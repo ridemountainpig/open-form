@@ -1,0 +1,166 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/*.tsbuildinfo", "!**/*.svg"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/core/src/schema/**", "!**/*.test.ts", "!**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "react": "schema/ is framework-agnostic: no React.",
+                  "react-dom": "schema/ is framework-agnostic: no React."
+                },
+                "patterns": [
+                  {
+                    "group": ["node:*", "../**", "!../schema/**"],
+                    "message": "schema/ is the bottom layer: no Node APIs and no other layers."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/core/src/react/**", "packages/core/src/app/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "node:*",
+                      "**/server/**",
+                      "!react-dom/server",
+                      "**/storage/**",
+                      "**/sqlite/**",
+                      "**/node/**",
+                      "**/vite/**",
+                      "**/cli/**"
+                    ],
+                    "message": "Browser code may only import schema/ and react/."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/core/src/server/**", "packages/core/src/storage/**", "!**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "react": "server/ is web-standard and React-free.",
+                  "react-dom": "server/ is web-standard and React-free."
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "node:*",
+                      "**/react/**",
+                      "**/sqlite/**",
+                      "**/node/**",
+                      "**/vite/**",
+                      "**/cli/**",
+                      "**/app/**"
+                    ],
+                    "message": "server/ and storage/ only depend on schema/ and Web standard APIs."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/forms/**", "**/template/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          },
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["**/themes/**"],
+                    "message": "A form owns its look: copy the theme in with `open-form theme copy <theme> <form>` and import ./theme instead."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noImgElement": "off"
+          }
+        }
+      }
+    }
+  ],
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": true,
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

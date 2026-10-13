@@ -1,0 +1,124 @@
+---
+title: Responses & export
+description: Where responses are stored, how to browse them in Studio, and how to get them out.
+---
+
+Responses are stored in SQLite, in a file inside your project:
+
+```text
+.open-form/
+├── open-form.db    # responses, form versions, Studio schedule overrides,
+│                   # rate-limit state, signed-out Studio sessions
+└── secret          # signs timing tokens and Studio sessions, hashes visitor ids
+```
+
+There's no database server to run. Open Form uses Node's built-in `node:sqlite`.
+Change the path with `storage.path` in `open-form.config.ts` or the `OPEN_FORM_DB`
+environment variable. Setting `OPEN_FORM_SECRET` replaces the `secret` file.
+
+## Runtime data stays out of git
+
+Your repo holds the questions, logic and policy. `.open-form/` holds the answers,
+and `open-form init` adds it to `.gitignore`. Keep it that way: responses are
+personal data.
+
+- The `.open-form/` directory is created `0700` and the database files `0600`.
+- The dev server refuses to serve anything inside `.open-form/` (or a custom
+  database path), so the file can't be downloaded past Studio's sign-in.
+- Deleting a response really erases it. SQLite's `secure_delete` is on and the
+  write-ahead log is truncated afterwards, so no copy stays behind in either file.
+- Export files written with `-o` are readable by you only (`0600`). Name them
+  `responses*.csv`, `.xlsx` or `.json`: the `.gitignore` that `open-form init`
+  writes keeps those out of git at the workspace root, and the dev server refuses
+  to serve them, along with Studio's `<id>-responses-<date>` downloads.
+
+## Response numbers
+
+Each response gets a number within its form: Studio's **Response #147**. Numbers
+increase and aren't reused when you delete responses, even the latest one, so a
+webhook receiver doesn't see the same number twice. Deleting the form itself
+erases its numbering: a new form with the same id starts again at #1 (see
+[`open-form delete`](/docs/cli/delete)).
+
+## In Studio
+
+Open a form and choose **Responses**.
+
+- **The table** shows the newest responses first, 50 per page, with their number,
+  submission time and the first few answered questions. Open a response or export
+  to see every answer.
+- **Search** matches answer values only, not field names, so searching "email"
+  doesn't hit every row.
+- **Click a row** to open the response at `/studio/:formId/responses/:responseId`.
+  The detail shows every answer with its question, when it was submitted and in
+  which language. **Copy** copies one answer; **Copy all** copies the whole
+  response as question and answer pairs.
+- **Delete** removes one response after a confirmation. Select rows to delete
+  several (Shift-click ticks a range), or select every response on the page,
+  every response, or every response matching your search.
+
+<Callout type="warn">
+  Deleting cannot be undone. Export first if you might need the data.
+</Callout>
+
+## Export
+
+Studio's Responses tab has **Excel**, **CSV** and **JSON** buttons. From the
+terminal:
+
+```bash
+pnpm exec open-form responses export meetup                      # CSV to stdout
+pnpm exec open-form responses export meetup -o responses.xlsx    # format from the extension
+pnpm exec open-form responses export meetup --format json -o responses-meetup.json
+```
+
+| Flag | Effect |
+| --- | --- |
+| `-o, --out <file>` | Write to a file instead of stdout. `.xlsx` and `.json` pick the format. |
+| `--format <format>` | `csv`, `xlsx` or `json`. Overrides the extension. |
+
+Excel files are binary, so `xlsx` needs `-o` when stdout is a terminal. The CLI
+reads the database file directly and loads the form the way the server does, so
+it doesn't need a running server and writes the same file as Studio.
+
+| Format | What you get |
+| --- | --- |
+| Excel | Numbers as numbers, `<DateInput>` answers as dates, **Submitted at** as a date and time in the time zone named in its header, a bold frozen header row with filters. |
+| CSV | UTF-8 with a BOM so Excel opens accents and CJK correctly. Cells that a spreadsheet would run as formulas are escaped. |
+| JSON | One object per response: `id`, `number`, `submittedAt`, `locale` (when one was recorded) and `data`, keyed by field `name`. |
+
+Every export lists responses oldest first. Tables start with `#` and
+**Submitted at**, then one column per field, headed by its label; fields that
+share a label are headed `label (name)`. When the form has translations and at
+least one response recorded its language, Excel and CSV add a **Language**
+column after **Submitted at**. CSV gives **Submitted at** as a UTC ISO timestamp
+(`2026-10-30T09:00:00.000Z`). Excel shows it in the form's time zone, including
+one changed in Studio's Settings.
+
+## Schema versions
+
+Open Form derives each form's schema from its code, and every response is stored
+with the schema version it was submitted against. Old responses keep their
+questions after you edit the form.
+
+Columns come from the newest version first, in form order, then fields only older
+versions had. A field's `name` is its column, so **renaming a field splits its
+column**: old responses keep the old name and new ones fill the new column.
+
+```tsx
+// Keeps the column: only the question changes.
+<Email name="email" label="Work email" required />
+
+// Splits it: answers before and after the rename land in different columns.
+<Email name="workEmail" label="Work email" required />
+```
+
+Change the `label`, not the `name`, once a field has responses.
+
+## What's next
+
+<Cards>
+  <Card title="open-form responses export" href="/docs/cli/responses-export" />
+  <Card title="Storage" href="/docs/reference/storage" />
+  <Card title="Webhooks" href="/docs/deploy/webhooks" />
+</Cards>

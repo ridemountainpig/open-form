@@ -1,0 +1,195 @@
+---
+title: Studio
+description: Browse forms, preview them on every device, read responses and adjust the schedule.
+---
+
+Studio is the admin UI that ships with Open Form. Start the dev server and open
+it in the browser:
+
+```bash
+pnpm dev    # Studio at http://localhost:3000/studio
+```
+
+The sidebar lists **Forms** and, under `open-form dev`, **Themes** with their
+counts, then your folders. Its **Search** button, or `Cmd` / `Ctrl` + `K`, opens
+the command palette: jump to any form, a folder or (under dev) a theme, or
+switch the appearance or Studio's language. Type to also find each form's
+responses (*Responses — Developer Meetup*). Each form opens fresh: a search,
+ticked responses or an Edit mode selection stay with the form they were made on.
+
+## Forms list
+
+Every folder in `forms/` is a form. The list shows each one as a card with a
+live thumbnail (the real form in its own theme and source language, rendered at
+desktop width and scaled down) and its status: **Open**, **Scheduled**,
+**Closed**, **Full** or **Error**.
+
+- **Search** matches the title, id and description.
+- **Status** narrows the list to *Open*, *Scheduled*, *Closed* or *Full*, with
+  a count for each.
+- **Sort** by *Recently edited*, *Latest response*, *Most responses* or *Name A–Z*.
+- Click anywhere on a card, thumbnail included, to open the form's **Preview**
+  in Studio. The response count opens its **Responses**, and the arrow button
+  opens the live form in a new tab.
+- Under `open-form dev`, the trash button on a card deletes the form: its folder
+  `forms/<id>/` and every response. Studio asks you to type the id first (click
+  it to fill it in), and links Excel, CSV and JSON exports when there are
+  responses to keep. The same action is at the bottom of the form's
+  **Settings** tab. See [`open-form delete`](/docs/cli/delete) for exactly what
+  goes.
+
+### Folders
+
+Folders group forms in the sidebar. Add one with **New folder** (the **+** beside
+*Folders*, or the row shown while you have none). Drag a form onto a folder, or
+use **Move to folder** on its card. A folder's menu has **Rename**, **Change
+icon** (an emoji or a color) and **Delete folder**, and you can drag folders to
+reorder them. Forms without a folder appear under **Unfiled**. **Delete folder**
+asks first, then moves its forms to **Unfiled**. No form or response is deleted.
+
+Folders are stored in `forms/.folders.json`, so they live in git with the forms:
+
+```json title="forms/.folders.json"
+{
+  "folders": [{ "id": "f-3a9c2e1b", "name": "Events", "icon": { "type": "color", "value": "#0091ff" } }],
+  "assignments": { "meetup": "f-3a9c2e1b" }
+}
+```
+
+Folders are only an organizing layer. Forms stay flat in `forms/<id>/`, and their
+ids, URLs and responses don't change when you move them. Folders are editable
+under `open-form dev`. A production build takes a snapshot and shows it read-only,
+only to people signed in to Studio.
+
+### Preferences
+
+**Appearance** (System, Light, Dark), Studio's **Language** (English, 繁體中文,
+简体中文, 日本語), the sort order and the preview's device frame are saved in
+your browser. Studio's language is separate from a form's `locale`, which is
+what respondents see.
+
+## Preview
+
+Open a form to land on **Preview**. On every tab, the header has **Copy link**,
+which copies the form's public URL, and **Open form**, which opens the live form
+in a new tab.
+
+The toolbar switches the device frame (**Desktop**, **Tablet**, **Mobile**) and,
+on a translated form, the **Preview language**: any language the form is
+translated into, or **Respondent’s language** to pick one as the respondent's
+browser would. Under `open-form dev` it also switches between **Preview** and
+**Edit** (see [Edit mode](/docs/core-feature/edit-mode)); **Edit** shows how
+many notes the form has. **Reload preview** starts the form again from the top.
+
+- **Steps** lists every page with its title and question count. Pages tagged
+  **If** only appear for certain answers. Click any step to open it directly. While
+  you jump around, hidden questions are shown with their conditions, Next and Back
+  don't validate, and nothing is sent. **Start over** returns to normal filling.
+- **Show hidden questions** opens that same view on a single-step form with
+  conditions: every question with its conditions, nothing sent.
+- **Done screen** shows what respondents see after they submit.
+- **When closed** shows each closed screen: *Closed* always; *Not open yet*
+  while `opensAt` is still ahead; *Full* when the form has a response limit,
+  including one set in Studio; *Already responded* with `uniqueBy: 'device'`.
+  The live form doesn't change.
+
+<Callout type="warn">
+  Submitting from Preview stores a real response. Delete test responses under
+  **Responses**.
+</Callout>
+
+## Responses
+
+The **Responses** tab is a searchable table of everything submitted, with a detail
+view, copy, delete and Excel / CSV / JSON export. See
+[Responses & export](/docs/core-feature/responses).
+
+## Schema
+
+The **Schema** tab is a table of every field the form collects, grouped by
+step: its label, data key, type, validation (**required**, **custom**) and the
+condition that shows it. A step's own condition sits on its heading row. Answers
+are stored under the data key, and JSON exports and webhooks use it too.
+
+## Settings
+
+The **Settings** tab has two cards: **Submissions**, which you can edit, and
+**Set in code**, which you can only read because what it shows lives in code.
+Under `open-form dev`, **Delete this form** sits below them: the same action as
+the trash button on the [forms list](#forms-list).
+
+**Submissions** has **Accepting responses** (pauses the form when off), **Opens**
+and **Closes** (a date, optionally with a time), the **Time zone** those dates
+are read in, and **Response limit**. These map to `submissions.opensAt`,
+`closesAt`, `maxResponses`, `closed` and the form's `timeZone`.
+
+- Under `open-form dev`, **Save** writes the values into
+  `forms/<id>/index.tsx`. The code stays the only source.
+- On a deployed server, **Save** stores them in the database as overrides. They
+  take effect right away, without a deploy. Studio lists what was **Changed in
+  Studio, not in code**, and **Use code values** removes the overrides.
+
+**Set in code** shows one response per email or device, drafts, protection,
+languages and translation coverage, webhooks, and the embed snippet. See
+[Submissions & protection](/docs/core-feature/submissions).
+
+## Themes
+
+`/studio/themes` is a gallery of the reference themes in `themes/`: what you and
+your agent start new forms from. Each theme's page previews it on a sample form,
+shows its `THEME.md` and spec, and gives the `open-form theme copy` command and
+an agent prompt for using it in a form. **New theme** adds a starter, and
+**Adjust** fine-tunes a reference's tokens, which affects only forms copied from
+it later. A form's own look lives in `forms/<id>/theme/`; change it there by hand
+or with your agent. The Themes pages are available under `open-form dev` only.
+See [Themes](/docs/core-feature/themes).
+
+## Routes
+
+| Route | Shows |
+| --- | --- |
+| `/studio` | Forms list |
+| `/studio/:formId` | Preview |
+| `/studio/:formId/responses` | Responses table; `/responses/:responseId` opens one response |
+| `/studio/:formId/schema` | Fields by step: data keys, types, validation, conditions |
+| `/studio/:formId/settings` | Schedule and settings in code |
+| `/studio/themes` | Reference theme gallery (dev only) |
+| `/studio/themes/:themeId` | Theme page and **Adjust** drawer (dev only) |
+| `/f/:formId` | The public form; an unknown id shows *Form not found* |
+
+## Who can open Studio
+
+- **`open-form dev`** without a password answers only direct requests from the
+  machine running it — not pages served from other origins, even other
+  `localhost` ports. With `OPEN_FORM_ADMIN_PASSWORD` set, everyone signs in,
+  including you. Set it before you expose dev in any way: a reverse proxy or a
+  raw TCP tunnel (`ssh -R`, `socat`) can make a remote request look local.
+- **`open-form start`** enables Studio only when `OPEN_FORM_ADMIN_PASSWORD` is set
+  (at least 16 characters; a passphrase works). Without it, Studio and the admin
+  API don't exist and the server only serves public forms.
+
+Set `OPEN_FORM_ADMIN_PASSWORD` in the environment or in the workspace's `.env`,
+which every `open-form` command except `init` loads; a variable already set in
+the environment wins.
+
+If Studio can't check the session (the server is down or answers with an error),
+it says so, with the HTTP status, and offers **Try again**.
+
+Signing in gives a session cookie that lasts 7 days by default. Signing out ends
+that session on the server, so a copy of the cookie stops working too. Sign-in
+attempts are limited to 10 per IP (per /64 for IPv6) every 10 minutes; behind a
+proxy, set [`trustProxy`](/docs/reference/config#behind-a-reverse-proxy) so each
+visitor counts separately (`open-form start` also reads `OPEN_FORM_TRUST_PROXY`).
+Changing the password signs everyone out. When you mount the handler yourself
+(for example with [Next.js](/docs/deploy/nextjs)), pass `adminAuth` to use a
+password, your own `authorize(request)` check such as an SSO session, or a
+`signInUrl`, and `sessionMaxAge` to change how long a sign-in lasts. See
+[Admin access](/docs/reference/http-api#admin-access).
+
+## What's next
+
+<Cards>
+  <Card title="Edit mode & comments" href="/docs/core-feature/edit-mode" />
+  <Card title="Responses & export" href="/docs/core-feature/responses" />
+  <Card title="Deploy to production" href="/docs/deploy/production" />
+</Cards>

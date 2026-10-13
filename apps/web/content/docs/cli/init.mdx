@@ -1,0 +1,105 @@
+---
+title: open-form init
+description: Scaffold a new forms workspace.
+---
+
+```npm
+npx @open-form-build/cli init my-forms
+```
+
+[`@open-form-build/cli`](https://www.npmjs.com/package/@open-form-build/cli)
+runs the `open-form` CLI from `@open-form-build/core` with the arguments you
+pass.
+
+Creates the workspace in `my-forms`, making the folder if it doesn't exist.
+Without a directory, an interactive run asks for one (default `my-forms`); a
+non-interactive run uses `my-forms`.
+
+If the target isn't empty, an interactive run asks before writing and a
+non-interactive run stops unless you pass `--force`. Only `.git` and
+`.DS_Store` don't count, so a folder holding just a `.env` still asks.
+
+Init never replaces a file you already have. It writes only the template files
+that are missing and lists the ones it kept. An existing `package.json` keeps
+its name, scripts and dependency versions; init only adds the scripts and
+dependencies it lacks. The one exception is the built-in skills: init refreshes
+them in `.agents/skills/` and turns each `.claude/skills/<name>` into a link, as
+[`sync:skills`](/docs/cli/sync-skills) does.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-f, --force` | off | Scaffold into a non-empty directory. |
+| `-n, --name <name>` | folder name | The `package.json` name, lowercased and made npm-safe. Without it, an existing `package.json` keeps its name. |
+| `--pm <pm>` | auto-detected | Package manager: `pnpm`, `npm`, `yarn` or `bun`. |
+| `--no-install` | off | Skip installing dependencies. |
+| `--no-git` | off | Skip `git init` and the initial commit. |
+
+The new `package.json` depends on `@open-form-build/core`: forms import from
+it, and its `open-form` CLI runs the scripts.
+
+Without `--pm`, init uses the package manager that launched it (from
+`npm_config_user_agent`) and falls back to `pnpm`. Either way, init installs
+with that package manager, prints the next steps for it, and writes its commands
+into the new `AGENTS.md`, `README.md` and `themes/README.md`: `npx open-form …`
+and `npm run dev` for npm, `yarn open-form …` and `yarn dev` for yarn,
+`bunx open-form …` and `bun run dev` for bun. Any of those files you already had
+stays as it is.
+
+## What it generates
+
+```text
+my-forms/
+├── forms/
+│   └── contact/
+│       └── index.tsx        # a starter contact form
+├── themes/
+│   └── README.md            # reference themes for new forms go here
+├── .agents/
+│   └── skills/              # the five agent skills
+├── .claude/
+│   └── skills/              # symlinks into .agents/skills/
+├── open-form.config.ts      # project config
+├── AGENTS.md                # agent rules
+├── CLAUDE.md                # symlink to AGENTS.md
+├── README.md
+├── package.json
+├── tsconfig.json
+└── .gitignore               # node_modules, dist, .open-form/, .env*, exported responses
+```
+
+- **Time zone** — init writes your computer's time zone into
+  `open-form.config.ts` as `timeZone` (falling back to `UTC`), so form open and
+  close dates mean the same in dev and in production. Change it if your forms
+  run on another clock.
+- **Install** — runs `install` with the chosen package manager. If it fails,
+  init prints the last lines of output and lists the install in the next steps.
+- **Git** — `git init` and a first commit, unless the folder is already inside
+  a repository (a package in a monorepo, for example) or git isn't installed;
+  then init says nothing about git. If the commit fails, usually because git
+  has no `user.name` or `user.email`, init keeps the new repository and prints
+  git's message. An existing `.gitignore` keeps its rules; init only adds the
+  lines it's missing.
+- On Windows, `CLAUDE.md` and the `.claude/skills/` entries are copies instead
+  of symlinks.
+
+## After init
+
+Init ends with the next steps for its package manager:
+
+```npm
+cd my-forms
+npm run dev
+```
+
+- `cd` is left out when you scaffold into the current folder. A path with
+  spaces or other special characters is quoted, so you can paste the line as
+  is.
+- `<pm> install` is added before the last step when dependencies weren't
+  installed: with `--no-install`, or when the install failed.
+- If an existing `package.json` kept a `dev` script of its own, the last step is
+  `<exec> open-form dev` instead (`pnpm exec`, `npx`, `yarn` or `bunx`).
+
+Studio is at `http://localhost:3000/studio`. Then ask your agent: "Create a
+registration form for our meetup."

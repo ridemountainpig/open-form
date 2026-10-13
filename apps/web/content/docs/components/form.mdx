@@ -1,0 +1,206 @@
+---
+title: Form
+description: The root component, the form file contract, Submit and Success.
+---
+
+`<Form>` is the root of every form. A form is one file — `forms/<id>/index.tsx`
+— whose default export renders exactly one `<Form>`. The folder name is the
+form's id and its public URL: `/f/<id>`.
+
+```tsx title="forms/meetup/index.tsx"
+import { defineForm, Email, Form, Page, Select, Submit, Text, When } from '@open-form-build/core';
+
+export const config = defineForm({
+  title: 'Developer Meetup Registration',
+  submissions: { maxResponses: 100, uniqueBy: 'email' },
+});
+
+export default function MeetupForm() {
+  return (
+    <Form>
+      <Page title="About you">
+        <Text name="name" label="Name" required autoComplete="name" />
+        <Email name="email" label="Email" required />
+      </Page>
+      <Page title="Background">
+        <Select name="role" label="Role" options={['Student', 'Engineer', 'Designer']} required />
+        <When field="role" equals="Student">
+          <Text name="school" label="School" required />
+        </When>
+      </Page>
+      <Submit>Register</Submit>
+    </Form>
+  );
+}
+```
+
+## File contract
+
+- `forms/<id>/index.tsx` is required. Use a kebab-case id. Anything else in the
+  folder — local components, option lists, a stylesheet, `locales/*.json`, the
+  form's own `theme/` — is yours to import.
+- `export const config = defineForm({...})` holds the title, description and
+  everything the server enforces: submission limits, dates, protection, the
+  success screen. See [`defineForm`](/docs/reference/define-form).
+- The default export is a component that renders one `<Form>`. Inside it, write
+  any React you like — your own components, `.map()`, wrappers — as long as the
+  inputs are [field components](/docs/components/fields) or
+  [`useField`](/docs/components/custom-fields).
+- Don't name the default export like an Open Form component — `Form`,
+  `Email`, `Text` — or a global like `Date` or `Number`. A component's name
+  would make the form render itself, so `open-form check`, dev and build
+  refuse it and name the file. A global's name isn't caught, but it shadows
+  the real `Date` or `Number` in that file. `open-form create` adds `Form` to
+  the name (`meetup` becomes `MeetupForm`) so this can't happen.
+- `config.title` and `config.description` render as the form's header. Don't
+  repeat them in the JSX.
+
+## Render-to-collect
+
+The server never parses your file. It renders the default export once in a
+collect mode: every `<Page>` renders, every `<When>` renders its children and
+records its condition, and every field registers its name, type, constraints,
+step and conditions. The result is the form's schema — what the server
+validates against, what versions are recorded under, and what Responses and
+exports use as columns. Custom `validate` functions are collected too, so the
+server runs them.
+
+Because of that:
+
+- Don't touch `window`, `document` or `localStorage` during render. Effects are
+  fine.
+- Keep field names stable. Never derive them from `Date.now()` or random values.
+  `__proto__` isn't allowed as a name.
+- A `name` may appear twice only with the same field type, in `<When>`
+  branches that don't show together — for example a postal code with one
+  `validate` per country. Each copy's `validate` applies while that copy is
+  showing. Two types under one name, or two copies under the same conditions
+  (say, on two pages), is a load error.
+- The browser repeats this render once when the form loads, off-screen, so it
+  decides what's showing exactly as the server will. Effects in your own
+  components run (and clean up) once more because of it.
+- A default export that renders no `<Form>`, or more than one, fails to load
+  with an error that names the file.
+
+## Props
+
+<TypeTable
+  type={{
+    title: {
+      type: 'string',
+      description: 'Overrides config.title for this render.',
+    },
+    description: {
+      type: 'string',
+      description: 'Overrides config.description.',
+    },
+    defaultValues: {
+      type: 'Record<string, unknown>',
+      description: 'Initial answers keyed by field name. Wins over a field’s own defaultValue.',
+    },
+    onSubmit: {
+      type: '(values) => void | Promise<void>',
+      description: 'Handle submission yourself instead of posting to the Open Form API.',
+    },
+    aside: {
+      type: 'ReactNode',
+      description: 'Display-only content beside the questions on wide screens. On narrow ones the default layout puts it below them; SplitLayout and StepperLayout put it above. FocusLayout doesn’t show it.',
+    },
+    theme: {
+      type: 'FormTheme',
+      description: "This form's look: tokens, components and CSS from defineTheme, usually its own copy in ./theme/.",
+    },
+    components: {
+      type: 'Partial<FormComponents>',
+      description: 'Replace fields, chrome or the whole Layout for this form, on top of the theme.',
+    },
+    className: {
+      type: 'string',
+      description: 'Added to the form root, for form-specific CSS.',
+    },
+  }}
+/>
+
+`aside` is for live previews, summaries and prices — see
+[Hooks](/docs/components/hooks). `components` is covered in
+[Layouts](/docs/components/layouts).
+
+<Callout type="warn">
+  Leave `onSubmit` out in an Open Form workspace. Submission, server
+  validation, protection and storage are built in. `onSubmit` receives the
+  answers the server would store — fields that are showing, trimmed and typed —
+  and skips all of that.
+</Callout>
+
+## Theme
+
+A form owns its look. `open-form theme copy <theme> <id>` copies a theme into
+`forms/<id>/theme/` and prints the line that imports it;
+`open-form create <id> --theme <theme>` does both for a new form. The copy
+keeps the theme's file type — `theme/index.ts` for a tokens-only theme like
+`classic`, `theme/index.tsx` for one with components — so import the path
+the command prints, and pass it to `theme`:
+
+```tsx title="forms/meetup/index.tsx"
+import theme from './theme/index.tsx'; // above the form's own CSS, so the form's CSS wins
+import './meetup.css';
+
+<Form theme={theme}>…</Form>
+```
+
+The theme's tokens become the form's `--of-*` variables, and its `components`
+replace the defaults: `defaultComponents` ← the theme's `components` ←
+`<Form components>`. The root element gets `data-of-theme="<id>"`, so the
+theme's CSS is scoped to this form. Without `theme`, the form uses the base
+styles, which are the `classic` starter's look — or, under a
+[`<FormHost theme>`](/docs/deploy/nextjs), that fallback theme. To adjust the
+default look, copy it in with `open-form theme copy classic <id>`. Editing a
+copy changes only this form; themes in `themes/` are references and never
+change it. See [Themes](/docs/core-feature/themes) and
+[`defineTheme`](/docs/reference/define-theme).
+
+For a form-specific tweak on top of the theme, import a local stylesheet after
+it and scope it with `className`. Prefix every class and build on the `--of-*`
+tokens so the theme and dark mode keep working:
+
+```tsx title="forms/pass/index.tsx"
+import theme from './theme/index.ts'; // a copy of classic
+import './pass.css';
+
+<Form theme={theme} className="pass-root">…</Form>
+```
+
+## `<Submit>`
+
+Sets the label of the final button. It renders nothing itself; Back and Next
+are automatic. Without it the button reads "Submit" in the language the form
+is shown in.
+
+```tsx
+<Submit>Register</Submit>
+```
+
+Put it directly inside `<Form>`. One placed inside the last `<Page>` is found
+too.
+
+## `<Success>`
+
+Replaces the thank-you screen shown after a successful submission.
+
+```tsx
+<Success title="You're in">
+  <p>We'll email your ticket before the event.</p>
+</Success>
+```
+
+The title comes from `<Success title>`, else `config.success.title`, else a
+built-in sentence. The body comes from its children, else
+`config.success.message`, else a built-in sentence. Children can read answers
+with `useFieldValue` to personalise the screen. Set `config.success.redirect`
+to send respondents to another page after they submit.
+
+<Cards>
+  <Card title="Page" href="/docs/components/page" />
+  <Card title="Fields" href="/docs/components/fields" />
+  <Card title="defineForm" href="/docs/reference/define-form" />
+</Cards>

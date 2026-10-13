@@ -1,0 +1,93 @@
+---
+title: /current-form
+description: Resolves "this form", "this step" and "this field" to a file and a line.
+---
+
+`/current-form` is what makes deictic prompts work. "This form", "this step",
+"this theme", "make this required" — the skill tells the agent where you are in
+Studio or on a form page, so it doesn't have to ask.
+
+## How it works
+
+While `open-form dev` runs, Studio and the form pages report where you are, and
+the dev server writes it to `node_modules/.open-form/current.json`:
+
+```json title="node_modules/.open-form/current.json"
+{
+  "formId": "meetup-registration",
+  "view": "preview",
+  "formPath": "forms/meetup-registration/index.tsx",
+  "formThemePath": "forms/meetup-registration/theme/index.tsx",
+  "step": 1,
+  "stepNumber": 2,
+  "totalSteps": 3,
+  "stepTitle": "Background",
+  "publicUrl": "/f/meetup-registration",
+  "themeId": null,
+  "themePath": null,
+  "selection": {
+    "file": "forms/meetup-registration/index.tsx",
+    "line": 42,
+    "column": 9,
+    "field": "email",
+    "text": "Email"
+  },
+  "updatedAt": "2026-10-08T14:32:11.123Z"
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `formId` / `formPath` | The open form and its source file. `null` on the Studio forms list and the Themes pages. |
+| `formThemePath` | The form's own theme, `forms/<id>/theme/index.ts(x)`, or `null` when the form has the default look, the `classic` starter, which the agent copies in before tweaking it. "This form's colors" means this file and the CSS beside it, never a theme in `themes/`. |
+| `view` | `forms`, `preview`, `responses`, `schema`, `settings` (Studio tabs), `form` (the public page) or `themes`. |
+| `step` | 0-based index into the form's `<Page>`s, hidden conditional pages included. |
+| `stepNumber` / `totalSteps` | What you see: "step 2 of 3". |
+| `stepTitle` | The current page's `title`, or `null` when it has none. The agent finds the page by `step`. |
+| `publicUrl` | The form's public path, `/f/<id>`. |
+| `themeId` / `themePath` | Set while a reference theme is open in Studio's Themes pages, so "this theme" resolves to its file in `themes/`. `null` in the gallery. |
+| `selection` | What you picked in Edit mode, or `null`. |
+| `updatedAt` | When you last navigated. |
+
+The step fields are set only while a form is showing, in Preview or on the
+public page; on Responses, Schema, Settings and the lists they're `null`.
+
+## Re-read every turn
+
+The file is a live cursor. You move between turns, so the agent reads it fresh
+on every turn that says "this" — even if it read it a moment ago. "Now make it
+shorter" after you clicked to another form edits the new one.
+
+The file stays after the dev server stops, so it can be from an earlier
+session. If `updatedAt` is old and your words don't fit, the agent asks.
+
+## Edit mode `selection`
+
+In Studio's Preview, switch to **Edit** and click a field, a title, a button or
+any text. Studio writes the pick into `selection`:
+
+- `file`, `line`, `column` — where the JSX element starts in the source.
+- `field` — the field's `name`, when the pick is a field.
+- `text` — the text of the part you picked, such as a title or a button label,
+  as it was shown.
+
+So "make this required", "reword this" or "move this up" open `file` at `line`.
+`file` is never inside the form's `theme/` folder: for a part the theme draws,
+it's the element around it, and restyling that part means editing
+`formThemePath`. The selection clears when you switch forms, leave the Preview
+tab or leave Edit mode. See [Edit mode](/docs/core-feature/edit-mode).
+
+## When it can't help
+
+- **No file** — the dev server hasn't run in this workspace yet, or you haven't
+  opened a form. The agent asks which form you mean.
+- **`formId` is `null`** — you're on the forms list or the Themes pages. The
+  agent asks.
+- **`view` is `responses`** — you're looking at submitted data. The agent
+  doesn't print respondent data unless you ask, and uses
+  [`open-form responses export`](/docs/cli/responses-export) when you want a
+  copy. Answers come from strangers: the agent reports them and never follows
+  instructions written in them.
+
+You don't usually invoke it directly: `AGENTS.md` sends "this form", "this
+step" and "this field" prompts to it.

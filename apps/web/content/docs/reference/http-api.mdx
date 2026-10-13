@@ -1,0 +1,228 @@
+---
+title: HTTP API
+description: The routes every Open Form server answers under /api, and the handler behind them.
+---
+
+`open-form dev`, `open-form start` and the Next.js route all serve the same
+API, mounted at `/api`. It's one Web-standard `(Request) => Response` handler
+from `@open-form-build/core/server`, so it runs on any runtime with `Request` and
+`Response`. The form page and `<FormHost>` use the public routes; Studio uses
+the admin routes.
+
+## Routes
+
+| Method | Path | Access | What |
+| --- | --- | --- | --- |
+| `GET` | `/api/forms/:id` | Public | Form status and a timing token |
+| `POST` | `/api/forms/:id/submissions` | Public | Submit a response |
+| `GET` | `/api/forms` | Admin | Every form with response counts and status |
+| `GET` | `/api/forms/:id/schema` | Admin | Schema, config, effective schedule and status |
+| `GET` | `/api/forms/:id/submissions` | Admin | Responses, paged: `limit` (default 50, max 500) and `offset` as whole numbers, `q` |
+| `GET` | `/api/forms/:id/submissions/:sid` | Admin | One response with the schema it was submitted under |
+| `DELETE` | `/api/forms/:id/submissions/:sid` | Admin | Delete one response |
+| `POST` | `/api/forms/:id/submissions/delete` | Admin | Delete 1–500 responses: `{ ids }` |
+| `PUT` | `/api/forms/:id/overrides` | Admin | Save Studio's schedule changes |
+| `DELETE` | `/api/forms/:id/overrides` | Admin | Go back to the schedule in code |
+| `GET` | `/api/forms/:id/export` | Admin | Download responses: `format=csv`, `xlsx` or `json` |
+| `GET` | `/api/studio/folders` | Admin | Studio's form folders, from `forms/.folders.json` (as of the build in production) |
+| `GET` | `/api/studio/session` | Open | Whether this browser is signed in to Studio |
+| `POST` | `/api/studio/session` | Open | Sign in with `{ password }` |
+| `DELETE` | `/api/studio/session` | Open | Sign out |
+
+Responses are JSON with `cache-control: no-store`. Errors share one shape:
+`{ "error": "<code>", "message": "<readable text>" }`. Across the API, an
+unknown path gets `404` `not_found`, a known path with the wrong method gets
+`405` `method_not_allowed`, and an unexpected failure gets `500` `internal`
+with a generic message (the details only with `exposeErrors`).
+
+## Form status
+
+`GET /api/forms/:id` tells the page whether to show the questions:
+
+```json
+{
+  "id": "meetup",
+  "title": "Developer Meetup Registration",
+  "availability": { "state": "open" },
+  "token": "…"
+}
+```
+
+`availability.state` is `open`, `closed`, `not-open` (with `opensAt`),
+`full` or `duplicate` (for `uniqueBy: 'device'`). Closed states carry the
+form's `message`. `token` is a signed timing token, issued only while the form
+is open.
+
+For `duplicate`, the device is the `of_vid` cookie the server sets on submit
+(`HttpOnly`, `SameSite=Lax`, one year). Where cookies are blocked, as in
+embeds, send the page's own random id — 16 to 64 letters, digits, `-` or `_`
+— in the `x-open-form-visitor` header. `<FormHost>` and the form page do this
+for you.
+
+## Submitting
+
+```http
+POST /api/forms/meetup/submissions
+Content-Type: application/json
+
+{ "data": { "name": "Ada", "email": "ada@example.com" }, "locale": "en", "token": "…", "hp": "" }
+```
+
+| Field | What |
+| --- | --- |
+| `data` | Answers keyed by field name. |
+| `locale` | The language shown. Used for error messages and stored with the response if the form offers it; otherwise the form's own language is stored. |
+| `token` | The timing token from the status route. Required unless `minimumCompletionTime` is `false`. |
+| `hp` | The honeypot input. Must be empty. |
+| `visitor` | Optional browser id for `uniqueBy: 'device'` when cookies are blocked, as in embeds. The `x-open-form-visitor` header works too. |
+
+The handler checks the request's origin, the form's schedule and the timing
+token. It then drops unknown fields and fields hidden by `<When>`, coerces the
+rest, and runs the same validation as the browser plus custom validators. Only a
+valid submission counts against the rate limit, so fixing mistakes doesn't use
+it up. The response is stored with `maxResponses` and `uniqueBy` checked in one
+transaction, and webhooks go out after the response.
+
+| Status | `error` | When |
+| --- | --- | --- |
+| `201` | — | Stored. Body: `{ id, number }`. |
+| `400` | `too_fast`, `invalid_token`, `expired_token`, `bad_request` | Sent too quickly, bad token, a token over 7 days old (reloading the page gets a new one), or a body that isn't a JSON object |
+| `403` | `forbidden` | Cross-site request from an origin not in `embed.origins` |
+| `404` | `not_found` | No such form |
+| `409` | `duplicate` | `uniqueBy` already has a response for this value or device |
+| `410` | `closed`, `not_open`, `full` | Outside the schedule, or `maxResponses` reached |
+| `413` | `too_large` | Body over the limit (256 KB by default) |
+| `415` | `unsupported_media_type` | Not `application/json` |
+| `422` | `invalid` | Validation failed; `errors` maps field names to messages |
+| `429` | `rate_limited` | Over the form's rate limit |
+
+A filled-in honeypot goes through the same checks and gets the answer a real
+submission would — `201` with `{ id, number }`, or `409` / `410` — but nothing
+is stored.
+
+Same origin means the `Origin` header matches the request URL. Behind a proxy
+that ends TLS the server sees `http://` while the browser sends an `https://`
+`Origin` for the same host; that counts as the same origin. The reverse, an
+`http://` page calling an `https://` server, doesn't.
+
+## Export
+
+`GET /api/forms/:id/export?format=csv` downloads every response as
+`<id>-responses-<date>.<format>`, oldest first.
+
+- **CSV** (default): `#`, `Submitted at`, `Language` on translated forms once
+  a response has one, then one column per field headed by its label. Fields
+  that only older versions had keep their columns. UTF-8 with a BOM, and cells
+  that start with `=`, `+`, `-` or `@` are escaped so spreadsheets don't run
+  them as formulas.
+- **xlsx**: the same columns with typed numbers and dates; `Submitted at` is
+  shown in the form's time zone.
+- **json**: `[{ id, number, submittedAt, locale?, data }]`.
+
+## Overrides
+
+`PUT /api/forms/:id/overrides` takes the schedule Studio wants —
+`{ submissions: { opensAt, closesAt, maxResponses, closed }, timeZone }` — and
+stores only what differs from the code. It answers `{ overrides }`. Other
+policy keys can't be overridden; change them in code.
+
+## Admin access
+
+Without `adminAuth`, every admin and session route answers `404`: the API is
+public forms only. With it, an unauthenticated admin request gets `401`
+`unauthorized`. Requests that change data must also come from the same origin.
+
+<TypeTable
+  type={{
+    password: {
+      type: 'string',
+      description: 'Shared password, at least 16 characters. Studio exchanges it for a signed session cookie. Changing it signs everyone out.',
+    },
+    authorize: {
+      type: '(request: Request) => boolean | Promise<boolean>',
+      description: 'Your own check, such as an SSO session.',
+    },
+    signInUrl: {
+      type: 'string',
+      description: 'Where Studio sends signed-out people when there is no password.',
+    },
+    sessionMaxAge: {
+      type: 'Duration',
+      default: "'7d'",
+      description: 'How long a Studio sign-in lasts.',
+    },
+  }}
+/>
+
+The session cookie is `of_session`: `HttpOnly`, `SameSite=Strict`, and
+`Secure` over HTTPS. `DELETE /api/studio/session` revokes the session in
+storage, so the same cookie is refused afterwards. Sign-in is limited to 10
+attempts per IP (per /64 for IPv6) every 10 minutes: a wrong password gets
+`401` `invalid_password`, and attempts over the limit get `429` `rate_limited`.
+
+`open-form start` and the Next.js route turn on password sign-in when
+`OPEN_FORM_ADMIN_PASSWORD` is set. `open-form dev` always serves the admin
+routes: without a password, only direct requests from your own machine get in
+and the rest are refused, with a hint in the terminal to set one; with a
+password, every request signs in, local ones too.
+
+## `createOpenFormHandler`
+
+Most projects never call it: `open-form start`, `open-form dev` and
+`createOpenFormRoute` from `@open-form-build/core/next` build it for you. Use it to mount
+the API in another server.
+
+```ts title="server.ts"
+import { createEntryRegistry, forwardedAddress } from '@open-form-build/core/node';
+import { createOpenFormHandler } from '@open-form-build/core/server';
+import { createSqliteStorage } from '@open-form-build/core/sqlite';
+import * as entry from './dist/server/entry.js'; // written by `open-form build`
+
+export const handler = createOpenFormHandler({
+  registry: createEntryRegistry(entry),
+  storage: await createSqliteStorage({ path: '.open-form/open-form.db' }),
+  secret: process.env.OPEN_FORM_SECRET!,
+  config: entry.config,
+  adminAuth: { password: process.env.OPEN_FORM_ADMIN_PASSWORD! },
+  // behind one reverse proxy that appends the client to X-Forwarded-For
+  clientAddress: (request) => forwardedAddress(request.headers.get('x-forwarded-for'), 1),
+});
+```
+
+<TypeTable
+  type={{
+    registry: { type: 'FormRegistry', required: true, description: 'Lists forms and loads their schema, config and validators.' },
+    storage: { type: 'StorageAdapter', required: true, description: 'Where responses, versions and rate limits live.' },
+    secret: { type: 'string', required: true, description: 'Signs timing tokens and Studio session cookies, and hashes visitor ids and IPs. At least 16 characters; shorter throws. Keep it stable and private.' },
+    config: { type: 'OpenFormConfig', description: 'The project config: protection defaults, time zone, webhooks, embed.' },
+    basePath: { type: 'string', default: "'/api'", description: 'Path prefix the handler is mounted under.' },
+    adminAuth: { type: 'AdminAuth', description: 'Who may use Studio and the admin routes. Without it they answer 404.' },
+    clientAddress: { type: '(request: Request) => string | undefined', description: 'The client IP, for rate limits and sign-in attempts. IPv6 addresses count per /64. Without it, every visitor counts as one: all of them share each form’s rate limit and the sign-in limit.' },
+    secureCookies: { type: 'boolean', description: 'Always mark cookies Secure. Without it they are Secure when the request URL or the page’s Origin is https.' },
+    webhookSecret: { type: 'string', description: 'Signs webhook deliveries. Usually OPEN_FORM_WEBHOOK_SECRET.' },
+    waitUntil: { type: '(promise: Promise<unknown>) => void', description: 'Keeps webhook deliveries alive after the response on serverless platforms.' },
+    fetch: { type: 'typeof fetch', default: 'global fetch', description: 'Used for webhook deliveries.' },
+    exposeErrors: { type: 'boolean', default: 'false', description: 'Include error details in 500 responses. Dev only.' },
+    maxBodyBytes: { type: 'number', default: '262144', description: 'Largest request body accepted.' },
+    now: { type: '() => number', default: 'Date.now', description: 'The clock, in epoch milliseconds. For tests.' },
+  }}
+/>
+
+Cross-origin calls are allowed only on the two public routes and only for
+sites in `embed.origins`, never with credentials; they may send
+`content-type` and `x-open-form-visitor`. An `OPTIONS` preflight on those
+routes gets `204` for an allowed site and `404` otherwise.
+
+`open-form dev` adds more `/api/studio/*` routes for Studio's editing
+features. They aren't part of the handler and don't exist in production.
+`/api/studio/session` and `/api/studio/folders` belong to the handler, so
+production serves them too. There, `/api/studio/folders` answers with
+`forms/.folders.json` as it was when you ran `open-form build`. The Next.js
+route has no folders, so it answers `{ "folders": [], "assignments": {} }`, as
+does any handler whose `registry` has no `folders()`.
+
+<Cards>
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Next.js" href="/docs/deploy/nextjs" />
+  <Card title="Storage" href="/docs/reference/storage" />
+</Cards>

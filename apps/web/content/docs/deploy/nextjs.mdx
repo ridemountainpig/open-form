@@ -1,0 +1,264 @@
+---
+title: Next.js
+description: Mount the Open Form API in a Next.js app and render forms in your own pages.
+---
+
+`@open-form-build/core/next` runs the same submission handler inside a Next.js App Router app.
+Forms render in your own pages with `<FormHost>`, and validation still comes from
+the same form files on both sides.
+
+Keep `forms/` (and optionally `open-form.config.ts`) at the root of the Next.js
+app. A form's look travels with it in `forms/<id>/theme/`:
+
+```text
+my-app/
+├── app/
+│   ├── api/[...openform]/route.ts
+│   └── rsvp/
+│       ├── page.tsx
+│       └── rsvp-form.tsx
+├── forms/
+│   └── rsvp/
+│       ├── index.tsx
+│       └── theme/           # the form's own theme, if it has one
+├── open-form.config.ts
+└── package.json
+```
+
+<Steps>
+<Step>
+
+### Install
+
+```npm
+npm install @open-form-build/core
+```
+
+</Step>
+<Step>
+
+### Mount the API
+
+```ts title="app/api/[...openform]/route.ts"
+import { createOpenFormRoute } from '@open-form-build/core/next';
+
+export const { GET, POST, PUT, DELETE, OPTIONS } = createOpenFormRoute();
+```
+
+The route reads each request, so Next.js always runs it on demand. Don't add
+`export const dynamic`: Next.js 16 rejects it when Cache Components
+(`cacheComponents: true`) is on.
+
+</Step>
+<Step>
+
+### Render the form
+
+`<FormHost>` fetches the form's availability and timing token from the API, then
+renders it. Import the runtime styles once.
+
+```tsx title="app/rsvp/rsvp-form.tsx"
+'use client';
+import { FormHost } from '@open-form-build/core';
+import '@open-form-build/core/styles.css';
+import Rsvp, { config } from '../../forms/rsvp';
+
+export function RsvpForm() {
+  return <FormHost id="rsvp" form={Rsvp} config={config} />;
+}
+```
+
+</Step>
+<Step>
+
+### Build the server bundle
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "open-form build --server-only --watch & next dev",
+    "build": "open-form build --server-only && next build"
+  }
+}
+```
+
+`&` runs both at once in macOS and Linux shells. Windows `cmd` waits for the
+first command to exit, so there, run `open-form build --server-only --watch` and
+`next dev` in two terminals.
+
+</Step>
+<Step>
+
+### Ship the bundle with the route
+
+The route loads `dist/server/entry.js` by path at runtime, so Next.js's file
+tracing can't see it. With `output: 'standalone'` or on Vercel, include it by
+hand:
+
+```ts title="next.config.ts"
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    '/api/*': ['./dist/server/**/*'],
+  },
+};
+
+export default nextConfig;
+```
+
+The key matches the route's path, `/api/[...openform]`, and the value is the
+bundle folder. If you mount the route somewhere else or pass `outDir`, change
+them to match.
+
+</Step>
+</Steps>
+
+## Why a server bundle
+
+App Router route handlers run in the React Server Components layer, which can't
+render a form to learn its fields. So the route reads `dist/server/entry.js`, a
+single file that `open-form build --server-only` writes with its own copy of React.
+The browser and the server still come from the same form source.
+
+Outside production the route checks the bundle on each request and reloads it
+after a rebuild, so `--watch` plus `next dev` picks up edits to forms and to
+`open-form.config.ts`. Restart the watcher after adding a form folder.
+
+## Options
+
+<TypeTable
+  type={{
+    root: {
+      type: 'string',
+      default: 'process.cwd()',
+      description: 'Where forms/, open-form.config.ts and dist/ live.',
+    },
+    outDir: {
+      type: 'string',
+      default: "'dist'",
+      description: 'The open-form build output directory.',
+    },
+    storage: {
+      type: 'StorageAdapter',
+      default: 'SQLite at OPEN_FORM_DB, else storage.path in open-form.config.ts, else .open-form/open-form.db',
+      description: 'Where responses go. The default needs a persistent disk.',
+    },
+    secret: {
+      type: 'string',
+      default: 'OPEN_FORM_SECRET, else a generated .open-form/secret',
+      description: 'Signs timing tokens and Studio session cookies, and hashes visitor ids. At least 16 characters.',
+    },
+    adminAuth: {
+      type: 'AdminAuth',
+      default: 'password from OPEN_FORM_ADMIN_PASSWORD, if set',
+      description: 'Who may use the admin API. Without one, there is no admin API.',
+    },
+    basePath: {
+      type: 'string',
+      default: "'/api'",
+      description: 'Where the route is mounted.',
+    },
+    trustProxy: {
+      type: 'boolean | number',
+      default: 'trustProxy in open-form.config.ts, else 1',
+      description: 'Proxies that append to X-Forwarded-For. Vercel and a reverse proxy in front of next start put the client last. With false the route sees no client IPs, so all visitors share one rate limit.',
+    },
+    waitUntil: {
+      type: '(promise: Promise<unknown>) => void',
+      description: 'Keeps webhook deliveries alive after the response.',
+    },
+  }}
+/>
+
+If you mount the route somewhere else, set `basePath` to match and pass the same
+path to `<FormHost api>`.
+
+Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
+`OPEN_FORM_SECRET`, `OPEN_FORM_DB` and `OPEN_FORM_WEBHOOK_SECRET`. It ignores
+`OPEN_FORM_TRUST_PROXY`; pass `trustProxy` instead. It also ignores
+`OPEN_FORM_SECURE_COOKIES` and has no option in its place: cookies are marked
+`Secure` when the request URL or the page's `Origin` is `https://`.
+
+<Callout type="warn">
+  Rate limits and Studio sign-in attempts are counted per client IP, read from the
+  right of `X-Forwarded-For`. Vercel sets that header itself. When you self-host,
+  keep `next start` behind a reverse proxy that appends the client address (nginx:
+  `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for`). Exposed directly,
+  Next.js keeps whatever `X-Forwarded-For` the client sends, so anyone can pick
+  their own IP and get around both limits.
+</Callout>
+
+## `<FormHost>` props
+
+<TypeTable
+  type={{
+    id: { type: 'string', required: true, description: "The form id: its folder name in forms/. The form's own theme CSS is scoped to it." },
+    form: { type: 'ComponentType', required: true, description: "The form's default export." },
+    config: { type: 'FormConfig', description: "The form's config export." },
+    api: {
+      type: 'string',
+      default: "'/api'",
+      description: 'Where the API is mounted, or another origin such as https://forms.example.com/api.',
+    },
+    theme: {
+      type: 'FormTheme',
+      description: "A look for forms that don't bring their own. A form's <Form theme> wins, so you usually leave it out.",
+    },
+    themeId: {
+      type: 'string',
+      default: "'custom' when a theme is given",
+      description: "Scopes the fallback theme's CSS. Letters, digits, hyphens and underscores, starting with a letter or digit; anything else falls back to default.",
+    },
+    locale: { type: 'Locale', description: "The project's default language, for forms that don't set locale." },
+    className: { type: 'string', description: 'Class on the wrapper element.' },
+  }}
+/>
+
+## Storage, admin and Vercel
+
+- **Storage.** Responses go to SQLite in `.open-form/` by default, which needs a
+  persistent disk. On a serverless platform pass `storage` with an adapter that
+  persists; see [Storage](/docs/reference/storage). Keep `.open-form/` and `dist/`
+  out of git.
+- **Secret.** Without `OPEN_FORM_SECRET`, the route generates one into
+  `.open-form/secret`. Serverless functions can't write there, so on Vercel and
+  other read-only hosts set `OPEN_FORM_SECRET` (or pass `secret`). It must be at
+  least 16 characters. Generate one and keep it the same across deploys, or
+  signed tokens and Studio sessions stop working:
+
+  ```bash
+  node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+  ```
+
+- **Admin API.** The endpoints for responses, export and delete exist only when
+  `OPEN_FORM_ADMIN_PASSWORD` is set or you pass `adminAuth`. The password must be
+  at least 16 characters; a passphrase of a few words works. To reuse your app's
+  sign-in, pass an `authorize` check.
+- **Setup errors.** The route sets up the API on its first request. A secret or
+  admin password under 16 characters, a webhook secret that isn't base64, or an
+  invalid `webhooks` or `embed.origins` entry makes that fail, and then every
+  request fails with the error, public form routes included. Check the Next.js
+  server logs.
+- **Vercel.** Pass `waitUntil: after` (from `next/server`) so
+  [webhooks](/docs/deploy/webhooks) finish after the response is sent. Retries
+  that come minutes later outlast the function and are lost.
+
+```ts title="app/api/[...openform]/route.ts"
+import { after } from 'next/server';
+import { createOpenFormRoute } from '@open-form-build/core/next';
+import { auth, isAdmin } from '@/lib/auth'; // your app's own sign-in
+
+export const { GET, POST, PUT, DELETE, OPTIONS } = createOpenFormRoute({
+  adminAuth: { authorize: async () => isAdmin(await auth()) },
+  waitUntil: after,
+});
+```
+
+## What's next
+
+<Cards>
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Webhooks" href="/docs/deploy/webhooks" />
+  <Card title="HTTP API" href="/docs/reference/http-api" />
+</Cards>

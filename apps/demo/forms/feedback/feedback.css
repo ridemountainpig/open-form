@@ -1,0 +1,132 @@
+/* Styles for this form only, on the tokens of ./theme. */
+
+.fb-cover {
+  display: grid;
+  justify-items: start;
+  gap: 22px;
+}
+
+.fb-cover .of-header {
+  margin-bottom: 4px;
+}
+
+.fb-badge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--of-primary) 14%, var(--of-surface));
+  color: var(--of-primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--of-primary) 22%, transparent) inset;
+  rotate: -6deg;
+  animation: fb-rise 520ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.fb-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: fb-rise 520ms 120ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.fb-facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px 6px 10px;
+  border: 1px solid var(--of-border);
+  border-radius: 999px;
+  background: var(--of-surface);
+  color: var(--of-muted);
+  font-size: 0.875rem;
+}
+
+.fb-facts svg {
+  color: var(--of-primary);
+}
+
+@keyframes fb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Success: the answers played back */
+
+.fb-receipt {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 26px;
+  padding: 22px 26px 24px;
+  border: 1px solid var(--of-border);
+  border-radius: 20px;
+  background: var(--of-surface);
+  animation: fb-rise 520ms 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.fb-receipt p {
+  margin: 0;
+}
+
+.fb-score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--of-heading-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.fb-score-value {
+  color: var(--of-primary);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.fb-score-scale {
+  color: var(--of-muted);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.fb-score-note {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.fb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fb-chips li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--of-primary) 10%, var(--of-surface));
+  font-size: 0.875rem;
+}
+
+.fb-reply {
+  color: var(--of-muted);
+  font-size: 0.875rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-badge,
+  .fb-facts,
+  .fb-receipt {
+    animation: none;
+  }
+}

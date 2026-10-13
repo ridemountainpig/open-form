@@ -1,0 +1,335 @@
+/* Editorial theme. Component classes are prefixed `ed-`; chrome overrides are
+   scoped to [data-of-theme="editorial"] so other forms are untouched. */
+
+[data-of-theme="editorial"] .of-form {
+  border: 0;
+  border-top: 3px solid var(--of-fg);
+  box-shadow: none;
+}
+
+[data-of-theme="editorial"] .of-header {
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--of-border);
+}
+
+[data-of-theme="editorial"] .of-title {
+  font-size: clamp(2.2rem, 1.6rem + 2.4vw, 3.25rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+[data-of-theme="editorial"] .of-description {
+  font-family: var(--of-heading-font);
+  font-size: 1.15rem;
+  font-style: italic;
+}
+
+[data-of-theme="editorial"] .of-button {
+  min-height: 52px;
+  padding: 0 1.75rem;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="editorial"] .of-button-primary::after {
+  content: "→";
+  margin-left: 0.6rem;
+  font-size: 15px;
+  letter-spacing: 0;
+  transition: transform 0.2s ease;
+}
+
+[data-of-theme="editorial"] .of-button-primary:hover::after {
+  transform: translateX(3px);
+}
+
+.ed-field {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ed-field > legend {
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.ed-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--of-muted);
+}
+
+.ed-field:focus-within .ed-label {
+  color: var(--of-fg);
+}
+
+.ed-help {
+  margin: -4px 0 0;
+  font-family: var(--of-heading-font);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--of-muted);
+}
+
+.ed-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--of-error);
+}
+
+.ed-error::before {
+  content: "— ";
+}
+
+.ed-line {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid var(--of-control);
+  transition: border-color 0.2s ease;
+}
+
+.ed-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--of-fg);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ed-line:focus-within::after {
+  transform: scaleX(1);
+}
+
+.ed-field[data-invalid] .ed-line {
+  border-bottom-color: var(--of-error);
+}
+
+.ed-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--of-fg);
+  font-family: var(--of-heading-font);
+  font-size: 22px;
+  outline: none;
+  appearance: none;
+}
+
+.ed-input::placeholder {
+  color: color-mix(in srgb, var(--of-muted) 60%, transparent);
+  font-style: italic;
+}
+
+.ed-textarea {
+  min-height: 7.5rem;
+  font-size: 19px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.ed-unit,
+.ed-count {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--of-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ed-count {
+  align-self: flex-end;
+  padding-bottom: 10px;
+}
+
+.ed-select {
+  cursor: pointer;
+}
+
+.ed-select::before {
+  content: "↓";
+  position: absolute;
+  right: 0;
+  bottom: 12px;
+  color: var(--of-muted);
+  pointer-events: none;
+}
+
+.ed-select select {
+  padding-right: 24px;
+  cursor: pointer;
+}
+
+.ed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ed-chip {
+  position: relative;
+  cursor: pointer;
+}
+
+.ed-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ed-chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--of-control);
+  border-radius: 999px;
+  font-size: 15px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.ed-chip:hover span {
+  border-color: var(--of-fg);
+}
+
+.ed-chip input:checked + span {
+  background: var(--of-fg);
+  border-color: var(--of-fg);
+  color: var(--of-surface);
+}
+
+.ed-chip input:focus-visible + span {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 3px;
+}
+
+.ed-field[data-invalid] .ed-chip span {
+  border-color: var(--of-error);
+}
+
+.ed-check {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+}
+
+.ed-check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ed-check-box {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border: 1.5px solid var(--of-fg);
+}
+
+.ed-check-box::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: var(--of-fg);
+  transform: scale(0);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ed-check input:checked + .ed-check-box::after {
+  transform: scale(1);
+}
+
+.ed-check input:focus-visible + .ed-check-box {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 3px;
+}
+
+.ed-check-text {
+  display: grid;
+  gap: 2px;
+  font-family: var(--of-heading-font);
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.ed-field[data-invalid] .ed-check-box {
+  border-color: var(--of-error);
+}
+
+.ed-rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+.ed-rating-item {
+  position: relative;
+  cursor: pointer;
+}
+
+.ed-rating-item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ed-rating-item span {
+  display: inline-block;
+  min-width: 1.2em;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  color: var(--of-muted);
+  font-family: var(--of-heading-font);
+  font-size: 30px;
+  text-align: center;
+  font-variant-numeric: oldstyle-nums;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.ed-rating-item:hover span {
+  color: var(--of-fg);
+}
+
+.ed-rating-item input:checked + span {
+  color: var(--of-fg);
+  border-bottom-color: var(--of-fg);
+}
+
+.ed-rating-item input:focus-visible + span {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 4px;
+}
+
+.ed-rating-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-family: var(--of-heading-font);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--of-muted);
+}

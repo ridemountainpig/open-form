@@ -1,0 +1,56 @@
+---
+title: Overview
+description: One CLI to scaffold, run, check and ship your forms.
+---
+
+Open Form ships a single binary, `open-form`, in the `@open-form-build/core`
+package. Scaffold a workspace with `npx @open-form-build/cli init`; every other
+command runs inside that workspace.
+
+`init` sets up these scripts in `package.json`:
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "open-form dev",
+    "build": "open-form build",
+    "start": "open-form start",
+    "typecheck": "tsc --noEmit",
+    "sync:skills": "open-form sync:skills"
+  }
+}
+```
+
+So day to day you type `pnpm dev`, `pnpm build` and `pnpm start`, and
+`pnpm exec open-form <command>` for the rest. These docs use pnpm; with npm,
+yarn or bun, run the CLI as `npx open-form`, `yarn open-form` or
+`bunx open-form`.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| [`init [dir]`](/docs/cli/init) | Create a new workspace. |
+| [`dev`](/docs/cli/dev) | Start the dev server with Studio. |
+| [`build`](/docs/cli/build) | Build for production. |
+| [`start`](/docs/cli/start) | Serve the production build: forms, API, SQLite. |
+| [`check [id]`](/docs/cli/check) | Load forms like the server does and print their schema, or the error. |
+| [`create <id>`](/docs/cli/create) | Create a new form from the starter, optionally with a copy of a theme (`--theme`). |
+| [`delete <id>`](/docs/cli/delete) | Delete a form, its files and every response. |
+| [`list`](/docs/cli/list) | List forms and their response counts. |
+| [`responses export <formId>`](/docs/cli/responses-export) | Export responses as CSV, Excel or JSON. |
+| [`theme list\|copy\|check\|add\|font`](/docs/cli/theme) | List themes, copy one into a form, check contrast, add a starter to `themes/`, download a Google Fonts family. |
+| [`comments [id]`](/docs/cli/comments) | List review comments left in Studio. |
+| [`sync:skills`](/docs/cli/sync-skills) | Update the agent skills in `.agents/skills/`. |
+
+`open-form --help` lists them, `open-form <command> --help` shows a command's
+flags, and `open-form -v` prints the version.
+
+Every command except `init` loads `.env` from the folder you run it in (your
+workspace) when there is one, with Node's `process.loadEnvFile`. Variables
+already set in the environment win.
+
+## Requirements
+
+Node.js 22.13 or later. Storage uses the built-in `node:sqlite`, so there's no
+database to install.

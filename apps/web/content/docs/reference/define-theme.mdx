@@ -1,0 +1,183 @@
+---
+title: defineTheme
+description: Theme tokens, dark mode, components and the --of-* CSS variables.
+---
+
+A theme's `index.ts` — `index.tsx` when it adds components — default-exports
+`defineTheme({...})`. It lives in one of two places:
+
+- `forms/<id>/theme/` — the form's own copy, made with
+  [`open-form theme copy`](/docs/cli/theme#theme-copy) or
+  `open-form create <id> --theme <theme>`. The form imports it from
+  `./theme/index.ts`, or `index.tsx` when the theme adds components
+  (`theme copy` prints the import), and passes it to
+  [`<Form theme>`](/docs/components/form#theme). Only that form uses it.
+- `themes/<id>/` — a reference for new forms, with a `THEME.md` beside it that
+  describes the look for people and agents. No form uses it directly, so
+  editing it never changes a form's copy.
+
+```tsx title="forms/meetup/theme/index.tsx"
+import { defineTheme, SplitLayout } from '@open-form-build/core';
+import './brand.css';
+
+export default defineTheme({
+  font: '"Inter", system-ui, var(--of-cjk), sans-serif',
+  headingFont: 'Georgia, var(--of-cjk-serif), serif',
+  radius: '12px',
+  buttonRadius: '999px',
+  spacing: 'comfortable',
+  width: '640px',
+  colors: {
+    primary: '#0f766e', primaryForeground: '#ffffff',
+    background: '#f5f7f6', surface: '#ffffff',
+    foreground: '#0b1f1c', muted: '#5b6b68',
+    border: '#dbe3e1', control: '#7d8f8b', input: '#ffffff',
+    error: '#c0362c', success: '#15803d',
+  },
+  dark: {
+    primary: '#5eead4', primaryForeground: '#042f2e',
+    background: '#071311', surface: '#0d1d1a',
+    foreground: '#ecf5f3', muted: '#9bb0ab',
+    border: '#1f3330', control: '#5d746f', input: '#0a1816',
+    error: '#f97066', success: '#4ade80',
+  },
+  components: { Layout: SplitLayout },
+});
+```
+
+## Tokens
+
+<TypeTable
+  type={{
+    font: { type: 'string', description: 'Body font stack. Put var(--of-cjk) after Latin fonts.' },
+    headingFont: { type: 'string', default: 'font', description: 'Title and heading font stack.' },
+    radius: { type: 'string', default: "'10px'", description: 'Corners of inputs, tiles and buttons.' },
+    buttonRadius: { type: 'string', default: 'radius', description: 'Buttons only, e.g. 999px for pills.' },
+    spacing: {
+      type: "'compact' | 'comfortable' | 'spacious'",
+      default: "'comfortable'",
+      description: 'Gap between fields: 16px, 24px or 32px.',
+    },
+    width: { type: 'string', default: "'640px'", description: 'Maximum width of the form.' },
+    layout: {
+      type: "'card' | 'plain'",
+      default: "'card'",
+      description: 'card floats the form on a background; plain renders it flat, for embedding.',
+    },
+    colors: { type: 'ThemeColors', description: 'The palette. The keys you set also apply in dark mode unless dark is set.' },
+    dark: { type: 'ThemeColors | false', description: 'Palette for respondents who prefer dark mode. false keeps the light palette.' },
+    colorScheme: {
+      type: "'light' | 'dark'",
+      description: 'Force one appearance. colors is then the only palette and dark is ignored.',
+    },
+    components: {
+      type: 'Partial<FormComponents>',
+      description: 'Replace fields, chrome or the Layout of the form that uses the theme. <Form components> wins over them.',
+    },
+  }}
+/>
+
+## Colors
+
+Every color is any CSS color — hex, `rgb()`, `hsl()`, `oklch()`. Keep them as
+literal values: `open-form theme check` can't resolve `var()` or
+`color-mix()`, and Studio's Adjust panel edits literals in place.
+
+| Key | CSS variable | Used for |
+| --- | --- | --- |
+| `primary` | `--of-primary` | Buttons, selection, focus rings |
+| `primaryForeground` | `--of-primary-fg` | Text on `primary` |
+| `background` | `--of-bg` | The page behind the card |
+| `surface` | `--of-surface` | The card |
+| `foreground` | `--of-fg` | Text |
+| `muted` | `--of-muted` | Help text and secondary copy |
+| `border` | `--of-border` | Decorative edges: card, dividers, choice tiles |
+| `control` | `--of-control` | Outlines that identify inputs, checkboxes, radios, ratings |
+| `input` | `--of-input` | Background of inputs, selects and choice tiles |
+| `error` | `--of-error` | Error text and outlines |
+| `success` | `--of-success` | Success states |
+
+## Dark mode
+
+- Without `dark`, the `colors` you set apply in dark mode too, and any color
+  you leave out takes the runtime's dark default, so your light colors mix with
+  built-in dark ones. `open-form theme check` warns about this. Always give
+  `dark`, or `dark: false` for a light-only theme.
+- `colorScheme: 'dark'` makes a dark-only brand: put the dark palette in
+  `colors`.
+
+## Contrast
+
+`pnpm exec open-form theme check <id>` measures every pair below in light and
+dark (WCAG); add `--form` to check a form's own copy, `<id>` being the form id.
+Run it after any color change.
+
+| Pair | Minimum |
+| --- | --- |
+| `foreground` on `surface`, `background` and `input` | 4.5:1 |
+| `muted` on `surface` | 4.5:1 |
+| `primaryForeground` on `primary` | 4.5:1 |
+| `error` on `surface` | 4.5:1 |
+| `control` on `input` | 3:1 |
+| `primary` on `surface` | 3:1 |
+
+`border` is decorative and exempt, which is why inputs are outlined with
+`control`: keep `control` at 3:1 or more against `input` so people can find
+the fields.
+
+## CSS variables
+
+Tokens become CSS variables on the form root. Use them in theme CSS, form CSS
+and custom fields so every theme and dark mode keeps working.
+
+| Variable | Default |
+| --- | --- |
+| `--of-font`, `--of-heading-font` | System sans-serif |
+| `--of-radius` | `10px` |
+| `--of-button-radius` | `var(--of-radius)` |
+| `--of-gap` | `24px` |
+| `--of-width` | `640px` |
+| `--of-aside-width` | `340px` |
+| `--of-primary` … `--of-success` | The built-in palette, the same as the `classic` starter's |
+| `--of-ring` | `primary` at 24%, for soft focus halos |
+| `--of-hover-border`, `--of-hover-control` | Hover shades of `border` and `control` |
+| `--of-ease` | The runtime's easing curve |
+| `--of-cjk`, `--of-cjk-serif` | CJK fallback fonts matching the form's language |
+
+Han characters are drawn differently in Taiwan, mainland China and Japan, so
+`--of-cjk` follows the form's language. Put it after your Latin fonts instead
+of naming one region's font. To use a web font, see
+[Web fonts](/docs/core-feature/themes#web-fonts).
+
+## Theme CSS
+
+Import a stylesheet from the theme's index file for details tokens can't
+express — button weight, header treatment, card border. Prefix
+theme classes, and scope overrides of built-in chrome (`.of-form`,
+`.of-title`, `.of-button`) with `[data-of-theme="<id>"]`:
+
+```css title="themes/brand/brand.css"
+[data-of-theme="brand"] .of-button-primary {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+```
+
+A form's root carries `data-of-theme="<form-id>"`, so in a form's copy the
+scope is the form id. `open-form theme copy brand meetup` rewrites the selector
+above to `[data-of-theme="meetup"]`. If you rename the form's folder, rename the
+selectors too.
+
+Prefixed classes such as `.brand-tile` aren't scoped. That only matters when
+several forms share a page and their copies of one theme have diverged; give one
+of them a new prefix.
+
+A form's theme is bundled with the form, on the client and in the server
+bundle (without its CSS), so don't touch `window` or `document` at the top level
+of theme files.
+
+<Cards>
+  <Card title="Themes" href="/docs/core-feature/themes" />
+  <Card title="Layouts and chrome" href="/docs/components/layouts" />
+  <Card title="create-theme skill" href="/docs/skills/create-theme" />
+</Cards>

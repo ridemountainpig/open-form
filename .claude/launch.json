@@ -1,0 +1,36 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "demo", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "demo-verify",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "demo", "exec", "open-form", "dev", "--port", "3001"],
+      "port": 3001
+    },
+    {
+      "name": "demo-auto",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "demo", "exec", "open-form", "dev"],
+      "port": 3002,
+      "autoPort": true
+    },
+    {
+      "name": "demo-design",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "demo", "exec", "open-form", "dev", "--port", "3011"],
+      "port": 3011
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "dev"],
+      "port": 3030
+    }
+  ]
+}

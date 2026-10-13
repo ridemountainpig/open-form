@@ -1,0 +1,209 @@
+---
+title: Custom fields
+description: Turn any React UI into a field with useField and FieldShell.
+---
+
+Any React UI can be a field. `useField` connects it to the form — value,
+validation, errors, focus, ARIA and storage — and `FieldShell` renders the
+standard label, help text and error around it in the active theme's style.
+Custom fields are collected like built-in ones, so the server validates and
+stores them too.
+
+```tsx title="forms/onboarding/plan-picker.tsx"
+import { FieldShell, useField } from '@open-form-build/core';
+import './plan-picker.css';
+
+const plans = [
+  { value: 'free', label: 'Free' },
+  { value: 'pro', label: 'Pro' },
+];
+
+export function PlanPicker({ name, label }: { name: string; label: string }) {
+  const field = useField({
+    name,
+    label,
+    type: 'radio', // built-in option check; omit for free-form values
+    required: true,
+    options: plans,
+  });
+  const { 'aria-invalid': invalid, 'aria-describedby': describedBy } = field.controlProps;
+
+  return (
+    <FieldShell field={field} as="fieldset">
+      <div className="plan-grid">
+        {plans.map((plan, i) => (
+          <label key={plan.value} className="plan-tile">
+            <input
+              ref={i === 0 ? field.ref : undefined}
+              type="radio"
+              name={field.name}
+              value={plan.value}
+              checked={field.value === plan.value}
+              aria-invalid={invalid}
+              aria-describedby={describedBy}
+              onChange={() => field.setValue(plan.value)}
+              onBlur={field.onBlur}
+            />
+            {plan.label}
+          </label>
+        ))}
+      </div>
+    </FieldShell>
+  );
+}
+```
+
+```tsx title="forms/onboarding/index.tsx"
+<Page title="Plan">
+  <PlanPicker name="plan" label="Choose a plan" />
+</Page>
+```
+
+## `useField` options
+
+<TypeTable
+  type={{
+    name: {
+      type: 'string',
+      required: true,
+      description: 'Unique, stable, camelCase key, as for built-in fields.',
+    },
+    type: {
+      type: 'FieldType',
+      default: "'custom'",
+      description: 'Which built-in coercion and checks apply. custom stores the value as given.',
+    },
+    label: { type: 'string', description: 'The question; also the Responses column header.' },
+    description: { type: 'string', description: 'Help text rendered by FieldShell.' },
+    required: { type: 'boolean', description: 'Must be answered before Next or Submit.' },
+    options: {
+      type: '{ value: string; label: string }[]',
+      description: 'Allowed values for select, radio and checkbox-group types. Required for them, and known when the form renders.',
+    },
+    defaultValue: { type: 'unknown', description: 'Initial value. As on built-in fields, it becomes the answer when the field first shows.' },
+    validate: {
+      type: 'CustomValidator',
+      description: 'A function returning an error message, or a Standard Schema.',
+    },
+  }}
+/>
+
+`type` is one of `'text'`, `'email'`, `'url'`, `'tel'`, `'number'`,
+`'textarea'`, `'select'`, `'radio'`, `'checkbox'`, `'checkbox-group'`,
+`'date'` or `'custom'`. Pick the built-in type whose value your control
+produces to get its coercion and checks for free — a slider that yields a
+number should say `'number'` and pass `min` / `max`. The constraint props of
+built-in fields are accepted too: `minLength`, `maxLength`, `pattern`,
+`patternMessage`, `min`, `max`, `integer`, `step`, `minSelected`, `maxSelected`.
+
+With `'custom'`, only `required` and `validate` apply, and the value is stored
+as it is. Keep it JSON-serializable and nested at most 10 levels deep; deeper
+values are refused, so Responses search and exports can always read them.
+
+## What it returns
+
+`useField` returns a `FieldApi`; both it and `UseFieldOptions` are exported for
+typing your own components.
+
+| Key | What |
+| --- | --- |
+| `name` | The field's name. Give it to every input of a native radio or checkbox group. |
+| `value` | The current answer (raw: a text input holds a string while typing). |
+| `setValue(value)` | Update the answer. Re-validates if the field is showing an error. |
+| `onBlur()` | Call when the control loses focus; shows format errors. |
+| `error` / `invalid` | The current error message, and whether there is one. |
+| `required` | Whether the field is required. |
+| `label` / `description` | Translated into the language being shown. |
+| `id`, `errorId`, `descriptionId` | DOM ids the shell and ARIA attributes use. |
+| `ref` | Attach to the element that should receive focus when the field is invalid. |
+| `controlProps` | `id`, `name`, `aria-invalid`, `aria-describedby`, `aria-required` and `onBlur`, for the main control. |
+
+## Native controls
+
+For a single native input, spread `controlProps` and attach `ref`. The label's
+`htmlFor` already points at `controlProps.id`.
+
+```tsx title="forms/grant/budget.tsx"
+import { FieldShell, useField } from '@open-form-build/core';
+
+export function Budget({ name, label }: { name: string; label: string }) {
+  const field = useField({ name, label, type: 'number', min: 0, max: 10000, defaultValue: 1000 });
+  return (
+    <FieldShell field={field}>
+      <input
+        {...field.controlProps}
+        ref={field.ref}
+        type="range"
+        min={0}
+        max={10000}
+        step={500}
+        value={Number(field.value ?? 0)}
+        onChange={(event) => field.setValue(Number(event.target.value))}
+      />
+      <output>{String(field.value ?? 0)}</output>
+    </FieldShell>
+  );
+}
+```
+
+## `FieldShell`
+
+`FieldShell` takes the `field` from `useField` and your control as children.
+Pass `as="fieldset"` for a group of inputs — the label becomes a `<legend>` —
+`hideLabel` when the control shows the label itself (add `<RequiredMark />`
+after it when `field.required`), and `hideDescription` when it renders
+`field.description` on its own. It renders the theme's `Field` component, so
+custom fields match the theme automatically.
+
+## Styling
+
+Build on the theme tokens so custom fields follow every theme and dark mode:
+
+```css title="forms/onboarding/plan-picker.css"
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: 0.5rem;
+}
+.plan-tile {
+  position: relative;
+  display: block;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--of-control);
+  border-radius: var(--of-radius);
+  background: var(--of-input);
+  color: var(--of-fg);
+  cursor: pointer;
+}
+.plan-tile input {
+  position: absolute;
+  opacity: 0;
+}
+.plan-tile:has(:checked) {
+  border-color: var(--of-primary);
+}
+.plan-tile:has(:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 2px;
+}
+```
+
+## Rules
+
+- **Spread `controlProps`** on the main control. In a group, put `ref` on the
+  first control and pass `aria-invalid` and `aria-describedby` to each one.
+- **Attach `ref`** so a failed Next can move focus to the field.
+- **Call `onBlur`** when focus leaves, or format errors won't appear until Next.
+- **Keep native inputs** where one exists. Restyle a radio or checkbox — a
+  visually hidden input with a styled label, or `appearance: none` — instead of
+  rebuilding it from `div`s, and keyboards and screen readers keep working.
+- **Show focus clearly**: a solid 2px `var(--of-primary)` outline, and control
+  outlines in `var(--of-control)` rather than the decorative `--of-border`.
+- **Don't hold the value in `useState`.** The form owns it; read
+  `field.value` and call `field.setValue`.
+
+<Cards>
+  <Card title="Fields" href="/docs/components/fields" />
+  <Card title="Layouts" href="/docs/components/layouts" />
+  <Card title="defineTheme" href="/docs/reference/define-theme" />
+</Cards>

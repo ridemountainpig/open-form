@@ -1,0 +1,37 @@
+---
+title: open-form comments
+description: List the review notes left in Studio.
+---
+
+```bash
+pnpm exec open-form comments           # every form
+pnpm exec open-form comments meetup    # one form
+```
+
+Notes you leave in Studio's Edit mode are saved in the form's source as
+`@form-comment` markers, right above the element they're about. `comments`
+finds them in every source file in each form's folder and prints one per line:
+
+```text
+forms/meetup/index.tsx:18  make this optional and say why we ask
+forms/meetup/index.tsx:31  (on “Next”) make this button full width
+```
+
+The element a note is about starts on the next line, or right after the marker
+on the same line.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--json` | off | Print an array of `{ form, file, line, text }`. |
+
+## Applying them
+
+Ask your agent to run [`/apply-comments`](/docs/skills/apply-comments). It
+applies each note and deletes its marker, leaving only the ones it has a
+question about — so running `comments` again shows what's still open.
+
+To drop a note without applying it, remove it from the **Notes** list in
+Studio's Edit panel, or delete the marker line yourself. See
+[Edit mode](/docs/core-feature/edit-mode).

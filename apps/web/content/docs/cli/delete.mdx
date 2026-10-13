@@ -1,0 +1,46 @@
+---
+title: open-form delete
+description: Delete a form, its files and every response it has.
+---
+
+```bash
+pnpm exec open-form delete event-registration
+pnpm exec open-form delete event-registration --yes
+```
+
+Deletes a form for good:
+
+1. **Its data**: every response, the schema versions they were stored with, any
+   settings changed in Studio on a running server, and its response numbering.
+   A new form with the same id later starts again at response #1.
+2. Its entry in `forms/.folders.json`, if it was in a folder.
+3. **The folder `forms/<id>/`** and every file in it.
+
+The data goes first, so a failure can't leave responses behind with no form to
+manage them from. Export them before you delete if you want to keep them:
+
+```bash
+pnpm exec open-form responses export event-registration -o responses.xlsx
+```
+
+`delete` asks you to type the form id to confirm. Without a terminal (in CI, or
+when an agent runs it) it stops unless you pass `--yes`. Code you've committed
+can come back from git; responses can't.
+
+`delete` also cleans up data left behind by a form whose folder was already
+removed by hand: if `forms/<id>/` is gone but the database still holds responses
+for that id, it erases them.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-y, --yes` | off | Delete without asking. |
+
+## In Studio
+
+Under `open-form dev`, Studio deletes forms too: from the trash button on a
+form's card in the [Forms list](/docs/core-feature/studio#forms-list), or from
+**Delete this form** at the bottom of its **Settings** tab. Both ask for the id.
+A production build can't delete forms — they're part of what was deployed — but
+you can still delete their responses there.

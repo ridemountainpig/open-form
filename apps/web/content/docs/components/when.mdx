@@ -1,0 +1,135 @@
+---
+title: When
+description: Show fields and steps only while a condition on earlier answers holds.
+---
+
+`<When>` renders its children only while a condition holds. It's how a form
+branches: follow-up questions, skip logic, conditional steps. Don't use
+ternaries or `useFormValues()` to show or hide fields — the server can't see
+those, but it reads every `<When>`.
+
+```tsx
+<Select name="role" label="Role" options={['Student', 'Engineer', 'Designer']} required />
+<When field="role" equals="Student">
+  <Text name="school" label="School" required />
+</When>
+```
+
+## Operators
+
+Name the field with `field`, then add one or more operators. Every operator
+you add must hold. A `<When field>` with no operator always shows its
+children, and a `<When>` with none of `field`, `all`, `any`, `not` or
+`condition` stops the form from loading.
+
+| Prop | Shows its children when the answer… |
+| --- | --- |
+| `equals` | equals the value. On a `CheckboxGroup`, exactly that one option is ticked. |
+| `notEquals` | differs from the value, including while unanswered. On a `CheckboxGroup`, anything but exactly that one option, including nothing ticked. |
+| `in` | is one of the listed values. On a `CheckboxGroup`, at least one listed option is ticked. |
+| `notIn` | is none of the listed values, including while unanswered. On a `CheckboxGroup`, none of the listed options is ticked. |
+| `contains` | includes the option (`CheckboxGroup`), or contains the text (fields stored as a string). On a `Select` or `RadioGroup` that's a substring match too — `contains="Eng"` matches `'Engineer'` — so use `equals` or `in` there. |
+| `filled` | has an answer. `filled={false}` means it has none. |
+| `empty` | has no answer. |
+| `gt` / `gte` / `lt` / `lte` | is a number greater than / at least / less than / at most the value. |
+
+```tsx
+<When field="role" notEquals="Other">…</When>
+<When field="role" in={['Engineer', 'Designer']}>…</When>
+<When field="interests" contains="AI">…</When>
+<When field="phone" filled>…</When>
+<When field="nps" lte={6}>…</When>
+<When field="age" gte={18} lt={65}>…</When>
+<When field="agree" equals={true}>…</When>
+```
+
+"No answer" means blank text, an unchecked `Checkbox`, an empty
+`CheckboxGroup` or an untouched field. Values compare by their string form, so
+`equals={1}` matches a select option `'1'`. On a `Checkbox`, `equals={true}`
+(or `notEquals={false}`) matches a ticked box, and `equals={false}` (or
+`empty`) an unticked one, even if it was never touched. Number operators are
+false while the answer isn't a number.
+
+A field's own `defaultValue` counts only once the field has shown: until its
+step comes up, conditions see no answer. For a default that conditions need
+from the start, use [`<Form defaultValues>`](/docs/components/form#props).
+
+## Combining conditions
+
+`all`, `any` and `not` take condition objects with the same keys — `field`
+plus operators — and nest freely:
+
+```tsx
+<When all={[{ field: 'role', equals: 'Student' }, { field: 'country', equals: 'Taiwan' }]}>…</When>
+<When any={[{ field: 'email', filled: true }, { field: 'phone', filled: true }]}>…</When>
+<When not={{ field: 'plan', equals: 'free' }}>…</When>
+```
+
+`condition` takes one whole condition object, which helps when you build
+conditions in code and reuse them; type them as `Condition`, and `<When>`'s
+props as `WhenProps`, both exported from `@open-form-build/core`. Props given together on
+one `<When>` — for example `field` and `any` — must all hold.
+
+## Hidden fields
+
+- **Required means required when shown.** A hidden field isn't validated, so
+  `required` inside `<When>` never blocks a respondent who can't see it.
+- **Hidden answers are dropped on the server.** The server works out which
+  fields were visible for the submitted answers and keeps only those.
+- **A hidden field counts as unanswered.** Conditions only see the answers of
+  fields that are showing, so whatever depends on a hidden field is re-checked
+  as if it had no answer: `<When field="phone" filled>` hides its children, and
+  `<When field="phone" empty>` shows them, even if `phone` was filled in before.
+- **Answers are compared as they're stored.** Text is trimmed and number
+  fields are numbers, so `equals="VIP"` matches `"VIP "` and `equals={5}`
+  matches `05`.
+- **The browser and the server agree.** Both decide what's showing with the
+  same code, so a field the respondent never saw is never required on submit.
+- **The browser keeps them until submit.** If someone switches back, their
+  earlier answer is still there. Hooks like `useFormValues()` therefore still
+  return hidden answers — check the same condition if a summary depends on it.
+
+## Earlier pages
+
+A condition can read any field, including ones on earlier steps:
+
+```tsx
+<Page title="Contact">
+  <Select name="country" label="Country" options={['Taiwan', 'Japan', 'Other']} />
+</Page>
+<Page title="Shipping">
+  <When field="country" equals="Taiwan">
+    <Text name="postalCode" label="Postal code" required autoComplete="postal-code" />
+  </When>
+</Page>
+```
+
+## Conditional steps
+
+Wrap whole `<Page>`s to skip steps. A skipped step leaves the progress count,
+and Next goes straight to the next visible step.
+
+```tsx
+<When field="role" equals="Engineer">
+  <Page title="Work">
+    <Text name="company" label="Company" required />
+  </Page>
+</When>
+```
+
+A `<When>` that wraps a `<Page>` holds only pages: a field or content next to
+the page inside it is never rendered or collected. When a `<When>` wraps only
+fields, put it inside a `<Page>`; at the top level of a multi-page form it
+would render above every step.
+
+<Callout type="info">
+  In Studio's Preview, the step list opens conditional pages directly, and
+  hidden branches render with a note naming their condition, so you can check
+  every path without filling the form in.
+</Callout>
+
+<Cards>
+  <Card title="Page" href="/docs/components/page" />
+  <Card title="Fields" href="/docs/components/fields" />
+  <Card title="Studio" href="/docs/core-feature/studio" />
+</Cards>

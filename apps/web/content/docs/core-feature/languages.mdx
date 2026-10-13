@@ -1,0 +1,158 @@
+---
+title: Languages
+description: Write a form in one language, translate it into others, and keep every response in one table.
+---
+
+A form is written in **one** language, its `locale`, and can be translated into
+others. Open Form supports `'en'` (the default), `'zh-TW'`, `'zh-CN'` and `'ja'`.
+
+## The form's language
+
+Set `locale` in `defineForm()`, or in `open-form.config.ts` for every form:
+
+```tsx title="forms/feedback/index.tsx"
+export const config = defineForm({
+  title: '產品回饋',
+  locale: 'zh-TW',
+});
+```
+
+`locale` covers the framework's own text: Back / Next / Submit, built-in
+validation errors, the success and closed screens, and dates, which are formatted
+with `Intl` for that language. It also picks the right CJK fonts: themes end their
+font stacks with `var(--of-cjk)`, and the runtime fills it with Traditional
+Chinese, Simplified Chinese or Japanese faces to match. Your questions are written
+by you, in that language.
+
+The server uses the same message catalog, so a validation error reads the same
+whether the browser or the server caught it.
+
+A single-language form never switches with the browser: the questions are in one
+language, and translating only the buttons would be inconsistent.
+
+## Translations
+
+Translations live beside the form, one JSON file per extra language, keyed by the
+**exact source text**:
+
+```text
+forms/feedback/
+├── index.tsx          # written in 繁體中文, locale: 'zh-TW'
+└── locales/
+    ├── en.json
+    └── ja.json
+```
+
+```json title="forms/feedback/locales/en.json"
+{
+  "產品回饋": "Product feedback",
+  "你最常用的功能": "Which features do you use most?"
+}
+```
+
+```tsx title="forms/feedback/index.tsx"
+import en from './locales/en.json';
+import ja from './locales/ja.json';
+
+export const config = defineForm({
+  title: '產品回饋',
+  locale: 'zh-TW',             // required once there are translations
+  translations: { en, ja },
+});
+```
+
+The form's code stays in one readable language, an agent can produce a whole
+translation in one pass, and `check` can list exactly what's missing. A missing
+entry falls back to the source text, so the form never breaks.
+
+### What's translated automatically
+
+The title, description, success copy and policy messages (`fullMessage`, …),
+`<Page>` titles and descriptions, field `label`, `description`, `placeholder` and
+`unit`, option labels, `Rating` end labels, `Checkbox` text, `<Submit>` text,
+`<Heading>` and `<Paragraph>` text, and messages returned by `validate`.
+
+### Your own markup
+
+Wrap text in custom components with `<T>`, or call `useTranslate()`. Placeholders
+in braces are filled after translating, so a translation can move them:
+
+```tsx title="forms/workshop/summary.tsx"
+import { T, useFieldValue, useTranslate } from '@open-form-build/core';
+
+export function Summary() {
+  const tr = useTranslate();
+  const n = Number(useFieldValue('workshops') ?? 0);
+  return (
+    <div>
+      <T>Early-bird pricing ends Friday.</T>
+      <p>{tr('Workshops × {n}', { n })}</p>
+    </div>
+  );
+}
+```
+
+The key for the second string is `"Workshops × {n}"`. `useFormLanguage()` returns
+`{ locale, source, available, setLocale }` for a custom language picker.
+
+## Values stay put
+
+Translation happens only in what respondents see. Field `name`s, option `value`s
+and `<When>` conditions are never translated, so every language stores the same
+answers in the same columns. Give options explicit values when their labels are
+translated:
+
+```tsx
+<RadioGroup
+  name="role"
+  label="職稱"
+  options={[
+    { value: 'engineer', label: '工程師' },
+    { value: 'designer', label: '設計師' },
+  ]}
+/>
+```
+
+Responses, CSV headers and Studio use the source language. Each response records
+the language it was submitted in; see [Responses & export](/docs/core-feature/responses).
+
+## Which language respondents see
+
+For a translated form, the runtime picks the first match:
+
+1. `?lang=` in the URL, for example `/f/feedback?lang=ja`.
+2. The language the respondent last chose on that form (saved in their browser).
+3. The browser's preferred languages.
+4. The source language.
+
+A picker in the corner lets respondents switch. `languageSwitch: false` hides it,
+and a `LanguageSwitch` component replaces it. The submission carries the chosen
+language; the server accepts only languages the form offers and uses it for its
+error messages.
+
+## Check coverage
+
+```bash
+pnpm exec open-form check feedback
+```
+
+`check` renders the form like the server does and prints, per language,
+`N/N translated` and the first 8 missing entries; `--json` lists them all.
+Entries it didn't see rendered are counted as **not seen**, and the first 3 are
+shown. Text that appears only for certain answers, or comes from `validate`, is
+expected there. A key left behind after you edited the source text is not:
+update it in every `locales/*.json`.
+
+Studio's **Settings → Languages** shows the translated count and the missing
+entries for each language, but not the not-seen ones. The preview's language
+picker reads each translation in place, and
+[Edit mode](/docs/core-feature/edit-mode) renames keys in the form's translations
+when you change source text.
+
+## What's next
+
+<Cards>
+  <Card title="defineForm" href="/docs/reference/define-form" />
+  <Card title="Hooks" href="/docs/components/hooks" />
+  <Card title="open-form check" href="/docs/cli/check" />
+</Cards>

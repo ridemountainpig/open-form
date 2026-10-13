@@ -1,0 +1,84 @@
+---
+title: /form-authoring
+description: The technical reference the agent reads before writing or editing a form.
+---
+
+`/form-authoring` is the spec for everything under `forms/`.
+[`/create-form`](/docs/skills/create-form),
+[`/create-theme`](/docs/skills/create-theme) and
+[`/apply-comments`](/docs/skills/apply-comments) defer to it, and `AGENTS.md`
+tells the agent to read it before **any** edit inside `forms/` — so "add a
+phone field" or "make this optional" goes through it too.
+
+You don't usually invoke it directly. Other skills and the rules do.
+
+## What it covers
+
+| Topic | What the agent learns |
+| --- | --- |
+| File contract | `forms/<id>/index.tsx`, one `<Form>`, header text in `config`, a default export named after the form, render-safe code (the form renders once on the server to derive its schema) |
+| Structure | `<Form>`, `<Page>`, `<When>`, `<Row>`, `<Heading>`, `<Paragraph>`, `<Submit>`, `<Success>` |
+| Fields | Every field, what it stores, and its props |
+| Conditions | `<When>` operators (and what they mean on a `CheckboxGroup`), `all` / `any` / `not` / `condition`, conditional steps, hidden answers dropped on the server |
+| Validation | Built-in rules, `validate` functions or a Standard Schema, run on client and server alike |
+| Custom fields | `useField` and `FieldShell` |
+| Live answers | `useFieldValue`, `useFormValues` and `<Form aside>` for previews and totals |
+| Custom styling | A local stylesheet scoped with `<Form className>`, prefixed classes on `--of-*` tokens, `--of-aside-width` |
+| Config | Submission policy, protection, success screen, drafts, time zones; webhooks and embeds in `open-form.config.ts` |
+| Themes | The form's own copy in `forms/<id>/theme/` and `<Form theme>`, references in `themes/` and the starters, `theme copy`, tokens, replaceable components, layouts, closed screens (`Notice`), `useFormNav` and `useFormMessages` |
+| Languages | `locale`, `translations`, `<T>`, language-neutral option values |
+| UX guidelines | Ask less, order easy to hard, 3–7 fields per page, `RadioGroup` vs. `Select` |
+
+The [Components](/docs/components/form) and
+[Reference](/docs/reference/define-form) sections document the same API for
+people.
+
+## Anti-patterns
+
+The skill ships a table of things agents reach for by habit, and what to write
+instead:
+
+| Don't | Do |
+| --- | --- |
+| `useState` + `onChange` for values | Field components, or `useField` |
+| `{watch('x') === 'y' && …}` or ternaries on values | `<When field="x" equals="y">` |
+| `onSubmit={() => fetch('/api/…')}` | Nothing — submission is built in |
+| `useFormValues()` to show or hide fields | `<When>`; the hooks are for display only |
+| API routes, SQL, Express handlers | `config.submissions` / `protection` |
+| `fetch()` to Slack or Zapier on submit | `webhooks` in `open-form.config.ts` |
+| Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
+| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | `open-form theme copy terminal <id>` + `<Form theme={theme}>` |
+| Custom CSS or media queries for layout | `<Row>`, `<Page>`, theme tokens |
+| Raw `<label>` / `<input>` markup | DSL components (they handle ARIA, focus, errors) |
+| Renaming a field that already has responses | Keep the `name`; change the `label` |
+| Reading `window` during render | `useEffect` |
+
+## Self-review checklist
+
+Before handing off, the agent checks:
+
+1. **Ids** — the folder is kebab-case; every `name` is unique, camelCase and
+   meaningful.
+2. **Required and conditional** — only truly necessary fields are `required`;
+   conditional fields use `<When>`, not ternaries.
+3. **Policy** — limits, dates, uniqueness and language match the request, and
+   nothing more was added.
+4. **Nothing hand-rolled** — no state, fetch, validation or styling outside the
+   theme and form CSS.
+5. **The look was chosen** — the form has its own copy of the agreed theme in
+   `forms/<id>/theme/`, imported above the form's CSS and passed to
+   `<Form theme>`; nothing imports from `themes/`; copy follows the theme's
+   `THEME.md`; conversational forms have one question per page.
+6. **Custom components** spread `field.controlProps`, attach `field.ref`, keep
+   native inputs and a visible focus style.
+7. **`open-form check <id>`** passes and its steps, fields, conditions,
+   required flags and policy match the plan; `pnpm typecheck` passes.
+8. **Closed screens** — the messages are in the form's voice, and a custom
+   `Notice` handles every state the form can reach without inventing facts.
+9. **Translations** — `locale` is set, options have explicit values, every
+   language shows `N/N translated`, and every "not seen" entry is text shown
+   only for certain answers or a `validate` message, not a key left behind by
+   edited text.
+10. **Studio**, when the dev server is running — Preview on desktop and mobile,
+    conditional pages through the step buttons, each closed screen under
+    *When closed*, and each translation through the language picker.

@@ -1,0 +1,123 @@
+---
+title: Storage
+description: The SQLite database, the StorageAdapter interface and its built-in adapters.
+---
+
+Responses live in a SQLite file in your project, written through Node's
+built-in `node:sqlite` — no database server, no native addon. Everything goes
+through one interface, `StorageAdapter`, so the handler doesn't care where
+the data lives.
+
+## Where the data lives
+
+```text
+.open-form/
+├── open-form.db      responses, form versions, rate limits, Studio overrides, signed-out sessions
+├── open-form.db-wal
+├── open-form.db-shm
+└── secret            signs timing tokens, Studio sessions and visitor hashes
+```
+
+The database path is, in order: `OPEN_FORM_DB`, then `storage.path` in
+[`open-form.config.ts`](/docs/reference/config), then
+`.open-form/open-form.db`. Relative paths resolve from the project root.
+`open-form dev` and `open-form start` on the same machine share the file.
+
+<Callout type="warn">
+  Responses are personal data. Keep `.open-form/` out of git — the
+  `.gitignore` that `open-form init` writes already does — and back the file
+  up like any database.
+  SQLite needs a persistent disk: a VPS, Docker or a platform volume, not a
+  serverless function's filesystem.
+</Callout>
+
+## Protection on disk
+
+- The `.open-form/` folder is `0700`; the database, its `-wal` and `-shm`
+  files, and `secret` are `0600` — readable by the owner only. The database is
+  created that way, and the database files and `secret` are re-tightened every
+  time they're opened.
+- `PRAGMA secure_delete` is on, and the write-ahead log is truncated after a
+  delete, so a response deleted in Studio is overwritten rather than left in
+  free pages.
+- The dev server refuses to serve the database files, other `*.db` / `*.sqlite`
+  files, `.env*`, keys and exported responses, so they can't be fetched around
+  Studio's sign-in.
+- Responses search skips a stored answer it can't read rather than failing.
+
+## Tables
+
+| Table | Holds |
+| --- | --- |
+| `form_versions` | One row per schema version of each form: `id`, `form_id`, `version`, `schema` (JSON), `created_at`. Unique per `form_id` + `version`. |
+| `submissions` | Responses: `id`, `form_id`, `number`, `form_version_id`, `data` (JSON), `visitor_hash`, `unique_key`, `locale`, `created_at`, `updated_at`. Unique per `form_id` + `unique_key`. |
+| `form_counters` | The last response `number` per form. Numbers only go up, so they're never reused after a delete. |
+| `form_overrides` | Schedule changes saved in Studio on a running server, per form. |
+| `rate_limits` | Fixed-window counters for submissions and Studio sign-ins, keyed by hashed IPs (IPv6 by /64). |
+| `revoked_sessions` | Studio sessions ended by signing out, kept until they would have expired. |
+| `submission_files` | Reserved for file uploads; unused today. |
+| `meta` | The applied migration version. |
+
+Migrations run in order when the database opens. Every response records the
+schema version it was submitted under, so Responses and exports keep columns
+for fields you've since removed.
+
+## `createSqliteStorage`
+
+```ts
+import { createSqliteStorage } from '@open-form-build/core/sqlite';
+
+const storage = await createSqliteStorage({ path: '.open-form/open-form.db' });
+```
+
+It takes `{ path }` — a file, or `':memory:'` — creates missing folders,
+applies migrations and resolves to a `StorageAdapter`. Pass it to
+[`createOpenFormHandler`](/docs/reference/http-api#createopenformhandler) or
+`createOpenFormRoute({ storage })`.
+
+## `createMemoryStorage`
+
+```ts
+import { createMemoryStorage } from '@open-form-build/core/server';
+
+const storage = createMemoryStorage();
+```
+
+An in-memory adapter for tests and throwaway previews. Data disappears with
+the process.
+
+## `StorageAdapter`
+
+Every method is async, so remote databases can implement it; the SQLite
+adapter simply resolves right away. Import the type from `@open-form-build/core/server`,
+along with the ones its methods use: `StoredSubmission`, `CreateSubmissionInput`,
+`CreateSubmissionResult`, `ListSubmissionsOptions`, `SubmissionPage`,
+`FormVersionRecord`, `FormOverrides` and `StoredOverrides`.
+
+| Method | What |
+| --- | --- |
+| `ensureFormVersion(formId, version, schema)` | Record a schema version if it's new; return its record. Called for every stored response, so keep it cheap and idempotent. |
+| `getFormVersion(id)` / `listFormVersions(formId)` | Read recorded versions. |
+| `createSubmission(input, constraints?)` | Insert a response. Checks `constraints.maxResponses` and the unique key atomically with the insert; resolves `{ ok: false, reason: 'full' \| 'duplicate' }` when they fail. |
+| `getSubmission(formId, id)` | One response, or `null`. |
+| `listSubmissions(formId, opts?)` | `{ items, total }`, newest first unless `order: 'asc'`. Options: `limit`, `offset`, `order`, and `search` — a case-insensitive match against answers, not field names. |
+| `countSubmissions(formId)` / `countsByForm()` | Response counts. |
+| `latestByForm()` | Optional. Newest response time per form, for sorting in Studio. |
+| `deleteSubmission(formId, id)` | Delete one response; `false` if it didn't exist. |
+| `deleteForm(formId)` | Erase everything stored for a form — responses, versions, overrides and its response numbering — and return how many responses it held. Used when a form is deleted. |
+| `hasUniqueKey(formId, uniqueKey)` | Whether a response already holds this key, e.g. `device:<hash>`. |
+| `getFormOverrides` / `setFormOverrides` / `listFormOverrides` | Studio's schedule overrides. `setFormOverrides` takes `FormOverrides`, or `null` to clear them; the getters return `StoredOverrides`, which add `updatedAt`. |
+| `hitRateLimit(key, windowMs, now?)` | Increment a fixed-window counter and return the count. |
+| `revokeSession(id, expiresAt, now?)` / `isSessionRevoked(id)` | Record a signed-out Studio session until `expiresAt` (epoch ms), and check for one. Expired entries may be dropped. |
+| `close()` | Release the connection. |
+
+`open-form start` always uses SQLite. To store responses elsewhere, implement
+`StorageAdapter` and pass it where you build the handler yourself — with
+`createOpenFormHandler`, or `createOpenFormRoute` in
+[Next.js](/docs/deploy/nextjs).
+
+<Cards>
+  <Card title="HTTP API" href="/docs/reference/http-api" />
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Responses" href="/docs/core-feature/responses" />
+</Cards>

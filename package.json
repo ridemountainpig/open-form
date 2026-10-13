@@ -1,0 +1,36 @@
+{
+  "name": "open-form-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=demo",
+    "dev:web": "turbo run dev --filter=web",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "pnpm --filter @open-form-build/core test:e2e",
+    "of": "pnpm --filter @open-form-build/core",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build --filter=@open-form-build/core && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.7",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^3.0.2",
+    "turbo": "^2.11.2",
+    "vitest": "^5.0.0"
+  }
+}

@@ -1,0 +1,162 @@
+---
+title: Submissions & protection
+description: Limits, deadlines, one response per person, spam protection and what happens after submit.
+---
+
+Every rule the server enforces lives in the form's `config`. You declare it once;
+the runtime shows the right screen and the server rejects anything that breaks it.
+
+```tsx title="forms/meetup/index.tsx"
+export const config = defineForm({
+  title: 'Developer Meetup',
+  timeZone: 'Asia/Taipei',
+  submissions: {
+    maxResponses: 100,
+    opensAt: '2026-10-01',
+    closesAt: '2026-10-30T18:00',
+    uniqueBy: 'email',
+    fullMessage: 'All 100 seats are taken.',
+  },
+  success: { title: 'You’re in', message: 'See you on Oct 30.' },
+});
+```
+
+Add only what the form needs. The defaults are sensible.
+
+## Submission policy
+
+| Option | Effect |
+| --- | --- |
+| `maxResponses` | Closes the form once this many responses are stored. |
+| `opensAt` | Shows a "not open yet" screen until then. |
+| `closesAt` | Closes the form after then. |
+| `closed` | `true` stops taking responses now, whatever the dates say. |
+| `uniqueBy` | A field name (`'email'`) allows one response per value; `'device'` allows one per browser. |
+| `closedMessage` / `fullMessage` / `duplicateMessage` | Replace the built-in sentences on the closed screens. |
+
+`maxResponses` and `uniqueBy` are checked inside the same database transaction
+that stores the response, so two people submitting at once can't both get the
+last seat.
+
+### Dates and time zones
+
+`opensAt` and `closesAt` take `YYYY-MM-DD` (from the start of that day, or until
+its end), `YYYY-MM-DDTHH:mm` or `YYYY-MM-DDTHH:mm:ss`. These are wall-clock times
+read in the form's `timeZone`, else the project's `timeZone` in
+`open-form.config.ts`, else UTC. The server's own clock zone is never used, so a
+deadline means the same on your laptop and in a UTC container. A timestamp with
+an offset (`'2026-10-30T18:00:00+09:00'`) or a `Date` object is an exact moment
+and ignores the zone.
+
+`open-form init` writes your computer's time zone into `open-form.config.ts`, and
+`open-form check` warns when a form uses wall-clock dates with no zone set.
+
+### One response per person
+
+- **A field** (`uniqueBy: 'email'`): values are compared trimmed and
+  case-insensitive. An empty value doesn't count. A duplicate is found on submit,
+  and `duplicateMessage` shows under the Submit button. `open-form check` warns
+  when the field is optional or conditional, since responses that leave it blank
+  or hidden aren't limited, and when no field has that name.
+- **`'device'`**: a cookie remembers the browser, so a returning visitor sees the
+  "already responded" screen before filling anything. It's lightweight, not
+  identity: a different browser or cleared storage gets through.
+
+## Protection
+
+Every form is protected by default. Override per form with `protection`, or set
+project-wide defaults in `open-form.config.ts` (each form's own keys win).
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `honeypot` | `true` | A hidden field bots fill in. Those submissions get the answer a real one would and nothing is stored. |
+| `minimumCompletionTime` | `'2s'` | The page gets a signed timing token on load; submissions sent faster are rejected. `false` disables it. |
+| `rateLimit` | `{ max: 10, window: '10m' }` | Valid submissions per IP per form; an IPv6 address counts as its /64. `false` disables it. |
+
+Durations accept `'2s'`, `'10m'`, `'1h'`, `'1d'` or milliseconds. Behind a reverse
+proxy, set [`trustProxy`](/docs/reference/config#behind-a-reverse-proxy) in
+`open-form.config.ts` so the rate limit sees each visitor's IP — without it
+everyone shares the proxy's count, and one person can use it up. `open-form start`
+also reads `OPEN_FORM_TRUST_PROXY`, and the Next.js route assumes one proxy; see
+[Production](/docs/deploy/production).
+
+## After submit
+
+`success` sets the thank-you screen's `title` and `message`, or sends people to a
+`redirect` URL. For a custom screen, render `<Success>` inside the form instead.
+
+`drafts: true` keeps unfinished answers in the respondent's browser and restores
+them when they come back, with a notice and a **Start over** button that clears
+them. A draft lasts 7 days from its last change; `{ expires: '1d' }` changes the
+duration. Drafts clear on submit, and when the form is closed, full or already
+answered. Studio's Preview doesn't keep them. They're off by default because on a
+shared computer the next person would see the previous person's answers.
+
+## Closed screens
+
+When a form isn't taking responses, respondents get a `Notice` screen instead of
+the questions: **closed**, **not open yet**, **full**, or **already responded**
+(`uniqueBy: 'device'`). Preview the ones that apply in Studio under
+**When closed** (*Not open yet* only while `opensAt` is still ahead), and design
+your own with a `Notice` component; see [Layouts](/docs/components/layouts).
+
+## The server pipeline
+
+Every response goes through the same steps, in the dev server, `open-form start`
+and the Next.js route:
+
+```text
+POST /api/forms/:id/submissions
+  │
+  ├─ request guard    same origin (or embed.origins), JSON only, body size limit
+  ├─ policy           config.submissions + Studio overrides
+  ├─ window           closed / opensAt / closesAt, in the form's time zone
+  ├─ timing token     signed; checks minimumCompletionTime
+  ├─ sanitize         drop hidden (<When>) and unknown fields, coerce types
+  ├─ validate         the same rules the browser ran, custom validate included
+  ├─ rate limit       per IP (IPv6: per /64) per form; only valid submissions count
+  ├─ honeypot         filled → the answer a real submission gets, nothing stored
+  ├─ store            maxResponses + uniqueBy checked in one transaction
+  └─ webhooks         sent in the background; the respondent doesn't wait
+```
+
+| Status | When |
+| --- | --- |
+| `201` | Stored. Body: `{ id, number }`. |
+| `400` | `too_fast` (sent before `minimumCompletionTime`), `invalid_token`, `expired_token` (the page was open over 7 days; reloading it gets a new token), or a malformed body. |
+| `404` | `not_found`: no form with that id. |
+| `409` | `duplicate`: the `uniqueBy` value or device already responded. |
+| `410` | `closed`, `not_open` or `full`. |
+| `422` | Validation failed. Body: `{ errors }`, mapped back to each field's step. |
+| `429` | Rate limit reached. |
+
+Requests from another site that isn't in `embed.origins` get `403`, oversized
+bodies `413`, and non-JSON bodies `415`. See the
+[HTTP API](/docs/reference/http-api) for every endpoint.
+
+## Changing the schedule in Studio
+
+People who run an event often need to move a deadline or raise a limit without a
+developer. Studio's **Settings** tab can edit `opensAt`, `closesAt`,
+`maxResponses`, `closed` and the `timeZone` they're read in, and nothing else.
+
+- Under `open-form dev`, saving rewrites those keys in `forms/<id>/index.tsx`.
+- On a deployed server, saving stores **overrides** in the database. They apply
+  immediately and win over the code. Only values that differ from the code are
+  stored, so later deploys still change everything Studio didn't touch.
+  **Use code values** removes them.
+
+<Callout type="warn">
+  If a deployed form ignores a date you changed in code, it was probably changed
+  in Studio. Check **Settings** for "Changed in Studio, not in code". Settings such
+  as `uniqueBy` can only change in code, because changing them mid-collection
+  would leave existing responses inconsistent.
+</Callout>
+
+## What's next
+
+<Cards>
+  <Card title="defineForm" href="/docs/reference/define-form" />
+  <Card title="Webhooks" href="/docs/deploy/webhooks" />
+  <Card title="Responses & export" href="/docs/core-feature/responses" />
+</Cards>

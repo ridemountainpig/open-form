@@ -1,0 +1,12 @@
+# generated content
+.source
+
+# build
+/.next/
+/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.env*.local
+.vercel

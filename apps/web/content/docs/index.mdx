@@ -1,0 +1,101 @@
+---
+title: Introduction
+description: The form framework built for agents.
+---
+
+**Open Form** is a form framework for the agent era. You describe a form in
+natural language; your coding agent writes the questions and logic as a small
+React component. Open Form handles everything that makes them a form: state,
+validation on the client and the server, multi-step flow, accessible
+responsive UI, the submission API, spam protection, storage and a Studio for
+previews and responses.
+
+```text
+Questions + Logic  →  Production-ready Form  →  Responses
+```
+
+```npm
+npx @open-form-build/cli init my-forms
+```
+
+## Why Open Form
+
+A coding agent can already write a form. It just rewrites the same hundreds
+of lines every time — form state, validation, step logic, an API route, a
+database schema, rate limiting, a responses page — and a little differently
+each time. With Open Form the agent writes only the part that is specific to
+your form, and the rest is the same tested runtime every time.
+
+- **One file per form.** Fields, pages and conditions are components; the
+  submission policy is a `config` export next to them.
+- **Client and server agree.** The same validation and conditions run in the
+  browser and in the API. Hidden answers are dropped on the server.
+- **Backend included.** Server validation, honeypot, signed timing token,
+  rate limits, response caps, deadlines and one response per email or device.
+- **SQLite-first, zero infrastructure.** Responses go to
+  `.open-form/open-form.db` through Node's built-in `node:sqlite`. No
+  database server, no API keys.
+- **Studio.** Forms list, responsive preview, Edit mode with comments for your
+  agent, responses with search and Excel / CSV / JSON export.
+- **Designed, not defaulted.** Each form owns its look: a copy of one of five
+  starters, or of a theme `/create-theme` made to match your design system.
+- **Agent-native.** Ships `AGENTS.md` and five skills; a live cursor tells the
+  agent which form, step or element you mean by "this".
+
+## A form is a file
+
+Each form lives in `forms/<id>/index.tsx`. The folder name is its id and its
+public URL, `/f/<id>`.
+
+```tsx title="forms/meetup/index.tsx"
+import { defineForm, Email, Form, Page, Select, Submit, Text, When } from '@open-form-build/core';
+
+export const config = defineForm({
+  title: 'Developer Meetup',
+  submissions: { maxResponses: 100, uniqueBy: 'email', closesAt: '2027-12-31' },
+});
+
+export default function Meetup() {
+  return (
+    <Form>
+      <Page title="About you">
+        <Text name="name" label="Name" required />
+        <Email name="email" label="Email" required />
+      </Page>
+      <Page title="Background">
+        <Select name="role" label="Role" options={['Student', 'Engineer', 'Designer']} required />
+        <When field="role" equals="Student">
+          <Text name="school" label="School" required />
+        </When>
+      </Page>
+      <Submit>Register</Submit>
+    </Form>
+  );
+}
+```
+
+That is the whole form: a responsive two-step flow with progress, validation
+on both sides, a conditional question, a 100-seat limit, one registration per
+email, a deadline, spam protection, storage, a Responses table and export.
+
+## The schema is derived
+
+The server needs to know a form's fields to validate submissions and build
+the Responses columns. Open Form doesn't make you write that schema twice: it
+renders the form once on the server and collects every field, page and
+condition it meets — including fields inside your own components. Change the
+TSX and the schema follows.
+
+## Your repo owns the artifact
+
+Questions, logic, validation, themes and submission policy are code in git,
+reviewed in pull requests. Responses are personal data, so they live in
+`.open-form/`, which is gitignored and never committed.
+
+## What's next
+
+<Cards>
+  <Card title="Get started" href="/docs/getting-started" />
+  <Card title="Create a form" href="/docs/skills/create-form" />
+  <Card title="Components" href="/docs/components/form" />
+</Cards>

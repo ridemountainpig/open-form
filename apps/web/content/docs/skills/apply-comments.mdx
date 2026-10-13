@@ -1,0 +1,71 @@
+---
+title: /apply-comments
+description: Turns the notes you leave in Studio into code edits.
+---
+
+`/apply-comments` closes the visual feedback loop. You leave notes on a form in
+Studio; the agent applies each one and removes it.
+
+```text
+Apply my comments.
+```
+
+## Markers
+
+In Studio's Preview, switch to **Edit**, select something, and write a **Note
+for your agent**. Studio saves it in the form's source, right above the element
+it's about:
+
+```tsx
+{/* @form-comment: make this optional and say why we ask */}
+<Email name="email" label="Email" required />
+```
+
+- Where JSX is an expression, such as right after `return (`, the marker is a
+  plain `/* @form-comment: … */`.
+- When the element doesn't start its line, such as a link inside a sentence,
+  the marker goes inline, just before it on the same line.
+- Notes on text that lives in `config` — the title, the description, the
+  success message — sit above that property.
+- Notes on something the runtime or theme draws inside an element, such as the
+  Next button or the progress bar, sit above that element and start with what
+  you picked: `(on “Next”) make this button full width`.
+
+Markers are ordinary comments, invisible at runtime. They live in the form's
+own files, never in its theme copy in `forms/<id>/theme/`, so they show up in
+git and pull requests like any other change. See
+[Edit mode](/docs/core-feature/edit-mode).
+
+## What it does
+
+1. **Lists the markers** with [`open-form comments`](/docs/cli/comments): one
+   `file:line  text` per note. `open-form comments <id>` lists one form's, and
+   `--json` prints them as JSON.
+2. **Reads [`/form-authoring`](/docs/skills/form-authoring)**, since every
+   comment is a form edit and follows the same rules.
+3. **Applies each comment**, top to bottom per file. It reads the element the
+   marker is about and enough context (its `<Page>`, its `<When>`, the form's
+   `config`), makes the change with the DSL — props, `<When>`, `validate`,
+   `config` — and deletes the marker. Comments about the look (colors, fonts,
+   spacing, how a theme-drawn part looks) go into the form's own theme in
+   `forms/<id>/theme/`, never into `themes/`, whose references don't change
+   existing forms. A form without its own copy has the default look, the
+   `classic` starter: the agent copies that in first, so only what you asked
+   for changes.
+4. **Checks** each form it touched with `open-form check <id>` (and
+   `open-form theme check <id> --form` after a color change), then runs
+   `open-form comments` again: only markers it kept on purpose should remain.
+5. **Reports** what it changed for each comment, and which ones it left, with a
+   question for each.
+
+## Rules
+
+- **Unclear or risky comments are skipped**, and their markers stay. That
+  covers comments that are ambiguous, conflict with another, or would rename a
+  field that already has responses. The agent asks about them at the end.
+- **"Rename this" changes the `label`**, not the `name`, unless you say the data
+  key should change. Field names are database keys.
+- **Translated forms**: when a comment changes text, the same key is updated in
+  every `locales/*.json`.
+- **Only your markers**: the agent doesn't touch markers it wasn't asked to
+  apply, and never adds `@form-comment` markers itself.

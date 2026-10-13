@@ -1,0 +1,483 @@
+/* Brutalist theme. Component classes are prefixed `br-`; overrides of built-in
+   elements are scoped to [data-of-theme="brutalist"]. */
+
+[data-of-theme="brutalist"] {
+  --br-ink: #000;
+  --br-pop: #7cf5c4;
+  --br-shadow: 6px 6px 0 var(--br-ink);
+}
+
+[data-of-theme="brutalist"].of-root {
+  background-color: var(--of-bg);
+  background-image: radial-gradient(rgb(0 0 0 / 0.14) 1.2px, transparent 1.4px);
+  background-size: 18px 18px;
+}
+
+[data-of-theme="brutalist"] .of-form,
+[data-of-theme="brutalist"] .of-stepper {
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  box-shadow: 12px 12px 0 var(--br-ink);
+}
+
+.br-header {
+  margin-bottom: 28px;
+}
+
+.br-title {
+  margin: 0;
+  font-family: var(--of-heading-font);
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.2rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.br-title span {
+  background: linear-gradient(
+    transparent 58%,
+    var(--of-primary) 58%,
+    var(--of-primary) 92%,
+    transparent 92%
+  );
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.br-desc {
+  margin: 14px 0 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.br-progress {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.br-progress-blocks {
+  display: flex;
+  gap: 6px;
+}
+
+.br-progress-blocks span {
+  flex: 1;
+  height: 16px;
+  border: 3px solid var(--br-ink);
+  background: var(--of-surface);
+  transition: background-color 0.2s ease;
+}
+
+.br-progress-blocks span[data-state="done"] {
+  background: var(--br-ink);
+}
+
+.br-progress-blocks span[data-state="current"] {
+  background: var(--of-primary);
+}
+
+.br-progress-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="brutalist"] .of-page-title {
+  display: inline-block;
+  padding: 2px 10px;
+  background: var(--br-ink);
+  color: var(--of-surface);
+  font-family: var(--of-heading-font);
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.br-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.br-field > legend {
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.br-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.br-req {
+  margin-left: 4px;
+  color: var(--of-primary);
+  -webkit-text-stroke: 0.6px var(--br-ink);
+}
+
+.br-help {
+  margin: -2px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--of-muted);
+}
+
+.br-error {
+  justify-self: start;
+  margin: 0;
+  padding: 3px 9px;
+  background: var(--br-ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.br-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.br-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  background: var(--of-input);
+  color: var(--of-fg);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  outline: none;
+  appearance: none;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.br-input:focus {
+  box-shadow: var(--br-shadow);
+  transform: translate(-3px, -3px);
+}
+
+.br-field[data-invalid] .br-input {
+  background: #ffe3e6;
+}
+
+.br-unit {
+  position: absolute;
+  right: 14px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.br-textarea {
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.br-textarea-wrap {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.br-count {
+  align-self: flex-end;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.br-select::after {
+  content: "↓";
+  position: absolute;
+  right: 16px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.br-select select {
+  cursor: pointer;
+}
+
+.br-choices {
+  display: grid;
+  gap: 10px;
+}
+
+.br-choices[data-variant="cards"] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+}
+
+.br-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 3px solid var(--br-ink);
+  background: var(--of-input);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.br-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.br-choice:hover {
+  box-shadow: 4px 4px 0 var(--br-ink);
+  transform: translate(-2px, -2px);
+}
+
+.br-choice:has(input:checked) {
+  background: var(--br-pop);
+  box-shadow: var(--br-shadow);
+  transform: translate(-3px, -3px);
+}
+
+.br-choice:has(input:focus-visible) {
+  outline: 3px solid var(--of-primary);
+  outline-offset: 3px;
+}
+
+.br-choice-box {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--br-ink);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.br-choice-box[data-multiple] {
+  border-radius: 0;
+}
+
+.br-choice input:checked + .br-choice-box::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: inherit;
+  background: var(--br-ink);
+}
+
+.br-field[data-invalid] .br-choice {
+  border-style: dashed;
+}
+
+.br-single {
+  align-items: flex-start;
+}
+
+.br-single:has(input:checked) {
+  background: var(--of-input);
+}
+
+.br-single-text {
+  display: grid;
+  gap: 2px;
+}
+
+.br-rating {
+  display: grid;
+  grid-template-columns: repeat(var(--br-count, 5), minmax(0, 1fr));
+  border: 3px solid var(--br-ink);
+}
+
+.br-rating-item {
+  position: relative;
+  cursor: pointer;
+}
+
+.br-rating-item + .br-rating-item {
+  border-left: 3px solid var(--br-ink);
+}
+
+.br-rating-item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.br-rating-item span {
+  display: grid;
+  place-items: center;
+  min-height: 50px;
+  background: var(--of-input);
+  font-family: var(--of-heading-font);
+  font-size: 18px;
+  transition: background-color 0.12s ease;
+}
+
+.br-rating-item:hover span {
+  background: color-mix(in srgb, var(--of-primary) 30%, #fff);
+}
+
+.br-rating-item input:checked + span {
+  background: var(--of-primary);
+}
+
+.br-rating-item input:focus-visible + span {
+  outline: 3px solid var(--br-ink);
+  outline-offset: -6px;
+}
+
+.br-rating-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+[data-of-theme="brutalist"] .of-alert {
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  background: #ffe3e6;
+  color: var(--br-ink);
+  font-weight: 700;
+}
+
+[data-of-theme="brutalist"] .of-alert:empty {
+  border: 0;
+}
+
+.br-btn {
+  min-height: 54px;
+  padding: 0 26px;
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  background: var(--of-surface);
+  color: var(--br-ink);
+  font-family: var(--of-heading-font);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--br-ink);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.br-btn:hover {
+  box-shadow: 7px 7px 0 var(--br-ink);
+  transform: translate(-2px, -2px);
+}
+
+.br-btn:active {
+  box-shadow: 0 0 0 var(--br-ink);
+  transform: translate(5px, 5px);
+}
+
+.br-btn:focus-visible {
+  outline: 3px solid var(--of-primary);
+  outline-offset: 4px;
+}
+
+.br-btn-primary {
+  background: var(--of-primary);
+}
+
+.br-btn-secondary {
+  margin-right: auto;
+}
+
+.br-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.br-success {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+}
+
+.br-sticker {
+  padding: 18px 28px;
+  border: 3px solid var(--br-ink);
+  background: var(--br-pop);
+  box-shadow: 10px 10px 0 var(--br-ink);
+  font-family: var(--of-heading-font);
+  font-size: clamp(1.8rem, 1.2rem + 3vw, 2.8rem);
+  line-height: 1;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  animation: br-slam 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.3);
+}
+
+@keyframes br-slam {
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(1.6);
+  }
+}
+
+.br-success-body .of-description {
+  color: var(--br-ink);
+  font-weight: 600;
+}
+
+[data-of-theme="brutalist"] .of-stepper-rail button {
+  border: 3px solid transparent;
+  border-radius: 0;
+  font-weight: 700;
+}
+
+[data-of-theme="brutalist"] .of-stepper-rail li[data-state="current"] button {
+  border-color: var(--br-ink);
+  background: var(--of-primary);
+  color: var(--br-ink);
+}
+
+[data-of-theme="brutalist"] .of-stepper-dot {
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+}
+
+[data-of-theme="brutalist"] .of-stepper-rail li[data-state="done"] .of-stepper-dot,
+[data-of-theme="brutalist"] .of-stepper-rail li[data-state="current"] .of-stepper-dot {
+  border-color: var(--br-ink);
+  background: var(--br-ink);
+  color: #fff;
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="brutalist"].of-root {
+    padding: 14px;
+    background-color: var(--of-bg);
+  }
+
+  .of-root[data-of-theme="brutalist"] .of-form,
+  .of-root[data-of-theme="brutalist"] .of-stepper {
+    border: 3px solid var(--br-ink);
+    box-shadow: 6px 6px 0 var(--br-ink);
+    padding: 24px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .br-sticker {
+    animation: none;
+  }
+}

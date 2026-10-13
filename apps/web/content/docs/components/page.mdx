@@ -1,0 +1,142 @@
+---
+title: Page
+description: Split a form into steps, and arrange content inside them.
+---
+
+`<Page>` is one step. With two or more pages you get a progress indicator,
+Back and Next buttons and per-step validation without writing any of it. A
+form with no pages is a single-page form.
+
+```tsx title="forms/onboarding/index.tsx"
+import { Email, Form, Page, RadioGroup, Row, Submit, Text, Textarea } from '@open-form-build/core';
+
+export default function Onboarding() {
+  return (
+    <Form>
+      <Page title="About you" description="So we know who to reply to.">
+        <Row>
+          <Text name="firstName" label="First name" required autoComplete="given-name" />
+          <Text name="lastName" label="Last name" required autoComplete="family-name" />
+        </Row>
+        <Email name="email" label="Work email" required />
+      </Page>
+      <Page title="Your team">
+        <RadioGroup name="size" label="Team size" options={['1–10', '11–50', '51+']} required />
+      </Page>
+      <Page title="Anything else?">
+        <Textarea name="notes" label="Notes" maxLength={500} />
+      </Page>
+      <Submit>Finish</Submit>
+    </Form>
+  );
+}
+```
+
+## Props
+
+<TypeTable
+  type={{
+    title: {
+      type: 'string',
+      description: 'Step heading. Also names the step in StepperLayout’s step list, in useFormNav (stepTitle and steps) and in Studio. The built-in progress shows only the count.',
+    },
+    description: {
+      type: 'string',
+      description: 'Short copy under the step heading.',
+    },
+    children: {
+      type: 'ReactNode',
+      description: 'Fields and content for this step.',
+    },
+  }}
+/>
+
+Untitled steps are listed as "Step 1", "Step 2", … in the language the form
+is shown in.
+Give every page a short `title` when you use `StepperLayout`.
+
+## How steps behave
+
+- **Progress.** The built-in progress shows "Step 2 of 3" and a bar, counting
+  only the steps the respondent will see. It hides itself on single-step forms.
+- **Next validates the current step.** Only fields on this step that are
+  showing are checked. The first invalid field receives focus, and screen
+  readers hear "Please fix the highlighted fields." Back never validates.
+  Jumping ahead from a step list also checks the steps in between.
+- **Errors appear when they help.** Format errors show when a field loses
+  focus; "required" waits for Next or Submit, so tabbing through an untouched
+  step doesn't light it up red. Once a field shows an error, it re-checks as
+  the respondent types.
+- **Enter advances.** The primary button is the form's submit button, so Enter
+  in a text input means Next — or Submit on the last step. In a `Textarea`,
+  Enter adds a line, except under `FocusLayout` on devices with a mouse or
+  trackpad, where it advances too (see
+  [Layouts](/docs/components/layouts#built-in-layouts)).
+- **Focus follows the step.** After moving, focus lands on the new step and
+  the page scrolls back to the top of the form if needed.
+- **Server errors come back to their step.** If the server rejects a field, the
+  form jumps to the earliest step with an error and focuses that field — even
+  one the respondent hasn't opened yet.
+
+## Conditional steps
+
+Wrap whole pages in [`<When>`](/docs/components/when) to skip them. A skipped
+step disappears from the progress, and the count adjusts as answers change.
+
+```tsx
+<Page title="Role">
+  <Select name="role" label="Role" options={['Student', 'Engineer']} required />
+</Page>
+<When field="role" equals="Engineer">
+  <Page title="Work">
+    <Text name="company" label="Company" required />
+  </Page>
+</When>
+```
+
+Nested `<When>`s around a page combine: every condition must hold.
+
+<Callout type="warn">
+  Write `<Page>` elements directly inside `<Form>` — fragments and `<When>`
+  are fine. The form finds its steps from the JSX it receives, so a component
+  of your own that returns pages is not split into steps. A `<When>` around
+  pages holds only pages: a field or content next to a page inside it is never
+  rendered or collected.
+</Callout>
+
+## Content outside pages
+
+In a multi-page form, top-level content that isn't a `<Page>`, `<Submit>` or
+`<Success>` renders above every step. Use it sparingly, for a short notice
+that belongs on each step, and don't put fields there. Field-level `<When>`s
+belong inside a `<Page>` for the same reason.
+
+## `<Row>`, `<Heading>`, `<Paragraph>`
+
+| Component | Use |
+| --- | --- |
+| `<Row>` | Put 2–3 short, related fields side by side: first and last name, city and postal code. Stacks on narrow screens. |
+| `<Heading level>` | A section title between fields. `level` is `2`, `3` (default) or `4`. |
+| `<Paragraph>` | Explanatory copy between fields. |
+
+```tsx
+<Page title="Shipping">
+  <Heading>Address</Heading>
+  <Text name="street" label="Street" autoComplete="street-address" />
+  <Row>
+    <Text name="city" label="City" />
+    <Text name="postalCode" label="Postal code" autoComplete="postal-code" />
+  </Row>
+  <Paragraph>We only ship within Taiwan.</Paragraph>
+</Page>
+```
+
+Plain-text children of `<Heading>` and `<Paragraph>`, like page titles and
+descriptions, are translated when the form has
+[translations](/docs/core-feature/languages).
+
+<Cards>
+  <Card title="When" href="/docs/components/when" />
+  <Card title="Layouts" href="/docs/components/layouts" />
+  <Card title="Hooks" href="/docs/components/hooks" />
+</Cards>

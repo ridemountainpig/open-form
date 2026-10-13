@@ -1,0 +1,109 @@
+/* Styles for this form only, on the --of-* tokens and tm-* classes of ./theme. */
+
+.mt-agenda {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.mt-agenda p {
+  margin: 0;
+}
+
+.mt-agenda .mt-cmd {
+  margin-bottom: 12px;
+  color: var(--of-muted);
+  overflow-wrap: anywhere;
+}
+
+.mt-agenda ol {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.mt-agenda li {
+  display: grid;
+  grid-template-columns: 5ch 2ch minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  color: var(--of-fg);
+  transition: color 160ms ease;
+}
+
+.mt-agenda li[data-dim] {
+  color: var(--of-muted);
+}
+
+.mt-time {
+  color: var(--of-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-mark {
+  color: var(--of-muted);
+  text-align: center;
+}
+
+.mt-agenda li[data-hit] .mt-mark,
+.mt-agenda li[data-hit] .mt-time {
+  color: var(--of-primary);
+}
+
+.mt-agenda li[data-hit] .mt-mark {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--of-primary) 60%, transparent);
+  animation: mt-blip 320ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mt-agenda li[data-hit] .mt-talk {
+  font-weight: 700;
+}
+
+.mt-tag {
+  margin-left: 1ch;
+  color: var(--of-muted);
+  font-weight: 400;
+}
+
+.mt-tag[data-hit] {
+  color: var(--of-primary);
+}
+
+.mt-foot {
+  color: var(--of-muted);
+}
+
+@keyframes mt-blip {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+/* The success screen shows its own copy; closed screens have nothing to preview. */
+.mt-root .tm-window:not([data-state="form"]) .tm-aside {
+  display: none;
+}
+
+.mt-agenda[data-final] {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border: 1px dashed color-mix(in srgb, var(--of-primary) 50%, transparent);
+}
+
+@media (max-width: 560px) {
+  .mt-agenda li {
+    grid-template-columns: 5ch minmax(0, 1fr);
+  }
+
+  .mt-mark {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-agenda li[data-hit] .mt-mark {
+    animation: none;
+  }
+}

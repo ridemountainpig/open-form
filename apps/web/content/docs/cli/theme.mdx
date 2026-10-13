@@ -1,0 +1,129 @@
+---
+title: open-form theme
+description: List themes, copy one into a form, check contrast, add a starter, and add Google Fonts.
+---
+
+Themes in your project's `themes/` folder are references for new forms. A form
+uses one by keeping its own copy in `forms/<id>/theme/`. See
+[Themes](/docs/core-feature/themes). `open-form theme` has five subcommands.
+
+## theme list
+
+```bash
+pnpm exec open-form theme list
+```
+
+Lists the project's themes with the one-line description from each `THEME.md`,
+and how to copy one into a form. Then it lists the starters: `brutalist`,
+`classic`, `conversational`, `editorial` and `terminal`.
+
+## theme copy
+
+```bash
+pnpm exec open-form theme copy terminal meetup
+pnpm exec open-form theme copy brand meetup --force
+```
+
+Copies a theme into `forms/<form>/theme/`, where the form owns it. The theme
+comes from `themes/<theme>` when the project has one with that id, otherwise
+from the starter of that name. Everything in the theme's folder is copied —
+`index.ts` or `index.tsx`, CSS, `fonts/` — except `THEME.md`, which stays with
+the reference; a single-file `themes/<id>.ts` becomes `theme/index.ts` and
+takes the fonts it imports from `themes/fonts/` along.
+Selectors scoped to `[data-of-theme="<theme>"]` are rewritten to the form id,
+and the command warns about any that still target another id.
+
+Then it prints what to add to the form, with the copy's own `index.ts` or
+`index.tsx`, unless the form already imports from `./theme/`. If that import
+names the other file — say `./theme/index.ts` after `--force` replaced it with
+a theme that has components — it warns you to update the import instead.
+
+```tsx title="forms/meetup/index.tsx"
+import theme from './theme/index.tsx'; // above the form's own CSS
+import './meetup.css';
+
+<Form theme={theme}>…</Form>
+```
+
+From then on, changing or deleting the theme in `themes/` doesn't affect the
+form. To start a new form with a copy already wired up, use
+[`open-form create <id> --theme <theme>`](/docs/cli/create).
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-f, --force` | off | Replace the form's existing `theme/` folder. Without it, the command stops. |
+
+## theme check
+
+```bash
+pnpm exec open-form theme check <id>
+pnpm exec open-form theme check <form> --form
+```
+
+Checks the WCAG contrast of every color pair forms actually use, in light and
+dark:
+
+| Pair | Needs |
+| --- | --- |
+| `foreground` on `surface`, on `background` and on `input` | 4.5:1 |
+| `muted` help text on `surface` | 4.5:1 |
+| `primaryForeground` on `primary` (button text) | 4.5:1 |
+| `error` on `surface` | 4.5:1 |
+| `control` outlines on `input` | 3:1 |
+| `primary` focus and selection on `surface` | 3:1 |
+
+A theme with `dark: false` is checked in light only, and one with `colorScheme`
+only in that scheme. It also warns when a theme sets `colors` without `dark`,
+since dark mode would mix your light colors with the built-in dark defaults.
+
+Colors can be hex, `rgb()`, `hsl()`, `oklch()` or `oklab()`. Values it can't
+resolve, such as `var()` or `color-mix()`, show as `?` and count as failures.
+The command exits with code 1 when any pair fails; fix it by changing that
+token's lightness and keeping its hue.
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--form` | off | `<id>` is a form id: check that form's own theme in `forms/<id>/theme/`. |
+| `--json` | off | Machine-readable output. |
+
+## theme add
+
+```bash
+pnpm exec open-form theme add editorial
+pnpm exec open-form theme add editorial --as brand
+```
+
+Copies a starter's whole folder into `themes/<name>/`: its tokens, `THEME.md`,
+and any components and CSS it has. It's a reference to adapt into your own
+look; forms use it through `theme copy`. Editing it later only affects forms
+you copy it into afterwards.
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--as <name>` | the starter's id | Save it under a new kebab-case id. `[data-of-theme="<starter>"]` selectors and the name and heading in `THEME.md` are renamed to match; file names and class names stay as they are. |
+| `-f, --force` | off | Replace an existing theme with that id. |
+
+## theme font
+
+```bash
+pnpm exec open-form theme font brand Inter
+pnpm exec open-form theme font brand Noto Sans TC
+pnpm exec open-form theme font meetup Inter --form
+```
+
+Downloads a [Google Fonts](https://fonts.google.com) family into the `fonts/`
+folder next to the theme's file — `themes/<id>/fonts/`, or
+`forms/<id>/theme/fonts/` with `--form` — and imports it from the theme. A
+single-file theme, `themes/<id>.ts`, uses a shared `themes/fonts/`. Then it
+prints the value to use for `font` or `headingFont`. The form serves the files
+itself, so respondents never contact Google. Variable families get their whole
+weight range; static ones get weights 400 to 700. Adding the same family again
+replaces its files.
+
+Chinese, Japanese and Korean families take a few MB in the project, split into
+small files. Respondents only download the ones holding the characters a page
+uses.
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--form` | off | `<id>` is a form id: add the font to that form's own theme in `forms/<id>/theme/`. |

@@ -1,0 +1,175 @@
+---
+title: Fields
+description: Every built-in input, what it stores, and how it validates.
+---
+
+Fields are behavior: each one wires a value into the form's state,
+validation, focus and storage. How they look comes from the
+[theme's components](/docs/components/layouts), so the same `<Select>` can
+render as a native select, chips or a terminal prompt.
+
+```tsx
+<Text name="name" label="Name" required autoComplete="name" />
+<Email name="email" label="Email" description="We'll send the ticket here." required />
+<NumberInput name="age" label="Age" min={13} max={120} integer unit="years" />
+<RadioGroup name="plan" label="Plan" options={['Free', 'Pro']} variant="cards" required />
+<Checkbox name="terms" required>I agree to the code of conduct</Checkbox>
+```
+
+## Shared props
+
+<TypeTable
+  type={{
+    name: {
+      type: 'string',
+      required: true,
+      description: 'Unique, stable, camelCase key. It is the database key and the export column, so keep it once responses exist.',
+    },
+    label: {
+      type: 'string',
+      description: 'The question. Responses and exports use it as the column header.',
+    },
+    description: {
+      type: 'string',
+      description: 'Help text under the label.',
+    },
+    required: {
+      type: 'boolean',
+      default: 'false',
+      description: 'Must be answered. On a Checkbox it means the box must be checked.',
+    },
+    defaultValue: {
+      type: 'string | number | boolean | string[]',
+      description: 'Initial answer, typed per field.',
+    },
+    validate: {
+      type: 'CustomValidator',
+      description: 'Extra rule: a function returning an error message, or a Standard Schema.',
+    },
+  }}
+/>
+
+A field's `defaultValue` becomes its answer when the field first shows. Until
+its step has been shown, `useFieldValue`, `useFormValues`, `<When>` and step
+skipping see no answer, so put answers they need from the start in
+[`<Form defaultValues>`](/docs/components/form#props).
+
+## Built-in fields
+
+| Component | Stored as | Extra props |
+| --- | --- | --- |
+| `<Text>` | string | `placeholder`, `minLength`, `maxLength`, `pattern`, `patternMessage`, `autoComplete` |
+| `<Email>` | string | Same as `Text`; checks the email format |
+| `<Url>` | string | Same as `Text`; requires `http://` or `https://` |
+| `<Tel>` | string | Same as `Text`; loose phone format |
+| `<Textarea>` | string | Same as `Text`, plus `rows` (default `4`); shows a counter when `maxLength` is set |
+| `<NumberInput>` | number | `min`, `max`, `step`, `integer`, `unit` (a suffix like `"years"`), `placeholder` |
+| `<DateInput>` | `YYYY-MM-DD` string | `min`, `max` as `YYYY-MM-DD` |
+| `<Select>` | string | `options`, `placeholder` |
+| `<RadioGroup>` | string | `options`, `variant` |
+| `<CheckboxGroup>` | string[] | `options`, `minSelected`, `maxSelected`, `variant` |
+| `<Checkbox>` | boolean | Children are the text beside the box |
+| `<Rating>` | number | `min` (default `1`), `max` (default `5`), `lowLabel`, `highLabel` |
+
+Text answers are trimmed before they're validated and stored, and a blank
+answer counts as no answer.
+`CheckboxGroup` stores the selected values in option order. `Rating` stores a
+whole number; use `min={0} max={10}` for an NPS question.
+
+A `Checkbox` without `label` uses its children as the column name in
+Responses. Give it both a `label` and children to show a question above the
+box.
+
+## Options
+
+`options` takes plain values or value/label pairs:
+
+```tsx
+<Select name="role" label="Role" options={['Student', 'Engineer', 'Designer']} />
+
+<RadioGroup
+  name="plan"
+  label="Plan"
+  options={[
+    { value: 'free', label: 'Free — for side projects' },
+    { value: 'pro', label: 'Pro — for teams' },
+  ]}
+/>
+```
+
+Values are stored as strings. Use value/label pairs when labels are long or
+may change, and on [translated forms](/docs/core-feature/languages): the
+label is what people read, the value is what's stored and what
+[`<When>`](/docs/components/when) compares against. Answers outside the option
+list are rejected on both sides, so the list must be known when the form
+renders: a choice field with no options fails to load.
+
+`variant` on `RadioGroup` and `CheckboxGroup` is `'list'` (default, stacked)
+or `'cards'` (a responsive grid of tiles). It's a hint: a theme's own
+`ChoiceGroup` may render choices its own way. Prefer `RadioGroup` for five or
+fewer options and `Select` for longer lists.
+
+## Autocomplete
+
+Set `autoComplete` on personal fields so browsers can fill them: `name`,
+`given-name`, `family-name`, `organization`, `street-address`, `postal-code`,
+`country-name`. `Email`, `Url` and `Tel` set `email`, `url` and `tel` for you.
+
+## Validation
+
+The validation props — `required`, `minLength` / `maxLength`, `pattern`,
+`min` / `max` / `integer` / `step`, `minSelected` / `maxSelected` and date bounds —
+plus the format checks on `Email`, `Url` and `Tel` and option membership on
+choice fields are one rule set. The browser and the server run the same code,
+so what the form accepts is what the server stores.
+
+- `pattern` must match the whole value, like the HTML attribute. Pair it with
+  `patternMessage` for a readable error. A field with a `pattern` and no
+  `maxLength` accepts up to 1,000 characters, so a slow pattern can't be turned
+  against the server with a huge answer.
+- Patterns run in Unicode mode when they can; ones only older syntax accepts,
+  such as `\d{3}\-\d{4}` or `[\w-.]+`, run without it. A pattern that isn't a
+  regular expression at all fails to load, and `open-form check` names it.
+- `step` on `NumberInput` accepts `min` (or 0 without a `min`) plus a whole
+  number of steps: `min={1} step={0.5}` takes 1, 1.5, 2…
+- `Email` accepts at most 254 characters, the longest address mail allows.
+- `minLength` and `maxLength` count characters, not bytes.
+- A checkbox group stores each picked value once.
+- Built-in error messages appear in the language the form is shown in.
+
+### Custom rules with `validate`
+
+`validate` takes a function that returns an error message (or nothing), or any
+[Standard Schema](https://standardschema.dev) — Zod, Valibot, ArkType — if the
+project already has one installed.
+
+```tsx title="forms/meetup/index.tsx"
+import { z } from 'zod';
+
+const workEmail = (value: unknown) =>
+  /@(gmail|yahoo|hotmail|outlook)\./i.test(String(value))
+    ? 'Please use your work email.'
+    : undefined;
+
+<Email name="email" label="Work email" required validate={workEmail} />
+<Text name="handle" label="GitHub handle" validate={z.string().regex(/^[\w-]+$/, 'Letters, numbers and dashes only.')} />
+```
+
+- A function receives `(value, allValues)` and may be async. `allValues`
+  holds the answers of the fields that are showing, trimmed and typed as
+  they're stored — the same object on both sides.
+- It runs only when the field has an answer and the built-in rules passed.
+- It runs in the browser and again on the server, so keep it free of browser
+  APIs. Don't call other services from a validator.
+
+## Why `NumberInput` and `DateInput`
+
+`import { Number, Date } from '@open-form-build/core'` would shadow the JavaScript globals
+in the same file, and validators often call `Number(value)` or `new Date()`.
+The `Input` suffix keeps both available.
+
+<Cards>
+  <Card title="When" href="/docs/components/when" />
+  <Card title="Custom fields" href="/docs/components/custom-fields" />
+  <Card title="Layouts" href="/docs/components/layouts" />
+</Cards>

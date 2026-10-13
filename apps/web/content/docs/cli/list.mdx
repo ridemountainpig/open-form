@@ -1,0 +1,30 @@
+---
+title: open-form list
+description: List your forms and how many responses each has.
+---
+
+```bash
+pnpm exec open-form list
+```
+
+Prints a table of every form in `forms/`:
+
+```text
+ID        TITLE                 RESPONSES  SOURCE
+contact   Get in touch          12         forms/contact/index.tsx
+meetup    Developer Meetup      87         forms/meetup/index.tsx
+```
+
+| Column | Meaning |
+| --- | --- |
+| `ID` | The folder name, served at `/f/<id>`. |
+| `TITLE` | The `title` from `defineForm()`, read from the source without loading the form. |
+| `RESPONSES` | The count in this workspace's database: `OPEN_FORM_DB`, else `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`. `0` before the first submission. |
+| `SOURCE` | The form's entry file. |
+
+`list` takes no flags and doesn't start a server. Counts come from the local
+database only — a deployed server keeps its own.
+
+To see the schema each form derives, use [`open-form check`](/docs/cli/check).
+To get the responses themselves, use
+[`open-form responses export`](/docs/cli/responses-export).

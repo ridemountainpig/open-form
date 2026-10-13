@@ -1,0 +1,39 @@
+{
+  "name": "@open-form-build/cli",
+  "version": "0.0.0",
+  "description": "Create an Open Form workspace: npx @open-form-build/cli init",
+  "type": "module",
+  "bin": {
+    "open-form": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@open-form-build/core": "workspace:^"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "keywords": [
+    "open-form",
+    "forms",
+    "agents",
+    "cli"
+  ],
+  "license": "MIT",
+  "homepage": "https://open-form.build",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ridemountainpig/open-form.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/ridemountainpig/open-form/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* Studio has its own light/dark switch (see lib/scheme.ts), set on <html>. */
+@custom-variant dark (&:where([data-studio-scheme="dark"], [data-studio-scheme="dark"] *));
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --color-brand: #18181b;
+}
+
+@layer base {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(0 0 0 / 0.22) transparent;
+  }
+
+  html[data-studio-scheme="dark"] {
+    --color-brand: #fafafa;
+    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+  }
+
+  html,
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-brand) 16%, transparent);
+  }
+}
+
+@utility focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950;
+}
+
+@keyframes studio-drawer-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+
+@keyframes studio-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.studio-drawer {
+  animation: studio-drawer-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes studio-sheet-in {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+}
+
+.studio-sheet {
+  animation: studio-sheet-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.studio-backdrop {
+  animation: studio-fade-in 0.2s ease;
+}
+
+@keyframes studio-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.studio-palette,
+.studio-actionbar {
+  animation: studio-pop-in 0.14s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-drawer,
+  .studio-sheet,
+  .studio-palette,
+  .studio-actionbar,
+  .studio-backdrop {
+    animation: none;
+  }
+}
+
+/* Sonner's toasts in Studio's zinc tones; `html` outranks the styles Sonner injects. */
+html [data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--color-white);
+  --normal-border: var(--color-zinc-200);
+  --normal-text: var(--color-zinc-800);
+  font-family: var(--font-sans);
+}
+
+html [data-sonner-toaster][data-sonner-theme="dark"] {
+  --normal-bg: var(--color-zinc-900);
+  --normal-border: var(--color-zinc-800);
+  --normal-text: var(--color-zinc-200);
+}
+
+html [data-sonner-toast][data-styled="true"][data-type="error"] {
+  border-color: var(--color-red-200);
+  color: var(--color-red-700);
+}
+
+html [data-sonner-toaster][data-sonner-theme="dark"] [data-sonner-toast][data-type="error"] {
+  border-color: color-mix(in srgb, var(--color-red-900) 60%, transparent);
+  color: var(--color-red-400);
+}

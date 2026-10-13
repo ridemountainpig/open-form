@@ -1,0 +1,48 @@
+---
+name: Conversational
+description: One question per screen, big friendly rounded type, soft violet — Typeform-like, with letter keys and auto-advance.
+layout: FocusLayout
+---
+
+# Conversational
+
+**Mood:** friendly, unhurried, personal. Feels like being asked, not like filling in a form.
+
+**Best for:** surveys and NPS, feedback, quizzes, onboarding questionnaires, research screeners, event RSVPs, anything with mostly single-choice questions.
+
+**Avoid when:** people need to see and review everything at once (long applications, data entry), or there are many free-text fields.
+
+## Palette
+
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| `primary` | `#5b4cf5` violet | `#a99cff` | Answers, keys, selected choices, progress, button |
+| `background` | `#f8f7ff` + one soft violet glow from the top | `#0e0c1f` | Page |
+| `surface` / `input` | `#ffffff` | `#17142e` / `#1c1838` | Choice and rating tiles |
+| `foreground` | `#1b1838` | `#f0edff` | Questions |
+| `muted` | `#66627f` | `#a39fc4` | Help, captions, counter |
+| `control` | `#8a82c6` | `#6a62b8` | Tile and underline outlines (≥ 3:1) |
+
+## Typography
+
+Rounded system sans for Latin (`ui-rounded`, `SF Pro Rounded`, `Nunito`); CJK falls through to `var(--of-cjk)` — PingFang / Noto Sans / Hiragino Sans in the form's language — which have real bold weights. Don't add `Hiragino Maru Gothic` back: it has a single weight, so browsers fake the bold and Chinese headings turn smudgy. Title 2.25–3.5rem / 700, questions 1.5–2rem / 650, answers typed at ~1.5rem in the primary color. Wrap with `text-wrap: pretty`, not `balance` (balance splits Chinese words).
+
+## Layout & components
+
+- `FocusLayout`: a **welcome screen** with the form's title, description and a Start button; then one step per screen, vertically centered, a thin progress bar at the top, a `1 / 4` counter, and the Next button with "press Enter ↵" beside it (Back sits at the far end of that row).
+- Write **one question per `<Page>`** and leave page titles off — the field label is the question. Write `title` / `description` as the invitation on the welcome screen.
+- Choices: rounded rows with letter keys (A, B, C…). Press the letter to choose. On a one-question step, picking a single answer — or a rating — advances automatically.
+- Inputs: large underline fields; textareas grow with the answer. Give them a friendly `placeholder` ("說說看…"). Enter moves on from a textarea too; Shift + Enter adds a line (phones keep Return for new lines).
+- Rating: number tiles; 0–10 scales wrap to two rows on phones.
+- Buttons: pill with an arrow.
+- Success: a drawn check in a primary-colored badge.
+
+## Copy tone
+
+Second person, warm, one idea per question: "What should we call you?", "How likely are you to recommend us?" Use `description` for gentle hints.
+
+## Do / Don't
+
+- Do branch with `<When>` around pages — skipped questions just never appear.
+- Do keep options short so letter keys stay scannable.
+- Don't put several fields on one page unless they belong together (first + last name).

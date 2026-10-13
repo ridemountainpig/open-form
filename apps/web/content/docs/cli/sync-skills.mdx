@@ -1,0 +1,59 @@
+---
+title: open-form sync:skills
+description: Update the agent skills in your workspace from the installed open-form.
+---
+
+```bash
+pnpm sync:skills
+# or
+pnpm exec open-form sync:skills
+```
+
+Copies the built-in skills from your installed `@open-form-build/core` into
+`.agents/skills/`, and links each one into `.claude/skills/` so Claude Code
+finds them too. Each skill is listed with its status:
+
+```text
+  · apply-comments unchanged
+  ~ create-form updated
+  · create-theme unchanged
+  + current-form added
+  · form-authoring unchanged
+```
+
+`open-form dev` does the same every time it starts, so you only need this to
+update the skills without starting the dev server — typically right after
+`pnpm up open-form`.
+
+Run it in your workspace (a folder with `open-form.config.ts`, or a
+`package.json` that depends on `@open-form-build/core`). Elsewhere — your home folder, say,
+where `.claude/skills/` would apply to every project — it stops with an error.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--dry-run` | off | Show what would change without writing anything. |
+
+## What it touches
+
+```text
+.agents/
+└── skills/
+    └── <name>/      # copied from open-form
+.claude/
+└── skills/
+    └── <name>       # symlink to ../../.agents/skills/<name>
+```
+
+- Skills are compared by content hash; unchanged ones aren't rewritten.
+- A skill whose contents differ is replaced, so local edits to a built-in skill
+  are lost. Put project-specific rules in `AGENTS.md` instead.
+- Skills under other names are left alone.
+- A `.claude/skills/<name>` for a built-in skill that isn't a symlink — a folder
+  you put there, say — is deleted and replaced by the symlink.
+- On Windows, `.claude/skills/<name>` is a copy instead of a symlink, replaced on
+  every sync.
+
+Set `OPEN_FORM_SKIP_SKILLS_SYNC=1` to stop `open-form dev` from syncing. See
+[Skills](/docs/skills/overview).

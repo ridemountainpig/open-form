@@ -1,0 +1,21 @@
+node_modules
+dist
+.DS_Store
+*.log
+.vite
+*.tsbuildinfo
+.turbo
+.open-form
+playwright-report
+test-results
+.next
+.source
+next-env.d.ts
+
+# Secrets and exported responses
+.env
+.env.*
+!.env.example
+responses*.csv
+responses*.xlsx
+responses*.json

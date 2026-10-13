@@ -1,0 +1,181 @@
+---
+title: Layouts and chrome
+description: Replace how fields, steps and screens look without touching behavior.
+---
+
+Built-in fields own behavior; their markup comes from replaceable
+components. So does the form's arrangement — the `Layout` — and its chrome:
+header, progress, buttons, success and closed screens. Replace any subset and
+the rest keep the default look. Validation, focus, steps and schema discovery
+keep working whatever you render.
+
+```tsx
+import { Form, SplitLayout } from '@open-form-build/core';
+
+<Form components={{ Layout: SplitLayout }}>…</Form>
+```
+
+## Replaceable components
+
+| Component | Renders | Key props |
+| --- | --- | --- |
+| `Field` | Label, help and error around every field | `field`, `children`, `as`, `hideLabel`, `hideDescription` |
+| `TextInput` | `Text`, `Email`, `Url`, `Tel`, `NumberInput`, `DateInput` | `field`, `type`, `value`, `onChange(string)`, `unit`, `placeholder`, `inputMode`, `autoComplete`, `maxLength`, `min` / `max` / `step` |
+| `Textarea` | `Textarea` | `field`, `value`, `onChange`, `rows`, `maxLength`, `placeholder`, `autoComplete` |
+| `Select` | `Select` | `field`, `options`, `value`, `onChange`, `placeholder` |
+| `ChoiceGroup` | `RadioGroup`, `CheckboxGroup` | `field`, `options`, `multiple`, `selected`, `onToggle(value, checked)`, `variant` |
+| `Checkbox` | `Checkbox` | `field`, `checked`, `onChange(boolean)`, `children`, `markRequired` |
+| `Rating` | `Rating` | `field`, `scores`, `value`, `onChange(number)`, `lowLabel`, `highLabel` |
+| `Layout` | The whole form | The regions below |
+| `Header` | Title and description | `title`, `description` |
+| `Progress` | Step indicator | `nav`, `label` ("Step 2 of 5", localized) |
+| `Nav` | Back / Next / Submit | `nav`, `submitLabel`, `labels` |
+| `Button` | Every button in `Nav` | `variant: 'primary' \| 'secondary'` plus button props |
+| `Success` | Thank-you screen | `title`, `children` |
+| `Notice` | Closed screens | `state`, `eyebrow`, `title`, `message` |
+| `LanguageSwitch` | Language picker on translated forms | `value`, `options`, `onChange`, `label` |
+
+Each has a matching props type exported from `@open-form-build/core`: `FieldUIProps`,
+`TextInputUIProps`, `LayoutUIProps`, `NoticeUIProps` and so on.
+
+A replacement control follows the
+[custom field rules](/docs/components/custom-fields#rules) for
+`field.controlProps` and `field.ref`, and passes on the attributes it
+receives — `inputMode`, `autoComplete`, `maxLength`, `placeholder` — so mobile
+keyboards, autofill and limits keep working. Inside any replacement,
+`useFormComponents()` returns the components in effect, so a custom `Nav` can
+render the theme's `Button`. `<RequiredMark />` is the built-in required
+asterisk, for a custom `Field` or `Checkbox`.
+
+## Override order
+
+`defaultComponents` ← the theme's `components` ← `<Form components>`. The
+theme is the form's own copy, passed as `<Form theme>`, so its components apply
+to that form only; `<Form components>` wins over them for one-off changes.
+
+```ts title="forms/survey/theme/index.ts"
+import { defineTheme, StepperLayout } from '@open-form-build/core';
+
+export default defineTheme({ components: { Layout: StepperLayout } });
+```
+
+```tsx title="forms/survey/index.tsx"
+import theme from './theme/index.ts'; // the path `theme copy` printed
+
+<Form theme={theme} components={{ ChoiceGroup: Chips }}>…</Form>
+```
+
+To extend instead of rewrite, render the default inside your own markup:
+
+```tsx
+import { defaultComponents, type TextInputUIProps } from '@open-form-build/core';
+
+function FramedInput(props: TextInputUIProps) {
+  return (
+    <div className="brand-frame">
+      <defaultComponents.TextInput {...props} />
+    </div>
+  );
+}
+```
+
+## Built-in layouts
+
+| Layout | Use it for |
+| --- | --- |
+| *(default)* | A centered card. General purpose. |
+| `StepperLayout` | Three or more named steps — applications, onboarding. A step list beside the questions; visited steps are clickable. Give every `<Page>` a short `title`. With fewer than two visible steps, and on the success and closed screens, it shows the default card. |
+| `SplitLayout` | Brand-forward forms — sales, waitlists, events. A panel with the title, progress and `aside`; questions on the other side. Stacks on small screens. |
+| `FocusLayout` | Conversational surveys. One screen per step, large type, Enter to continue. Put one question in each `<Page>` and leave page titles off. Doesn't show `aside`. |
+
+When the form has a `title` or `description`, `FocusLayout` opens with a
+welcome screen built from them and a Start button, so write them as an
+invitation. Enter advances from a `Textarea` too; Shift + Enter adds a line.
+On touch screens, Return in a `Textarea` adds a line and Cmd/Ctrl + Enter
+advances. To show the title above the first question instead of on its own
+screen:
+
+```tsx
+<Form components={{ Layout: (props) => <FocusLayout {...props} cover={false} /> }}>…</Form>
+```
+
+## Layout regions
+
+A `Layout` receives ready-made regions (`LayoutUIProps`) and arranges them:
+
+<TypeTable
+  type={{
+    state: { type: "'form' | 'success' | 'unavailable'", description: 'Which screen is showing.' },
+    nav: { type: 'FormNav', description: 'Navigation state and actions, as from useFormNav.' },
+    header: { type: 'ReactNode', description: 'The rendered Header. Raw title and description are passed too.' },
+    progress: { type: 'ReactNode', description: 'The rendered Progress.' },
+    intro: { type: 'ReactNode', description: 'Top-level content outside any Page, in a multi-page form. A form without pages puts all its content in content.' },
+    content: { type: 'ReactNode', description: 'The current step, or the Success or Notice screen.' },
+    alert: { type: 'ReactNode', description: 'Live region for form-level errors. Always render it.' },
+    actions: { type: 'ReactNode', description: 'The rendered Nav: Back, Next, Submit.' },
+    aside: { type: 'ReactNode', description: 'The Form aside content, if any. FocusLayout leaves it out.' },
+    banner: { type: 'ReactNode', description: 'Status line, such as a restored-draft notice.' },
+  }}
+/>
+
+```tsx
+import type { LayoutUIProps } from '@open-form-build/core';
+
+function Centered({ state, header, progress, content, alert, actions }: LayoutUIProps) {
+  return (
+    <div className="my-shell" data-state={state}>
+      {state === 'form' && header}
+      {progress}
+      {content}
+      {alert}
+      {actions}
+    </div>
+  );
+}
+```
+
+A custom `Nav` or `Button` must keep `type="submit"` on the primary button so
+Enter still advances.
+
+## Closed screens — `Notice`
+
+Respondents see `Notice` instead of the questions when the form isn't taking
+responses. It receives `state`, `eyebrow` (the form's title), `title` and
+`message`, already translated.
+
+| `state` | When | `message` |
+| --- | --- | --- |
+| `'closed'` | `closed: true`, after `closesAt`, or closed in Studio | `closedMessage`, or a built-in sentence |
+| `'not-open'` | Before `opensAt` | A built-in sentence with the opening date |
+| `'full'` | `maxResponses` reached | `fullMessage`, or a built-in sentence |
+| `'duplicate'` | `uniqueBy: 'device'` and this browser already responded | `duplicateMessage`, or a built-in sentence |
+| `'not-found'` | A [`<FormHost>`](/docs/deploy/nextjs) asked for a form the server doesn't have; `title` is "Form not found" | `closedMessage`, or a built-in sentence |
+
+```tsx title="forms/meetup/index.tsx"
+import { Form, type NoticeUIProps, T } from '@open-form-build/core';
+
+function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
+  return (
+    <div className="meetup-closed">
+      {eyebrow && <p className="of-eyebrow">{eyebrow}</p>}
+      <h1 className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</h1>
+      <p className="of-description">{message}</p>
+    </div>
+  );
+}
+
+<Form components={{ Notice: MeetupClosed }}>…</Form>
+```
+
+Branch on `state` for what differs and fall back to `title` and `message`, so
+a state you didn't plan for still reads right. Keep policy messages in
+`config.submissions`, where Studio and the server use them too. Render one
+`<h1>`; layouts that keep the header on the closed screen, like
+`SplitLayout`, already show the title as the `<h1>`, so use `<h2>` and skip
+`eyebrow` there. Studio's Preview shows every closed screen the form can reach.
+
+<Cards>
+  <Card title="Themes" href="/docs/core-feature/themes" />
+  <Card title="defineTheme" href="/docs/reference/define-theme" />
+  <Card title="Hooks" href="/docs/components/hooks" />
+</Cards>

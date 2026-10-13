@@ -1,0 +1,183 @@
+---
+title: open-form.config.ts
+description: Project-wide configuration with defineConfig.
+---
+
+The project config lives at the workspace root. Every key is optional.
+Unlike a form's `config`, it never reaches the browser, so it's the place for
+webhook URLs and anything else that shouldn't be public.
+
+```ts title="open-form.config.ts"
+import { defineConfig } from '@open-form-build/core';
+
+export default defineConfig({
+  locale: 'zh-TW',
+  timeZone: 'Asia/Taipei',
+});
+```
+
+`open-form init` writes this file with `timeZone` set to your computer's time
+zone. It loads as ESM whether or not your `package.json` is `"type": "module"`,
+so it also works at the root of an existing app.
+
+`process.env` in this file reads the server's environment. Every `open-form`
+command except `init` first loads `.env` from the workspace root when there is
+one; variables already set in the environment win. In a Next.js app, Next.js
+loads `.env` itself.
+
+## Schema
+
+<TypeTable
+  type={{
+    formsDir: {
+      type: 'string',
+      default: "'forms'",
+      description: 'Folder that holds forms, one folder per form.',
+    },
+    themesDir: {
+      type: 'string',
+      default: "'themes'",
+      description: 'Folder that holds the reference themes new forms start from. Forms keep their own copy in forms/<id>/theme/.',
+    },
+    port: {
+      type: 'number',
+      default: '3000',
+      description: 'Port for open-form dev and open-form start. A --port flag wins; for start, so does PORT.',
+    },
+    locale: {
+      type: "'en' | 'zh-TW' | 'zh-CN' | 'ja'",
+      default: "'en'",
+      description: 'Default language for forms that do not set their own locale.',
+    },
+    timeZone: {
+      type: 'string',
+      default: "'UTC'",
+      description: 'IANA zone for submission dates in forms that do not set their own.',
+    },
+    storage: {
+      type: '{ path?: string }',
+      default: "{ path: '.open-form/open-form.db' }",
+      description: 'SQLite file, relative to the project root. OPEN_FORM_DB overrides it.',
+    },
+    protection: {
+      type: 'ProtectionConfig',
+      default: "{ honeypot: true, minimumCompletionTime: '2s', rateLimit: { max: 10, window: '10m' } }",
+      description: 'Defaults for every form. Each form’s own protection keys win.',
+    },
+    trustProxy: {
+      type: 'boolean | number',
+      default: "false (1 in the Next.js route)",
+      description: 'Proxies in front of the server: true for one, or how many. Reads the client IP from X-Forwarded-For; open-form start and open-form dev also read the protocol and host from X-Forwarded-Proto / X-Forwarded-Host. open-form start falls back to OPEN_FORM_TRUST_PROXY; the Next.js route’s own trustProxy option wins over it.',
+    },
+    allowedHosts: {
+      type: 'string[] | true',
+      description: 'Hostnames the dev server answers. true allows any host.',
+    },
+    webhooks: {
+      type: '{ url: string; forms?: string[] }[]',
+      description: 'POST every new response to these URLs, optionally only for some forms.',
+    },
+    embed: {
+      type: '{ origins?: string[] }',
+      description: 'Sites that may frame forms and call the public form API. Use * for any site.',
+    },
+  }}
+/>
+
+`protection` takes the same keys as a form's
+[`protection`](/docs/reference/define-form#protection), merged key by key.
+
+## Checked at load
+
+An unknown `locale` or an invalid `timeZone` fails loudly: `open-form dev`,
+`build`, `check` and the other commands that read this file stop with the
+error. Saved while `open-form dev` runs, a broken config is reported and the
+server keeps the previous one until you fix it. `webhooks` and `embed.origins`
+are checked when the server sets up the API; see
+[Webhooks](/docs/deploy/webhooks) and [Embed](/docs/deploy/embed#allow-the-site).
+
+## Common recipes
+
+### Deadlines in your time zone
+
+Set `timeZone` once so `opensAt: '2026-10-01'` and `closesAt: '2026-10-31'`
+mean those days where you are, on any server:
+
+```ts
+export default defineConfig({ timeZone: 'Asia/Taipei' });
+```
+
+### Send responses to Slack, Zapier or your API
+
+```ts
+const responsesUrl = process.env.RESPONSES_WEBHOOK_URL;
+
+export default defineConfig({
+  webhooks: responsesUrl ? [{ url: responsesUrl, forms: ['meetup'] }] : [],
+});
+```
+
+Each new response is POSTed as `submission.created`. Set
+`OPEN_FORM_WEBHOOK_SECRET` to sign deliveries in the Standard Webhooks format.
+URLs must use `https://` (`http://` only for `localhost`, `127.0.0.1`, `[::1]`
+and `*.localhost`). Keep the URL in an environment variable; it is read when
+the server starts, not copied into the build. Leave the entry out when the
+variable is unset, as above: a missing URL is refused like any other invalid
+one, so `open-form start` won't start, and under `open-form dev` or in a
+Next.js route every API request fails. See [Webhooks](/docs/deploy/webhooks).
+
+### Embed forms on another site
+
+```ts
+export default defineConfig({ embed: { origins: ['https://blog.example.com'] } });
+```
+
+Origins are scheme and host only — `https://example.com`, no path. This
+allows framing `/f/<id>` and calling the public form routes from that site;
+the admin API never opens to other origins. See [Embed](/docs/deploy/embed).
+
+### Behind a reverse proxy
+
+```ts
+export default defineConfig({ trustProxy: 1 });
+```
+
+Without it, every visitor seems to come from the proxy's address, so rate limits
+and sign-in attempts are counted for everyone together: one person can use up a
+form's rate limit or lock everyone out of Studio sign-in. Forms work either way,
+HTTPS included. Set it only when proxies you control sit in front of the server.
+`open-form start` also reads `OPEN_FORM_TRUST_PROXY` (`true`, `false` or a
+number) when the config doesn't set it. The [Next.js](/docs/deploy/nextjs)
+route defaults to `1` instead, since it expects Vercel or a reverse proxy in
+front.
+
+### Keep the database on a volume
+
+```ts
+export default defineConfig({ storage: { path: '/data/open-form.db' } });
+```
+
+Or leave the config alone and set `OPEN_FORM_DB=/data/open-form.db` on the
+server. See [Storage](/docs/reference/storage).
+
+### Remote IDE or tunnel during development
+
+Cloud workspaces and tunnels reach the dev server through another hostname,
+which the dev server blocks. Allow it — a leading dot matches every subdomain:
+
+```ts
+export default defineConfig({ allowedHosts: ['.my-workspace.example.com'] });
+```
+
+Without `OPEN_FORM_ADMIN_PASSWORD`, Studio answers only direct requests from
+your machine and refuses the rest, with a hint in the terminal to set it. A raw
+TCP tunnel (`ssh -R`) or a proxy that adds no `X-Forwarded-For` can still make
+a remote request look local, so set a password whenever Studio is reachable
+through a tunnel or proxy; see [`open-form dev`](/docs/cli/dev#admin-access).
+With it set, everyone signs in, on your own machine too.
+
+<Cards>
+  <Card title="defineForm" href="/docs/reference/define-form" />
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Webhooks" href="/docs/deploy/webhooks" />
+</Cards>

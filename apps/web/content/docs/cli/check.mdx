@@ -1,0 +1,67 @@
+---
+title: open-form check
+description: Load forms the way the server does and print their schema, or the exact error.
+---
+
+```bash
+pnpm exec open-form check            # every form
+pnpm exec open-form check meetup     # one form
+```
+
+Loads each form through the same SSR and render-to-collect path the server uses,
+without listening on a port, and prints what it derived. It's how your agent
+verifies a form before anyone opens it, and it works whether or not
+`open-form dev` is running.
+
+```text
+✔ meetup  Developer Meetup Registration  own theme · v3c9e1a07b2d4
+  step 1 About you
+    name               text           required
+    email              email          required
+  step 2 Background
+    role               select         required, 3 options
+    school             text           required  if role = "Student"
+  policy max 100 · one per email
+```
+
+## What it reports
+
+- **Schema** — each step and its condition, and each field: `name`, type,
+  `required`, the number of options, a custom validator, and its own `<When>`
+  condition. `v…` is a fingerprint of the schema; it changes when the fields do.
+  The header line says `own theme` when the form has `forms/<id>/theme/`, or
+  `default look` when it doesn't.
+- **Policy** — `maxResponses`, `uniqueBy`, and `opensAt` / `closesAt` with the
+  time zone they're read in.
+- **Imports** — a warning when a form imports from `themes/` or from another
+  form's folder. A form keeps its own copy of its look (`open-form theme copy`),
+  so changing a theme or another form never changes it.
+- **One response per** — a warning when `uniqueBy` names a field that isn't
+  there, or one that's optional or conditional: responses that leave it blank or
+  hidden aren't limited.
+- **Time zone** — a warning when `opensAt` / `closesAt` are wall-clock dates
+  and neither the form nor `open-form.config.ts` sets `timeZone`, since they'd
+  be read in UTC.
+- **Translations** — for forms with more than one language, `N/N translated`
+  per language, the missing strings (the first eight here, all of them in
+  `--json`), and up to three "not seen" entries.
+- **Errors** — a form that fails to load prints the exact error.
+
+"Not seen" means a translation key that didn't appear when the form rendered
+with no answers. Text shown only for certain answers, or returned by
+`validate`, lands there legitimately; anything else is usually a key left behind
+by edited text.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--json` | off | Machine-readable output. |
+
+With `--json`, each form is an object with `id`, `ok`, `version`, `theme`,
+`schema`, `submissions`, `timeZone`, `warnings` and `languages`; a form that
+failed is `{ id, ok: false, error }`. `theme` is the project-relative path of the
+form's own theme file, such as `forms/meetup/theme/index.tsx`, or `null`.
+
+The command exits with code 1 when any form fails to load, or when there's no
+form with the `id` you gave. Warnings don't change the exit code.

@@ -1,0 +1,19 @@
+{
+  "title": "Open Form",
+  "pages": [
+    "index",
+    "getting-started",
+    "---Core features---",
+    "...core-feature",
+    "---Components---",
+    "...components",
+    "---Skills---",
+    "...skills",
+    "---CLI---",
+    "...cli",
+    "---Deploy---",
+    "...deploy",
+    "---Reference---",
+    "...reference"
+  ]
+}

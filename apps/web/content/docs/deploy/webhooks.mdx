@@ -1,0 +1,154 @@
+---
+title: Webhooks
+description: POST every new response to Zapier, your own API or any other service, signed and retried.
+---
+
+A webhook POSTs each new response to a URL you choose. Configure it in
+`open-form.config.ts`:
+
+```ts title="open-form.config.ts"
+import { defineConfig } from '@open-form-build/core';
+
+const responsesUrl = process.env.RESPONSES_WEBHOOK_URL;
+
+export default defineConfig({
+  webhooks: [
+    ...(responsesUrl ? [{ url: responsesUrl }] : []),                    // every form
+    { url: 'https://api.example.com/hooks/meetup', forms: ['meetup'] },  // only these forms
+  ],
+});
+```
+
+| Field | Effect |
+| --- | --- |
+| `url` | Receives a POST for every new response. |
+| `forms` | Only these form ids. Default: every form. |
+
+<Callout type="warn">
+  Webhooks go in `open-form.config.ts`, never in `defineForm()`. A form's config is
+  bundled into the browser; the project config isn't. Many webhook URLs (Slack,
+  Zapier) are secrets themselves, so keep them in environment variables. The
+  config runs when the server starts, so the variable is read from the server's
+  environment and never copied into `dist/`; the build doesn't need it.
+</Callout>
+
+Leave an entry out when its variable is unset, as the first one above does. A
+missing URL is refused like any other invalid one: `open-form start` won't
+start, and under `open-form dev` or in a Next.js route every API request fails,
+public forms included. That matters on a laptop that runs `open-form dev`
+without the production variables.
+
+Studio lists each form's webhooks under **Settings → Webhooks**, showing only the
+origin and whether deliveries are signed.
+
+## Payload
+
+Each delivery is a JSON `submission.created` event:
+
+```json
+{
+  "type": "submission.created",
+  "timestamp": "2026-10-09T08:15:30.412Z",
+  "data": {
+    "form": { "id": "meetup", "title": "Developer Meetup" },
+    "submission": {
+      "id": "6f1c2a9e-4b7d-4e2a-9a51-2d8c0f3b7e10",
+      "number": 42,
+      "createdAt": "2026-10-09T08:15:30.412Z",
+      "locale": "en",
+      "data": { "name": "Ada Lovelace", "email": "ada@example.com", "role": "Engineer" }
+    }
+  }
+}
+```
+
+`data` is keyed by field `name`, after the server dropped hidden and unknown
+fields. `number` is the response number shown in Studio; it's never reused.
+
+## Signing
+
+Set `OPEN_FORM_WEBHOOK_SECRET` and every delivery is signed in the
+[Standard Webhooks](https://www.standardwebhooks.com) format, so receivers can
+verify it with an off-the-shelf library. Without a secret, deliveries go out
+unsigned and the server logs a warning.
+
+| Header | Value |
+| --- | --- |
+| `webhook-id` | `msg_…`, the same for every retry of one delivery. Use it to drop duplicates. |
+| `webhook-timestamp` | Unix seconds when this attempt was sent. |
+| `webhook-signature` | `v1,<base64 HMAC-SHA256>` of `id.timestamp.body`. |
+
+Use a `whsec_` secret: the part after the prefix is a base64 key, which is what
+the Standard Webhooks libraries expect. The prefix is optional, but the key must
+be base64. A secret that isn't is refused up front rather than failing every
+delivery: `open-form start` won't start, and under `open-form dev` or in a
+Next.js route every API request fails with the error, public forms included.
+To generate one:
+
+```bash
+node -e "console.log('whsec_' + require('node:crypto').randomBytes(32).toString('base64'))"
+```
+
+## Delivery and retries
+
+- URLs must be `https://`. Plain `http://` is allowed only for `localhost`,
+  `127.0.0.1`, `[::1]` and `*.localhost`, because the payload contains
+  respondents' answers. Any other URL is refused up front, like a bad secret.
+- Deliveries run in the background once the response is stored, so a slow
+  receiver never delays the respondent.
+- Any `2xx` is a success. Anything else, a timeout (10 seconds) or a network error
+  is retried: 5 attempts in all, the first right away and each retry after
+  waiting 5 s, 30 s, 2 min and 10 min, so the last comes about 13 minutes after
+  the first. Redirects aren't followed.
+- `410 Gone` stops retrying right away.
+- Logs name only the receiver's origin, never the URL path or the payload.
+
+<Callout type="info">
+  Retries are kept in memory. If the server restarts, pending retries are lost. On
+  serverless platforms pass `waitUntil` so deliveries can finish after the
+  response; see [Next.js](/docs/deploy/nextjs). It keeps the function alive only
+  up to the platform's maximum duration, so the later retries, minutes apart,
+  are lost there too.
+</Callout>
+
+The dev server sends webhooks too, so you can test against a local receiver at
+`http://localhost`.
+
+## Verify in a receiver
+
+With the [`standardwebhooks`](https://www.npmjs.com/package/standardwebhooks)
+package:
+
+```npm
+npm install standardwebhooks
+```
+
+```ts title="app/api/open-form-webhook/route.ts"
+import { Webhook } from 'standardwebhooks';
+
+const webhook = new Webhook(process.env.OPEN_FORM_WEBHOOK_SECRET!);
+
+export async function POST(request: Request) {
+  const body = await request.text();
+  let event: { type: string; data: { form: { id: string }; submission: { number: number } } };
+  try {
+    event = webhook.verify(body, Object.fromEntries(request.headers)) as typeof event;
+  } catch {
+    return new Response('Invalid signature', { status: 400 });
+  }
+
+  // Handle event.data.submission here: store it, notify a channel, …
+  return new Response(null, { status: 204 });
+}
+```
+
+Verify against the raw body text, before parsing it. The library also rejects
+timestamps too far from the current time, which blocks replayed requests.
+
+## What's next
+
+<Cards>
+  <Card title="open-form.config.ts" href="/docs/reference/config" />
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Responses & export" href="/docs/core-feature/responses" />
+</Cards>

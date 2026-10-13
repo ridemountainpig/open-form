@@ -1,0 +1,117 @@
+---
+title: Embed on another site
+description: Put a form on a blog, landing page or docs site with one snippet.
+---
+
+A form can live on another site as a frame that grows with it. One setting allows
+it, and one snippet places it.
+
+## Allow the site
+
+List the sites that may embed your forms in `open-form.config.ts`:
+
+```ts title="open-form.config.ts"
+import { defineConfig } from '@open-form-build/core';
+
+export default defineConfig({
+  embed: { origins: ['https://blog.example.com'] },
+});
+```
+
+Each entry is an origin: scheme and host only, such as `https://example.com`, with
+no path. `'*'` allows any site. The server refuses entries that aren't origins:
+`open-form start` won't start, and under `open-form dev` or in a Next.js route
+every API request fails with the error, public forms included, until you fix
+the config.
+
+## Add the snippet
+
+Paste this where the form should appear, using your deployment's host:
+
+```html
+<div data-open-form="meetup"></div>
+<script src="https://forms.example.com/embed.js" async></script>
+```
+
+Studio shows the snippet with the real host under **Settings → Embed**, with a
+**Copy** button and the list of allowed sites.
+
+`embed.js` puts an iframe of `/f/<id>?embed` inside each `data-open-form`
+element, in place of anything it held. The element itself stays, so you can
+style it and listen on it. Optional attributes:
+
+| Attribute | Effect |
+| --- | --- |
+| `data-open-form-lang` | Show the form in this language, for example `ja`. |
+| `data-open-form-title` | The iframe's accessible title (default: the form id). |
+
+For elements added after the page loads, call `window.OpenForm.mount(element)`.
+Pass an id as well, `window.OpenForm.mount(element, 'meetup')`, to set
+`data-open-form` for you. An element that already holds its form is left
+alone.
+
+## How it behaves
+
+- **Auto-height.** The frame follows the form's height as respondents move
+  between steps, so there's no scrollbar inside it.
+- **Submitted event.** After a response is sent, the element fires a bubbling
+  `open-form:submitted` event. It carries only the form id, never the answers.
+- **Redirects leave the host page.** A `success.redirect` opens in the top window,
+  not inside the frame.
+- **One per device still works.** Browsers block cookies in third-party frames, so
+  the runtime also keeps a random visitor id in the frame's storage for
+  `uniqueBy: 'device'`. Neither is identity.
+
+```html
+<script>
+  document
+    .querySelector('[data-open-form="meetup"]')
+    .addEventListener('open-form:submitted', (event) => {
+      // event.detail.formId === 'meetup'; show a thank-you note or track a conversion
+    });
+</script>
+```
+
+## Iframe without the script
+
+You can frame the page directly:
+
+```html
+<iframe src="https://forms.example.com/f/meetup?embed" title="Meetup" style="width: 100%; border: 0"></iframe>
+```
+
+The page still posts `open-form:resize` (with `height`) and `open-form:submitted`
+messages to its parent, but nothing listens for them unless you do. Use
+`embed.js` unless you need to handle them yourself.
+
+## Inside a React app
+
+In a React or Next.js app, skip the iframe and render the form directly with
+`<FormHost>`. Point `api` at the Open Form server when it runs on another origin;
+it uses the same `embed.origins` allowlist. See [Next.js](/docs/deploy/nextjs).
+
+```tsx
+<FormHost id="meetup" form={Meetup} config={config} api="https://forms.example.com/api" />
+```
+
+## Security
+
+- `embed.origins` is the only switch. Under `open-form start`, `/f/:id` can be
+  framed only by its own origin (`frame-ancestors 'self'`), plus the listed
+  sites when you set it. Other sites can never frame Studio.
+- Those framing headers come from `open-form start` alone. The dev server sends
+  none, and in a Next.js app forms render in your own pages, so your app's
+  headers decide who may frame them.
+- Cross-origin requests (CORS) are allowed only on the public form routes: the
+  form's status, submitting, and their preflight. They never carry credentials.
+- The admin API is never opened to other sites.
+- Don't add CORS or framing headers to Open Form's routes by hand; the config
+  covers both.
+
+## What's next
+
+<Cards>
+  <Card title="open-form.config.ts" href="/docs/reference/config" />
+  <Card title="Submissions & protection" href="/docs/core-feature/submissions" />
+  <Card title="Next.js" href="/docs/deploy/nextjs" />
+</Cards>

@@ -1,0 +1,149 @@
+---
+title: Live answers and navigation
+description: Hooks for previews, summaries, custom navigation and translated copy.
+---
+
+Forms are React, so UI can react to answers. These hooks work anywhere inside
+`<Form>` — in `aside`, in `<Success>`, in custom fields and in theme
+components. They are for display; showing and hiding fields is
+[`<When>`](/docs/components/when)'s job.
+
+## Reading answers
+
+| Hook | Returns |
+| --- | --- |
+| `useFieldValue(name)` | One answer. Re-renders only when that answer changes. |
+| `useFormValues()` | Every answer so far, keyed by field name. |
+
+```tsx title="forms/team-plan/index.tsx"
+import { Form, NumberInput, Page, RadioGroup, Success, useFieldValue } from '@open-form-build/core';
+
+function Summary() {
+  const tier = useFieldValue<string>('tier');
+  const seats = Number(useFieldValue('seats') ?? 1);
+  return <p>Total: ${(tier === 'pro' ? 20 : 0) * seats}/mo</p>;
+}
+
+export default function TeamPlan() {
+  return (
+    <Form aside={<Summary />}>
+      <Page title="Plan">
+        <RadioGroup name="tier" label="Tier" options={['free', 'pro']} required />
+        <NumberInput name="seats" label="Seats" min={1} integer />
+      </Page>
+      <Success title="You're in">
+        <Summary />
+      </Success>
+    </Form>
+  );
+}
+```
+
+## `<Form aside>`
+
+`aside` renders beside the questions on wide screens — a live preview, an
+order summary, a running total. On narrow screens the default layout puts it
+below the questions. `SplitLayout` and `StepperLayout` place it in their side
+panel, which comes first, so it stacks above them; `FocusLayout` doesn't show
+it.
+In the default layout, override `--of-aside-width` on your form's root class
+to resize it; it has no effect on the other layouts' panels. Never put fields
+in `aside`: they aren't part of the form's schema.
+
+## `useFormNav`
+
+`useFormNav()` returns a `FormNav`: where the respondent is and the actions to
+move. Use it for custom progress, step lists and layouts.
+
+| Key | What |
+| --- | --- |
+| `position` | 0-based position among the steps the respondent will see. |
+| `step` | Index of the current `<Page>` among all pages, hidden conditional ones included. |
+| `total` | Number of visible steps. |
+| `steps` | Each visible step (`NavStep`): `title`, `state` (`'done'`, `'current'` or `'upcoming'`), `reachable`, `position`, and `index` among all pages. |
+| `stepTitle` | The current step's title, if it has one. |
+| `isFirst` / `isLast` | Whether this is the first or last visible step. |
+| `status` | `'idle'`, `'submitting'`, `'success'` or `'error'`. |
+| `submitting` | A submission is in flight. |
+| `error` | Form-level error, such as a network failure. |
+| `inspecting` | Studio's Preview has jumped between steps: navigation is free and nothing is submitted. |
+| `next()` | Validate this step, then advance — or submit on the last step. Same as the primary button. |
+| `back()` | Go to the previous visible step. |
+| `goTo(position)` | Jump to a visited step. Moving forward validates the current step and the steps it skips, stopping at the first one with an error. |
+
+```tsx
+import { useFormNav } from '@open-form-build/core';
+
+function StepList() {
+  const { steps, goTo } = useFormNav();
+  return (
+    <ol>
+      {steps.map((step) => (
+        <li key={step.position} data-state={step.state}>
+          <button
+            type="button"
+            disabled={!step.reachable || step.state === 'current'}
+            onClick={() => goTo(step.position)}
+          >
+            {step.title}
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+```
+
+## Copy and language
+
+| Hook | Returns |
+| --- | --- |
+| `useFormMessages()` | The built-in strings in the language the form is shown in — `next`, `back`, `submit`, `start` and the rest — for custom components that need them. |
+| `useTranslate()` | `tr(text, vars?)`: turns source text into the respondent's language. Unknown text comes back unchanged. |
+| `<T>` | The same as a component: `<T>Early-bird ends Friday.</T>`. |
+| `useFormLanguage()` | `{ locale, source, available, setLocale }` for custom language pickers. |
+
+Field labels, page titles, options and other DSL text are translated for you.
+Wrap your own markup's text in `<T>` or `tr()` so it's translated and counted
+by `open-form check`. For text with values, use placeholders:
+
+```tsx
+const tr = useTranslate();
+tr('{n} seats left', { n: 3 }); // translation key: "{n} seats left"
+```
+
+```tsx
+import { useFormLanguage } from '@open-form-build/core';
+
+function LanguageLinks() {
+  const { locale, available, setLocale } = useFormLanguage();
+  return available.map((code) => (
+    <button key={code} type="button" aria-pressed={code === locale} onClick={() => setLocale(code)}>
+      {code}
+    </button>
+  ));
+}
+```
+
+See [Languages](/docs/core-feature/languages) for translation files.
+
+## Rules
+
+- **Display only.** Use `<When>` to show or hide fields, never these hooks.
+  Prices and totals you compute are for display; the server stores the
+  answers, not your numbers.
+- **Values are raw input.** A `NumberInput` keeps the string that was typed
+  into it, and only validation, conditions and the submitted answers see a
+  number. Convert with `Number(...)` before doing arithmetic.
+- **Hidden answers stay in memory.** Answers to fields hidden by `<When>` are
+  kept until submit (the server drops them). If a summary depends on a
+  conditional field, check the same condition.
+- **A field's `defaultValue` arrives when it shows.** Until the field's step
+  has been shown, these hooks don't see it. Put answers you need from the
+  start in [`<Form defaultValues>`](/docs/components/form#props).
+
+<Cards>
+  <Card title="Layouts" href="/docs/components/layouts" />
+  <Card title="Languages" href="/docs/core-feature/languages" />
+  <Card title="Custom fields" href="/docs/components/custom-fields" />
+</Cards>

@@ -1,0 +1,133 @@
+---
+title: Production
+description: Build once, run one Node process, and keep the database on a persistent disk.
+---
+
+A production deployment is one Node.js process that serves the forms, the API,
+Studio and SQLite. There are no other services to run.
+
+```bash
+pnpm build    # open-form build
+pnpm start    # open-form start
+```
+
+`open-form build` writes two things to `dist/`:
+
+- `dist/client/`: the browser app (public form pages, Studio), each form's own
+  theme with its CSS and fonts, and `embed.js`. The reference themes in
+  `themes/` are for development and aren't included.
+- `dist/server/entry.js`: every form, `open-form.config.ts`, React and the schema
+  collector, bundled into one file. `open-form.config.ts` runs when the server
+  starts, so values it reads from `process.env` come from the server's environment
+  and are never copied into the build (except `process.env.NODE_ENV`, which the
+  build sets to `production`).
+
+`open-form start` serves that build. It renders every form once at startup, so a
+broken form fails the deploy instead of a respondent.
+
+| Flag | Default |
+| --- | --- |
+| `-p, --port <port>` | `PORT`, else `port` in `open-form.config.ts`, else `3000` |
+| `--host <host>` | `HOST`, else `0.0.0.0` |
+| `--out-dir <dir>` | `dist` |
+
+Open Form requires Node.js 22.13 or later.
+
+## Where to run it
+
+Responses live in a SQLite file, so the server needs a **persistent disk**:
+
+- A VPS or any machine you control.
+- Docker, with a volume for the data.
+- Railway or Fly.io, with a volume attached.
+
+Serverless platforms with an ephemeral filesystem (Vercel and similar) lose the
+file between invocations, so local SQLite doesn't work there. To run inside a
+Next.js app, see [Next.js](/docs/deploy/nextjs) and pass your own storage.
+
+By default the data lives in `.open-form/` in the project: the database and a
+generated signing secret. Either mount the volume at `.open-form/`, or point
+`OPEN_FORM_DB` at a file on the volume and set `OPEN_FORM_SECRET` so the secret
+survives redeploys too.
+
+## Environment variables
+
+`open-form start`, like every `open-form` command except `init`, loads `.env`
+from the project folder when there is one. Variables already set in the
+environment win, so your platform's settings override the file.
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Port to listen on without `--port` (default: `port` in `open-form.config.ts`, else `3000`). |
+| `HOST` | Address to bind without `--host` (default `0.0.0.0`). |
+| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio and the admin API. At least 16 characters; a passphrase of a few words works. |
+| `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`). |
+| `OPEN_FORM_SECRET` | Signs timing tokens and Studio sessions, and hashes visitor ids (default: generated into `.open-form/secret`). At least 16 characters. Keep it stable and private. |
+| `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally prefixed `whsec_` as the Standard Webhooks libraries expect. |
+| `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` for one. Lets rate limits and sign-in attempts count each visitor instead of the proxy. |
+| `OPEN_FORM_SECURE_COOKIES` | With a trusted proxy, cookies are always marked `Secure`. `0` marks them `Secure` only for requests made over HTTPS. |
+
+## HTTPS and proxies
+
+Put the server behind HTTPS: a reverse proxy or your platform's TLS (Railway,
+Fly.io and Render end TLS for you). Forms and Studio work behind such a proxy
+without any setting: a page on `https://` may submit to the server even though
+the server itself is reached over `http://`, and cookies are marked `Secure`
+whenever the browser is on HTTPS. The proxy has to pass on the browser's `Host`
+header, as those platforms do; with nginx, add `proxy_set_header Host $host;`.
+
+Behind a proxy, still set `OPEN_FORM_TRUST_PROXY` to the number of proxies.
+Without it every request seems to come from the proxy, so all visitors share one
+count: one person can use up a form's rate limit for everyone, and ten wrong
+passwords lock everyone out of Studio sign-in for 10 minutes. With it, the server
+reads the protocol and host from `X-Forwarded-Proto` and `X-Forwarded-Host`,
+and the visitor's IP from the `X-Forwarded-For` entry your outermost proxy
+added: the address that connected to it. Entries to its left came from the
+client and are ignored. The variable takes `true` (one proxy), `false`, or a
+number; any other value stops the server from starting.
+
+You can also set `trustProxy` in `open-form.config.ts` (`true` for one proxy, or a
+number). It takes precedence over the environment variable, `false` and `0`
+included.
+
+<Callout type="warn">
+  Never set `OPEN_FORM_TRUST_PROXY` or `trustProxy` higher than the real number
+  of proxies. The extra entries come from the client, so clients could pick their
+  own IP and slip past the rate limit. While proxy trust is off, the server warns
+  once when a request carries `X-Forwarded-For`. It's off unless one of them
+  turns it on, and a config `trustProxy` of `false` or `0` turns it off even
+  when the variable is set.
+</Callout>
+
+## Studio in production
+
+Studio exists in production only when `OPEN_FORM_ADMIN_PASSWORD` is set. Without
+it, `/studio` and the admin API answer `404` and the server only serves public
+forms and their submission endpoint. `open-form start` prints each form's URL and
+whether Studio is enabled.
+
+With a password, open `/studio` and sign in. The session lasts 7 days and signing
+out ends it on the server. Changing the password signs everyone out, and a
+password shorter than 16 characters stops the server from starting.
+
+Sign-in is limited to 10 attempts per IP (per /64 for IPv6) every 10 minutes.
+Behind a proxy, that IP is each visitor's own only while the server trusts the
+proxy (`trustProxy` or `OPEN_FORM_TRUST_PROXY`, above); otherwise all visitors
+share the proxy's attempts.
+
+Production Studio has Preview, Responses, Schema and Settings. Schedule changes
+made there are stored in the database as overrides and apply without a
+redeploy; see [Submissions & protection](/docs/core-feature/submissions).
+Edit mode, comments, folder editing, deleting forms and the Themes pages are
+development-only: make those changes in code and deploy again.
+
+Studio's pages can't be framed by other sites. Public forms can be framed only by
+your own origin unless you allow others with [`embed.origins`](/docs/deploy/embed).
+
+## What's next
+
+<Cards>
+  <Card title="Webhooks" href="/docs/deploy/webhooks" />
+  <Card title="Embed on another site" href="/docs/deploy/embed" />
+  <Card title="open-form start" href="/docs/cli/start" />
+</Cards>

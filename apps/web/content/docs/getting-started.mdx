@@ -1,0 +1,133 @@
+---
+title: Getting started
+description: Scaffold a workspace and collect your first response in a few minutes.
+---
+
+Open Form needs **Node.js 22.13 or later**. It stores responses with Node's
+built-in `node:sqlite`, so there is nothing else to install.
+
+## Install
+
+```npm
+npx @open-form-build/cli init my-forms
+cd my-forms
+npm run dev
+```
+
+The scaffolder creates a workspace (abridged — see
+[open-form init](/docs/cli/init) for the full tree):
+
+```text
+my-forms/
+├── forms/                  # one folder per form, with its own theme/ once it has one
+│   └── contact/index.tsx   # a starter form
+├── themes/                 # reference themes for new forms (just a README at first)
+├── .agents/skills/         # bundled agent skills
+├── open-form.config.ts     # project config, with your time zone
+├── AGENTS.md               # agent rules (CLAUDE.md links to it)
+└── package.json
+```
+
+The `dev` script starts the dev server with Studio at
+`http://localhost:3000/studio`. Every form is live at `/f/<id>` and hot
+reloads as its file changes.
+
+Forms import from `@open-form-build/core`, the package the workspace depends
+on, and its CLI is `open-form`.
+
+The rest of these docs use pnpm: `pnpm dev`, `pnpm exec open-form <command>`.
+With npm, yarn or bun, run the CLI as `npx open-form`, `yarn open-form` or
+`bunx open-form`.
+
+## Author with an agent
+
+Open the workspace in any agent-aware editor — Claude Code, Codex, Cursor,
+Gemini CLI, OpenCode, Windsurf, Zed. From the agent prompt:
+
+```text
+/create-form registration for a developer meetup. Ask for name, email, role
+and experience. If they're a student, ask for their school. 100 seats.
+```
+
+The skill asks what it needs, proposes three visual directions for your
+audience, then writes `forms/<id>/index.tsx` and checks it with
+`open-form check`. See [create-form](/docs/skills/create-form).
+
+Prefer to write it yourself? Start from a stub:
+
+```bash
+pnpm exec open-form create meetup
+```
+
+## Preview and iterate
+
+Open the form in Studio (`/studio/<id>`):
+
+1. **Preview** it at desktop, tablet and mobile widths. The step buttons
+   jump to any page, including conditional ones; *When closed* shows each
+   closed screen.
+2. Switch to **Edit**, select any element and change its text in place, or
+   leave a comment for your agent.
+3. Run `/apply-comments` in your agent. It applies each note in the source and
+   removes the marker.
+
+See [Studio](/docs/core-feature/studio) and
+[Edit mode & comments](/docs/core-feature/edit-mode).
+
+## Give it a look
+
+Each form keeps its own copy of its look in `forms/<id>/theme/`. A form from
+`/create-form` already has one. For the stub, copy a starter into the form:
+
+```bash
+pnpm exec open-form theme copy terminal meetup
+```
+
+That writes `forms/meetup/theme/`. Then apply it in the form, importing it above
+any CSS of the form's own:
+
+```tsx title="forms/meetup/index.tsx"
+import theme from './theme/index.tsx';
+
+export default function Meetup() {
+  return <Form theme={theme}>…</Form>;
+}
+```
+
+`pnpm exec open-form create meetup --theme terminal` does both for a new form.
+The starters are `classic`, `editorial`, `terminal`, `brutalist` and
+`conversational`. The copy is the form's to change, and only that form changes
+with it. For a look of your own, ask your agent for one with `/create-theme`:
+it lands in `themes/` as a reference for new forms. See
+[Themes](/docs/core-feature/themes).
+
+## Collect responses
+
+Submissions from the preview are real: they are stored in
+`.open-form/open-form.db` and appear under the form's **Responses** tab, where
+you can search, open, delete and export them.
+
+```bash
+pnpm exec open-form responses export meetup -o responses.xlsx
+```
+
+## Build and deploy
+
+```bash
+pnpm build
+OPEN_FORM_ADMIN_PASSWORD='a long passphrase you choose' pnpm start
+```
+
+`open-form start` serves the forms, the API and SQLite from one Node process.
+It needs a persistent disk for `.open-form/` — a VPS, Docker, or Railway /
+Fly.io with a volume. Studio is only available in production when
+`OPEN_FORM_ADMIN_PASSWORD` is set. See [Production](/docs/deploy/production),
+or mount the API inside an existing app with [Next.js](/docs/deploy/nextjs).
+
+## What's next
+
+<Cards>
+  <Card title="Create a form" href="/docs/skills/create-form" />
+  <Card title="Fields" href="/docs/components/fields" />
+  <Card title="Submissions & protection" href="/docs/core-feature/submissions" />
+</Cards>

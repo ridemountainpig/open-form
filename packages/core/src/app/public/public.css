@@ -1,0 +1,62 @@
+html,
+body {
+  margin: 0;
+}
+
+/* The page takes the form's colors (set from the theme by form-page.tsx), so
+   overscroll and the scrollbar match it — including dark-only themes. */
+html:has(.of-host) {
+  background: var(--of-page-bg, #f4f4f6);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--of-page-fg, #888) 28%, transparent) transparent;
+}
+
+/* Safari: the same thin, rounded thumb. */
+html:has(.of-host)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html:has(.of-host)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html:has(.of-host)::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--of-page-fg, #888) 28%, transparent) padding-box;
+}
+
+.of-host {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.of-host > .of-root {
+  flex: 1;
+}
+
+/* Embedded: the frame takes the form's height, so nothing may stretch to the
+   frame's (a 100dvh layout would only ever grow). */
+html[data-of-embed] .of-host,
+html[data-of-embed] .of-split,
+html[data-of-embed] .of-focus {
+  min-height: 0;
+}
+
+.of-host-detail {
+  margin: 1.25rem auto 0;
+  max-width: 60ch;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  white-space: pre-wrap;
+  font:
+    0.8125rem / 1.55 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  color: var(--of-error);
+  background: color-mix(in srgb, var(--of-error) 7%, var(--of-surface));
+  border-radius: var(--of-radius);
+}

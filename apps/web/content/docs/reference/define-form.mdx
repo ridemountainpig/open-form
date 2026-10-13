@@ -1,0 +1,214 @@
+---
+title: defineForm
+description: Every key of a form's config export, with defaults.
+---
+
+Each form exports its config from `forms/<id>/index.tsx`: its title, language,
+schedule, limits, spam protection and thank-you screen. Field validation comes
+from the fields in the form itself, and `protection` falls back to the defaults
+in [`open-form.config.ts`](/docs/reference/config). Every key is optional; add
+only what the form needs.
+
+```tsx title="forms/meetup/index.tsx"
+import { defineForm } from '@open-form-build/core';
+
+export const config = defineForm({
+  title: 'Developer Meetup Registration',
+  description: 'Oct 30, Taipei. 100 seats.',
+  locale: 'en',
+  timeZone: 'Asia/Taipei',
+  submissions: { maxResponses: 100, closesAt: '2026-10-29', uniqueBy: 'email' },
+  success: { title: 'See you there!' },
+});
+```
+
+The form's look isn't config: it's the form's own theme.
+`open-form theme copy <theme> <id>` (or `open-form create <id> --theme <theme>`)
+copies one into `forms/<id>/theme/`, and the form imports it and passes it to
+[`<Form theme>`](/docs/components/form#theme):
+
+```tsx
+import theme from './theme/index.tsx';
+
+<Form theme={theme}>…</Form>
+```
+
+A theme without components, such as `classic`, is `theme/index.ts` instead;
+`open-form theme copy` prints the import to use.
+
+<Callout type="info">
+  A form's config is bundled into the browser. Secrets — webhook URLs, API
+  keys — belong in [`open-form.config.ts`](/docs/reference/config), never here.
+</Callout>
+
+## Schema
+
+<TypeTable
+  type={{
+    title: {
+      type: 'string',
+      description: 'Form header and the name shown in Studio and exports.',
+    },
+    description: {
+      type: 'string',
+      description: 'Shown under the title.',
+    },
+    locale: {
+      type: "'en' | 'zh-TW' | 'zh-CN' | 'ja'",
+      default: "the project's locale, else 'en'",
+      description: 'The language the form is written in. Sets buttons, messages, date formats and CJK fonts.',
+    },
+    timeZone: {
+      type: 'string',
+      default: "the project's timeZone, else 'UTC'",
+      description: 'IANA zone that submissions dates are read in, e.g. Asia/Taipei.',
+    },
+    translations: {
+      type: 'Partial<Record<Locale, Record<string, string>>>',
+      description: 'Other languages, keyed by the exact source text. Usually imported from locales/*.json. Requires locale.',
+    },
+    languageSwitch: {
+      type: 'boolean',
+      default: 'true',
+      description: 'Show the language picker when the form has translations.',
+    },
+    submissions: {
+      type: 'SubmissionPolicy',
+      description: 'Limits, dates, uniqueness and closed-screen messages.',
+    },
+    protection: {
+      type: 'ProtectionConfig',
+      description: 'Spam protection. Merged over the project defaults.',
+    },
+    success: {
+      type: 'SuccessConfig',
+      description: 'Thank-you screen copy, or a redirect.',
+    },
+    drafts: {
+      type: 'boolean | { expires?: Duration }',
+      default: 'false',
+      description: 'Keep unfinished answers in the browser and restore them on return.',
+    },
+  }}
+/>
+
+## `submissions`
+
+<TypeTable
+  type={{
+    maxResponses: {
+      type: 'number',
+      description: 'Stop accepting responses once this many are stored. Checked atomically with each insert.',
+    },
+    opensAt: {
+      type: 'string | Date',
+      description: 'Start taking responses. YYYY-MM-DD means the start of that day.',
+    },
+    closesAt: {
+      type: 'string | Date',
+      description: 'Stop taking responses. YYYY-MM-DD means the end of that day.',
+    },
+    closed: {
+      type: 'boolean',
+      default: 'false',
+      description: 'Stop taking responses now, whatever the dates say.',
+    },
+    uniqueBy: {
+      type: "'device' | string",
+      description: "One response per browser ('device', a cookie), or per distinct value of the named field.",
+    },
+    closedMessage: { type: 'string', description: 'Shown when the form is closed.' },
+    fullMessage: { type: 'string', description: 'Shown when maxResponses is reached.' },
+    duplicateMessage: { type: 'string', description: 'Shown to someone who already responded.' },
+  }}
+/>
+
+`uniqueBy: 'device'` is checked before the form shows, so a returning browser
+sees the closed screen. It's a cookie — lightweight, not identity. With a
+field name such as `'email'`, values are compared case-insensitively and
+the duplicate is found on submit, so `duplicateMessage` appears under the
+Submit button. `uniqueBy` must name a field in the form.
+
+## `protection`
+
+<TypeTable
+  type={{
+    honeypot: {
+      type: 'boolean',
+      default: 'true',
+      description: 'A hidden field bots fill in. Those submissions get the answer a real one would and are not stored.',
+    },
+    minimumCompletionTime: {
+      type: 'Duration | false',
+      default: "'2s'",
+      description: 'Reject submissions sent faster than this after the form loads.',
+    },
+    rateLimit: {
+      type: '{ max: number; window: Duration } | false',
+      default: "{ max: 10, window: '10m' }",
+      description: 'Valid submissions per IP address per form within each window. An IPv6 address counts as its /64.',
+    },
+  }}
+/>
+
+A `Duration` is a number of milliseconds or a string like `'500ms'`, `'2s'`,
+`'10m'`, `'1h'` or `'7d'`. Each key falls back to the project's `protection`,
+then to the defaults above. Behind a reverse proxy, set
+[`trustProxy`](/docs/reference/config) so the rate limit counts visitors, not
+the proxy.
+
+## `success`
+
+<TypeTable
+  type={{
+    title: { type: 'string', description: 'Thank-you heading. A Success element wins over it.' },
+    message: { type: 'string', description: 'Thank-you body text.' },
+    redirect: { type: 'string', description: 'Send the respondent to this URL after a successful submission.' },
+  }}
+/>
+
+## `drafts`
+
+Off by default, because on a shared computer the next person would see the
+answers. `true` keeps unfinished answers in the respondent's browser for 7
+days; `{ expires: '1d' }` sets another lifetime. Drafts never leave the
+browser and are cleared on submit, when the form closes, fills up or the
+respondent has already answered, and when you turn `drafts` off. Opening any
+form also clears expired drafts of the others. A restored draft shows a notice
+with a button to start over.
+
+## Dates and time zones
+
+`opensAt` and `closesAt` accept:
+
+- `'2026-10-01'` — a whole day: from its start for `opensAt`, until its end for
+  `closesAt`.
+- `'2026-10-01T09:00'` — a wall-clock time.
+- `'2026-10-31T18:00:00+09:00'` or a `Date` — an exact instant; the time zone
+  is ignored.
+
+Day and wall-clock values are read in the form's `timeZone`, else the
+project's `timeZone`, else UTC — never the server's own time zone, so a
+deadline means the same on your laptop and in production. If you set a
+deadline, set a `timeZone` somewhere; `open-form check` warns when it's
+missing.
+
+People can change `opensAt`, `closesAt`, `maxResponses`, `closed` and the
+time zone in Studio. Under `open-form dev` that rewrites this config in the
+form's code. On a deployed server it's stored in the database and wins over
+the code until someone restores it in Studio — see
+[Submissions](/docs/core-feature/submissions).
+
+## Checked at load
+
+A config that can't work fails loudly instead of silently never applying: an
+unknown `locale`, an invalid `timeZone`, a `uniqueBy` that isn't a field, an
+unparseable date or duration, `translations` without a `locale`, or a
+translation for a language Open Form doesn't support. `open-form check`
+reports the same errors.
+
+<Cards>
+  <Card title="Form" href="/docs/components/form" />
+  <Card title="open-form.config.ts" href="/docs/reference/config" />
+  <Card title="Submissions" href="/docs/core-feature/submissions" />
+</Cards>

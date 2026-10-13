@@ -1,0 +1,60 @@
+---
+title: open-form create
+description: Create a new form from the starter.
+---
+
+```bash
+pnpm exec open-form create event-registration
+pnpm exec open-form create event-registration --title "Event Registration"
+pnpm exec open-form create event-registration --theme editorial
+```
+
+Writes `forms/<id>/index.tsx` with a small starter form and prints its preview
+path, `/f/<id>`. With `--theme`, it also copies that theme into
+`forms/<id>/theme/`, as [`open-form theme copy`](/docs/cli/theme#theme-copy)
+does, and wires it into the form.
+
+The id must be kebab-case: lowercase letters, digits and `-`. It becomes the
+folder name and the public URL. `create` stops if `forms/<id>` already exists.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-t, --title <title>` | the id in title case | The form's `title` in `defineForm()`. |
+| `--theme <theme>` | none | Copy a theme from `themes/`, or else the starter of that name, into the form. If the theme doesn't exist, nothing is created. |
+
+## The starter
+
+```tsx title="forms/event-registration/index.tsx"
+import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
+
+export const config = defineForm({
+  title: 'Event Registration',
+  description: 'Tell us a little about yourself.',
+});
+
+export default function EventRegistrationForm() {
+  return (
+    <Form>
+      <Text name="name" label="Name" required autoComplete="name" />
+      <Email name="email" label="Email" required />
+      <Textarea name="message" label="Message" maxLength={2000} />
+      <Submit>Send</Submit>
+    </Form>
+  );
+}
+```
+
+With `--theme editorial`, the starter also imports its copy,
+`import theme from './theme/index.tsx'`, and renders `<Form theme={theme}>`.
+
+The component is named after the id with `Form` at the end (`contact-form`
+becomes `ContactForm`), so it never collides with a component it imports, such
+as `Form` or `Email`, or with a global like `Date`. A default export named like
+an Open Form component would render itself, so `check`, `dev` and `build` stop
+with an error asking for another name.
+
+Replace the body with your own questions, or let your agent take it from here.
+Agents following [`/create-form`](/docs/skills/create-form) can scaffold with
+`create` or write the file directly.

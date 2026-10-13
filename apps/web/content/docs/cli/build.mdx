@@ -1,0 +1,79 @@
+---
+title: open-form build
+description: Build your forms, Studio and server for production.
+---
+
+```bash
+pnpm build
+# or
+pnpm exec open-form build
+```
+
+Builds two things into `dist/`:
+
+- **Client** — the form pages and Studio in `dist/client/`, each form with its
+  own theme (CSS and fonts included), plus an unhashed `embed.js` for
+  [embedding forms](/docs/deploy/embed) on other sites. The reference themes in
+  `themes/` aren't built: they're only for development.
+- **Server entry** — `dist/server/entry.js`, a single file that bundles every
+  form, `open-form.config.ts` and the schema collector, along with React and the
+  runtime, so `open-form start` doesn't depend on how `node_modules` is laid
+  out. A `package.json` next to `entry.js` marks it as ESM, so it loads the same
+  whether or not your own `package.json` is `"type": "module"`.
+  `process.env.NODE_ENV` is fixed in `entry.js` at build time, to `"production"`
+  (`"development"` with `--watch`), so the server runs React's production build
+  without you setting anything. A form's theme comes along through the form's
+  import, minus its CSS, so theme files must not touch `window`, `document` or
+  other browser globals at the top level of a module.
+
+```text
+dist/
+├── .open-form-build
+├── client/
+│   ├── index.html
+│   ├── embed.js
+│   └── assets/
+└── server/
+    ├── entry.js
+    └── package.json
+```
+
+Run [`open-form start`](/docs/cli/start) to serve it.
+
+## Static files
+
+Files in the workspace's `public/` folder — a favicon, an image you link to by
+URL — are copied as they are into `dist/client/` and served from the root:
+`public/logo.png` is `/logo.png`, under `open-form dev` and `open-form start`
+alike. `--server-only` skips them. An image a form imports
+(`import logo from './logo.png'`) doesn't go there; it's bundled with the form.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--out-dir <dir>` | `dist` | Write the build somewhere else. Pass the same `--out-dir` to `start`, or as `outDir` to `createOpenFormRoute()` in Next.js. The build empties `client/` and `server/` in that folder, so it refuses non-empty ones there unless an earlier build left its `.open-form-build` file. |
+| `--server-only` | off | Build only `dist/server/entry.js`. |
+| `--watch` | off | Rebuild the server entry when forms change. Requires `--server-only`. |
+
+## Next.js
+
+When your forms live in a Next.js app, Next renders the pages and
+`@open-form-build/core/next` serves the API. Route handlers can't render forms to learn
+their fields, so they read the server entry instead. Build only that:
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "open-form build --server-only --watch & next dev",
+    "build": "open-form build --server-only && next build"
+  }
+}
+```
+
+`&` runs both at once in macOS and Linux shells, but not in Windows `cmd`. On
+Windows, run `open-form build --server-only --watch` and `next dev` in two
+terminals.
+
+`--watch` rebuilds when a form or `open-form.config.ts` changes; a new form
+folder needs a restart. See [Next.js](/docs/deploy/nextjs).

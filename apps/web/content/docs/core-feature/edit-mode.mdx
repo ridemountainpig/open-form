@@ -1,0 +1,149 @@
+---
+title: Edit mode & comments
+description: Select anything in the preview, change its text in place, or leave a note for your agent.
+---
+
+Edit mode is available during development (`open-form dev`). Open a form in
+Studio and switch the toolbar from **Preview** to **Edit**. An edit panel docks
+beside the preview (below it on narrow screens).
+
+Hover shows a dashed outline and the element's name. Click to select. In Edit
+mode clicks don't focus fields or change steps, so you can pick anything without
+filling the form.
+
+## Selecting
+
+- **Fields** are selected whole: label, help text and control together.
+- **Parts** the runtime or theme draws are selectable on their own: the form's
+  title and description, page titles, the progress bar, the Next and Submit
+  buttons, theme decorations.
+- The breadcrumb and **Select parent** move the selection outward, up to the
+  `<Page>` and the `<Form>`.
+
+Press `Escape` to clear the selection. Press it again with nothing selected, switch
+back to **Preview**, or close the panel to leave Edit mode.
+
+Restarting the preview or changing its language keeps Edit mode on. If the
+selection isn't on screen any more (a question on a later step, after a restart),
+it clears.
+
+## Edit text directly
+
+The **Text** section lists every piece of text the selection owns: label,
+description, title, placeholder, unit, rating end labels, button text, the
+closed / full / duplicate messages, and text that lives in `config` such as the
+form's title. Change one and press `Enter` (or click away). Studio writes it to
+the form's source in place, and the preview reloads on the same step.
+
+Text that is also data isn't listed. Option labels written as plain strings
+(`options={['Student']}`) and condition values (`equals="Student"`) are stored
+values, so changing them would split your responses. Ask your agent instead, or
+use `{ value, label }` options.
+
+### Translated forms
+
+When the form has translations, renaming a source string also renames that key
+in each translation, in `locales/*.json` files and in an inline
+`config.translations`, so the translations follow it. If the old text is still
+used elsewhere in the form, the translation is copied instead. Switch the preview
+language to edit a translation directly: the panel shows the source text and the
+translated text for that language, marked **Not translated yet** when it's missing.
+A translation missing from an inline `config.translations` can't be filled in
+from the panel; add it in code. See [Languages](/docs/core-feature/languages).
+
+## Copy location
+
+The **Source** section shows where the element is written, starting with the
+form's folder (`meetup/index.tsx:18`). **Copy location** copies it with the field
+name (and the picked text, for a part), ready to paste to an agent:
+
+```text
+forms/meetup/index.tsx:18 · field "email"
+```
+
+## Comments
+
+Sometimes a change is easier to describe than to make. Type it under **Note for
+your agent** and press **Add note** (`Cmd` / `Ctrl` + `Enter`):
+
+> make this optional and say why we ask
+
+Studio pins the note as a `@form-comment` marker in the source, directly above the
+element it is about:
+
+```tsx title="forms/meetup/index.tsx"
+{/* @form-comment: make this optional and say why we ask */}
+<Email name="email" label="Email" required />
+```
+
+- In an expression position, such as right after `return (`, the marker is a plain
+  `/* @form-comment: … */`.
+- Notes about text in `config` (title, description, success message) sit on the
+  line above that property.
+- Notes about a part whose text comes from one string in your code sit above
+  that string's element, like any other note. Otherwise the note sits above the
+  element around the part and says which part:
+  `(on “Next ↵”) make this button full width`.
+
+Comments live in your code, so they travel with git and pull requests and need no
+separate database. The panel's **Notes** list shows the form's comments, and
+**Remove note** deletes one.
+
+### Apply them
+
+List every marker from the terminal:
+
+```bash
+pnpm exec open-form comments          # all forms
+pnpm exec open-form comments meetup   # one form
+pnpm exec open-form comments --json
+```
+
+Then run [`/apply-comments`](/docs/skills/apply-comments) in your agent. It
+applies each note with the DSL, deletes its marker, and runs `open-form check`.
+Notes that are unclear, conflict, or would rename a field with responses keep
+their marker and come back to you as questions.
+
+## Your agent sees the selection
+
+Under `open-form dev`, Studio writes where you are to
+`node_modules/.open-form/current.json` every time you navigate: the form, the
+tab, the step. Edit mode adds what you selected. An excerpt:
+
+```json title="node_modules/.open-form/current.json"
+{
+  "formId": "meetup",
+  "view": "preview",
+  "formPath": "forms/meetup/index.tsx",
+  "selection": {
+    "file": "forms/meetup/index.tsx",
+    "line": 18,
+    "column": 9,
+    "field": "email",
+    "text": "Email"
+  }
+}
+```
+
+The [`current-form`](/docs/skills/current-form) skill reads it (that page lists
+every field), so *"make this required"* resolves to the exact element with no
+"which one?" round-trip. The selection clears when you switch forms, leave Edit
+mode or leave the Preview tab. On the Responses, Schema and Settings tabs, `step`,
+`stepNumber`, `totalSteps` and `stepTitle` clear too.
+
+<Callout type="info">
+  Selection works with any theme because the dev server marks each JSX element in
+  `forms/` with its source position (line numbers don't change). Files in a
+  form's own `theme/` folder aren't marked, since the theme draws every field, so
+  selections and comments land in the form's own files. Custom fields must spread
+  `field.controlProps` on their control; see
+  [Custom fields](/docs/components/custom-fields).
+</Callout>
+
+## What's next
+
+<Cards>
+  <Card title="/apply-comments" href="/docs/skills/apply-comments" />
+  <Card title="/current-form" href="/docs/skills/current-form" />
+  <Card title="open-form comments" href="/docs/cli/comments" />
+</Cards>

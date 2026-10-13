@@ -1,0 +1,60 @@
+---
+title: open-form responses export
+description: Export a form's responses as CSV, Excel or JSON.
+---
+
+```bash
+pnpm exec open-form responses export meetup                    # CSV to stdout
+pnpm exec open-form responses export meetup -o responses.xlsx  # Excel file
+pnpm exec open-form responses export meetup --format json > responses.json
+```
+
+Reads one form's responses from the workspace's SQLite database (`OPEN_FORM_DB`,
+else `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`),
+oldest first, and writes them to stdout or a file — the same file Studio's
+export gives you. It exits with an error if there's no database yet.
+
+For CSV and Excel it also loads the form the way the server does (like
+[`open-form check`](/docs/cli/check)), for its current labels, languages and
+time zone. If the form doesn't load, it warns and exports with the columns
+stored alongside the responses; a form whose folder is gone exports that way
+too, without the warning. Either way the file has no **Language** column, and
+Excel uses the project's time zone, not one set in Studio.
+
+## Flags
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--format <format>` | from `-o`, else `csv` | `csv`, `xlsx` or `json`. |
+| `-o, --out <file>` | stdout | Write to a file instead of stdout. |
+
+Without `--format`, the file extension decides: `.json` gives JSON, `.xlsx`
+gives Excel, anything else — or no `-o` — gives CSV.
+
+## Formats
+
+- **CSV** and **Excel** have one column per field, headed by its label. Columns
+  cover every version of the form, so a field you've since removed keeps its
+  column for older responses. Translated forms get a **Language** column after
+  **Submitted at**. Excel shows **Submitted at** in the form's time zone: the
+  one set in Studio's Settings, else the form's `timeZone`, else the project's.
+  Both need the form to load; see above.
+- **JSON** is an array of submissions, each with `id`, `number`, `submittedAt`,
+  `locale` (when one was recorded) and `data`, the raw answers keyed by field
+  `name`.
+
+Excel files are binary, so `xlsx` won't print to a terminal. Pass
+`-o responses.xlsx`, or redirect stdout to a file.
+
+Answers come from strangers. Printed to a terminal, control characters in them
+show as `�` so they can't send escape sequences to it. Files written with `-o`
+are readable by you only, and the `.gitignore` that `open-form init` writes
+keeps `responses*.csv`, `.xlsx` and `.json` at the workspace root out of git.
+CSV cells that contain a comma, semicolon, tab, quote or line break are quoted,
+and cells that would start a spreadsheet formula get a leading `'`.
+
+When writing to a file, the summary line goes to stderr, so stdout stays clean
+for pipes.
+
+Studio's Responses tab exports the same three formats. See
+[Responses](/docs/core-feature/responses).

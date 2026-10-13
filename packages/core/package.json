@@ -1,0 +1,117 @@
+{
+  "name": "@open-form-build/core",
+  "version": "0.0.0",
+  "description": "The form framework built for agents. Your agent writes the questions and logic — Open Form handles the runtime, validation, submissions, storage, and responses.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./sqlite": {
+      "types": "./dist/sqlite/index.d.ts",
+      "import": "./dist/sqlite/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "import": "./dist/vite/index.js"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "import": "./dist/next/index.js"
+    },
+    "./styles.css": "./src/react/styles.css",
+    "./env": {
+      "types": "./env.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "open-form": "./bin.js"
+  },
+  "files": [
+    "bin.js",
+    "dist",
+    "env.d.ts",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "themes",
+    "skills",
+    "template",
+    "!**/.open-form",
+    "!**/.env*",
+    "!**/*.db",
+    "!**/*.db-*",
+    "!template/**/node_modules",
+    "!template/**/dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "build:watch": "tsdown --watch --no-clean",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "pnpm run build && node e2e/smoke.mjs",
+    "prepack": "pnpm build"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "keywords": [
+    "forms",
+    "agents",
+    "react",
+    "vite",
+    "sqlite",
+    "claude-code"
+  ],
+  "homepage": "https://open-form.build",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ridemountainpig/open-form.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/ridemountainpig/open-form/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.9",
+    "@clack/prompts": "^1.7.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "chalk": "^6.0.0",
+    "commander": "^15.0.0",
+    "lucide-react": "^1.25.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.4",
+    "sonner": "^2.0.8",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.0"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.29.8",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2"
+  }
+}

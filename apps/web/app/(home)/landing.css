@@ -1,0 +1,424 @@
+.landing {
+  --color-ink: oklch(1 0 0);
+  --color-panel: oklch(1 0 0);
+  --color-panel-hi: oklch(0.975 0 0);
+  --color-rule: oklch(0.91 0 0);
+  --color-rule-soft: oklch(0.94 0 0);
+  --color-text: oklch(0.145 0 0);
+  --color-text-soft: oklch(0.38 0 0);
+  --color-muted: oklch(0.52 0 0);
+  --color-dim: oklch(0.72 0 0);
+
+  /* Monochrome like Studio: ink is the accent. Green only means "done". */
+  --color-accent: oklch(0.145 0 0);
+  --color-success: oklch(0.55 0.13 155);
+
+  --shadow-edge: 0 0 0 0.5px oklch(0 0 0 / 0.06), 0 1px 0 oklch(0 0 0 / 0.025);
+  --shadow-floating: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px -8px oklch(0 0 0 / 0.1);
+  --shadow-lift:
+    0 1px 2px oklch(0 0 0 / 0.04), 0 12px 32px -12px oklch(0 0 0 / 0.12),
+    0 32px 64px -24px oklch(0 0 0 / 0.14);
+  --shadow-window:
+    0 0 0 0.5px oklch(0 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.04),
+    0 12px 32px -12px oklch(0 0 0 / 0.12);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  letter-spacing: -0.005em;
+  font-feature-settings: "ss01", "cv11", "calt";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark .landing {
+  --color-ink: oklch(0.145 0 0);
+  --color-panel: oklch(0.165 0 0);
+  --color-panel-hi: oklch(0.2 0 0);
+  --color-rule: oklch(1 0 0 / 0.1);
+  --color-rule-soft: oklch(1 0 0 / 0.06);
+  --color-text: oklch(0.93 0 0);
+  --color-text-soft: oklch(0.78 0 0);
+  --color-muted: oklch(0.66 0 0);
+  --color-dim: oklch(0.45 0 0);
+
+  --color-accent: oklch(0.93 0 0);
+  --color-success: oklch(0.74 0.14 155);
+
+  --shadow-edge: 0 0 0 0.5px oklch(0 0 0 / 0.2);
+  --shadow-floating: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -8px oklch(0 0 0 / 0.5);
+  --shadow-lift: 0 1px 2px oklch(0 0 0 / 0.4), 0 24px 64px -24px oklch(0 0 0 / 0.7);
+  --shadow-window: 0 0 0 0.5px oklch(1 0 0 / 0.12), 0 12px 32px -12px oklch(0 0 0 / 0.6);
+}
+
+.landing ::selection {
+  background: color-mix(in oklab, var(--color-text) 14%, transparent);
+  color: var(--color-text);
+}
+
+.landing .caption {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.landing .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.landing section[id] {
+  scroll-margin-top: 60px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing) {
+    scroll-behavior: smooth;
+  }
+}
+
+.landing .nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-y, 12px));
+    filter: blur(var(--rise-blur, 6px));
+  }
+}
+/* backwards (not both): the last keyframe matches natural styles, and a
+   forwards fill would pin transform and block hover/press feedback. */
+.landing .rise {
+  animation: lp-rise 1000ms var(--ease-out-expo) backwards;
+}
+.landing .rise-word {
+  display: inline-block;
+  --rise-y: 0.3em;
+  --rise-blur: 10px;
+}
+
+@keyframes lp-rise-frame {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+}
+.landing .rise-frame {
+  animation: lp-rise-frame 1400ms var(--ease-out-expo) backwards;
+}
+
+/* Scroll reveals — ScrollReveal only marks elements still below the fold
+   as .reveal-hidden, so content never flashes and non-JS visitors see
+   everything. Removing the class transitions back to natural styles. */
+.landing [data-reveal].reveal-hidden,
+.landing [data-reveal="stagger"].reveal-hidden > * {
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(4px);
+}
+.landing [data-reveal="stagger"].reveal-hidden {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+.landing [data-reveal].reveal-shown,
+.landing [data-reveal="stagger"].reveal-shown > * {
+  transition:
+    opacity 900ms var(--ease-out-expo),
+    transform 900ms var(--ease-out-expo),
+    filter 900ms var(--ease-out-expo);
+  transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-i, 0) * 70ms);
+}
+.landing [data-reveal="stagger"] > :nth-child(2) {
+  --stagger-i: 1;
+}
+.landing [data-reveal="stagger"] > :nth-child(3) {
+  --stagger-i: 2;
+}
+.landing [data-reveal="stagger"] > :nth-child(4) {
+  --stagger-i: 3;
+}
+.landing [data-reveal="stagger"] > :nth-child(5) {
+  --stagger-i: 4;
+}
+.landing [data-reveal="stagger"] > :nth-child(n + 6) {
+  --stagger-i: 5;
+}
+
+/* Keyed swap for text or glyphs that change in place — remounting the
+   node replays it, and the blur hides the crossfade seam. */
+@keyframes lp-swap {
+  from {
+    opacity: 0;
+    transform: translateY(var(--swap-y, 4px));
+    filter: blur(2px);
+  }
+}
+.landing .swap-in {
+  display: inline-block;
+  animation: lp-swap 320ms var(--ease-out-strong) backwards;
+}
+
+/* Press feedback for anything clickable. Transition list covers the hover
+   color moves those elements already rely on, since this shorthand wins
+   over the tailwind utility. */
+.landing .pressable {
+  transition:
+    transform 160ms var(--ease-out-strong),
+    color 200ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease,
+    opacity 200ms ease;
+}
+.landing .pressable:active {
+  transform: scale(0.98);
+}
+
+@keyframes lp-code-pulse {
+  0% {
+    background-color: color-mix(in oklab, var(--color-text) 12%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@keyframes lp-code-swap {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+.landing .code-pulse {
+  animation:
+    lp-code-pulse 900ms ease-out,
+    lp-code-swap 400ms var(--ease-out-strong);
+}
+.landing .code-live {
+  background-color: color-mix(in oklab, var(--color-text) 7%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-text);
+  transition:
+    background-color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+@keyframes lp-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    background-color: color-mix(in oklab, var(--color-success) 16%, transparent);
+  }
+  60% {
+    background-color: color-mix(in oklab, var(--color-success) 10%, transparent);
+  }
+}
+.landing .row-in {
+  animation: lp-row-in 1100ms var(--ease-out-strong) backwards;
+}
+
+@keyframes lp-tick {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+.landing .tick-in {
+  animation: lp-tick 260ms var(--ease-out-strong) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing .rise,
+  .landing .rise-frame,
+  .landing .swap-in,
+  .landing .code-pulse,
+  .landing .row-in,
+  .landing .tick-in {
+    animation: none;
+  }
+  .landing .pressable:active {
+    transform: none;
+  }
+}
+
+.landing .logo-dark {
+  display: none;
+}
+html.dark .landing .logo-dark {
+  display: inline-block;
+}
+html.dark .landing .logo-light {
+  display: none;
+}
+
+.landing .agent-mono {
+  filter: brightness(0);
+  opacity: 0.7;
+}
+html.dark .landing .agent-mono {
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+
+.landing :where(a, button, [role="button"], [role="tab"]):focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Live forms render with the real runtime inside fixed frames. Layouts that
+   fill the viewport (Split, Focus) fill the frame instead. */
+.landing .demo-frame {
+  container-type: size;
+}
+.landing .demo-host {
+  display: flex;
+  flex-direction: column;
+}
+.landing .demo-frame .demo-host {
+  min-height: 100cqh;
+}
+.landing .demo-host > .of-root {
+  flex: 1;
+}
+.landing .demo-frame .of-split,
+.landing .demo-frame .of-focus {
+  min-height: 100cqh;
+}
+.landing .demo-host :where(.of-root) :focus-visible {
+  border-radius: revert;
+}
+
+/* The Launch party demo's own closed screen (components.Notice), on the
+   form's tokens so it follows the theme and dark mode. */
+.landing .lc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  color: var(--of-fg);
+}
+.landing .lc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--of-muted);
+  background: color-mix(in srgb, var(--of-fg) 6%, transparent);
+}
+.landing .lc-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #a1a1aa;
+}
+.landing .lc-status.lc-full {
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+}
+.landing .of-root[data-scheme="dark"] .lc-status.lc-full {
+  color: #fbbf24;
+}
+.landing .lc-status.lc-full i {
+  background: #f59e0b;
+}
+.landing .lc-eyebrow {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--of-muted);
+}
+.landing .lc-title {
+  margin: 0;
+  font: 600 28px / 1.15 var(--of-heading-font);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.landing .lc-message {
+  margin: 0;
+  font-size: 15px;
+  color: var(--of-muted);
+}
+.landing .lc-seats {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: 5px;
+  width: 100%;
+  margin-top: 10px;
+}
+@keyframes lp-seat {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+.landing .lc-seats i {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--of-fg);
+  animation: lp-seat 360ms var(--ease-out-strong) backwards;
+  animation-delay: calc(var(--i) * 6ms);
+}
+.landing .lc-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  justify-items: center;
+  gap: 2px;
+  width: 100%;
+  margin-top: 10px;
+  font-size: 11.5px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.landing .lc-calendar b {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--of-muted);
+}
+.landing .lc-calendar span {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 999px;
+}
+.landing .lc-calendar .lc-end {
+  font-weight: 600;
+  color: var(--of-surface);
+  background: var(--of-fg);
+}
+.landing .lc-calendar .lc-after {
+  color: var(--of-muted);
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.landing .lc-next {
+  width: 100%;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--of-border);
+  font-size: 13px;
+  color: var(--of-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing .lc-seats i {
+    animation: none;
+  }
+}

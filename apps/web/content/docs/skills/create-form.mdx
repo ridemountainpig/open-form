@@ -1,0 +1,165 @@
+---
+title: /create-form
+description: Takes a new form from a one-line request to a reviewed, working form.
+---
+
+`/create-form` is the entry point for any new form. It owns the workflow;
+[`/form-authoring`](/docs/skills/form-authoring) supplies the *how*. The agent
+writes `forms/<id>/`, including the form's own copy of its theme in
+`forms/<id>/theme/`, and `themes/<id>/` only when the look you pick needs a new
+theme.
+
+```text
+Create a registration form for our developer meetup. Name, email, role and
+years of experience; if they're a student, ask for their school. 100 seats.
+```
+
+## What it does
+
+<Steps>
+<Step>
+
+### Understand the form
+
+Purpose and audience, must-have questions, follow-ups that depend on earlier
+answers, policy (limits, dates, one response per email or device), languages,
+what happens after submit, and the header facts. If the purpose or the core
+questions are unclear, it asks first; otherwise it restates its reading in one
+line and moves on. It never invents dates, venues or prices.
+
+</Step>
+<Step>
+
+### Propose three visual directions
+
+It runs `open-form theme list`, reads the candidates' `THEME.md` (the project's
+references in `themes/` and the starters), and offers three directions tailored
+to the form and audience. Each is a theme plus a layout and concrete cues —
+*terminal: CLI prompts, green on black*, or *brutalist + StepperLayout: loud
+yellow, thick borders, a step rail* — never a bare "modern". A brand theme in
+`themes/` is the recommended option. If you already named the look, it skips the
+question.
+
+A project theme or a starter can be used as it is. A new look goes through
+[`/create-theme`](/docs/skills/create-theme) first, which adds it to `themes/`.
+
+</Step>
+<Step>
+
+### Pick an id
+
+Kebab-case, short, descriptive: `meetup-registration`, `beta-waitlist`. The id
+is the public URL `/f/<id>`, so the agent avoids internal names and checks
+`forms/` for collisions.
+
+</Step>
+<Step>
+
+### Plan the structure
+
+Shaped by the direction: one question per page for conversational themes and
+`FocusLayout`, a single page for up to about seven fields, 3–7 fields per
+`<Page>` for longer forms. Easy questions first, free text near the end,
+follow-ups right after the question they depend on. Copy follows the theme's
+tone, `locale` matches the language, and the closed screen gets messages in the
+form's voice. A form tied to a date, with limited spots or one response per
+person, or with a strong look also gets its own `Notice`: the closed screen in
+the form's look, saying what to do next with only facts you gave.
+
+</Step>
+<Step>
+
+### Scaffold it with the theme
+
+[`open-form create <id> --theme <theme>`](/docs/cli/create) writes a starter
+`forms/<id>/index.tsx` and the form's own copy of the chosen theme in
+`forms/<id>/theme/`, already wired up. For a folder that already exists,
+[`open-form theme copy <theme> <id>`](/docs/cli/theme#theme-copy) copies the
+theme in. From then on the form owns its look: changing the theme in `themes/`
+never changes it.
+
+</Step>
+<Step>
+
+### Write the form
+
+The starter's body is replaced: `config = defineForm({ … })` — only the policy
+you asked for — and a default component that renders `<Form theme={theme}>`,
+with the theme imported from `./theme/` above the form's own CSS. The component
+is named after the form (`MeetupForm`). Named like an Open Form export, such as
+`Form` or `Email`, it would render itself, so `open-form check` refuses it; a
+global name such as `Date` would shadow the global. When the direction calls
+for it, the agent adapts the copy for this form and, after color changes, runs
+`open-form theme check <id> --form`. Multilingual forms get a
+`forms/<id>/locales/<lang>.json` per extra language.
+
+</Step>
+<Step>
+
+### Self-review
+
+It runs the [checklist](/docs/skills/form-authoring#self-review-checklist), then:
+
+```bash
+pnpm exec open-form check <id>
+pnpm typecheck                   # tsc --noEmit
+```
+
+[`open-form check`](/docs/cli/check) loads the form the way the server does and
+prints its steps, fields, conditions and policy, or the exact error. For a
+multilingual form it shows each language as `N/N translated`; the agent fixes
+every missing entry, and keeps a "not seen" one only when it's text shown for
+certain answers or a `validate` message.
+
+With the dev server running, the agent also opens the form's **Schema** tab in
+Studio (`/studio/<id>/schema`) to compare the derived schema — steps, fields,
+required flags, conditions — with its plan, and looks at the form in Preview
+on desktop and mobile, including every closed screen under *When closed*.
+
+</Step>
+<Step>
+
+### Hand off
+
+You get the public link and the Studio link, the theme and layout it built, the
+policy it applied, what respondents see once the form closes, and any
+assumptions it made. For a multilingual form: the languages, how respondents
+get theirs (automatically, the picker or `?lang=`), and that editing text means
+updating each `locales/*.json`. The look is the form's own, in
+`forms/<id>/theme/`, for you or the agent to change; `themes/` is the reference
+library for new forms, and changing it won't touch this one.
+
+</Step>
+</Steps>
+
+## What it asks you
+
+It asks before writing code, and only about what it can't decide well itself:
+
+- **The form itself**, when the purpose or core questions are unclear.
+- **The look** — three directions, the best fit marked *Recommended*, plus room
+  for your own answer.
+- In the same question, anything else that changes the build: the flow (one
+  page, sections, or one question per screen) when it's a real choice; policy
+  gaps such as "one registration per email?" when there's a response limit;
+  languages when the audience plausibly reads more than one.
+
+Field types, ordering and labels it decides on its own.
+
+## Example prompts
+
+```text
+Make a post-purchase NPS survey: a 0–10 score, then ask what we could do
+better if they gave 6 or less.
+```
+
+```text
+We need a beta waitlist: email, company, team size. Close it on 2026-11-30,
+one signup per email. Use our brand theme.
+```
+
+```text
+A product feedback form for our users in Taiwan and Japan.
+```
+
+Preview submissions are stored for real. Delete them under Responses.

@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+overrides:
+  # apps/web: fumadocs-core 16.15's processed-Markdown stringifier drops the
+  # `attention` hook 2.2.0 added, so any **bold** text recurses forever.
+  mdast-util-to-markdown: 2.1.2

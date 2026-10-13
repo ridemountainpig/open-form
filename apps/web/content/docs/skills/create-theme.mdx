@@ -1,0 +1,149 @@
+---
+title: /create-theme
+description: Turns your design system, a screenshot or a brief into a reference theme for new forms.
+---
+
+`/create-theme` builds a theme folder under `themes/<id>/`: a reference that new
+forms copy their look from. Reach for it with "make it look like our product", a
+brand or a mood. [`/create-form`](/docs/skills/create-form) hands off to it when
+the direction you picked needs a theme the project doesn't have. For a tweak to
+a single form, just ask for the tweak — it goes in that form's own
+`forms/<id>/theme/`.
+
+```text
+Make our forms look like the product. The design tokens are in apps/web.
+```
+
+## Sources
+
+Any mix of:
+
+- **The repo's design system** — the most common. The agent looks before it
+  asks: Tailwind config or a v4 `@theme` block, CSS variables (shadcn's `:root`
+  and `.dark`), theme objects and token files, `next/font` calls and
+  `@font-face`, logo fills and `theme_color`, and the shape of the product's own
+  inputs and buttons.
+- **Images** — screenshots, a mood board, a brand guide.
+- **A description** — "dark, neon, arcade", "calm clinic", "Swiss poster".
+- **A starter to adapt** — "editorial, but with our colors".
+
+If the source isn't clear, it asks once. When sources disagree, it asks which
+one wins.
+
+## Token mapping
+
+shadcn and Tailwind token names don't line up with Open Form's. The skill
+carries this table, traps included:
+
+| Product token | Open Form token | Note |
+| --- | --- | --- |
+| `--background` | `background` | The page behind the form |
+| `--card` | `surface` | The form card |
+| `--foreground` | `foreground` | |
+| `--muted-foreground` | `muted` | shadcn `--muted` is a background, not this |
+| `--border` | `border` | Decorative edges only |
+| `--input` | `control` | shadcn `--input` is a border color; Open Form `input` is the field background |
+| `--primary` / `--primary-foreground` | `primary` / `primaryForeground` | |
+| `--destructive` | `error` | |
+| `--ring` | — | Focus uses `primary` |
+| — | `success` | The brand's green, or one that passes 3:1 on `surface` |
+| `--radius` | `radius` | `rounded-full` buttons become `buttonRadius: '999px'` |
+
+Colors can be pasted as they are: hex, `hsl()` and `oklch()` all work. Tokens
+avoid `var()` and `color-mix()`, which the contrast check can't read.
+
+## What it writes
+
+The agent starts from the closest starter, under the new id:
+
+```bash
+pnpm exec open-form theme add classic --as acme
+```
+
+`classic` for product UI, `editorial` for premium serif, `terminal` for
+developer tools, `brutalist` for loud campaigns, `conversational` for one
+question per screen. `--as` renames the `[data-of-theme]` selectors and the
+name in `THEME.md`; file names and class prefixes stay the starter's, so
+`theme add editorial --as acme` gives `themes/acme/editorial.css` with `.ed-…`
+classes.
+
+Then it goes only as deep as the look needs:
+
+1. **Tokens** — colors, fonts, radius, spacing, width and layout. Most product
+   themes stop here; pill buttons are just `buttonRadius`.
+2. **Tokens and CSS** — a stylesheet for chrome details tokens can't express,
+   such as button weight, the header or the card border, scoped to the theme.
+3. **Components** — the theme's own fields or layout, when the product's
+   controls are structurally different: underline inputs, chips, a branded
+   layout.
+
+Started from `classic`, the result looks like this:
+
+```text
+themes/acme/
+├── index.ts      # tokens: colors (light and dark), fonts, radius, spacing, layout
+├── acme.css      # depth 2: chrome details tokens can't express
+├── fonts/        # optional: web fonts, e.g. from `open-form theme font`
+└── THEME.md      # mood, palette, typography, layout, copy tone, do / don't
+```
+
+A theme with its own components uses `index.tsx`. Every color gets a dark value
+too, or `dark: false` for a light-only brand; a dark-only brand sets
+`colorScheme: 'dark'` and puts its dark palette in `colors`. Controls and
+buttons stay at least 44px tall.
+
+`THEME.md` is what Studio shows on the theme's page and what `/create-form`
+reads when it compares themes. See [Themes](/docs/core-feature/themes) and
+[defineTheme](/docs/reference/define-theme).
+
+### Fonts
+
+The product's own font setup (`next/font`, the `geist` package) isn't available
+to forms. The agent writes a system stack with the brand font first, and ends
+every stack with `var(--of-cjk)` (or `var(--of-cjk-serif)`) before the generic
+family, so Chinese and Japanese text gets fonts that match the form's
+`locale`. When the font is central to the brand, or you ask, it downloads it
+into the theme with [`open-form theme font`](/docs/cli/theme#theme-font):
+
+```bash
+pnpm exec open-form theme font acme Inter   # → themes/acme/fonts/
+```
+
+It never links `fonts.googleapis.com`: that would send every respondent's IP
+address to Google, a problem under the GDPR. See
+[Web fonts](/docs/core-feature/themes#web-fonts).
+
+## Checking it
+
+```bash
+pnpm exec open-form theme check acme   # WCAG contrast, light and dark
+pnpm typecheck                         # tsc --noEmit: the theme's code compiles
+```
+
+Accessibility wins over brand for text and controls. When a brand color fails,
+the agent keeps the hue, lowers the lightness until it passes, and tells you the
+original and the new value. See [`open-form theme`](/docs/cli/theme).
+
+## Applying it
+
+The new theme is a reference, so creating it changes no form. A form uses it by
+getting its own copy:
+
+```bash
+pnpm exec open-form theme copy acme meetup         # an existing form
+pnpm exec open-form create waitlist --theme acme   # a new one
+```
+
+When the theme is for a form, the agent copies it in and wires it up with
+`<Form theme={theme}>`. "Our forms" or "everything" means copying it into each
+form you mean; there's no project-wide theme. A form that already has its own
+look needs `--force`, which replaces that copy and discards the form's own edits
+to it, so the agent looks first and tells you. It reports the theme's folder,
+where the tokens came from, any contrast adjustments, and which forms it copied
+the theme into.
+
+The folder in `themes/` is yours from then on: edit it by hand, ask the agent,
+or fine-tune colors, fonts, radius, width and spacing in Studio's *Adjust*
+panel, which writes straight back to the theme file. Those changes reach forms
+you copy it into afterwards; forms that already have a copy keep theirs. See
+[Themes](/docs/core-feature/themes).
