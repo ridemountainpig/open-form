@@ -56,6 +56,27 @@ export {
   localeProblem,
   suggestLocale,
 } from './messages.ts';
+export type {
+  FilterableResponse,
+  ResponseFilter,
+  ResponseFilterOp,
+  ResponseFilterRule,
+  ResponseFilterValueKind,
+} from './response-filter.ts';
+export {
+  MAX_FILTER_RULES,
+  parseResponseFilter,
+  RESPONSE_FILTER_OPS,
+  responseFilterRuleProblem,
+  responseFilterTest,
+  responseFilterValueKind,
+} from './response-filter.ts';
+export type { ResponseSort, ResponseSortKey } from './response-sort.ts';
+export {
+  compareResponseSortKeys,
+  parseResponseSort,
+  responseSortKey,
+} from './response-sort.ts';
 export type { FormOverrides, Schedule, SubmissionOverrides } from './schedule.ts';
 export {
   applyOverrides,

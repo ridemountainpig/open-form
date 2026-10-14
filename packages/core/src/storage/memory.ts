@@ -1,4 +1,9 @@
-import type { FormSchema } from '../schema/index.ts';
+import {
+  compareResponseSortKeys,
+  type FormSchema,
+  responseFilterTest,
+  responseSortKey,
+} from '../schema/index.ts';
 import type {
   CreateSubmissionInput,
   CreateSubmissionResult,
@@ -89,9 +94,20 @@ export function createMemoryStorage(): StorageAdapter {
       const needle = opts.search?.toLowerCase();
       let rows = ofForm(formId);
       if (needle) rows = rows.filter((s) => answerMatches(s.data, needle));
-      rows = [...rows].sort((a, b) =>
-        opts.order === 'asc' ? a.number - b.number : b.number - a.number,
-      );
+      if (opts.filter) rows = rows.filter(responseFilterTest(opts.filter, opts.now));
+      const direction = opts.sort?.direction ?? opts.order ?? 'desc';
+      if (opts.sort?.field !== undefined) {
+        const key = responseSortKey(opts.sort);
+        const keyed = rows.map((row) => ({ row, key: key(row.data) }));
+        keyed.sort(
+          (a, b) => compareResponseSortKeys(a.key, b.key, direction) || b.row.number - a.row.number,
+        );
+        rows = keyed.map(({ row }) => row);
+      } else {
+        rows = [...rows].sort((a, b) =>
+          direction === 'asc' ? a.number - b.number : b.number - a.number,
+        );
+      }
       const offset = opts.offset ?? 0;
       const items = rows.slice(offset, opts.limit === undefined ? undefined : offset + opts.limit);
       return { items: items.map(strip), total: rows.length };

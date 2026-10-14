@@ -11,6 +11,10 @@ import {
   type Messages,
   type OpenFormConfig,
   overriddenTimeZone,
+  parseResponseFilter,
+  parseResponseSort,
+  type ResponseFilter,
+  type ResponseSort,
   resolveProtection,
   scheduleEdit,
   scheduleOf,
@@ -161,6 +165,30 @@ function countParam(url: URL, name: string, fallback: number): number {
     throw new HttpError(400, 'bad_request', `${name} must be a whole number.`);
   }
   return value;
+}
+
+/** Studio's `?filter=` rules, as JSON; absent means no filter. */
+function filterParam(url: URL): ResponseFilter | undefined {
+  const raw = url.searchParams.get('filter');
+  if (raw === null || raw === '') return undefined;
+  try {
+    return parseResponseFilter(JSON.parse(raw));
+  } catch (err) {
+    const reason = err instanceof SyntaxError ? 'it must be JSON' : (err as Error).message;
+    throw new HttpError(400, 'bad_request', `Invalid filter: ${reason}.`);
+  }
+}
+
+/** Studio's `?sort=` column, as JSON; absent means newest first. */
+function sortParam(url: URL): ResponseSort | undefined {
+  const raw = url.searchParams.get('sort');
+  if (raw === null || raw === '') return undefined;
+  try {
+    return parseResponseSort(JSON.parse(raw));
+  } catch (err) {
+    const reason = err instanceof SyntaxError ? 'it must be JSON' : (err as Error).message;
+    throw new HttpError(400, 'bad_request', `Invalid sort: ${reason}.`);
+  }
 }
 
 export function embedOriginProblems(origins: readonly string[] = []): string[] {
@@ -612,12 +640,19 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     return schemaHistory(storage, id, def);
   }
 
-  async function listSubmissions({ url }: RouteContext, [id]: string[]) {
+  async function listSubmissions({ url, now }: RouteContext, [id]: string[]) {
     if (!FORM_ID_RE.test(id as string)) throw new HttpError(404, 'not_found', 'Form not found.');
     const limit = Math.min(Math.max(countParam(url, 'limit', 50), 1), 500);
     const offset = countParam(url, 'offset', 0);
     const search = url.searchParams.get('q') ?? undefined;
-    const page = await storage.listSubmissions(id as string, { limit, offset, search });
+    const page = await storage.listSubmissions(id as string, {
+      limit,
+      offset,
+      search,
+      filter: filterParam(url),
+      sort: sortParam(url),
+      now,
+    });
     const columns = responseColumns(await schemasFor(id as string), page.items);
     return json({ ...page, columns, limit, offset });
   }

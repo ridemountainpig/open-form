@@ -5,6 +5,8 @@ import {
   Languages,
   Lock,
   Monitor,
+  PanelLeftClose,
+  PanelLeftOpen,
   PencilLine,
   RotateCw,
   Smartphone,
@@ -31,6 +33,7 @@ import {
   sendInspectSelect,
   sendPreviewCommand,
   shiftPick,
+  usePreviewKeys,
   usePreviewNav,
   usePreviewPicks,
 } from '../lib/preview-channel.ts';
@@ -38,6 +41,7 @@ import { type SchemaInfo, useResource } from './api.ts';
 import { type Comment, EditPanel } from './edit-panel.tsx';
 import { useFormDetail } from './form-detail.tsx';
 import { useT } from './i18n.tsx';
+import { IS_APPLE } from './sidebar.tsx';
 import { Button, cx, Dropdown, Segmented } from './ui.tsx';
 
 const DEVICES = [
@@ -56,6 +60,16 @@ function initialDevice(): DeviceId {
     if (DEVICES.some((d) => d.id === stored)) return stored as DeviceId;
   } catch {}
   return 'desktop';
+}
+
+const STEPS_KEY = 'open-form:preview-steps';
+
+function initialStepsCollapsed(): boolean {
+  try {
+    return localStorage.getItem(STEPS_KEY) === 'collapsed';
+  } catch {
+    return false;
+  }
 }
 
 const NOTICE_ICONS = {
@@ -107,8 +121,11 @@ export function Preview() {
   const { formId, info } = useFormDetail();
   const t = useT();
   const [device, setDevice] = useState<DeviceId>(initialDevice);
+  const [stepsCollapsed, setStepsCollapsed] = useState(initialStepsCollapsed);
   const [language, setLanguage] = useState<Locale | ''>('');
   const frame = useRef<HTMLIFrameElement>(null);
+  const rail = useRef<HTMLElement>(null);
+  usePreviewKeys(frame);
   const shown = usePreviewNav(frame) ?? { step: 0, inspecting: false, done: false, notice: null };
   const current = DEVICES.find((d) => d.id === device) ?? DEVICES[0];
   const schema = info?.schema;
@@ -236,6 +253,30 @@ export function Preview() {
     } catch {}
   };
 
+  // Edit mode needs the room for its panel, so the rail shows just the numbers there too.
+  const compact = editing || stepsCollapsed;
+  const toggleSteps = useCallback(() => setStepsCollapsed((collapsed) => !collapsed), []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(STEPS_KEY, stepsCollapsed ? 'collapsed' : 'expanded');
+    } catch {}
+  }, [stepsCollapsed]);
+  useEffect(() => {
+    if (editing) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.repeat || event.defaultPrevented || event.altKey || event.shiftKey) return;
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'b') return;
+      // Narrow, the rail isn't shown and there's nothing to collapse.
+      if (!rail.current?.offsetParent) return;
+      event.preventDefault();
+      toggleSteps();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editing, toggleSteps]);
+  const stepsShortcut = IS_APPLE ? '⌘B' : 'Ctrl+B';
+  const stepsLabel = t(stepsCollapsed ? 'preview.expandSteps' : 'preview.collapseSteps');
+
   const sourceLocale = info?.config.locale ?? appConfig.locale;
 
   // The steps, then the screen respondents see after submitting.
@@ -293,21 +334,21 @@ export function Preview() {
   const peekId = useId();
 
   const railItem = (item: RailEntry) => (
-    <li key={item.key} className={editing ? 'group relative' : undefined}>
+    <li key={item.key} className={compact ? 'group relative' : undefined}>
       <button
         type="button"
         onClick={item.go}
         aria-current={item.active ? 'step' : undefined}
         // Collapsed, the step shows its details on hover instead.
-        title={editing ? undefined : tooltip(item)}
-        aria-label={editing ? item.name : undefined}
-        aria-describedby={editing ? `${peekId}-${item.key}` : undefined}
+        title={compact ? undefined : tooltip(item)}
+        aria-label={compact ? item.name : undefined}
+        aria-describedby={compact ? `${peekId}-${item.key}` : undefined}
         className={cx(
           'focus-ring flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors',
           item.active
             ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
             : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100',
-          editing && 'justify-center',
+          compact && 'justify-center',
         )}
       >
         <span
@@ -317,14 +358,14 @@ export function Preview() {
           )}
         >
           {item.mark}
-          {item.condition && editing && (
+          {item.condition && compact && (
             <span
               aria-hidden
               className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-current"
             />
           )}
         </span>
-        <span className={cx('min-w-0 flex-1', editing && 'hidden')}>
+        <span className={cx('min-w-0 flex-1', compact && 'hidden')}>
           <span className="flex items-center gap-1.5">
             <span className="truncate text-[13px] leading-5 font-medium">{item.name}</span>
             {item.condition && (
@@ -345,7 +386,7 @@ export function Preview() {
           )}
         </span>
       </button>
-      {editing && <StepPeek id={`${peekId}-${item.key}`} item={item} />}
+      {compact && <StepPeek id={`${peekId}-${item.key}`} item={item} />}
     </li>
   );
 
@@ -354,30 +395,70 @@ export function Preview() {
       <div
         className={cx(
           'grid items-start gap-4 @3xl:gap-5',
-          editing
+          compact
             ? '@3xl:grid-cols-[2.75rem_minmax(0,1fr)]'
             : '@3xl:grid-cols-[12.5rem_minmax(0,1fr)]',
         )}
       >
-        {/* Beside the preview, like open-slide's page rail; just the numbers while editing. */}
-        <nav aria-label={t('preview.steps')} className="hidden @3xl:sticky @3xl:top-6 @3xl:block">
+        {/* Beside the preview, like open-slide's page rail; just the numbers when collapsed or editing. */}
+        <nav
+          ref={rail}
+          aria-label={t('preview.steps')}
+          className="hidden @3xl:sticky @3xl:top-6 @3xl:block"
+        >
           {/* As tall as the toolbar, so the first step lines up with the top of the preview. */}
-          <h3
+          <div
             className={cx(
-              'mb-4 flex h-[2.125rem] items-center text-[11px] font-semibold whitespace-nowrap text-zinc-500 uppercase',
-              // Collapsed, the label centers over the numbers and drops its letter-spacing to fit.
-              editing ? 'justify-center' : 'px-2 tracking-wider',
+              'mb-4 flex h-[2.125rem] items-center',
+              compact ? 'justify-center' : 'justify-between gap-2',
             )}
           >
-            {t('preview.steps')}
-          </h3>
+            <h3
+              className={cx(
+                'text-[11px] font-semibold whitespace-nowrap text-zinc-500 uppercase',
+                // Editing, the label centers over the numbers and drops its letter-spacing to
+                // fit; collapsed by choice, the expand button takes its place.
+                editing ? undefined : stepsCollapsed ? 'sr-only' : 'px-2 tracking-wider',
+              )}
+            >
+              {t('preview.steps')}
+            </h3>
+            {!editing && (
+              <span className="group/toggle relative">
+                <button
+                  type="button"
+                  onClick={toggleSteps}
+                  aria-expanded={!stepsCollapsed}
+                  aria-label={stepsLabel}
+                  aria-keyshortcuts={IS_APPLE ? 'Meta+B' : 'Control+B'}
+                  className="focus-ring grid size-7 shrink-0 place-items-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                >
+                  {stepsCollapsed ? (
+                    <PanelLeftOpen className="size-4" aria-hidden />
+                  ) : (
+                    <PanelLeftClose className="size-4" aria-hidden />
+                  )}
+                </button>
+                {/* Shown at once, unlike a title, so the shortcut gets noticed. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none invisible absolute top-1/2 left-full z-30 ml-2 flex -translate-y-1/2 items-center gap-1.5 rounded-md bg-zinc-900 py-1 pr-1 pl-2 text-[12px] font-medium whitespace-nowrap text-white opacity-0 shadow-md transition-[opacity,visibility] duration-150 group-hover/toggle:visible group-hover/toggle:opacity-100 group-hover/toggle:delay-200 group-has-[:focus-visible]/toggle:visible group-has-[:focus-visible]/toggle:opacity-100 motion-reduce:transition-none dark:bg-white dark:text-zinc-900"
+                >
+                  {stepsLabel}
+                  <kbd className="rounded bg-white/15 px-1 font-mono text-[10.5px] leading-4 text-white/80 dark:bg-zinc-900/10 dark:text-zinc-600">
+                    {stepsShortcut}
+                  </kbd>
+                </span>
+              </span>
+            )}
+          </div>
           <ol className="space-y-0.5">{items.map(railItem)}</ol>
           {noticeItems.length > 0 && (
             <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
               <h4
                 className={cx(
                   'mb-1.5 px-2 text-[11px] font-semibold tracking-wider whitespace-nowrap text-zinc-500 uppercase',
-                  editing && 'sr-only',
+                  compact && 'sr-only',
                 )}
               >
                 {t('preview.notices')}
@@ -388,7 +469,7 @@ export function Preview() {
           <div
             className={cx(
               'mt-4 space-y-2 border-t border-zinc-200 px-2 pt-4 text-[11.5px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400',
-              editing && 'hidden',
+              compact && 'hidden',
             )}
           >
             {steps.some((s) => s.condition) && <p>{t('preview.stepsHint')}</p>}

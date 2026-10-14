@@ -410,6 +410,10 @@ export function Popover({
   align?: 'start' | 'end';
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const reposition = useRef<(() => void) | null>(null);
+  // The page around the anchor can move it without a scroll or resize (a
+  // toolbar that wraps), and that comes with a render, so follow it.
+  useLayoutEffect(() => reposition.current?.());
   useLayoutEffect(() => {
     const panel = ref.current;
     const anchor = panel?.parentElement;
@@ -425,12 +429,14 @@ export function Popover({
       panel.style.left = `${Math.max(VIEWPORT_EDGE, Math.min(left, clientWidth - width - VIEWPORT_EDGE))}px`;
       panel.style.top = `${flip ? above : below}px`;
     };
+    reposition.current = place;
     place();
     const resize = new ResizeObserver(place);
     resize.observe(panel);
     window.addEventListener('scroll', place, true);
     window.addEventListener('resize', place);
     return () => {
+      reposition.current = null;
       resize.disconnect();
       window.removeEventListener('scroll', place, true);
       window.removeEventListener('resize', place);
@@ -442,7 +448,9 @@ export function Popover({
     const onDown = (event: PointerEvent) => {
       if (!anchor?.contains(event.target as Node)) onClose();
     };
-    const onKey = (event: globalThis.KeyboardEvent) => event.key === 'Escape' && onClose();
+    // A list open inside the panel (a Dropdown) closes first on its own Escape.
+    const onKey = (event: globalThis.KeyboardEvent) =>
+      event.key === 'Escape' && !event.defaultPrevented && onClose();
     document.addEventListener('pointerdown', onDown);
     window.addEventListener('keydown', onKey);
     if (takeFocus) {

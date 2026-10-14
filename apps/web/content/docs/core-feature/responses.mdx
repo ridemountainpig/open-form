@@ -49,22 +49,52 @@ Open a form and choose **Responses**.
   to see every answer.
 - **Search** matches answer values only, not field names, so searching "email"
   doesn't hit every row.
+- **Filter** narrows the table the way a Notion database does. Choose a question
+  (or **Submitted**) and a condition; each rule becomes a chip above the table.
+  Click a chip to change it, or its **×** to remove it. With two or more rules,
+  choose whether a response must match **all** of them or **any** one. Filters
+  work together with search, and the count shows how many of the form's
+  responses are left. A filtered question's column stays in the table.
+- **Sort** from a column heading: click it for **Sort ascending**, **Sort
+  descending** or **Filter**. The sorted column shows an arrow and stays in the
+  table, and a chip above the table reverses the order when clicked; its **×**
+  goes back to newest first. Text sorts A–Z regardless of case, numbers by value,
+  and select, radio and checkbox-group answers in the order of the form's
+  options. Empty answers come last either way; responses with the same answer
+  stay newest first.
 - **Click a row** to open the response at `/studio/:formId/responses/:responseId`.
   The detail shows every answer with its question, when it was submitted and in
   which language. **Copy** copies one answer; **Copy all** copies the whole
   response as question and answer pairs.
 - **Delete** removes one response after a confirmation. Select rows to delete
   several (Shift-click ticks a range), or select every response on the page,
-  every response, or every response matching your search.
+  every response, or every response matching your search and filters.
 
 <Callout type="warn">
   Deleting cannot be undone. Export first if you might need the data.
 </Callout>
 
+### Filter conditions
+
+| Question | Conditions |
+| --- | --- |
+| Text, email, URL, phone, long text | contains, does not contain, is, is not, starts with, ends with, is empty, is not empty. Case doesn't matter. |
+| Number | `=`, `≠`, `>`, `<`, `≥`, `≤`, is empty, is not empty |
+| Select, radio | is, is not — pick one or more options |
+| Checkbox group | has any of, has all of, has none of, is empty, is not empty |
+| Checkbox | is checked, is not checked |
+| Date | is on, is before, is after, is on or before, is on or after, is between, is empty, is not empty |
+| **Submitted** | in the past N days (1, 7, 30, 90 or your own), is on, is before, is after, is on or before, is on or after, is between |
+
+A rule without a value yet (a dashed chip) doesn't filter. **Submitted** days are
+days in your browser's time zone, like the times in the table. Filters belong to
+the page: they reset when you open another form, along with the sort, and exports
+always contain every response, oldest first.
+
 ## Export
 
-Studio's Responses tab has **Excel**, **CSV** and **JSON** buttons. From the
-terminal:
+In Studio's Responses tab, **Export** offers **Excel**, **CSV** and **JSON**.
+From the terminal:
 
 ```bash
 pnpm exec open-form responses export meetup                      # CSV to stdout

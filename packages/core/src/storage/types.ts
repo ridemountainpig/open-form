@@ -1,4 +1,10 @@
-import type { FormOverrides, FormSchema, FormValues } from '../schema/index.ts';
+import type {
+  FormOverrides,
+  FormSchema,
+  FormValues,
+  ResponseFilter,
+  ResponseSort,
+} from '../schema/index.ts';
 
 export type FormVersionRecord = {
   id: string;
@@ -40,7 +46,14 @@ export type ListSubmissionsOptions = {
   offset?: number;
   /** Case-insensitive substring match against the answers (not the field names). */
   search?: string;
+  /** Studio's filter rules, checked by `responseFilterTest`; applies together with `search`. */
+  filter?: ResponseFilter;
+  /** The current time for relative rules ("in the past 7 days"). Defaults to now. */
+  now?: number;
+  /** By response number (submission order). */
   order?: 'asc' | 'desc';
+  /** Studio's column sort, keyed by `responseSortKey`; replaces `order`. Ties stay newest first. */
+  sort?: ResponseSort;
 };
 
 /** Settings changed in Studio on a running server; they win over the form's code. */

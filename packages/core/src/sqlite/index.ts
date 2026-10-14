@@ -1,7 +1,15 @@
 import { chmodSync, closeSync, mkdirSync, openSync } from 'node:fs';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
-import type { FormOverrides, FormSchema, FormValues } from '../schema/index.ts';
+import {
+  type FilterableResponse,
+  type FormOverrides,
+  type FormSchema,
+  type FormValues,
+  type ResponseSortKey,
+  responseFilterTest,
+  responseSortKey,
+} from '../schema/index.ts';
 import type {
   CreateSubmissionResult,
   FormVersionRecord,
@@ -194,6 +202,28 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
   db.exec('PRAGMA busy_timeout = 5000');
   migrate(db);
 
+  // Filters run the same JavaScript as every other adapter, so COUNT, LIMIT and
+  // OFFSET still happen in SQL. Queries are synchronous: one filter at a time.
+  let filtering: ((response: FilterableResponse) => boolean) | null = null;
+  db.function('open_form_filter', { directOnly: true }, (data, createdAt) => {
+    if (!filtering) return 1;
+    try {
+      const parsed = JSON.parse(String(data)) as FilterableResponse['data'];
+      return filtering({ data: parsed, createdAt: String(createdAt) }) ? 1 : 0;
+    } catch {
+      return 0;
+    }
+  });
+  let sorting: ((data: FilterableResponse['data']) => ResponseSortKey) | null = null;
+  db.function('open_form_sort_key', { directOnly: true }, (data) => {
+    if (!sorting) return null;
+    try {
+      return sorting(JSON.parse(String(data)) as FilterableResponse['data']);
+    } catch {
+      return null;
+    }
+  });
+
   const stmt = {
     findVersion: db.prepare('SELECT * FROM form_versions WHERE form_id = ? AND version = ?'),
     getVersion: db.prepare('SELECT * FROM form_versions WHERE id = ?'),
@@ -346,17 +376,30 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
         );
         params.push(`%${escapeLike(opts.search.trim())}%`);
       }
+      const test = opts.filter ? responseFilterTest(opts.filter, opts.now) : null;
+      if (test) where.push('open_form_filter(data, created_at)');
       const clause = where.join(' AND ');
-      const { n: total } = db
-        .prepare(`SELECT COUNT(*) AS n FROM submissions WHERE ${clause}`)
-        .get(...params) as { n: number };
-      const order = opts.order === 'asc' ? 'ASC' : 'DESC';
-      const rows = db
-        .prepare(
-          `SELECT * FROM submissions WHERE ${clause} ORDER BY number ${order} LIMIT ? OFFSET ?`,
-        )
-        .all(...params, opts.limit ?? -1, opts.offset ?? 0) as SubmissionRow[];
-      return { items: rows.map(toSubmission), total: Number(total) };
+      const order = (opts.sort?.direction ?? opts.order) === 'asc' ? 'ASC' : 'DESC';
+      const key = opts.sort?.field !== undefined ? responseSortKey(opts.sort) : null;
+      // Empty answers last either way; ties newest first, like the default order.
+      const query = key
+        ? `SELECT * FROM (SELECT *, open_form_sort_key(data) AS sort_key FROM submissions WHERE ${clause})
+           ORDER BY sort_key IS NULL, sort_key ${order}, number DESC LIMIT ? OFFSET ?`
+        : `SELECT * FROM submissions WHERE ${clause} ORDER BY number ${order} LIMIT ? OFFSET ?`;
+      filtering = test;
+      sorting = key;
+      try {
+        const { n: total } = db
+          .prepare(`SELECT COUNT(*) AS n FROM submissions WHERE ${clause}`)
+          .get(...params) as { n: number };
+        const rows = db
+          .prepare(query)
+          .all(...params, opts.limit ?? -1, opts.offset ?? 0) as SubmissionRow[];
+        return { items: rows.map(toSubmission), total: Number(total) };
+      } finally {
+        filtering = null;
+        sorting = null;
+      }
     },
 
     async countSubmissions(formId) {

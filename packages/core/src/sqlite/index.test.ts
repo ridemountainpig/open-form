@@ -121,6 +121,75 @@ describe.each([
     expect(await search('%')).toEqual([]);
     await storage.close();
   });
+
+  it('filters and pages with the filter applied, alongside search', async () => {
+    const storage = await open();
+    await submit(storage, { name: 'Amy', plan: 'pro', seats: 3 });
+    await submit(storage, { name: 'Ben', plan: 'free', seats: 12 });
+    await submit(storage, { name: 'Cleo', plan: 'pro', seats: 40 });
+    await submit(storage, { name: 'Dee', plan: 'pro' });
+    const filter = {
+      rules: [
+        { field: 'plan', op: 'anyOf' as const, values: ['pro'] },
+        { field: 'seats', op: 'notEmpty' as const },
+      ],
+    };
+    const page = await storage.listSubmissions('f', { filter, limit: 1, offset: 1 });
+    expect(page.total).toBe(2);
+    expect(page.items.map((s) => s.data.name)).toEqual(['Amy']);
+    const both = await storage.listSubmissions('f', { filter, search: 'cle' });
+    expect(both.items.map((s) => s.data.name)).toEqual(['Cleo']);
+    const any = await storage.listSubmissions('f', {
+      filter: { match: 'any', rules: [{ field: 'seats', op: 'gt' as const, value: 20 }] },
+      order: 'asc',
+    });
+    expect(any.items.map((s) => s.data.name)).toEqual(['Cleo']);
+    await storage.close();
+  });
+
+  it('sorts by an answer, empty answers last, pages after sorting', async () => {
+    const storage = await open();
+    await submit(storage, { name: 'amy', level: 'senior', seats: 3 });
+    await submit(storage, { name: 'Ben', level: 'junior', seats: 12 });
+    await submit(storage, { name: 'cleo', seats: 'x' });
+    await submit(storage, { name: 'Dee', level: 'mid' });
+    await submit(storage, { name: 'Eve', level: 'junior', seats: 12 });
+    const names = async (sort: { field?: string; direction: 'asc' | 'desc'; values?: string[] }) =>
+      (await storage.listSubmissions('f', { sort })).items.map((s) => s.data.name);
+    expect(await names({ field: 'name', direction: 'asc' })).toEqual([
+      'amy',
+      'Ben',
+      'cleo',
+      'Dee',
+      'Eve',
+    ]);
+    // Numbers before text, empty last; ties newest first.
+    expect(await names({ field: 'seats', direction: 'desc' })).toEqual([
+      'cleo',
+      'Eve',
+      'Ben',
+      'amy',
+      'Dee',
+    ]);
+    const values = ['junior', 'mid', 'senior'];
+    expect(await names({ field: 'level', direction: 'asc', values })).toEqual([
+      'Eve',
+      'Ben',
+      'Dee',
+      'amy',
+      'cleo',
+    ]);
+    expect(await names({ direction: 'asc' })).toEqual(['amy', 'Ben', 'cleo', 'Dee', 'Eve']);
+    const page = await storage.listSubmissions('f', {
+      sort: { field: 'name', direction: 'desc' },
+      filter: { rules: [{ field: 'level', op: 'notEmpty' }] },
+      limit: 2,
+      offset: 1,
+    });
+    expect(page.total).toBe(4);
+    expect(page.items.map((s) => s.data.name)).toEqual(['Dee', 'Ben']);
+    await storage.close();
+  });
 });
 
 describe('sqlite search', () => {

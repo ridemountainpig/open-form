@@ -1,4 +1,20 @@
-export type { FormOverrides, FormSchema } from '../schema/index.ts';
+export type {
+  FilterableResponse,
+  FormOverrides,
+  FormSchema,
+  ResponseFilter,
+  ResponseFilterOp,
+  ResponseFilterRule,
+  ResponseSort,
+  ResponseSortKey,
+} from '../schema/index.ts';
+export {
+  compareResponseSortKeys,
+  parseResponseFilter,
+  parseResponseSort,
+  responseFilterTest,
+  responseSortKey,
+} from '../schema/index.ts';
 export type {
   CreateSubmissionInput,
   CreateSubmissionResult,

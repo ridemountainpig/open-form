@@ -1,5 +1,6 @@
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -9,7 +10,16 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { isLocale, LOCALE_NAMES } from '../../schema/index.ts';
@@ -28,7 +38,21 @@ import {
 import { useFormDetail } from './form-detail.tsx';
 import { fieldIndex, formatValue, fullDate, timeAgo } from './format.ts';
 import { useT } from './i18n.tsx';
-import { Button, ButtonLink, Card, cx, EmptyState, ErrorNotice, Skeleton } from './ui.tsx';
+import {
+  AddFilter,
+  ColumnMenu,
+  type ColumnSort,
+  EMPTY_FILTER,
+  FilterBar,
+  type FilterDraft,
+  type FilterProperty,
+  filterQuery,
+  newRule,
+  readyCount,
+  SortChip,
+  sortQuery,
+} from './response-filters.tsx';
+import { Button, Card, cx, EmptyState, ErrorNotice, Popover, Skeleton } from './ui.tsx';
 
 const PAGE_SIZE = 50;
 const MAX_COLUMNS = 5;
@@ -76,47 +100,85 @@ export function Responses() {
   const [query, setQuery] = useState('');
   const [offset, setOffset] = useState(0);
   const search = useDebounced(query.trim(), 250);
+  const [filterDraft, setFilterDraft] = useState<FilterDraft>(EMPTY_FILTER);
+  const [editing, setEditing] = useState<string | null>(null);
+  // Days of "Submitted" rules are the viewer's days, like the times in the table.
+  const timeZone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+  const filter = useDebounced(filterQuery(filterDraft, timeZone), 250);
+  const narrowed = Boolean(search || filter);
+  const fields = useMemo(() => fieldIndex(info?.schema), [info]);
+  const [sort, setSort] = useState<ColumnSort | null>(null);
+  const order = sortQuery(sort, sort?.field === undefined ? undefined : fields.get(sort.field));
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
-  // Every response matching the search, picked from the banner over the table.
-  // Only for the form and search it was gathered for.
+  // Every response matching the search and filters, picked from the banner over
+  // the table. Only for the form, search and filters it was gathered for.
   const [gathered, setGathered] = useState<{
     formId: string;
     search: string;
+    filter: string;
     ids: ReadonlySet<string>;
   } | null>(null);
   const everything =
-    gathered?.formId === formId && gathered.search === search ? gathered.ids : null;
+    gathered?.formId === formId && gathered.search === search && gathered.filter === filter
+      ? gathered.ids
+      : null;
   const [gathering, setGathering] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const anchor = useRef<number | null>(null);
-  const shown = useRef({ formId, search });
-  shown.current = { formId, search };
+  const shown = useRef({ formId, search, filter });
+  shown.current = { formId, search, filter };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: another form starts with no search
-  useEffect(() => setQuery(''), [formId]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new search starts at the first page
-  useEffect(() => setOffset(0), [formId, search]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: another form starts with no search or filters
+  useEffect(() => {
+    setQuery('');
+    setFilterDraft(EMPTY_FILTER);
+    setEditing(null);
+    setSort(null);
+  }, [formId]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new search or order starts at the first page
+  useEffect(() => setOffset(0), [formId, search, filter, order]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new search is a new set of responses
-  useEffect(() => setGathered(null), [formId, search]);
+  useEffect(() => setGathered(null), [formId, search, filter]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: ticks belong to the page they were made on
   useEffect(() => {
     setSelected(new Set());
     anchor.current = null;
-  }, [formId, offset, search]);
+  }, [formId, offset, search, filter, order]);
 
   const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
   if (search) params.set('q', search);
+  if (filter) params.set('filter', filter);
+  if (order) params.set('sort', order);
   const page = useResource<SubmissionPage>(`${formPath(formId)}/submissions?${params}`, {
     scope: `${formPath(formId)}/submissions`,
   });
-  const fields = useMemo(() => fieldIndex(info?.schema), [info]);
   const items = page.data?.items ?? [];
-  // Prefer columns that have answers on this page; conditional fields are often empty.
   const allColumns = page.data?.columns ?? [];
-  const filled = allColumns.filter((c) =>
-    items.some((item) => formatValue(item.data[c.key]) !== ''),
+  const submitted: FilterProperty = { label: t('responses.submitted') };
+  const properties: FilterProperty[] = [
+    submitted,
+    ...allColumns.map((c) => ({
+      field: c.key,
+      label: c.header,
+      type: c.type ?? fields.get(c.key)?.type,
+      options: fields.get(c.key)?.options,
+    })),
+  ];
+  // Sorted and filtered questions first, then ones with answers on this page;
+  // conditional fields are often empty. Shown in form order.
+  const pinned = new Set([sort?.field, ...filterDraft.rules.map((rule) => rule.field)]);
+  const filled = allColumns.filter(
+    (c) => !pinned.has(c.key) && items.some((item) => formatValue(item.data[c.key]) !== ''),
   );
-  const columns = (filled.length ? filled : allColumns).slice(0, MAX_COLUMNS);
+  const picked = new Set(
+    [
+      ...new Set([
+        ...allColumns.filter((c) => pinned.has(c.key)),
+        ...(filled.length ? filled : allColumns),
+      ]),
+    ].slice(0, MAX_COLUMNS),
+  );
+  const columns = allColumns.filter((c) => picked.has(c));
   const total = page.data?.total ?? 0;
   const ticked = (id: string) => (everything ? everything.has(id) : selected.has(id));
   // Only what's ticked on screen: live updates can push a ticked row onto another page.
@@ -170,13 +232,24 @@ export function Responses() {
     anchor.current = null;
   };
 
+  const addFilter = (property: FilterProperty) => {
+    const rule = newRule(property);
+    setFilterDraft((draft) => ({ ...draft, rules: [...draft.rules, rule] }));
+    setEditing(rule.id);
+  };
+
+  const clearFilters = () => {
+    setFilterDraft(EMPTY_FILTER);
+    setEditing(null);
+  };
+
   const selectEverything = async () => {
-    const asked = { formId, search };
+    const asked = { formId, search, filter };
     setGathering(true);
     try {
-      const ids = await submissionIds(asked.formId, asked.search);
+      const ids = await submissionIds(asked.formId, asked.search, asked.filter);
       const now = shown.current;
-      if (now.formId === asked.formId && now.search === asked.search)
+      if (now.formId === asked.formId && now.search === asked.search && now.filter === asked.filter)
         setGathered({ ...asked, ids });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('common.error'));
@@ -209,7 +282,7 @@ export function Responses() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full sm:w-auto sm:max-w-72 sm:min-w-40 sm:flex-1">
           <Search
             className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-400"
             aria-hidden
@@ -223,18 +296,29 @@ export function Responses() {
             className="focus-ring h-8 w-full rounded-md border border-zinc-200 bg-white pr-3 pl-8 text-[13px] placeholder:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
           />
         </div>
+        <AddFilter properties={properties} onPick={addFilter} count={readyCount(filterDraft)} />
         <span className="text-[13px] text-zinc-500 tabular-nums dark:text-zinc-400">
-          {page.data && t.n('responses.count', total)}
+          {page.data &&
+            (narrowed && info
+              ? t.n('responses.countOf', info.responses, { shown: total })
+              : t.n('responses.count', total))}
         </span>
-        <div className="ml-auto flex gap-2">
-          {EXPORT_FORMATS.map(({ format, label }) => (
-            <ButtonLink key={format} href={exportPath(formId, format)} download>
-              <Download />
-              {label}
-            </ButtonLink>
-          ))}
+        <div className="ml-auto">
+          <ExportMenu formId={formId} count={info?.responses} narrowed={narrowed} />
         </div>
       </div>
+
+      {(filterDraft.rules.length > 0 || sort) && (
+        <FilterBar
+          draft={filterDraft}
+          properties={properties}
+          editing={editing}
+          onEdit={setEditing}
+          onChange={setFilterDraft}
+          onAdd={addFilter}
+          leading={sort && <SortChip sort={sort} properties={properties} onChange={setSort} />}
+        />
+      )}
 
       {page.error && <ErrorNotice error={page.error} />}
 
@@ -248,9 +332,20 @@ export function Responses() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={<Inbox />}
-            title={search ? t('responses.noMatches') : t('responses.empty')}
+            title={narrowed ? t('responses.noMatches') : t('responses.empty')}
           >
-            {search ? t('responses.noMatchesHint', { q: search }) : t('responses.emptyHint')}
+            {filter ? (
+              <>
+                {t('responses.noMatchesFiltered')}
+                <span className="mt-3 block">
+                  <Button onClick={clearFilters}>{t('filters.clear')}</Button>
+                </span>
+              </>
+            ) : search ? (
+              t('responses.noMatchesHint', { q: search })
+            ) : (
+              t('responses.emptyHint')
+            )}
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
@@ -259,9 +354,11 @@ export function Responses() {
                 {everything ? (
                   <>
                     <span>
-                      {search
-                        ? t('responses.allMatchingSelected', { n: everything.size, q: search })
-                        : t('responses.allSelected', { n: everything.size })}
+                      {filter
+                        ? t('responses.allFilteredSelected', { n: everything.size })
+                        : search
+                          ? t('responses.allMatchingSelected', { n: everything.size, q: search })
+                          : t('responses.allSelected', { n: everything.size })}
                     </span>
                     <button type="button" onClick={clearSelection} className={bannerLink}>
                       {t('responses.clearSelection')}
@@ -278,9 +375,11 @@ export function Responses() {
                     >
                       {gathering
                         ? t('responses.selecting')
-                        : search
-                          ? t('responses.selectAllMatching', { n: total, q: search })
-                          : t('responses.selectAll', { n: total })}
+                        : filter
+                          ? t('responses.selectAllFiltered', { n: total })
+                          : search
+                            ? t('responses.selectAllMatching', { n: total, q: search })
+                            : t('responses.selectAll', { n: total })}
                     </button>
                   </>
                 )}
@@ -304,16 +403,27 @@ export function Responses() {
                   <th scope="col" className="w-14 py-2.5 pr-2 font-medium">
                     #
                   </th>
-                  <th scope="col" className="py-2.5 pr-4 font-medium whitespace-nowrap">
-                    {t('responses.submitted')}
+                  <th scope="col" className="py-1.5 pr-4 font-medium">
+                    <ColumnMenu
+                      property={submitted}
+                      sort={sort}
+                      onSort={setSort}
+                      onFilter={addFilter}
+                    />
                   </th>
                   {columns.map((c) => (
-                    <th
-                      key={c.key}
-                      scope="col"
-                      className="py-2.5 pr-4 font-medium whitespace-nowrap"
-                    >
-                      {c.header}
+                    <th key={c.key} scope="col" className="py-1.5 pr-4 font-medium">
+                      <ColumnMenu
+                        property={
+                          properties.find((p) => p.field === c.key) ?? {
+                            field: c.key,
+                            label: c.header,
+                          }
+                        }
+                        sort={sort}
+                        onSort={setSort}
+                        onFilter={addFilter}
+                      />
                     </th>
                   ))}
                 </tr>
@@ -595,6 +705,84 @@ function ResponseDrawer({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Every format behind one button; the toolbar keeps its room for search and filters. */
+function ExportMenu({
+  formId,
+  count,
+  narrowed,
+}: {
+  formId: string;
+  count: number | undefined;
+  narrowed: boolean;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const headingId = useId();
+
+  const close = useCallback(() => {
+    setOpen(false);
+    if (root.current?.contains(document.activeElement)) {
+      root.current.querySelector<HTMLElement>('button')?.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) list.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+  }, [open]);
+
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const items = [...(list.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    const step = event.key === 'ArrowDown' ? 1 : -1;
+    items[(index + step + items.length) % items.length]?.focus();
+  };
+
+  return (
+    <div ref={root} className="relative">
+      <Button onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
+        <Download aria-hidden />
+        {t('responses.export')}
+        <ChevronDown className="-mr-1 text-zinc-400" aria-hidden />
+      </Button>
+      <Popover open={open} onClose={close} takeFocus={false} className="w-72 p-1">
+        <div className="px-2 pt-1.5 pb-1">
+          <p id={headingId} className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400">
+            {count === undefined ? t('responses.export') : t.n('responses.exportAll', count)}
+          </p>
+          {narrowed && (
+            <p className="text-[11.5px] text-zinc-400 dark:text-zinc-500">
+              {t('responses.exportUnfiltered')}
+            </p>
+          )}
+        </div>
+        <div ref={list} role="menu" aria-labelledby={headingId} onKeyDown={onKeyDown}>
+          {EXPORT_FORMATS.map(({ format, label }) => (
+            <a
+              key={format}
+              role="menuitem"
+              href={exportPath(formId, format)}
+              download
+              onClick={close}
+              className="flex flex-col rounded-md px-2 py-1.5 outline-none hover:bg-zinc-100 focus-visible:bg-zinc-100 dark:hover:bg-zinc-800 dark:focus-visible:bg-zinc-800"
+            >
+              <span className="text-[13px] font-medium text-zinc-800 dark:text-zinc-100">
+                {label}
+              </span>
+              <span className="text-[12px] text-zinc-500 dark:text-zinc-400">
+                {t(`responses.exportHint.${format}`)}
+              </span>
+            </a>
+          ))}
+        </div>
+      </Popover>
     </div>
   );
 }

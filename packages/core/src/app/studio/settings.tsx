@@ -38,7 +38,7 @@ export function Settings() {
   const { protection } = info;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <ScheduleSection
         key={`${info.timeZone}|${JSON.stringify(info.schedule)}|${info.overrides?.updatedAt ?? ''}`}
         formId={formId}

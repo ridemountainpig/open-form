@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
+  FieldType,
   FormConfig,
   FormOverrides,
   FormSchema,
@@ -67,7 +68,7 @@ export type Submission = {
   createdAt: string;
 };
 
-export type Column = { key: string; header: string };
+export type Column = { key: string; header: string; type?: FieldType };
 
 export type SubmissionPage = {
   items: Submission[];
@@ -210,13 +211,18 @@ export async function deleteSubmissions(formId: string, submissionIds: string[])
   return { deleted };
 }
 
-/** Every response matching `search` (all of them without one), by id. */
-export async function submissionIds(formId: string, search: string): Promise<Set<string>> {
+/** Every response matching `search` and `filter` (all of them without either), by id. */
+export async function submissionIds(
+  formId: string,
+  search: string,
+  filter: string,
+): Promise<Set<string>> {
   const ids = new Set<string>();
   const limit = 500;
   for (let offset = 0; ; offset += limit) {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (search) params.set('q', search);
+    if (filter) params.set('filter', filter);
     const page = await request<SubmissionPage>(`${formPath(formId)}/submissions?${params}`);
     for (const item of page.items) ids.add(item.id);
     if (page.items.length < limit || offset + limit >= page.total) return ids;

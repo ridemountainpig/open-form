@@ -11,6 +11,7 @@ import { visitorHeaders } from '../../react/visitor.ts';
 import { getMessages, type Locale, sourceLocale, translate } from '../../schema/index.ts';
 import { reportCurrent, useFormModule } from '../lib/forms.ts';
 import {
+  forwardStudioKeys,
   onInspect,
   previewChannel,
   reportInspectReady,
@@ -145,6 +146,8 @@ export function PublicFormPage() {
         : undefined,
     [embedded],
   );
+
+  useEffect(() => (embedded ? forwardStudioKeys() : undefined), [embedded]);
 
   // Studio's Edit mode, in dev only: that's when the source locations exist.
   const translations = useRef(config?.translations);

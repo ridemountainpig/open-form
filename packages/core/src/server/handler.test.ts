@@ -428,6 +428,33 @@ describe('admin endpoints', () => {
     expect(page.total).toBe(1);
     expect(page.items[0]?.data.name).toBe('Amy');
 
+    const filtered = async (filter: string) =>
+      handle(
+        new Request(`${ORIGIN}/api/forms/meetup/submissions?filter=${encodeURIComponent(filter)}`),
+      );
+    const byRole = (await (
+      await filtered(JSON.stringify({ rules: [{ field: 'role', op: 'is', value: 'engineer' }] }))
+    ).json()) as { items: Array<{ data: { email: string } }>; total: number };
+    expect(byRole.total).toBe(1);
+    expect(byRole.items[0]?.data.email).toBe('eve@example.com');
+    const bad = await filtered(JSON.stringify({ rules: [{ field: 'role', op: 'like' }] }));
+    expect(bad.status).toBe(400);
+    expect(((await bad.json()) as { message: string }).message).toMatch(/unknown operator/);
+    expect((await filtered('{')).status).toBe(400);
+
+    const sortedBy = async (sort: string) =>
+      handle(
+        new Request(`${ORIGIN}/api/forms/meetup/submissions?sort=${encodeURIComponent(sort)}`),
+      );
+    const byEmail = (await (
+      await sortedBy(JSON.stringify({ field: 'email', direction: 'desc' }))
+    ).json()) as { items: Array<{ data: { email: string } }> };
+    expect(byEmail.items.map((item) => item.data.email)).toEqual([
+      'eve@example.com',
+      'amy@example.com',
+    ]);
+    expect((await sortedBy(JSON.stringify({ field: 'email' }))).status).toBe(400);
+
     const bytes = new Uint8Array(
       await (await handle(new Request(`${ORIGIN}/api/forms/meetup/export`))).arrayBuffer(),
     );

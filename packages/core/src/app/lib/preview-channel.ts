@@ -118,6 +118,63 @@ export function usePreviewNav(frame: RefObject<HTMLIFrameElement | null>): Previ
   return nav;
 }
 
+// Focus inside the preview would swallow Studio's ⌘/Ctrl shortcuts (⌘K, ⌘B), so
+// the preview passes them up and Studio replays them on its own window.
+const KEY_MESSAGE = 'open-form:preview-key';
+const STUDIO_KEYS = ['b', 'k'];
+
+/** In the preview: hand Studio's shortcuts to it. */
+export function forwardStudioKeys(): () => void {
+  const onKey = (event: KeyboardEvent) => {
+    const key = event.key.toLowerCase();
+    if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+    if (!STUDIO_KEYS.includes(key)) return;
+    event.preventDefault();
+    window.parent.postMessage(
+      {
+        type: KEY_MESSAGE,
+        key,
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        repeat: event.repeat,
+      },
+      window.location.origin,
+    );
+  };
+  window.addEventListener('keydown', onKey);
+  return () => window.removeEventListener('keydown', onKey);
+}
+
+/** In Studio: replay the shortcuts a preview frame hands up. */
+export function usePreviewKeys(frame: RefObject<HTMLIFrameElement | null>) {
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.current?.contentWindow) return;
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as {
+        type?: string;
+        key?: unknown;
+        metaKey?: unknown;
+        ctrlKey?: unknown;
+        repeat?: unknown;
+      };
+      if (data?.type !== KEY_MESSAGE || typeof data.key !== 'string') return;
+      if (!STUDIO_KEYS.includes(data.key)) return;
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: data.key,
+          metaKey: data.metaKey === true,
+          ctrlKey: data.ctrlKey === true,
+          repeat: data.repeat === true,
+          cancelable: true,
+        }),
+      );
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [frame]);
+}
+
 // Studio's Edit mode: the preview says when it can listen; Studio switches
 // picking on and off and says what is selected; the preview reports what the
 // user clicks, and when Escape (with nothing selected) should leave Edit mode.

@@ -360,6 +360,8 @@ meta             (key, value)                                                -- 
 - `maxResponses` 與 `uniqueBy` 在 adapter 的 transaction 內檢查，不會有 race。
 - `number` 是每張表單內的流水號（Studio 的「Response #147」），刪除後不會重排，也不會重用：編號來自只增不減的 `form_counters`，與 `maxResponses`／`uniqueBy` 檢查在同一個 transaction 內遞增。不單用 `MAX(number) + 1`，因為刪掉最新一筆後下一筆會拿到同一個編號，而 webhook 接收端已經看過它；但仍取 `max(計數器 + 1, MAX(number) + 1)`，所以升級前的資料、或舊版程式繞過計數器寫入的回覆，都不會造成重複編號。
 - 搜尋（`listSubmissions({ search })`，Studio 的 `?q=`）只比對答案的值（`json_tree` 的字串與數字），不比對欄位名稱；否則搜「email」會命中每一筆。
+- 篩選（`listSubmissions({ filter, now })`，Studio 的 `?filter=` JSON）只在 `schema/response-filter.ts` 定義一次：`parseResponseFilter` 驗證（handler 遇到不合法的回 400），`responseFilterTest` 執行。memory adapter 直接呼叫；SQLite 把它註冊成 `open_form_filter(data, created_at)` SQL 函式，所以 `COUNT`、`LIMIT`、`OFFSET` 仍在 SQL 裡做，兩個 adapter 結果一致。送出時間的「日」以 Studio 傳來的 `timeZone`（檢視者的時區）計算。
+- 排序（`listSubmissions({ sort })`，Studio 的 `?sort=` JSON）同樣做法：`schema/response-sort.ts` 把答案轉成排序鍵（`responseSortKey`：數字、轉小寫的文字，或選項在 Studio 傳來的 `values` 中的位置，讓選項依表單順序排）並定義順序（`compareResponseSortKeys`：與 SQLite 相同——數字在文字前、空答案不論升降冪都排最後）。SQLite 把排序鍵註冊成 `open_form_sort_key(data)`，在子查詢裡排序，所以分頁仍在 SQL 完成；同值以 `number DESC` 決定先後。
 
 **部署注意**：SQLite 適合有 persistent volume 的環境（VPS、Docker、Railway + Volume、Fly.io + Volume）。Serverless（Vercel 類）不適合本機 SQLite，需等 remote adapter。
 

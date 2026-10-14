@@ -92,7 +92,8 @@ Every method is async, so remote databases can implement it; the SQLite
 adapter simply resolves right away. Import the type from `@open-form-build/core/server`,
 along with the ones its methods use: `StoredSubmission`, `CreateSubmissionInput`,
 `CreateSubmissionResult`, `ListSubmissionsOptions`, `SubmissionPage`,
-`FormVersionRecord`, `FormOverrides` and `StoredOverrides`.
+`FormVersionRecord`, `FormOverrides`, `StoredOverrides`, `ResponseFilter` and
+`ResponseSort`.
 
 | Method | What |
 | --- | --- |
@@ -100,7 +101,7 @@ along with the ones its methods use: `StoredSubmission`, `CreateSubmissionInput`
 | `getFormVersion(id)` / `listFormVersions(formId)` | Read recorded versions. |
 | `createSubmission(input, constraints?)` | Insert a response. Checks `constraints.maxResponses` and the unique key atomically with the insert; resolves `{ ok: false, reason: 'full' \| 'duplicate' }` when they fail. |
 | `getSubmission(formId, id)` | One response, or `null`. |
-| `listSubmissions(formId, opts?)` | `{ items, total }`, newest first unless `order: 'asc'`. Options: `limit`, `offset`, `order`, and `search` — a case-insensitive match against answers, not field names. |
+| `listSubmissions(formId, opts?)` | `{ items, total }`, newest first unless `order: 'asc'`. Options: `limit`, `offset`, `order`; `search` — a case-insensitive match against answers, not field names; and `filter` — Studio's filter rules, with `now` for "in the past N days"; and `sort` — Studio's column sort, which replaces `order`. `total` counts what matches both `search` and `filter`. Run `filter` with `responseFilterTest(filter, now)` from `@open-form-build/core/server`, which returns a test for `{ data, createdAt }`. Sort with `responseSortKey(sort)` (a key per answer) and `compareResponseSortKeys`: empty answers last, numbers before text, ties newest first. Using them keeps every adapter in the same order. |
 | `countSubmissions(formId)` / `countsByForm()` | Response counts. |
 | `latestByForm()` | Optional. Newest response time per form, for sorting in Studio. |
 | `deleteSubmission(formId, id)` | Delete one response; `false` if it didn't exist. |
