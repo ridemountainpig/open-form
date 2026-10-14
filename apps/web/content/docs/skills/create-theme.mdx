@@ -28,7 +28,9 @@ Any mix of:
 - **A starter to adapt** — "editorial, but with our colors".
 
 If the source isn't clear, it asks once. When sources disagree, it asks which
-one wins.
+one wins. From images or a description, it gives the theme one distinctive move
+— a display heading font, a textured brand panel, an unusual control shape —
+and keeps everything else quiet.
 
 ## Token mapping
 
@@ -84,7 +86,7 @@ themes/acme/
 ├── index.ts      # tokens: colors (light and dark), fonts, radius, spacing, layout
 ├── acme.css      # depth 2: chrome details tokens can't express
 ├── fonts/        # optional: web fonts, e.g. from `open-form theme font`
-└── THEME.md      # mood, palette, typography, layout, copy tone, do / don't
+└── THEME.md      # mood, palette, typography, layout, signature ideas, copy tone, do / don't
 ```
 
 A theme with its own components uses `index.tsx`. Every color gets a dark value
@@ -123,6 +125,11 @@ pnpm typecheck                         # tsc --noEmit: the theme's code compiles
 Accessibility wins over brand for text and controls. When a brand color fails,
 the agent keeps the hue, lowers the lightness until it passes, and tells you the
 original and the new value. See [`open-form theme`](/docs/cli/theme).
+
+Contrast numbers don't show whether it looks right, so with a browser tool the
+agent also opens the theme's page in Studio (`/studio/themes/<id>`), takes
+screenshots in light and dark, and compares them with the source. Without one,
+it tells you it hasn't seen the theme.
 
 ## Applying it
 

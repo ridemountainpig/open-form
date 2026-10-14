@@ -41,6 +41,16 @@ layout: default card (works with StepperLayout)
 - Errors: black tags with white text.
 - Success: a rotated mint sticker that slams in.
 
+## Signature ideas
+
+Pick one. `aside` sits beside the card and drops below it on narrow screens:
+
+- **A sticker** — a rotated tile with the one fact that sells it (the date, the price, "30 SEATS"), 3px ink border, hard shadow, `--br-pop` or `primary` fill.
+- **A badge that fills in** — the person's name in `Arial Black` capitals on a pink marker strip, plus what they picked (tier, role): a pass people want to screenshot.
+- **A stamped ending** — `<Success>` reusing that badge with a slammed-in stamp.
+
+Keep ink borders and hard shadows; the Don'ts below apply to it too.
+
 ## Copy tone
 
 Short, punchy, capitalized for emphasis. "GET EARLY ACCESS." "No spam. Ever."

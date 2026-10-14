@@ -37,6 +37,16 @@ Rounded system sans for Latin (`ui-rounded`, `SF Pro Rounded`, `Nunito`); CJK fa
 - Buttons: pill with an arrow.
 - Success: a drawn check in a primary-colored badge.
 
+## Signature ideas
+
+`FocusLayout` doesn't show `aside`, so the signature lives in the flow. Pick one:
+
+- **A personal ending** — `<Success>` that reads the answers back: a quiz result, a thank-you that fits their NPS score, "See you on Friday, Amy".
+- **A welcome worth starting** — the title and description as an invitation that says what it takes: "4 questions · about a minute".
+- **Answers that carry over** — a later screen that uses an earlier answer in a line above its question ("Nice to meet you, Amy."), from `useFieldValue`.
+
+Soft and roomy; one idea per screen.
+
 ## Copy tone
 
 Second person, warm, one idea per question: "What should we call you?", "How likely are you to recommend us?" Use `description` for gentle hints.

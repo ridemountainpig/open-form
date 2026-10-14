@@ -30,7 +30,7 @@ Run `open-form` through the workspace's package manager, as AGENTS.md → Comman
    - A comment about the look (colors, fonts, spacing, how a theme-drawn part looks) is applied in the form's own theme in `forms/<id>/theme/` — tokens, components or its CSS — never in `themes/`: those are references and don't change existing forms. A form without one has the default look, which is the `classic` starter: copy that in first (`open-form theme copy classic <id>`) so nothing else changes — another theme would restyle the whole form — or ask.
    - Delete the marker line (or the inline marker). Leave no `@form-comment` behind for a comment you applied.
    - If a comment is unclear, conflicts with another, or would rename a field that already has responses, **skip it, keep its marker**, and ask the user about it at the end.
-4. **Check**: `open-form check <id>` for each form you touched (plus `open-form theme check <id> --form` after a color change), and `open-form comments` should list only the ones you deliberately kept.
+4. **Check**: `open-form check <id>` for each form you touched (plus `open-form theme check <id> --form` after a color change), and `open-form comments` should list only the ones you deliberately kept. After a comment about the look, also look at the result, as `create-form` → Step 6 → *Look at it* describes.
 5. **Report** briefly: what you changed for each comment, and which you left (with your question).
 
 ## Rules

@@ -57,6 +57,8 @@ Colors may be pasted as-is: every token is a CSS color, so `oklch(…)`, `hsl(�
 
 Name dominant colors, the type personality (serif / grotesk / mono / rounded, weight), density, corner style, borders vs. shadows, decorative motifs. Resolve vague words into decisions before writing.
 
+Give the theme **one distinctive move** — a display heading font, a textured brand panel, an unusual control shape (underlines, pills, chunky blocks) — and keep everything else quiet. A theme that's only "clean and modern" ends up as `classic` with a new primary color.
+
 When sources disagree, ask which wins.
 
 ## Step 3 — Pick an id, a starting point and a depth
@@ -136,10 +138,14 @@ layout: <default card | SplitLayout | StepperLayout | FocusLayout | custom>
 
 ## Layout & components
 
+## Signature ideas
+
 ## Copy tone
 
 ## Do / Don't
 ````
+
+*Signature ideas*: two or three form-specific elements that fit the theme (*Design guidelines → Look* in `form-authoring`), each with where it lives in this theme's layout (`aside` beside the card, in a split panel, at the bottom of a custom layout, or the success screen when the layout has no `aside`) and how to style it. The starters' THEME.md files show the shape.
 
 ## Step 7 — Check it
 
@@ -152,13 +158,13 @@ pnpm typecheck               # tsc --noEmit, via the workspace's package manager
 
 **Brand vs. contrast**: accessibility wins for text and controls. When a brand color fails (e.g. white on a light emerald button is ~3.5:1, needs 4.5:1), keep the hue and lower the lightness (in `oklch`, reduce L by 0.03–0.08) until it passes, then tell the user the exact adjustment and the original value. Don't silently keep a failing color, and don't fix it per component — fix the token. `border` is decorative and exempt; `control` is not.
 
-If the dev server is running, also open `/studio/themes/<id>` on the URL `open-form dev` printed (default `http://localhost:3000`): the theme on a sample form with every component — jump to any step or the success screen, in light and dark, in Studio's language — next to THEME.md and the same contrast report.
+Then look at it — contrast numbers don't show whether it looks right. With a browser tool (a browser MCP, Playwright, Claude in Chrome, your editor's preview), open `/studio/themes/<id>` on the URL `open-form dev` printed (default `http://localhost:3000`; if nothing answers, start the `dev` script in the background and stop it afterwards): the theme on a sample form with every component — jump to any step or the success screen, in light and dark, in Studio's language — next to THEME.md and the same contrast report. Screenshot light and dark, compare them with the source (the product, the images, the description) and fix what's off. Without a browser tool, say you haven't seen it.
 
 The user can fine-tune tokens there too: the Studio *Adjust* drawer writes colors, fonts, radius, width and spacing straight back into the theme's entry file (`themes/<id>/index.ts` or `index.tsx`, or a single-file `themes/<id>.ts`) — the reference, so it affects only forms that copy it afterwards. For anything bigger it hands them a prompt to paste to you ("Update the Open Form theme “<id>” (<file>): …"; the gallery's *New theme* button does the same with "Create a new Open Form theme: …", and a theme without THEME.md offers "Write THEME.md for …") — treat it like any theme request: read THEME.md, edit tokens / CSS / components, run `theme check`, update THEME.md. Keep tokens as plain literals inside `defineTheme({ … })` (not computed from variables) so those edits keep working.
 
 ## Step 8 — Use it in a form and hand off
 
-- When the theme is for a form, copy it in — `open-form theme copy <id> <form>` (or `open-form create <form> --theme <id>` for a new one, already wired) — and wire it as `form-authoring` → *Themes* shows: `import theme from './theme/index.tsx';` (the path `theme copy` prints — `index.ts` when the theme has no components) above the form's own CSS import, then `<Form theme={theme}>`. Run `open-form check <form>`, and look at the form if the dev server is up (`/f/<form>`, and Studio Preview on mobile): every step, a validation error, the success screen. A test submission is stored for real — delete it under Responses.
+- When the theme is for a form, copy it in — `open-form theme copy <id> <form>` (or `open-form create <form> --theme <id>` for a new one, already wired) — and wire it as `form-authoring` → *Themes* shows: `import theme from './theme/index.tsx';` (the path `theme copy` prints — `index.ts` when the theme has no components) above the form's own CSS import, then `<Form theme={theme}>`. Run `open-form check <form>`, then look at the form as `create-form` → Step 6 → *Look at it* describes: `/f/<form>` on desktop and phone width, every step through Studio's Preview, a validation error. A test submission is stored for real — delete it under Responses.
 - A form that already has its own look in `forms/<form>/theme/` needs `--force`, which replaces that copy and **discards the form's own edits to it** — look at it first and tell the user.
 - Changing `themes/<id>/` later doesn't update forms that already copied it. To update one too, re-copy with `--force` (same warning) or make the same change in its copy.
 - "Our forms" / "everything" means copying it into each form the user means; there's no project-wide theme.

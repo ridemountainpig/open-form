@@ -1,6 +1,6 @@
 ---
 name: form-authoring
-description: Technical reference for writing or editing forms in an Open Form workspace — the file contract, every DSL component and prop, conditional logic with <When>, validation, custom validators and custom field components, submission policy (limits, deadlines, one-per-email/device), spam protection, success screens, locale and themes. Read this before creating or changing anything under `forms/`. Use `create-form` for the end-to-end workflow of drafting a new form.
+description: Technical reference for writing or editing forms in an Open Form workspace — the file contract, every DSL component and prop, conditional logic with <When>, validation, custom validators and custom field components, submission policy (limits, deadlines, one-per-email/device), spam protection, success screens, locale, themes, styling hooks and design guidelines for how a form should look. Read this before creating or changing anything under `forms/`. Use `create-form` for the end-to-end workflow of drafting a new form.
 ---
 
 # Authoring forms with Open Form
@@ -195,7 +195,7 @@ Rules: values are raw input (a number field may hold a string while typing), and
 
 ## Custom styling
 
-Prefer theme tokens. For form-specific visuals (a branded preview card, custom tiles), import a local stylesheet and scope it with `className`:
+Prefer theme tokens. For form-specific visuals (a live preview card, a facts block, custom tiles), import a local stylesheet and scope it with `className`:
 
 ```tsx
 import theme from './theme/index.ts';
@@ -204,6 +204,21 @@ import './pass.css';                  // below the theme, so it wins over the th
 ```
 
 Prefix every class (`.pass-…`), build on `var(--of-*)` tokens so themes and dark mode keep working, and override `--of-aside-width` on your root class to resize the aside.
+
+To restyle what the runtime renders, use these classes, scoped to `[data-of-theme="<form-id>"]` or your root class — never bare tags (`button[type="submit"]`, `h1`, `input`), which also hit your own markup:
+
+| Part | Classes |
+| --- | --- |
+| Header | `.of-header`, `.of-eyebrow`, `.of-title`, `.of-description` |
+| Page content | `.of-page-title`, `.of-page-description`, `.of-heading`, `.of-paragraph` |
+| Field | `.of-field`, `.of-label`, `.of-required`, `.of-help`, `.of-error`, `.of-counter` |
+| Controls | `.of-input` (also `.of-textarea`, `.of-select`), `.of-choices[data-variant="cards"]`, `.of-choice` (`:has(input:checked)` when chosen), `.of-rating-item` |
+| Actions | `.of-nav`, `.of-button-primary`, `.of-button-secondary`, `.of-alert` |
+| Progress | `.of-progress`, `.of-progress-label`, `.of-progress-track`, `.of-progress-bar` |
+| Layouts | default: `.of-form` (the card), `.of-aside` · `SplitLayout`: `.of-split-brand` (the panel; its background is `--of-primary`), `.of-split-main` · `StepperLayout`: `.of-stepper-rail` · `FocusLayout`: `.of-focus` |
+| End screens | `.of-success`, `.of-notice` |
+
+Tokens to build on: `--of-bg` (page), `--of-surface` (card), `--of-fg`, `--of-muted`, `--of-primary`, `--of-primary-fg`, `--of-border`, `--of-control`, `--of-input`, `--of-error`, `--of-success`, `--of-radius`, `--of-button-radius`, `--of-gap`, `--of-width`, `--of-font`, `--of-heading-font`.
 
 ## `defineForm` config
 
@@ -304,7 +319,7 @@ open-form theme add editorial --as brand     # starter → themes/brand/, a refe
 
 `theme copy` takes the theme's `index.ts(x)`, its CSS and `fonts/` (not `THEME.md`) and rewrites `[data-of-theme="<theme>"]` selectors to the form id. It doesn't edit the form: add the import and `<Form theme={theme}>` yourself (`create --theme` does both).
 
-A theme's `THEME.md` (the project's in `themes/<id>/`, starters' in `node_modules/open-form/themes/<id>/`) describes its palette, typography, components, copy tone and do/don'ts — read it before writing a form in that theme, and follow its copy guidance.
+A theme's `THEME.md` (the project's in `themes/<id>/`, starters' in `node_modules/@open-form-build/core/themes/<id>/`) describes its palette, typography, components, copy tone and do/don'ts — read it before writing a form in that theme, and follow its copy guidance.
 
 ### Theme anatomy
 
@@ -505,15 +520,35 @@ export const config = defineForm({
 - **Editing a translated form**: changing a source string orphans its translations. Update the key (and the translation) in every `locales/*.json` in the same change, then re-run `check`.
 - Responses, CSV headers and Studio use the source language.
 
-## UX guidelines
+## Design guidelines
+
+The runtime handles spacing, focus, states and responsiveness. You own the questions, the hierarchy, the copy and the one detail people remember.
+
+### Questions
 
 - Ask only what you need. Every extra field costs completions.
 - Order: easy → personal → hard. Group related questions on a page; 3–7 fields per page.
 - Labels are questions or nouns ("Company", "What best describes you?"). Put hints in `description`, not `placeholder`.
 - Mark only truly necessary fields `required`.
-- Prefer `RadioGroup` for ≤ 5 options (visible at a glance), `Select` for longer lists, `variant="cards"` for 2–6 short options.
+- Prefer `RadioGroup` for ≤ 5 options (visible at a glance), `Select` for longer lists, `variant="cards"` for 2–6 short options — on a `CheckboxGroup` too, where 5+ short options as a list make a tall column of rows.
 - Use `<Row>` only for short, related fields.
 - Write copy in the form's language and set `locale` to match.
+
+### Look
+
+- **Header**: a title of a few words and a description of one or two sentences. Each fact — date, venue, price, deadline — appears **once**: in the description or in a facts block, never both.
+- **One signature element.** A form feels designed, not generated, when one piece of UI belongs to *this* form's purpose — usually in `aside` (see *Live answers*) or a custom field, built on `var(--of-*)` tokens:
+  - a live preview that fills in as people answer — a pass, badge, ticket or profile card;
+  - an event's facts (date · venue · price · seats) or its agenda;
+  - plan tiles with prices, and a running total;
+  - a summary of the answers so far in `SplitLayout`'s panel.
+
+  One is enough; two compete. Use only facts the user gave. A short internal form may need none — then the effort goes into copy and spacing. The theme's THEME.md lists *Signature ideas* that fit it, and where its layout puts `aside` — `FocusLayout` has none, so there it goes in the flow or `<Success>`.
+- **Color**: the theme's palette only. `primary` marks the main action, the selection and focus; the form's CSS adds no new hues (tints come from `color-mix()` on tokens). Gradients, glows and textures go on the page background or the brand panel, never behind text or controls.
+- **Type**: at most the theme's two families (`font`, `headingFont`). Build hierarchy with size and weight, not more colors, and don't shrink labels or help text below the theme's sizes.
+- **Phones**: at about 390px wide, the title and the first question (or `FocusLayout`'s Start button) fit on the first screen. `SplitLayout` stacks its panel above the questions under 860px and the default `aside` drops below them under 960px — hide secondary panel or aside content there (`@media (max-width: 860px)`) instead of pushing the questions down.
+- **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. `<Success>` can reuse the signature element, filled with the person's answers. Closed screens: see *Closed screens*.
+- **Motion**: the runtime already animates steps and errors, and turns all motion in the form off for `prefers-reduced-motion`. Add at most a hover or a transition on the signature element.
 
 ## Anti-patterns
 
@@ -527,7 +562,11 @@ export const config = defineForm({
 | `fetch()` to Slack/Zapier in `onSubmit` or a validator | `webhooks` in `open-form.config.ts` |
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
 | `theme: 'terminal'` in `defineForm`, or importing from `themes/` | `open-form theme copy terminal <id>` + `<Form theme={theme}>` |
-| Custom CSS/media queries for layout | `<Row>`, `<Page>`, theme tokens |
+| CSS grid / flex to arrange fields | `<Row>`, `<Page>` |
+| Styling tags (`button[type="submit"]`, `h1`) or unscoped `.of-*` rules | The `.of-*` classes under `[data-of-theme="<id>"]` (*Custom styling*) |
+| Hex colors in the form's CSS | `var(--of-*)` tokens; tints via `color-mix()` |
+| The date and venue in the description *and* in an aside | Each fact once |
+| A bare "Thanks!" success screen | What happens next, in the form's voice |
 | `<label>` / `<input>` markup | DSL components (they handle ARIA, focus, errors) |
 | Renaming a field that already has responses | Keep the name; change only `label` |
 | Reading `window` during render | `useEffect` |
@@ -538,9 +577,9 @@ export const config = defineForm({
 2. Required fields are minimal and correct; conditional fields use `<When>`, not ternaries.
 3. Policy matches the request (limits, dates, uniqueness, language).
 4. No hand-rolled state, fetch, validation or styling outside the theme / form CSS.
-5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction, nothing imports from `themes/`, the copy follows that theme's `THEME.md` tone, and conversational forms have one question per page.
+5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction, nothing imports from `themes/`, the copy follows that theme's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element, no new hues, success copy written for this form.
 6. Custom components spread `field.controlProps`, attach `field.ref`, keep native inputs and a visible focus style.
 7. `open-form check <id>` passes and its output (steps, fields, conditions, required flags, policy) matches your plan; the `typecheck` script passes.
 8. Closed screens: `closedMessage` (plus `fullMessage` / `duplicateMessage` where they apply) is in the form's voice, and a custom `Notice` handles every `state` the form can reach and invents no facts.
 9. Multilingual: `locale` is set, options have explicit values, `check` shows every language `N/N translated`, and every "not seen" entry is dynamic text or a `validate` message — not a key left behind by edited text.
-10. If the dev server is running, look at it in Studio: `/studio/<id>` on the URL `open-form dev` printed (default `http://localhost:3000`) — Preview on desktop and mobile. Use the step buttons to open conditional pages directly, *When closed* to see each closed screen, and the language picker to read each translation in place.
+10. You **saw** it — `check` proves the form works, not that it looks right. Screenshot `/f/<id>` on the dev server at desktop (~1440×900) and phone (~390×844) width with whatever browser tool you have, and compare it with the plan: the title shows, the form's own CSS applies (`.of-root` has `data-of-theme="<id>"` when the form has its own theme), nothing is low-contrast or clipped, and on the phone the first question is on the first screen. Then use Studio's Preview (`/studio/<id>`): the step buttons open conditional pages directly, *When closed* shows each closed screen, and the language picker shows each translation in place. Without a browser tool, say so at hand-off — never describe a look you haven't seen.

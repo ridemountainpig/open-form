@@ -31,6 +31,16 @@ System sans (`ui-sans-serif` / SF / Segoe, then `var(--of-cjk)` for Chinese and 
 
 Centered card, labels above controls, bordered 46px inputs, list or card choices, a thin progress bar for multi-step forms, Back on the left and the primary action on the right.
 
+## Signature ideas
+
+Classic stays quiet, so its signature is useful rather than decorative. Pick one; `aside` sits beside the card:
+
+- **An order summary** — the plan, seats and a running total, updating as people choose (display only; the server stores the answers).
+- **Plan tiles** — a custom field with a name, price and one line per plan instead of a plain radio list.
+- **What happens next** — `<Success>` with two or three numbered steps ("We reply within a day", …), only from facts given.
+
+Same border, radius and `primary` as the card — no new colors.
+
 ## Copy tone
 
 Plain and helpful, sentence case. Labels are nouns or short questions ("Work email", "What best describes you?"); help text explains *why* a field is asked.

@@ -35,13 +35,18 @@ line and moves on. It never invents dates, venues or prices.
 It runs `open-form theme list`, reads the candidates' `THEME.md` (the project's
 references in `themes/` and the starters), and offers three directions tailored
 to the form and audience. Each is a theme plus a layout and concrete cues —
-*terminal: CLI prompts, green on black*, or *brutalist + StepperLayout: loud
-yellow, thick borders, a step rail* — never a bare "modern". A brand theme in
-`themes/` is the recommended option. If you already named the look, it skips the
-question.
+*terminal: CLI prompts, green on black, the agenda printed beside the
+questions*, or *brutalist + StepperLayout: loud yellow, thick borders, a step
+rail* — never a bare "modern". When the form has one, a direction also names its
+**signature element**: the one piece of UI that belongs to this form, such as a
+pass that fills in as people answer, an event's facts or agenda, or plan tiles
+with a running total. A brand theme in `themes/` is the recommended option. If
+you already named the look, it skips the question.
 
-A project theme or a starter can be used as it is. A new look goes through
-[`/create-theme`](/docs/skills/create-theme) first, which adds it to `themes/`.
+A project theme or a starter can be used as it is, or adapted for this form —
+recolored, with other fonts or another layout — since the form gets its own
+copy. A new look goes through [`/create-theme`](/docs/skills/create-theme)
+first, which adds it to `themes/`.
 
 </Step>
 <Step>
@@ -60,7 +65,9 @@ is the public URL `/f/<id>`, so the agent avoids internal names and checks
 Shaped by the direction: one question per page for conversational themes and
 `FocusLayout`, a single page for up to about seven fields, 3–7 fields per
 `<Page>` for longer forms. Easy questions first, free text near the end,
-follow-ups right after the question they depend on. Copy follows the theme's
+follow-ups right after the question they depend on. It also plans the look:
+where each header fact goes (once), where the signature element lives, what a
+phone shows on the first screen, and the success copy. Copy follows the theme's
 tone, `locale` matches the language, and the closed screen gets messages in the
 form's voice. A form tied to a date, with limited spots or one response per
 person, or with a strong look also gets its own `Notice`: the closed screen in
@@ -111,19 +118,26 @@ multilingual form it shows each language as `N/N translated`; the agent fixes
 every missing entry, and keeps a "not seen" one only when it's text shown for
 certain answers or a `validate` message.
 
-With the dev server running, the agent also opens the form's **Schema** tab in
-Studio (`/studio/<id>/schema`) to compare the derived schema — steps, fields,
-required flags, conditions — with its plan, and looks at the form in Preview
-on desktop and mobile, including every closed screen under *When closed*.
+`check` proves the form works, not that it looks right, so the agent then looks
+at it with whatever browser tool it has, starting the dev server in the
+background if it isn't running. It takes screenshots of `/f/<id>` at desktop
+and phone width and compares them with the direction: the title shows, the
+form's own CSS applies, nothing is low-contrast or clipped, and on a phone the
+first question is on the first screen. It opens the **Schema** tab in Studio
+(`/studio/<id>/schema`) to compare the derived steps, fields, required flags
+and conditions with its plan, and Preview for every step and every closed
+screen under *When closed*. It fixes what it sees and looks again. Without a
+browser tool it says it hasn't seen the form, and asks you to open it.
 
 </Step>
 <Step>
 
 ### Hand off
 
-You get the public link and the Studio link, the theme and layout it built, the
-policy it applied, what respondents see once the form closes, and any
-assumptions it made. For a multilingual form: the languages, how respondents
+You get the public link and the Studio link, the theme, layout and signature
+element it built, whether it looked at the form on desktop and phone, the policy
+it applied, what respondents see once the form closes, and any assumptions it
+made. For a multilingual form: the languages, how respondents
 get theirs (automatically, the picker or `?lang=`), and that editing text means
 updating each `locales/*.json`. The look is the form's own, in
 `forms/<id>/theme/`, for you or the agent to change; `themes/` is the reference

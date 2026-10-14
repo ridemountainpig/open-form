@@ -17,7 +17,7 @@ themes/
 └── brand/                # a reference for new forms
     ├── index.tsx         # defineTheme({ colors, font, …, components })
     ├── brand.css         # optional, scoped to [data-of-theme="brand"]
-    └── THEME.md          # palette, type, components, copy tone, do / don't
+    └── THEME.md          # palette, type, components, signature ideas, copy tone, do / don't
 forms/
 └── meetup/
     ├── index.tsx         # import theme from './theme/index.tsx'
@@ -144,8 +144,10 @@ See [`defineTheme`](/docs/reference/define-theme) for every token and
 ## THEME.md
 
 Each reference has a `THEME.md` with its mood, what it suits and when to avoid
-it, its palette, typography, layout and components, copy tone, and do / don't.
-The [`create-form`](/docs/skills/create-form) skill reads these to propose visual
+it, its palette, typography, layout and components, signature ideas (a few
+form-specific elements that fit the theme, such as terminal's command that fills
+in as people answer), copy tone, and do / don't. The
+[`create-form`](/docs/skills/create-form) skill reads these to propose visual
 directions before it writes a form, and Studio renders it on the theme's page.
 It stays with the reference; a form's copy doesn't need one.
 

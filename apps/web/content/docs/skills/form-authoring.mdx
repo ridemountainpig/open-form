@@ -23,11 +23,11 @@ You don't usually invoke it directly. Other skills and the rules do.
 | Validation | Built-in rules, `validate` functions or a Standard Schema, run on client and server alike |
 | Custom fields | `useField` and `FieldShell` |
 | Live answers | `useFieldValue`, `useFormValues` and `<Form aside>` for previews and totals |
-| Custom styling | A local stylesheet scoped with `<Form className>`, prefixed classes on `--of-*` tokens, `--of-aside-width` |
+| Custom styling | A local stylesheet scoped with `<Form className>`, prefixed classes on `--of-*` tokens, `--of-aside-width`, and the `.of-*` classes to target when restyling what the runtime renders |
 | Config | Submission policy, protection, success screen, drafts, time zones; webhooks and embeds in `open-form.config.ts` |
 | Themes | The form's own copy in `forms/<id>/theme/` and `<Form theme>`, references in `themes/` and the starters, `theme copy`, tokens, replaceable components, layouts, closed screens (`Notice`), `useFormNav` and `useFormMessages` |
 | Languages | `locale`, `translations`, `<T>`, language-neutral option values |
-| UX guidelines | Ask less, order easy to hard, 3–7 fields per page, `RadioGroup` vs. `Select` |
+| Design guidelines | Questions: ask less, order easy to hard, 3–7 fields per page, `RadioGroup` vs. `Select` vs. cards. Look: each header fact once, one signature element tied to the form's purpose, the theme's palette only, the first question on a phone's first screen, success copy written for the form |
 
 The [Components](/docs/components/form) and
 [Reference](/docs/reference/define-form) sections document the same API for
@@ -48,7 +48,11 @@ instead:
 | `fetch()` to Slack or Zapier on submit | `webhooks` in `open-form.config.ts` |
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
 | `theme: 'terminal'` in `defineForm`, or importing from `themes/` | `open-form theme copy terminal <id>` + `<Form theme={theme}>` |
-| Custom CSS or media queries for layout | `<Row>`, `<Page>`, theme tokens |
+| CSS grid or flex to arrange fields | `<Row>`, `<Page>` |
+| Styling tags (`button[type="submit"]`, `h1`) or unscoped `.of-*` rules | The `.of-*` classes under `[data-of-theme="<id>"]` |
+| Hex colors in the form's CSS | `var(--of-*)` tokens; tints via `color-mix()` |
+| The date and venue in the description *and* in an aside | Each fact once |
+| A bare "Thanks!" success screen | What happens next, in the form's voice |
 | Raw `<label>` / `<input>` markup | DSL components (they handle ARIA, focus, errors) |
 | Renaming a field that already has responses | Keep the `name`; change the `label` |
 | Reading `window` during render | `useEffect` |
@@ -68,7 +72,9 @@ Before handing off, the agent checks:
 5. **The look was chosen** — the form has its own copy of the agreed theme in
    `forms/<id>/theme/`, imported above the form's CSS and passed to
    `<Form theme>`; nothing imports from `themes/`; copy follows the theme's
-   `THEME.md`; conversational forms have one question per page.
+   `THEME.md`; conversational forms have one question per page. Each header
+   fact appears once, there's at most one signature element, the form's CSS
+   adds no new hues, and the success copy is written for this form.
 6. **Custom components** spread `field.controlProps`, attach `field.ref`, keep
    native inputs and a visible focus style.
 7. **`open-form check <id>`** passes and its steps, fields, conditions,
@@ -79,6 +85,10 @@ Before handing off, the agent checks:
    language shows `N/N translated`, and every "not seen" entry is text shown
    only for certain answers or a `validate` message, not a key left behind by
    edited text.
-10. **Studio**, when the dev server is running — Preview on desktop and mobile,
-    conditional pages through the step buttons, each closed screen under
-    *When closed*, and each translation through the language picker.
+10. **Seen, not assumed** — screenshots of `/f/<id>` at desktop and phone
+    width match the plan: the title shows, the form's own CSS applies, nothing
+    is low-contrast or clipped, and the first question fits a phone's first
+    screen. Then Studio's Preview: conditional pages through the step buttons,
+    each closed screen under *When closed*, and each translation through the
+    language picker. Without a browser tool, the agent says it hasn't seen the
+    form.

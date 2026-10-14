@@ -42,6 +42,16 @@ Monospace everywhere (`ui-monospace`, `SF Mono`, `JetBrains Mono`, `Menlo`, `Con
 - Buttons: `next ↵` (inverted green block) before `← back`.
 - Success: `✔ title`, message, `process exited with code 0`.
 
+## Signature ideas
+
+Pick one, in the session's voice. `aside` prints at the bottom of the window (`.tm-aside`), after the buttons:
+
+- **The command being built** — `$ rsvp --name "Amy" --topics rag,agents` filling in as people answer (`useFormValues`). It only repeats answers, so mark it `aria-hidden`.
+- **A printed file** — the agenda or the event's facts as `$ cat agenda.txt` output: times in `muted`, titles in `foreground`.
+- **A log on success** — `<Success>` lines built from the answers and the facts given: `✔ seat reserved for amy@…`, `→ 11/20 19:00 · venue`.
+
+Text and color only — no boxes, cards or icons.
+
 ## Copy tone
 
 Lowercase is fine. Terse, a little wry: "Name, as it should appear on your badge." Avoid exclamation marks.

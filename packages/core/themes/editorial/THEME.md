@@ -39,6 +39,16 @@ No accent color — contrast comes from ink on paper. Add a single accent only i
 - Rating: large old-style numerals, underlined when chosen.
 - Buttons: square, uppercase, letter-spaced, with an arrow.
 
+## Signature ideas
+
+Pick one. It goes in the ink panel as `aside`; hide it under 860px, where the panel stacks above the questions:
+
+- **A summary of the answers** — "Your request: Company · Team size · Plan" set in serif, filling in as people answer.
+- **A slip from the archive** — an application slip or library card with ruled rows that fill in; `<Success>` shows it complete, with a stamp.
+- **A masthead** — the issue number, date and venue as a small-caps line above a hairline: "No. 12 · 11.20 · Taipei".
+
+Hairlines and type, no filled boxes; `currentColor` with opacity keeps it paper-on-ink.
+
 ## Copy tone
 
 Short, declarative, a little formal. "Tell us about your team." not "Hey there! 👋".
