@@ -1,5 +1,23 @@
 # @open-form-build/cli
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [ba78eb6]
+- Updated dependencies [ba78eb6]
+- Updated dependencies [8104dc4]
+- Updated dependencies [ba78eb6]
+- Updated dependencies [b8f0545]
+- Updated dependencies [b8f0545]
+- Updated dependencies [b8f0545]
+- Updated dependencies [b8f0545]
+- Updated dependencies [b8f0545]
+- Updated dependencies [b8f0545]
+- Updated dependencies [d8b5bb6]
+- Updated dependencies [d8b5bb6]
+  - @open-form-build/core@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
