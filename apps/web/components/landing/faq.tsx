@@ -30,7 +30,7 @@ export const faqs: QA[] = [
   },
   {
     q: 'Is Open Form open source?',
-    a: 'Yes, under the MIT license. The whole framework is one npm package, @open-form-build/core. It needs Node.js 22.13 or later and starts with npx @open-form-build/cli init.',
+    a: 'Yes, under the MIT license. The whole framework is one npm package, @open-form-build/core. It needs Node.js 22.13 or later and starts with npm create open-form@latest.',
   },
 ];
 

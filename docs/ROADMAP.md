@@ -345,6 +345,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 
 - ⬜ Respondent sign-in (Clerk / Auth.js / Supabase) — only for "require sign-in before filling in the form"; for Studio sign-in, see v0.3 Step 5
 - ✅ `@open-form-build/cli` (`npx @open-form-build/cli init`)
+- ✅ `create-open-form` (`npm create open-form@latest`)
 
 ---
 

@@ -1,5 +1,5 @@
 // End-to-end smoke test of the user journey, against the local build:
-// init → install → create/list → build → start → submit → Studio API → CLI export.
+// create-open-form → install → create/list → build → start → submit → Studio API → CLI export.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const PKG = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BIN = path.join(PKG, 'bin.js');
+const CREATE = path.resolve(PKG, '../create-open-form/index.js');
 // Outside the monorepo, or pnpm would install into this repo's workspace instead.
 const SCRATCH = mkdtempSync(path.join(os.tmpdir(), 'open-form-e2e-'));
 const WS = path.join(SCRATCH, 'workspace');
@@ -45,10 +46,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let server;
 
 try {
-  step('init');
+  step('init (create-open-form)');
   execFileSync(
     process.execPath,
-    [BIN, 'init', WS, '--no-git', '--pm', 'pnpm', '--open-form-version', `link:${PKG}`],
+    [CREATE, WS, '--no-git', '--pm', 'pnpm', '--open-form-version', `link:${PKG}`],
     { stdio: 'inherit', env: { ...process.env, CI: '1' } },
   );
   for (const file of [

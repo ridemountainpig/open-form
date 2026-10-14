@@ -57,7 +57,7 @@ describe('isWorkspace', () => {
     expect(isWorkspace(root)).toBe(true);
     rmSync(path.join(root, 'open-form.config.ts'));
     expect(isWorkspace(root)).toBe(false);
-    expect(() => assertWorkspace(root, 'dev')).toThrow(/npx @open-form-build\/cli init/);
+    expect(() => assertWorkspace(root, 'dev')).toThrow(/npm create open-form@latest/);
     writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'blog' }));
     expect(isWorkspace(root)).toBe(false);
     writeFileSync(

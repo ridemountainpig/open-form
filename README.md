@@ -9,12 +9,12 @@ Questions + Logic  →  Production-ready Form  →  Responses
 ```
 
 ```bash
-pnpm dlx @open-form-build/cli init my-forms
+pnpm create open-form my-forms
 cd my-forms
 pnpm dev
 ```
 
-Or `npx @open-form-build/cli init my-forms`, then `npm run dev`. Forms import from `@open-form-build/core`, and its CLI is `open-form`.
+Or `npm create open-form@latest my-forms`, then `npm run dev`. Forms import from `@open-form-build/core`, and its CLI is `open-form`.
 
 Then ask your coding agent (Claude Code, Codex, Cursor, …):
 

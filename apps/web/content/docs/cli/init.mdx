@@ -4,12 +4,13 @@ description: Scaffold a new forms workspace.
 ---
 
 ```npm
-npx @open-form-build/cli init my-forms
+npm create open-form@latest my-forms
 ```
 
-[`@open-form-build/cli`](https://www.npmjs.com/package/@open-form-build/cli)
-runs the `open-form` CLI from `@open-form-build/core` with the arguments you
-pass.
+[`create-open-form`](https://www.npmjs.com/package/create-open-form) runs
+`open-form init` from `@open-form-build/core` with the arguments you pass. npm
+needs `--` before flags: `npm create open-form@latest my-forms -- --no-git`.
+`npx @open-form-build/cli init my-forms` does the same.
 
 Creates the workspace in `my-forms`, making the folder if it doesn't exist.
 Without a directory, an interactive run asks for one (default `my-forms`); a

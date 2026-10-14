@@ -20,7 +20,7 @@ Questions + Logic  →  Production-ready Form  →  Responses
 | 原始構想 | 實際採用 | 原因 |
 | --- | --- | --- |
 | Next.js | **Vite（隱藏在套件內）+ Web-standard `fetch` handler** | open-slide 的核心經驗：使用者 repo 只有 `forms/`、`open-form.config.ts`、`package.json`，沒有 `app/`、沒有 `next.config`。Next.js 要求 `app/` 在使用者專案內，無法像 Vite 一樣把整個 app 藏在 `node_modules`。Server 端寫成 `(Request) => Response`，所以也能掛進 Next.js Route Handler（`@open-form-build/core/next` adapter，見 §7）。 |
-| 10 個 `@open-form/*` 套件 | **`@open-form-build` npm org 底下兩個發佈套件：`@open-form-build/core`（framework，內部分層 + subpath exports，附 `open-form` CLI）與 `@open-form-build/cli`（建立 workspace）** | npm 上 `@open-form/core`、`@open-form/cli` 已被其他人註冊，scope 不在我們手上；unscoped 的 `open-form` 也被 npm 判定和既有的 `openform` 太像而拒絕發佈。做法比照 open-slide（`@open-slide/core` + `@open-slide/cli`）：workspace 直接依賴並 import `@open-form-build/core`，用 `npx @open-form-build/cli init` 建立。分層改用 `src/<layer>/` + Biome `noRestrictedImports` 強制依賴方向，對外以 `@open-form-build/core`、`@open-form-build/core/schema`、`@open-form-build/core/server`、`@open-form-build/core/sqlite` 等 subpath 暴露。日後真的需要拆套件，邊界已經在了。 |
+| 10 個 `@open-form/*` 套件 | **`@open-form-build` npm org 底下兩個發佈套件：`@open-form-build/core`（framework，內部分層 + subpath exports，附 `open-form` CLI）與 `@open-form-build/cli`（建立 workspace），另有 unscoped 的 `create-open-form` 提供 `npm create open-form`** | npm 上 `@open-form/core`、`@open-form/cli` 已被其他人註冊，scope 不在我們手上；unscoped 的 `open-form` 也被 npm 判定和既有的 `openform` 太像而拒絕發佈。做法比照 open-slide（`@open-slide/core` + `@open-slide/cli`）：workspace 直接依賴並 import `@open-form-build/core`，用 `npx @open-form-build/cli init` 建立。open-slide 沒有的是 `create-open-form`：提供 `npm create open-form@latest` / `pnpm create open-form` 這個慣例，執行的是同一個 `init`。分層改用 `src/<layer>/` + Biome `noRestrictedImports` 強制依賴方向，對外以 `@open-form-build/core`、`@open-form-build/core/schema`、`@open-form-build/core/server`、`@open-form-build/core/sqlite` 等 subpath 暴露。日後真的需要拆套件，邊界已經在了。 |
 | Drizzle + SQLite driver | **`node:sqlite`（Node 內建）+ 手寫 4 張表的 storage adapter** | 「Zero infrastructure to start」：不需要 native addon（better-sqlite3 要編譯）、不需要 ORM。4 張表、十來個 query，用 ORM 反而增加安裝體積。Postgres adapter 階段再評估 Drizzle。 |
 | Zod | **內建輕量 validation engine + 支援 Standard Schema** | Client 與 server 必須用**同一份**驗證邏輯，schema 也必須能序列化存進 DB。內建 engine 處理 required / length / pattern / range / options；escape hatch `validate` 接受函式或任何 [Standard Schema](https://standardschema.dev)（Zod、Valibot、ArkType 皆實作），所以 Zod 可用但不是依賴。 |
 | Radix / shadcn | **Form runtime 用原生 input + CSS variables；Studio 用 Tailwind** | 原生 `<select>`、`<input type=radio>` 在手機上的 a11y 與體驗最好，且 runtime 0 額外依賴、可以被任何 React app 嵌入。Studio（我們自己的 UI）沿用 open-slide 的 Tailwind 做法。 |
@@ -52,7 +52,8 @@ open-form/                         ← 本 repo（pnpm + Turborepo monorepo）
 │   │   ├── skills/                內建 agent skills（create-form、create-theme、form-authoring、current-form、apply-comments）
 │   │   ├── template/              `open-form init` 用的 workspace 模板
 │   │   └── e2e/                   smoke test：scaffold → build → start → submit → export
-│   └── cli/                       ← @open-form-build/cli：`npx @open-form-build/cli init` 執行 core 的 CLI
+│   ├── cli/                       ← @open-form-build/cli：`npx @open-form-build/cli init` 執行 core 的 CLI
+│   └── create-open-form/          ← create-open-form：`npm create open-form@latest` 執行 core 的 `init`
 ├── apps/
 │   └── demo/                      dogfood workspace，透過 workspace:* 使用本地 framework
 └── docs/
@@ -62,7 +63,7 @@ open-form/                         ← 本 repo（pnpm + Turborepo monorepo）
     └── ROADMAP.zh.md
 ```
 
-使用者 workspace（`npx @open-form-build/cli init my-forms` 產生）：
+使用者 workspace（`npm create open-form@latest my-forms` 產生）：
 
 ```text
 my-forms/

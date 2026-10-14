@@ -3,12 +3,12 @@
 **The form framework built for agents.** Your agent writes the questions and logic — Open Form provides the runtime, validation, responsive UI, submission API, spam protection, SQLite storage and a Responses Studio.
 
 ```bash
-pnpm dlx @open-form-build/cli init my-forms
+pnpm create open-form my-forms
 cd my-forms
 pnpm dev
 ```
 
-`npx @open-form-build/cli init my-forms` works too; then it's `npm run dev`. Init prints the commands for the package manager you ran it with. The CLI is `open-form`.
+`npm create open-form@latest my-forms` works too; then it's `npm run dev`. Init prints the commands for the package manager you ran it with. The CLI is `open-form`.
 
 ```tsx
 // forms/meetup/index.tsx

@@ -7,7 +7,7 @@ import { writeToClipboard } from './clipboard';
 import { CopyCommand } from './copy-command';
 
 const agentPrompt =
-  'Set up an Open Form workspace with `npx @open-form-build/cli init my-forms`. Install the dependencies, start the dev server with `npm run dev`, and tell me the Studio URL when it is ready.';
+  'Set up an Open Form workspace with `npm create open-form@latest my-forms`. Install the dependencies, start the dev server with `npm run dev`, and tell me the Studio URL when it is ready.';
 
 export function HeroActions() {
   const [copied, setCopied] = useState(false);

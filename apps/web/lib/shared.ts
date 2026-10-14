@@ -12,7 +12,7 @@ export const gitConfig = {
 
 export const repoUrl = `https://github.com/${gitConfig.owner}/${gitConfig.repo}`;
 export const npmUrl = 'https://www.npmjs.com/package/@open-form-build/core';
-export const initCommand = 'npx @open-form-build/cli init';
+export const initCommand = 'npm create open-form@latest';
 
 export const tagline = 'The form framework built for agents.';
 export const description =

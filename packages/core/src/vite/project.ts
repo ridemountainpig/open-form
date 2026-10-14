@@ -186,7 +186,7 @@ export function assertWorkspace(dir: string, command: string): void {
   if (isWorkspace(dir)) return;
   throw new Error(
     `${dir} isn't an Open Form workspace: there's no ${CONFIG_FILE}, and package.json doesn't depend on ${PACKAGE_NAME}.\n` +
-      `    cd into your workspace and run \`open-form ${command}\` there, or create one with \`npx @open-form-build/cli init\`.`,
+      `    cd into your workspace and run \`open-form ${command}\` there, or create one with \`npm create open-form@latest\`.`,
   );
 }
 

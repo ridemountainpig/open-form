@@ -1,0 +1,37 @@
+{
+  "name": "create-open-form",
+  "version": "0.1.0",
+  "description": "Create an Open Form workspace: npm create open-form@latest",
+  "type": "module",
+  "bin": {
+    "create-open-form": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@open-form-build/core": "workspace:^"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "keywords": [
+    "open-form",
+    "forms",
+    "agents",
+    "create",
+    "scaffold"
+  ],
+  "license": "MIT",
+  "homepage": "https://open-form.build",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ridemountainpig/open-form.git",
+    "directory": "packages/create-open-form"
+  },
+  "bugs": {
+    "url": "https://github.com/ridemountainpig/open-form/issues"
+  }
+}

@@ -345,6 +345,7 @@
 
 - ⬜ 填寫者登入（Clerk / Auth.js / Supabase）——只負責「填表前是否要求登入」；Studio 登入見 v0.3 Step 5
 - ✅ `@open-form-build/cli`（`npx @open-form-build/cli init`）
+- ✅ `create-open-form`（`npm create open-form@latest`）
 
 ---
 

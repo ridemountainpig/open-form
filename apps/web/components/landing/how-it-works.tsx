@@ -20,7 +20,7 @@ const steps: Step[] = [
     body: 'One command scaffolds forms/, themes/, the agent skills and Studio. No database to provision.',
     code: {
       prompt: '$',
-      line: 'npx @open-form-build/cli init my-forms',
+      line: 'npm create open-form@latest my-forms',
       tail: '✓ studio on :3000',
     },
   },
