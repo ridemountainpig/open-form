@@ -16,7 +16,13 @@ import type { FormDefinition } from '../server/index.ts';
 import { createDevRegistry } from '../vite/api-plugin.ts';
 import { createViteConfig } from '../vite/config.ts';
 import { sourceFiles } from '../vite/form-files.ts';
-import { formThemeFile, loadUserConfig, type ProjectPaths, projectPaths } from '../vite/project.ts';
+import {
+  formThemeFile,
+  loadUserConfig,
+  PKG_ROOT,
+  type ProjectPaths,
+  projectPaths,
+} from '../vite/project.ts';
 import { glyph } from './ui.ts';
 
 export type CheckResult =
@@ -45,8 +51,11 @@ export async function withSsrServer<T>(
   });
   const server = await createServer({
     ...merged,
+    // A running `open-form dev` serves its pre-bundled deps from the default cache;
+    // these different optimizeDeps would rewrite it underneath and blank its pages.
+    cacheDir: path.join(PKG_ROOT, 'node_modules', '.vite-ssr'),
     // Nothing is served to a browser, and the optimizer would outlive `close()`,
-    // leaving a deps_temp_* folder in the package's node_modules/.vite each run.
+    // leaving a deps_temp_* folder in the cache each run.
     optimizeDeps: { ...merged.optimizeDeps, noDiscovery: true, include: [] },
   });
   try {

@@ -35,7 +35,7 @@ pnpm typecheck
 pnpm check        # biome (format + lint + imports)
 pnpm check:fix
 pnpm test         # vitest
-pnpm test:e2e     # scaffold → build → start → submit → export
+pnpm test:e2e     # scaffold → build → start → submit → export, then `open-form dev` from a packed install
 ```
 
 `src/app` and `src/react` are compiled by Vite from source at runtime (the `@open-form-build/core` import is aliased to `src/index.ts`), so app/runtime edits hot-reload in `pnpm dev`. Node-side code (`cli`, `vite`, `node`, `server`, `sqlite`) runs from `dist/` — rebuild (`pnpm of build`, or keep `pnpm of build:watch` running) and restart `pnpm dev` after changing it.

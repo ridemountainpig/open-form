@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { isFileLoadingAllowed, normalizePath, type ResolvedConfig, resolveConfig } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { devServerDeny } from './config.ts';
+import { createViteConfig, devServerDeny } from './config.ts';
 
 let root: string;
 let config: ResolvedConfig;
@@ -57,5 +57,12 @@ describe('devServerDeny', () => {
     expect(isFileLoadingAllowed(config, at('.git', 'config'))).toBe(false);
     expect(isFileLoadingAllowed(config, at('forms', 'meetup', 'index.tsx'))).toBe(true);
     expect(isFileLoadingAllowed(config, at('data', 'cities.json'))).toBe(true);
+  });
+});
+
+describe('createViteConfig', () => {
+  it('serves forms the same runtime as the app, never a pre-bundled copy', async () => {
+    const vite = await createViteConfig({ userCwd: root, config: {} });
+    expect(vite.optimizeDeps?.exclude).toContain('@open-form-build/core');
   });
 });

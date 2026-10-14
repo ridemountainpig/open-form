@@ -81,6 +81,9 @@ export async function createViteConfig(opts: CreateViteConfigOptions): Promise<I
     },
     optimizeDeps: {
       entries: [path.join(APP_ROOT, 'main.tsx')],
+      // Installed from npm, the alias lands in node_modules, so Vite would pre-bundle a
+      // second copy of the runtime for forms and they'd lose the page's context.
+      exclude: [PACKAGE_NAME],
       include: [
         'react',
         'react-dom',

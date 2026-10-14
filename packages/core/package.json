@@ -64,7 +64,7 @@
     "build": "tsdown",
     "build:watch": "tsdown --watch --no-clean",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "pnpm run build && node e2e/smoke.mjs",
+    "test:e2e": "pnpm run build && node e2e/smoke.mjs && node e2e/dev.mjs",
     "prepack": "pnpm build"
   },
   "engines": {

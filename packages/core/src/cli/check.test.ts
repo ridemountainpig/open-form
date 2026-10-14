@@ -1,6 +1,11 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { resolveConfig } from 'vite';
 import { describe, expect, it } from 'vitest';
 import type { FieldSchema, FormSchema } from '../schema/index.ts';
-import { uniqueWarnings } from './check.ts';
+import { createViteConfig } from '../vite/config.ts';
+import { uniqueWarnings, withSsrServer } from './check.ts';
 
 const email = (extra: Partial<FieldSchema> = {}): FieldSchema => ({
   name: 'email',
@@ -23,5 +28,21 @@ describe('uniqueWarnings', () => {
     ).toMatch(/blank or hidden/);
     expect(uniqueWarnings(form(email(), 'phone'))[0]).toMatch(/isn't a field/);
     expect(uniqueWarnings(form(email(), 'device'))).toEqual([]);
+  });
+});
+
+describe('withSsrServer', () => {
+  it("keeps its pre-bundled deps apart from a running dev server's", async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'open-form-ssr-'));
+    try {
+      const dev = await resolveConfig(
+        await createViteConfig({ userCwd: root, config: {} }),
+        'serve',
+      );
+      const ssr = await withSsrServer(root, async (server) => server.config.cacheDir);
+      expect(ssr).not.toBe(dev.cacheDir);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

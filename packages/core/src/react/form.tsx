@@ -771,17 +771,26 @@ function InteractiveForm({
     visible,
   ]);
 
+  // Moving without validating leaves the alert behind with the step that raised it.
+  const leave = useCallback(
+    (index: number) => {
+      store.setState({ formError: undefined });
+      goTo(index);
+    },
+    [goTo, store],
+  );
+
   const back = useCallback(() => {
     const previous = visible[position - 1];
-    if (previous !== undefined) goTo(previous);
-  }, [goTo, position, visible]);
+    if (previous !== undefined) leave(previous);
+  }, [leave, position, visible]);
 
   const jump = useCallback(
     async (target: number) => {
       const index = visible[target];
-      if (inspecting && index !== undefined) return goTo(index);
+      if (inspecting && index !== undefined) return leave(index);
       if (index === undefined || target === position || target > furthest || busy.current) return;
-      if (target < position) return goTo(index);
+      if (target < position) return leave(index);
       busy.current = true;
       try {
         if (!(await validateMounted())) return;
@@ -792,7 +801,7 @@ function InteractiveForm({
         busy.current = false;
       }
     },
-    [furthest, goTo, inspecting, position, validateMounted, validateSkipped, visible],
+    [furthest, goTo, inspecting, leave, position, validateMounted, validateSkipped, visible],
   );
 
   // Studio preview: jump straight to any step (conditional ones included) or screen.
