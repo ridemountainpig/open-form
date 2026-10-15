@@ -27,6 +27,7 @@ export {
   formTimeZone,
   parseDuration,
   resolveProtection,
+  studioProblem,
   submissionWindow,
 } from './config.ts';
 export type { PaletteReport } from './contrast.ts';

@@ -63,6 +63,11 @@ export type OpenFormHandlerOptions = {
   basePath?: string;
   /** Who may use Studio's endpoints (responses, export, delete). Without it they answer 404. */
   adminAuth?: AdminAuth;
+  /**
+   * `'read-only'`: Studio's reading endpoints (forms, schemas, responses,
+   * export) answer everyone. Changes still need `adminAuth`.
+   */
+  publicStudio?: 'read-only';
   clientAddress?: (request: Request) => string | undefined;
   secureCookies?: boolean;
   /** Signs webhook deliveries (`config.webhooks`). Usually `OPEN_FORM_WEBHOOK_SECRET`. */
@@ -310,6 +315,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
         now: clock,
       })
     : null;
+  const publicRead = opts.publicStudio === 'read-only';
 
   /** The respondent's language if the form offers it, else the form's own. */
   const localeFor = (def: FormDefinition, requested?: unknown): Locale => {
@@ -739,11 +745,13 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
   }
 
   async function getSession({ request }: RouteContext) {
-    const via = await requireGate().check(request);
+    if (!gate && !publicRead) throw new HttpError(404, 'not_found', 'Not found.');
+    const via = (await gate?.check(request)) ?? null;
     const auth = opts.adminAuth;
     return json({
       signedIn: via !== null,
       canSignOut: via === 'session',
+      readOnly: via === null && publicRead,
       signIn: auth?.password ? 'password' : auth?.signInUrl ? 'url' : null,
       signInUrl: auth?.signInUrl,
     });
@@ -896,10 +904,12 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
 
     async function dispatch(route: Route, match: RegExpExecArray): Promise<Response> {
       try {
-        if (route.admin && !gate) {
+        // Studio's GET routes only read, so they're the ones a public Studio opens.
+        const open = publicRead && request.method === 'GET';
+        if (route.admin && !open && !gate) {
           return json({ error: 'not_found', message: 'Not found.' }, 404);
         }
-        if (route.admin && !(await gate?.check(request))) {
+        if (route.admin && !open && !(await gate?.check(request))) {
           return json({ error: 'unauthorized', message: 'Sign in to Studio.' }, 401);
         }
         const params = match.slice(1).map(decodeParam);

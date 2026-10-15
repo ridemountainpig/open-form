@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { OpenFormConfig } from '../schema/index.ts';
+import { type OpenFormConfig, studioProblem } from '../schema/index.ts';
 import {
   adminPasswordProblem,
   createOpenFormHandler,
@@ -43,6 +43,8 @@ export type StartedServer = {
   server: http.Server;
   url: string;
   adminEnabled: boolean;
+  /** `studio.public: 'read-only'`: anyone can read Studio without signing in. */
+  publicStudio: boolean;
   forms: string[];
   close(): Promise<void>;
 };
@@ -197,6 +199,9 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   const adminEnabled = Boolean(adminPassword);
   const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
   if (passwordProblem) throw new Error(`OPEN_FORM_ADMIN_PASSWORD: ${passwordProblem}`);
+  const studioConfigProblem = studioProblem(config.studio);
+  if (studioConfigProblem) throw new Error(`open-form.config.ts: ${studioConfigProblem}`);
+  const publicStudio = config.studio?.public === 'read-only';
   const envTrustProxy = parseTrustProxy(process.env.OPEN_FORM_TRUST_PROXY);
   const trustProxy = config.trustProxy ?? envTrustProxy ?? false;
   const sockets = new WeakMap<Request, IncomingMessage>();
@@ -207,6 +212,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     config,
     secret: resolveSecret(root, databasePath),
     adminAuth: adminPassword ? { password: adminPassword } : undefined,
+    publicStudio: publicStudio ? 'read-only' : undefined,
     webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
     clientAddress: (request) => {
       const req = sockets.get(request);
@@ -266,7 +272,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
       }
 
       if (pathname === '/' || pathname === '/studio' || pathname.startsWith('/studio/')) {
-        if (!adminEnabled) {
+        if (!adminEnabled && !publicStudio) {
           sendIndex(req, res, 'form', 404);
           return;
         }
@@ -300,6 +306,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     server,
     url: `http://${host === '0.0.0.0' ? 'localhost' : host}:${actualPort}`,
     adminEnabled,
+    publicStudio,
     forms: entry.formIds,
     async close() {
       await new Promise<void>((resolve) => server.close(() => resolve()));

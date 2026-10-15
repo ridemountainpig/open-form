@@ -41,8 +41,10 @@ of a respondent. It shuts down cleanly on `SIGINT` and `SIGTERM`.
 already set in the environment win, so your platform's settings override the
 file.
 
-Without `OPEN_FORM_ADMIN_PASSWORD`, forms work but Studio is disabled. Changing
-it signs everyone out of Studio.
+Without `OPEN_FORM_ADMIN_PASSWORD`, forms work but Studio is disabled, unless
+[`studio.public`](/docs/reference/config#a-public-demo-studio) is `'read-only'`:
+then anyone can read Studio and nobody can change anything. Changing the
+password signs everyone out of Studio.
 
 Put the server behind HTTPS. Forms and Studio work behind a proxy that ends TLS
 without further setup, but set `OPEN_FORM_TRUST_PROXY` to the exact number of

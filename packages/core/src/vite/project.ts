@@ -2,7 +2,12 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfigFromFile } from 'vite';
-import { localeProblem, type OpenFormConfig, timeZoneProblem } from '../schema/index.ts';
+import {
+  localeProblem,
+  type OpenFormConfig,
+  studioProblem,
+  timeZoneProblem,
+} from '../schema/index.ts';
 import { FORM_ID_RE } from '../server/index.ts';
 
 export const CONFIG_FILE = 'open-form.config.ts';
@@ -158,7 +163,10 @@ export async function loadUserConfig(userCwd: string): Promise<OpenFormConfig> {
     else process.env.NODE_ENV = nodeEnv;
   }
   const config = (loaded?.config ?? {}) as OpenFormConfig;
-  const problem = localeProblem(config.locale) ?? timeZoneProblem(config.timeZone);
+  const problem =
+    localeProblem(config.locale) ??
+    timeZoneProblem(config.timeZone) ??
+    studioProblem(config.studio);
   if (problem) throw new Error(`${CONFIG_FILE}: ${problem}`);
   return config;
 }

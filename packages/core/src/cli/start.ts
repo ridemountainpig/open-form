@@ -20,9 +20,15 @@ export async function start(flags: StartFlags = {}): Promise<void> {
     ...started.forms.map((id): [string, string] => ['Form', chalk.cyan(`${started.url}/f/${id}`)]),
     [
       'Studio',
-      started.adminEnabled
-        ? chalk.cyan(`${started.url}/studio`)
-        : chalk.dim('disabled — set OPEN_FORM_ADMIN_PASSWORD to enable'),
+      started.publicStudio
+        ? `${chalk.cyan(`${started.url}/studio`)} ${chalk.yellow('read-only for everyone')}${
+            started.adminEnabled
+              ? chalk.dim(' · sign in to make changes')
+              : chalk.dim(' · set OPEN_FORM_ADMIN_PASSWORD to make changes')
+          }`
+        : started.adminEnabled
+          ? chalk.cyan(`${started.url}/studio`)
+          : chalk.dim('disabled — set OPEN_FORM_ADMIN_PASSWORD to enable'),
     ],
   ]);
   process.stdout.write('\n');

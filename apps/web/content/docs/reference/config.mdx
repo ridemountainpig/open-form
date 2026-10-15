@@ -81,6 +81,10 @@ loads `.env` itself.
       type: '{ origins?: string[] }',
       description: 'Sites that may frame forms and call the public form API. Use * for any site.',
     },
+    studio: {
+      type: "{ public?: 'read-only' }",
+      description: "'read-only' lets anyone open Studio under open-form start and read every form and response without signing in. Changes still need OPEN_FORM_ADMIN_PASSWORD.",
+    },
   }}
 />
 
@@ -89,7 +93,8 @@ loads `.env` itself.
 
 ## Checked at load
 
-An unknown `locale` or an invalid `timeZone` fails loudly: `open-form dev`,
+An unknown `locale`, an invalid `timeZone` or a `studio.public` other than
+`'read-only'` fails loudly: `open-form dev`,
 `build`, `check` and the other commands that read this file stop with the
 error. Saved while `open-form dev` runs, a broken config is reported and the
 server keeps the previous one until you fix it. `webhooks` and `embed.origins`
@@ -168,6 +173,21 @@ OPEN_FORM_SECRET=<at least 16 random characters>
 ```
 
 See [Storage](/docs/reference/storage).
+
+### A public demo Studio
+
+```ts
+export default defineConfig({ studio: { public: 'read-only' } });
+```
+
+Under `open-form start`, anyone can open `/studio` without signing in and read
+every form, unpublished ones included, and every response, export included.
+Deleting responses and changing a form's schedule still need
+`OPEN_FORM_ADMIN_PASSWORD`: with it set, **Sign in** at the bottom of the
+sidebar unlocks them; without it, nobody can make those changes. Respondents'
+answers are public this way, so say so on the form and don't ask for anything
+personal. `open-form dev` ignores the setting: there, Studio stays on your
+machine.
 
 ### Remote IDE or tunnel during development
 

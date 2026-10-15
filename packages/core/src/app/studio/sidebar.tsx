@@ -2,6 +2,7 @@ import appConfig from 'virtual:open-form/config';
 import {
   Languages,
   LayoutGrid,
+  LogIn,
   LogOut,
   Menu,
   Monitor,
@@ -30,7 +31,7 @@ import {
 } from './folders.tsx';
 import { STUDIO_LANGUAGES, useSetLocale, useT } from './i18n.tsx';
 import { type SchemePreference, setStudioScheme, useStudioScheme } from './scheme.ts';
-import { useSession } from './session.tsx';
+import { useReadOnly, useSession } from './session.tsx';
 import { ChoiceMenu } from './ui.tsx';
 
 export const UNFILED = 'unfiled';
@@ -124,9 +125,25 @@ function LanguageMenu() {
   );
 }
 
-function SignOutButton() {
+const SESSION_BUTTON =
+  'focus-ring grid size-7 place-items-center rounded-md text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 [&_svg]:size-3.5';
+
+function SessionButton() {
   const t = useT();
   const session = useSession();
+  if (session?.info.readOnly && session.info.signIn) {
+    return (
+      <button
+        type="button"
+        onClick={session.openSignIn}
+        aria-label={t('session.signInToEdit')}
+        title={t('session.signInToEdit')}
+        className={SESSION_BUTTON}
+      >
+        <LogIn aria-hidden />
+      </button>
+    );
+  }
   if (!session?.info.canSignOut) return null;
   return (
     <button
@@ -134,7 +151,7 @@ function SignOutButton() {
       onClick={() => void session.signOut()}
       aria-label={t('session.signOut')}
       title={t('session.signOut')}
-      className="focus-ring grid size-7 place-items-center rounded-md text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 [&_svg]:size-3.5"
+      className={SESSION_BUTTON}
     >
       <LogOut aria-hidden />
     </button>
@@ -166,6 +183,7 @@ function SidebarContent({ onSearch }: { onSearch(): void }) {
   const { forms, themes, folders } = useStudioData();
   const moveForm = useMoveForm();
   const dragHint = useFormDragActive();
+  const readOnly = useReadOnly();
   const [creating, setCreating] = useState(false);
 
   const list = forms.data?.forms ?? [];
@@ -309,10 +327,11 @@ function SidebarContent({ onSearch }: { onSearch(): void }) {
         <p className="mr-auto font-mono text-[11px] text-zinc-400">
           v{appConfig.version}
           {appConfig.dev ? ' · dev' : ''}
+          {readOnly ? ` · ${t('session.readOnly')}` : ''}
         </p>
         <LanguageMenu />
         <SchemeMenu />
-        <SignOutButton />
+        <SessionButton />
       </div>
     </div>
   );

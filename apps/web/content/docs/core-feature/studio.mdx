@@ -174,7 +174,11 @@ See [Themes](/docs/core-feature/themes).
 - **`open-form start`** enables Studio only when `OPEN_FORM_ADMIN_PASSWORD` is set
   (at least 16 characters, not one word or pattern repeated; a passphrase
   works). Without it, Studio and the admin API don't exist and the server only
-  serves public forms.
+  serves public forms. With
+  [`studio: { public: 'read-only' }`](/docs/reference/config#a-public-demo-studio),
+  anyone can open Studio and read it without signing in; the sidebar says
+  *read-only*, and deleting responses or changing the schedule still takes the
+  password, through **Sign in** at the bottom of the sidebar.
 
 Set `OPEN_FORM_ADMIN_PASSWORD` in the environment or in the workspace's `.env`,
 which every `open-form` command except `init` loads; a variable already set in

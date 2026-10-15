@@ -18,6 +18,7 @@ import {
   resolveVisibleFields,
   scheduleChanges,
   schemaVersion,
+  studioProblem,
   submissionValues,
   submissionWindow,
   themeToCss,
@@ -473,6 +474,14 @@ describe('config helpers', () => {
     expect(parseDuration('10m')).toBe(600_000);
     expect(parseDuration(150)).toBe(150);
     expect(() => parseDuration('soon' as never)).toThrow();
+  });
+
+  it("accepts only 'read-only' for a public Studio", () => {
+    expect(studioProblem(undefined)).toBeUndefined();
+    expect(studioProblem({})).toBeUndefined();
+    expect(studioProblem({ public: 'read-only' })).toBeUndefined();
+    expect(studioProblem({ public: true })).toMatch(/studio\.public true/);
+    expect(studioProblem('read-only')).toMatch(/object/);
   });
 
   it('merges protection layers over defaults', () => {

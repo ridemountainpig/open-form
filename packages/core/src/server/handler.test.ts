@@ -580,6 +580,109 @@ describe('admin endpoints', () => {
   });
 });
 
+describe('public read-only Studio', () => {
+  const PASSWORD = 'correct horse battery staple';
+
+  function publicHandler(adminAuth?: { password: string }) {
+    return createOpenFormHandler({
+      registry: {
+        list: async () => ['meetup'],
+        load: async (id) => (id === 'meetup' ? definition() : null),
+      },
+      storage,
+      secret: SECRET,
+      config: { protection: { minimumCompletionTime: false, rateLimit: false } },
+      now: () => now,
+      clientAddress: () => address,
+      adminAuth,
+      publicStudio: 'read-only',
+    });
+  }
+
+  const get = (handle: OpenFormHandler, path: string, cookie?: string) =>
+    handle(new Request(`${ORIGIN}/api${path}`, { headers: cookie ? { cookie } : {} }));
+  const send = (handle: OpenFormHandler, method: string, path: string, cookie?: string) =>
+    handle(
+      new Request(`${ORIGIN}/api${path}`, {
+        method,
+        headers: {
+          origin: ORIGIN,
+          'content-type': 'application/json',
+          ...(cookie ? { cookie } : {}),
+        },
+        body: method === 'DELETE' ? undefined : JSON.stringify({ ids: ['x'] }),
+      }),
+    );
+
+  it('lets anyone read Studio but not change anything', async () => {
+    const handle = publicHandler();
+    const created = (await (await handle(post(alex))).json()) as { id: string };
+
+    expect((await get(handle, '/forms')).status).toBe(200);
+    expect((await get(handle, '/forms/meetup/schema')).status).toBe(200);
+    const page = (await (await get(handle, '/forms/meetup/submissions')).json()) as {
+      total: number;
+    };
+    expect(page.total).toBe(1);
+    expect((await get(handle, `/forms/meetup/submissions/${created.id}`)).status).toBe(200);
+    expect((await get(handle, '/forms/meetup/export')).status).toBe(200);
+    expect(await (await get(handle, '/studio/session')).json()).toMatchObject({
+      signedIn: false,
+      readOnly: true,
+      signIn: null,
+    });
+
+    expect((await send(handle, 'DELETE', `/forms/meetup/submissions/${created.id}`)).status).toBe(
+      404,
+    );
+    expect((await send(handle, 'POST', '/forms/meetup/submissions/delete')).status).toBe(404);
+    expect((await send(handle, 'DELETE', '/forms/meetup/overrides')).status).toBe(404);
+    expect((await send(handle, 'POST', '/studio/session')).status).toBe(404);
+    expect(await storage.countSubmissions('meetup')).toBe(1);
+  });
+
+  it('still asks for the password before changes', async () => {
+    const handle = publicHandler({ password: PASSWORD });
+    const created = (await (await handle(post(alex))).json()) as { id: string };
+    expect((await get(handle, '/forms')).status).toBe(200);
+    expect(await (await get(handle, '/studio/session')).json()).toMatchObject({
+      signedIn: false,
+      readOnly: true,
+      signIn: 'password',
+    });
+    const path = `/forms/meetup/submissions/${created.id}`;
+    expect((await send(handle, 'DELETE', path)).status).toBe(401);
+
+    const signedIn = await handle(
+      new Request(`${ORIGIN}/api/studio/session`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: ORIGIN },
+        body: JSON.stringify({ password: PASSWORD }),
+      }),
+    );
+    const cookie = signedIn.headers.get('set-cookie')?.split(';')[0];
+    expect(await (await get(handle, '/studio/session', cookie)).json()).toMatchObject({
+      signedIn: true,
+      readOnly: false,
+    });
+    expect((await send(handle, 'DELETE', path, cookie)).status).toBe(200);
+  });
+
+  it('is off unless asked for', async () => {
+    const handle = createOpenFormHandler({
+      registry: { list: async () => ['meetup'], load: async () => definition() },
+      storage,
+      secret: SECRET,
+      adminAuth: { password: PASSWORD },
+    });
+    expect((await get(handle, '/forms')).status).toBe(401);
+    expect(await (await get(handle, '/studio/session')).json()).toMatchObject({
+      signedIn: false,
+      readOnly: false,
+    });
+  });
+});
+
 describe('schedule', () => {
   const put = (submissions: unknown, headers: HeadersInit = {}, timeZone?: string) =>
     new Request(`${ORIGIN}/api/forms/meetup/overrides`, {

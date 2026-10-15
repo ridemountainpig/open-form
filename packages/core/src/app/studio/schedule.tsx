@@ -12,6 +12,7 @@ import { clearOverrides, type SchemaInfo, saveSchedule } from './api.ts';
 import { relativeTime } from './format.ts';
 import { useT } from './i18n.tsx';
 import type { MessageKey } from './messages.ts';
+import { useReadOnly } from './session.tsx';
 import { deviceTimeZone, TimeZonePicker } from './time-zone-picker.tsx';
 import { Button, Card, cx, Kbd } from './ui.tsx';
 
@@ -233,6 +234,7 @@ export function ScheduleSection({
   const t = useT();
   const ids = useId();
   const dev = appConfig.dev;
+  const readOnly = useReadOnly();
   const { schedule, overrides } = info;
   const [initial] = useState(() => toDraft(info));
   const [draft, setDraft] = useState(initial);
@@ -292,7 +294,10 @@ export function ScheduleSection({
       <form onSubmit={submit}>
         <h2 className="text-sm font-semibold">{t('settings.submissions')}</h2>
 
-        <div className="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">
+        <fieldset
+          disabled={readOnly}
+          className="mt-2 min-w-0 divide-y divide-zinc-100 dark:divide-zinc-800"
+        >
           <div className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-1.5 py-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
             <span id={`${ids}-published`} className="text-sm text-zinc-500 dark:text-zinc-400">
               {t('schedule.published')}
@@ -389,7 +394,7 @@ export function ScheduleSection({
               </p>
             )}
           </Field>
-        </div>
+        </fieldset>
 
         {changed.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
@@ -398,14 +403,16 @@ export function ScheduleSection({
                 list: new Intl.ListFormat(t.locale).format(changed.map((key) => t(LABELS[key]))),
               })}
             </span>
-            <Button
-              variant="ghost"
-              className="h-7 text-amber-800 dark:text-amber-300"
-              disabled={busy}
-              onClick={() => void run(() => clearOverrides(formId))}
-            >
-              {t('schedule.restore')}
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                className="h-7 text-amber-800 dark:text-amber-300"
+                disabled={busy}
+                onClick={() => void run(() => clearOverrides(formId))}
+              >
+                {t('schedule.restore')}
+              </Button>
+            )}
           </div>
         )}
 
@@ -415,37 +422,43 @@ export function ScheduleSection({
           </p>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-            {/* Inline, not inline-flex: an empty dot would set the label's baseline at its bottom edge. */}
-            {dirty && (
-              <span className="mr-2 font-medium text-zinc-800 dark:text-zinc-200">
-                <span
-                  aria-hidden
-                  className="mr-1.5 inline-block size-1.5 rounded-full bg-amber-500 align-middle"
-                />
-                {t('schedule.unsaved')}
-              </span>
-            )}
-            {dev ? (
-              <>
-                {t('schedule.savesToCode')} <Kbd>forms/{formId}/index.tsx</Kbd>
-              </>
-            ) : (
-              t('schedule.savesLive')
-            )}
+        {readOnly ? (
+          <p className="mt-3 border-t border-zinc-100 pt-3 text-[12px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+            {t('schedule.readOnly')}
           </p>
-          <div className="flex gap-1.5">
-            {dirty && (
-              <Button variant="ghost" disabled={busy} onClick={() => setDraft(initial)}>
-                {t('common.cancel')}
+        ) : (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {/* Inline, not inline-flex: an empty dot would set the label's baseline at its bottom edge. */}
+              {dirty && (
+                <span className="mr-2 font-medium text-zinc-800 dark:text-zinc-200">
+                  <span
+                    aria-hidden
+                    className="mr-1.5 inline-block size-1.5 rounded-full bg-amber-500 align-middle"
+                  />
+                  {t('schedule.unsaved')}
+                </span>
+              )}
+              {dev ? (
+                <>
+                  {t('schedule.savesToCode')} <Kbd>forms/{formId}/index.tsx</Kbd>
+                </>
+              ) : (
+                t('schedule.savesLive')
+              )}
+            </p>
+            <div className="flex gap-1.5">
+              {dirty && (
+                <Button variant="ghost" disabled={busy} onClick={() => setDraft(initial)}>
+                  {t('common.cancel')}
+                </Button>
+              )}
+              <Button type="submit" variant="primary" disabled={!dirty || busy || Boolean(problem)}>
+                {t('schedule.save')}
               </Button>
-            )}
-            <Button type="submit" variant="primary" disabled={!dirty || busy || Boolean(problem)}>
-              {t('schedule.save')}
-            </Button>
+            </div>
           </div>
-        </div>
+        )}
       </form>
     </Card>
   );

@@ -120,6 +120,11 @@ it, `/studio` and the admin API answer `404` and the server only serves public
 forms and their submission endpoint. `open-form start` prints each form's URL and
 whether Studio is enabled.
 
+For a public demo, set
+[`studio: { public: 'read-only' }`](/docs/reference/config#a-public-demo-studio):
+anyone can then read Studio, responses included, without signing in, and only
+the password can change anything.
+
 With a password, open `/studio` and sign in. The session lasts 7 days and signing
 out ends it on the server. Changing the password signs everyone out. A password
 shorter than 16 characters, with fewer than 8 different characters, or that only

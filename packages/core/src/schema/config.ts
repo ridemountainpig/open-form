@@ -139,10 +139,26 @@ export type OpenFormConfig = {
      */
     origins?: string[];
   };
+  studio?: {
+    /**
+     * `'read-only'`: under `open-form start`, anyone can open Studio and read
+     * every form and response, unpublished forms included, without signing in.
+     * Changes still need `OPEN_FORM_ADMIN_PASSWORD`. For public demos.
+     */
+    public?: 'read-only';
+  };
 };
 
 export function defineConfig(config: OpenFormConfig): OpenFormConfig {
   return config;
+}
+
+export function studioProblem(studio: unknown): string | undefined {
+  if (studio === undefined) return undefined;
+  if (typeof studio !== 'object' || studio === null) return 'studio must be an object.';
+  const value = (studio as { public?: unknown }).public;
+  if (value === undefined || value === 'read-only') return undefined;
+  return `studio.public ${JSON.stringify(value)} isn't supported. Use 'read-only', or leave it out.`;
 }
 
 export const DEFAULT_PROTECTION = {

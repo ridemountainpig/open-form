@@ -1,4 +1,4 @@
-import { ArrowRight, KeyRound, RotateCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, KeyRound, RotateCw } from 'lucide-react';
 import {
   createContext,
   type FormEvent,
@@ -18,16 +18,23 @@ const SESSION_API = '/api/studio/session';
 type SessionInfo = {
   signedIn: boolean;
   canSignOut: boolean;
+  /** Not signed in, but the server lets everyone read Studio (`studio.public`). */
+  readOnly?: boolean;
   signIn: 'password' | 'url' | null;
   signInUrl?: string;
 };
 
-type Session = { info: SessionInfo; signOut(): Promise<void> };
+type Session = { info: SessionInfo; signOut(): Promise<void>; openSignIn(): void };
 
 const SessionContext = createContext<Session | null>(null);
 
 export function useSession(): Session | null {
   return useContext(SessionContext);
+}
+
+/** Studio is open to read without signing in: hide everything that changes data. */
+export function useReadOnly(): boolean {
+  return useSession()?.info.readOnly ?? false;
 }
 
 async function fetchSession(): Promise<SessionInfo> {
@@ -38,11 +45,12 @@ async function fetchSession(): Promise<SessionInfo> {
   return (await res.json()) as SessionInfo;
 }
 
-/** Renders Studio once signed in; otherwise the sign-in screen. */
+/** Renders Studio once signed in or open to read; otherwise the sign-in screen. */
 export function SessionGate({ children }: { children: ReactNode }) {
   const [info, setInfo] = useState<SessionInfo | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   const load = useCallback(
     () =>
@@ -81,8 +89,24 @@ export function SessionGate({ children }: { children: ReactNode }) {
     );
   }
   if (!info) return <div aria-busy="true" className="min-h-dvh" />;
-  if (!info.signedIn) return <SignIn info={info} onSignedIn={load} />;
-  return <SessionContext.Provider value={{ info, signOut }}>{children}</SessionContext.Provider>;
+  if (!info.signedIn && (!info.readOnly || signingIn)) {
+    return (
+      <SignIn
+        info={info}
+        onSignedIn={() => {
+          setSigningIn(false);
+          load();
+        }}
+        onBack={info.readOnly ? () => setSigningIn(false) : undefined}
+      />
+    );
+  }
+  const openSignIn = () => setSigningIn(true);
+  return (
+    <SessionContext.Provider value={{ info, signOut, openSignIn }}>
+      {children}
+    </SessionContext.Provider>
+  );
 }
 
 function SessionFailed({
@@ -124,8 +148,23 @@ function Screen({ children }: { children: ReactNode }) {
   );
 }
 
-function SignIn({ info, onSignedIn }: { info: SessionInfo; onSignedIn(): void }) {
+function SignIn({
+  info,
+  onSignedIn,
+  onBack,
+}: {
+  info: SessionInfo;
+  onSignedIn(): void;
+  /** Back to the read-only Studio, when there is one. */
+  onBack?(): void;
+}) {
   const t = useT();
+  const back = onBack && (
+    <Button variant="ghost" className="mt-2 w-full" onClick={onBack}>
+      <ArrowLeft />
+      {t('session.back')}
+    </Button>
+  );
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -171,6 +210,7 @@ function SignIn({ info, onSignedIn }: { info: SessionInfo; onSignedIn(): void })
           {t('session.sso')}
           <ArrowRight />
         </ButtonLink>
+        {back}
       </Screen>
     );
   }
@@ -184,6 +224,7 @@ function SignIn({ info, onSignedIn }: { info: SessionInfo; onSignedIn(): void })
           {code}
           {t('session.unavailable.after')}
         </p>
+        {back}
       </Screen>
     );
   }
@@ -227,6 +268,7 @@ function SignIn({ info, onSignedIn }: { info: SessionInfo; onSignedIn(): void })
           {busy ? t('session.submitting') : t('session.submit')}
         </Button>
       </form>
+      {back}
     </Screen>
   );
 }

@@ -162,6 +162,13 @@ storage, so the same cookie is refused afterwards. Sign-in is limited to 10
 attempts per IP (per /64 for IPv6) every 10 minutes: a wrong password gets
 `401` `invalid_password`, and attempts over the limit get `429` `rate_limited`.
 
+With `publicStudio: 'read-only'`, the admin `GET` routes (forms, schemas,
+responses, export, folders) answer everyone, and `GET /api/studio/session`
+answers even without `adminAuth`, with `readOnly: true` for a browser that
+isn't signed in. The routes that change data still need `adminAuth`, and
+answer `404` without it. `open-form start` sets it from
+[`studio.public`](/docs/reference/config#a-public-demo-studio).
+
 `open-form start` and the Next.js route turn on password sign-in when
 `OPEN_FORM_ADMIN_PASSWORD` is set. `open-form dev` always serves the admin
 routes: without a password, only direct requests from your own machine get in
@@ -199,6 +206,7 @@ export const handler = createOpenFormHandler({
     config: { type: 'OpenFormConfig', description: 'The project config: protection defaults, time zone, webhooks, embed.' },
     basePath: { type: 'string', default: "'/api'", description: 'Path prefix the handler is mounted under.' },
     adminAuth: { type: 'AdminAuth', description: 'Who may use Studio and the admin routes. Without it they answer 404.' },
+    publicStudio: { type: "'read-only'", description: 'Open the admin GET routes to everyone. Changes still need adminAuth.' },
     clientAddress: { type: '(request: Request) => string | undefined', description: 'The client IP, for rate limits and sign-in attempts. IPv6 addresses count per /64. Without it, every visitor counts as one: all of them share each form’s rate limit and the sign-in limit.' },
     secureCookies: { type: 'boolean', description: 'Always mark cookies Secure. Without it they are Secure when the request URL or the page’s Origin is https.' },
     webhookSecret: { type: 'string', description: 'Signs webhook deliveries. Usually OPEN_FORM_WEBHOOK_SECRET.' },

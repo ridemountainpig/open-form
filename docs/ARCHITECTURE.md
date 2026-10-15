@@ -317,7 +317,7 @@ POST   /api/forms/:id/submissions/delete { ids }    admin: bulk delete (1–500)
 PUT    /api/forms/:id/overrides                     admin: Studio submission-setting overrides (see §9)
 DELETE /api/forms/:id/overrides                     admin: revert to the settings in code
 GET    /api/forms/:id/export?format=csv|xlsx|json   admin
-GET    /api/studio/session                          sign-in state (signedIn, whether sign-out is possible, sign-in method)
+GET    /api/studio/session                          sign-in state (signedIn, readOnly, whether sign-out is possible, sign-in method)
 POST   /api/studio/session    { password }          password → session cookie (same-origin, 10 per IP (/64 for IPv6) / 10 minutes)
 DELETE /api/studio/session                          sign out
 ```
@@ -328,6 +328,7 @@ DELETE /api/studio/session                          sign out
 - `adminAuth.authorize(request)`: custom logic (an SSO session, local connections); `signInUrl` makes Studio's sign-in screen redirect to an external sign-in page.
 - dev: with no password set, `authorize` = a direct local connection (loopback connection, loopback `Host`, no `Forwarded` / `X-Forwarded-*` / `X-Real-IP`, and not a web page from another origin: `Sec-Fetch-Site` must be `same-origin` / `none`, and `Origin` must be same-origin). Vite's `server.cors` is also turned off, since otherwise it answers CORS for any localhost origin and lets pages from other dev servers read responses. Once `OPEN_FORM_ADMIN_PASSWORD` is set, local connections are no longer trusted and everyone signs in: nginx's default `proxy_pass` (no `X-Forwarded-For`, Host rewritten to 127.0.0.1) or plain TCP forwarding (`ssh -R`, `socat`) makes remote requests look local, so always set a password before exposing dev. The dev file-writing endpoints (themes, folders, comments, source, current) sit behind the same gate.
 - production (`open-form start`): only `OPEN_FORM_ADMIN_PASSWORD` is honored; without it, Studio and the admin API don't exist and only the public forms are served.
+- public read-only Studio (`studio: { public: 'read-only' }` → the handler's `publicStudio`): the admin `GET` routes skip the gate, and `GET /api/studio/session` answers `readOnly: true` to anyone not signed in, so Studio renders without the sign-in screen and hides deleting and schedule editing. Writes still go through `adminAuth` (404 without it). Only `open-form start` passes it: dev keeps Studio local, and the Next.js route serves no Studio.
 - Page headers: Studio `frame-ancestors 'self'`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: same-origin`; `/f/:id` allows only same-origin embedding by default (`embed.origins` opens it up).
 
 **Client IP**: with `trustProxy` (`true` or a number of proxy hops), the IP is counted from the right of `X-Forwarded-For`, skipping the entries your own proxies added; values further left were sent by the client itself and are ignored.

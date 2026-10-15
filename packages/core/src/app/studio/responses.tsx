@@ -52,6 +52,7 @@ import {
   SortChip,
   sortQuery,
 } from './response-filters.tsx';
+import { useReadOnly } from './session.tsx';
 import { Button, Card, cx, EmptyState, ErrorNotice, Popover, Skeleton } from './ui.tsx';
 
 const PAGE_SIZE = 50;
@@ -96,6 +97,7 @@ export function Responses() {
   const { responseId } = useParams();
   const navigate = useNavigate();
   const t = useT();
+  const readOnly = useReadOnly();
   const yesNo = [t('common.yes'), t('common.no')] as const;
   const [query, setQuery] = useState('');
   const [offset, setOffset] = useState(0);
@@ -388,19 +390,24 @@ export function Responses() {
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                  <th scope="col" className="w-10 py-2.5 pr-1 pl-4 font-medium">
-                    <input
-                      ref={(box) => {
-                        if (box) box.indeterminate = chosen.length > 0 && !allChosen;
-                      }}
-                      type="checkbox"
-                      className={cx(CHECKBOX, 'block')}
-                      checked={allChosen}
-                      onChange={tickPage}
-                      aria-label={t('responses.selectPage')}
-                    />
-                  </th>
-                  <th scope="col" className="w-14 py-2.5 pr-2 font-medium">
+                  {!readOnly && (
+                    <th scope="col" className="w-10 py-2.5 pr-1 pl-4 font-medium">
+                      <input
+                        ref={(box) => {
+                          if (box) box.indeterminate = chosen.length > 0 && !allChosen;
+                        }}
+                        type="checkbox"
+                        className={cx(CHECKBOX, 'block')}
+                        checked={allChosen}
+                        onChange={tickPage}
+                        aria-label={t('responses.selectPage')}
+                      />
+                    </th>
+                  )}
+                  <th
+                    scope="col"
+                    className={cx('w-14 py-2.5 pr-2 font-medium', readOnly && 'pl-4')}
+                  >
                     #
                   </th>
                   <th scope="col" className="py-1.5 pr-4 font-medium">
@@ -442,18 +449,25 @@ export function Responses() {
                     )}
                     aria-selected={item.id === responseId}
                   >
-                    <td className="p-0" data-tick>
-                      <label className="flex cursor-pointer items-center py-2.5 pr-1 pl-4">
-                        <input
-                          type="checkbox"
-                          className={CHECKBOX}
-                          checked={ticked(item.id)}
-                          onChange={(e) => tick(index, e.target.checked, withShift(e))}
-                          aria-label={t('responses.select', { n: item.number })}
-                        />
-                      </label>
-                    </td>
-                    <td className="py-2.5 pr-2 font-mono text-xs text-zinc-400 tabular-nums">
+                    {!readOnly && (
+                      <td className="p-0" data-tick>
+                        <label className="flex cursor-pointer items-center py-2.5 pr-1 pl-4">
+                          <input
+                            type="checkbox"
+                            className={CHECKBOX}
+                            checked={ticked(item.id)}
+                            onChange={(e) => tick(index, e.target.checked, withShift(e))}
+                            aria-label={t('responses.select', { n: item.number })}
+                          />
+                        </label>
+                      </td>
+                    )}
+                    <td
+                      className={cx(
+                        'py-2.5 pr-2 font-mono text-xs text-zinc-400 tabular-nums',
+                        readOnly && 'pl-4',
+                      )}
+                    >
                       <button
                         type="button"
                         className="focus-ring rounded-sm"
@@ -564,6 +578,7 @@ function ResponseDrawer({
   const [deleting, setDeleting] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const t = useT();
+  const readOnly = useReadOnly();
   const yesNo = [t('common.yes'), t('common.no')] as const;
   // `onClose` is new on every render of the list; the drawer only focuses when it opens.
   const close = useRef(onClose);
@@ -699,10 +714,12 @@ function ResponseDrawer({
             {copiedAll ? <Check /> : <Copy />}
             {copiedAll ? t('responses.copied') : t('responses.copyAll')}
           </Button>
-          <Button variant="danger" onClick={remove} disabled={!submission || deleting}>
-            <Trash2 />
-            {t('common.delete')}
-          </Button>
+          {!readOnly && (
+            <Button variant="danger" onClick={remove} disabled={!submission || deleting}>
+              <Trash2 />
+              {t('common.delete')}
+            </Button>
+          )}
         </div>
       </div>
     </div>
