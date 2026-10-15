@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ViteDevServer } from 'vite';
 import { deleteForm } from '../editing/delete-form.ts';
 import { writeScheduleChanges } from '../editing/form-config.ts';
-import { formTimeZone, type OpenFormConfig, scheduleEdit } from '../schema/index.ts';
+import { formTimeZone, isPublished, type OpenFormConfig, scheduleEdit } from '../schema/index.ts';
 import type { StorageAdapter } from '../storage/index.ts';
 import { createDevRegistry } from './api-plugin.ts';
 import { findForms, type ProjectPaths } from './project.ts';
@@ -13,9 +13,9 @@ import { assertSameOrigin, readBody, StudioError, send } from './studio-http.ts'
 // schedule edits as overrides in the database instead (`PUT /api/forms/:id/overrides`)
 // and can't delete forms: they're part of the build.
 //
-//   PUT    /api/studio/forms/:id/schedule   { submissions, timeZone } → rewrite opensAt /
-//                                          closesAt / maxResponses / closed and timeZone
-//                                          in forms/<id>/index.tsx
+//   PUT    /api/studio/forms/:id/schedule   { submissions, timeZone, published } → rewrite
+//                                          opensAt / closesAt / maxResponses / closed,
+//                                          timeZone and published in forms/<id>/index.tsx
 //   DELETE /api/studio/forms/:id            { confirm: id } → erase its responses and
 //                                          data, then remove forms/<id>/
 
@@ -33,7 +33,7 @@ export function studioFormsMiddleware(ctx: Context) {
 
   async function saveSchedule(
     id: string,
-    input: { submissions?: unknown; timeZone?: unknown },
+    input: { submissions?: unknown; timeZone?: unknown; published?: unknown },
   ): Promise<void> {
     const entry = findForms(ctx.paths.formsRoot).find((f) => f.id === id);
     if (!entry) throw new StudioError(404, `No form "${id}".`);
@@ -47,6 +47,7 @@ export function studioFormsMiddleware(ctx: Context) {
       const changes = scheduleEdit(input, {
         policy: def.config.submissions,
         timeZone: formTimeZone(def.config, ctx.config.timeZone),
+        published: isPublished(def.config, null),
       });
       if (Object.keys(changes).length === 0) return;
       const source = await readFile(entry.file, 'utf8');

@@ -16,15 +16,15 @@ pnpm start      # serve forms + API + SQLite
 
 ## Deploying
 
-`open-form start` needs a persistent disk for `.open-form/` (VPS, Docker, Railway / Fly.io with a volume). It reads these variables from the environment, or from a `.env` file in this folder (the environment wins).
+`open-form start` needs a persistent disk for `.open-form/` (VPS, Docker, Railway / Fly.io with a volume). Step-by-step guides: [Docker](https://open-form.build/docs/deploy/docker), [Railway](https://open-form.build/docs/deploy/railway). It reads these variables from the environment, or from a `.env` file in this folder (the environment wins).
 
 | Variable | Purpose |
 | --- | --- |
 | `PORT` | Port to listen on (default: `port` in `open-form.config.ts`, else 3000) |
 | `HOST` | Address to bind (default `0.0.0.0`) |
-| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio in production; a password you choose and sign in with. At least 16 characters — a passphrase of a few words works |
+| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio in production; a password you choose and sign in with. At least 16 characters, not one word or pattern repeated — a passphrase of a few words works |
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`) |
-| `OPEN_FORM_SECRET` | Signs form tokens and Studio sessions; at least 16 characters (default: generated into `.open-form/secret`) |
+| `OPEN_FORM_SECRET` | Signs form tokens and Studio sessions; at least 16 characters (default: generated into a `secret` file next to the database) |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs `webhooks` deliveries ([Standard Webhooks](https://www.standardwebhooks.com)); base64, optionally prefixed `whsec_` |
 | `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` for one, so rate limits and sign-in attempts count each visitor. `trustProxy` in `open-form.config.ts` wins over it |
 | `OPEN_FORM_SECURE_COOKIES` | With a trusted proxy, cookies are always marked `Secure`; `0` marks them `Secure` only for requests made over HTTPS |

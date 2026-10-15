@@ -29,6 +29,7 @@ const en = {
   'status.not-open': 'Scheduled',
   'status.closed': 'Closed',
   'status.full': 'Full',
+  'status.unpublished': 'Unpublished',
   'status.error': 'Error',
 
   'folders.heading': 'Folders',
@@ -527,6 +528,9 @@ const en = {
   'edit.removeNote': 'Remove note',
   'settings.drafts': 'Keeps unfinished answers',
   'settings.responses': 'Responses',
+  'schedule.published': 'Published',
+  'schedule.unpublishedHint':
+    'Offline — its link shows “Form not found”. Only Studio can preview it.',
   'schedule.accepting': 'Accepting responses',
   'schedule.pausedHint': 'Paused — respondents see the closed message.',
   'schedule.time': 'Time',
@@ -604,6 +608,7 @@ const zhTW: Dictionary = {
   'status.not-open': '尚未開放',
   'status.closed': '已關閉',
   'status.full': '已額滿',
+  'status.unpublished': '未發布',
   'status.error': '錯誤',
 
   'folders.heading': '資料夾',
@@ -1086,6 +1091,8 @@ const zhTW: Dictionary = {
   'edit.removeNote': '移除留言',
   'settings.drafts': '保存未完成的回答',
   'settings.responses': '回覆',
+  'schedule.published': '發布',
+  'schedule.unpublishedHint': '已下架，連結會顯示「找不到表單」，只有 Studio 能預覽。',
   'schedule.accepting': '接受回覆',
   'schedule.pausedHint': '已暫停，填答者會看到關閉訊息。',
   'schedule.time': '時間',
@@ -1158,6 +1165,7 @@ const zhCN: Dictionary = {
   'status.not-open': '未开放',
   'status.closed': '已关闭',
   'status.full': '已满',
+  'status.unpublished': '未发布',
   'status.error': '错误',
 
   'folders.heading': '文件夹',
@@ -1641,6 +1649,8 @@ const zhCN: Dictionary = {
   'edit.removeNote': '移除留言',
   'settings.drafts': '保存未完成的回答',
   'settings.responses': '回复',
+  'schedule.published': '发布',
+  'schedule.unpublishedHint': '已下架，链接会显示“找不到该表单”，只有 Studio 能预览。',
   'schedule.accepting': '接受回复',
   'schedule.pausedHint': '已暂停，填写者会看到关闭消息。',
   'schedule.time': '时间',
@@ -1713,6 +1723,7 @@ const ja: Dictionary = {
   'status.not-open': '公開前',
   'status.closed': '締切',
   'status.full': '満員',
+  'status.unpublished': '非公開',
   'status.error': 'エラー',
 
   'folders.heading': 'フォルダ',
@@ -2219,6 +2230,9 @@ const ja: Dictionary = {
   'edit.removeNote': 'メモを削除',
   'settings.drafts': '途中の回答を保存',
   'settings.responses': '回答',
+  'schedule.published': '公開',
+  'schedule.unpublishedHint':
+    '非公開中。リンクには「フォームが見つかりません」と表示され、Studio でのみプレビューできます。',
   'schedule.accepting': '回答を受け付ける',
   'schedule.pausedHint': '一時停止中。回答者には締め切りのメッセージが表示されます。',
   'schedule.time': '時刻',

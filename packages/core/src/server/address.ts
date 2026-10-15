@@ -17,6 +17,17 @@ function ipv6Groups(text: string): number[] | null {
   return parts.map((part) => Number.parseInt(part, 16));
 }
 
+/** A `Host` (port optional) that only reaches this machine. */
+export function isLoopbackHost(host: string | null | undefined): boolean {
+  const name = host?.toLowerCase().replace(/:\d+$/, '');
+  return (
+    name === 'localhost' ||
+    name === '127.0.0.1' ||
+    name === '[::1]' ||
+    Boolean(name?.endsWith('.localhost'))
+  );
+}
+
 /**
  * Who a rate limit counts. IPv4 addresses (also IPv4-mapped IPv6) count one by
  * one; an IPv6 address counts as its /64, because one home or server usually

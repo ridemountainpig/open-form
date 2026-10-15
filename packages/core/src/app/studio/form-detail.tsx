@@ -61,16 +61,18 @@ export function FormDetail() {
             {info && <span className="text-zinc-400 dark:text-zinc-600"> · v{info.version}</span>}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={copy} aria-live="polite">
-            {copied ? <Check /> : <Link2 />}
-            {copied ? t('detail.copied') : t('detail.copyLink')}
-          </Button>
-          <ButtonLink href={`/f/${formId}`} target="_blank" rel="noreferrer" variant="primary">
-            {t('detail.openForm')}
-            <ArrowUpRight />
-          </ButtonLink>
-        </div>
+        {info?.published !== false && (
+          <div className="flex items-center gap-2">
+            <Button onClick={copy} aria-live="polite">
+              {copied ? <Check /> : <Link2 />}
+              {copied ? t('detail.copied') : t('detail.copyLink')}
+            </Button>
+            <ButtonLink href={`/f/${formId}`} target="_blank" rel="noreferrer" variant="primary">
+              {t('detail.openForm')}
+              <ArrowUpRight />
+            </ButtonLink>
+          </div>
+        )}
       </div>
 
       <nav

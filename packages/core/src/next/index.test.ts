@@ -114,6 +114,35 @@ describe('createOpenFormRoute', () => {
     }
   });
 
+  it('warns in production that a client can spoof X-Forwarded-For without a proxy', async () => {
+    writeEntry('RSVP', 1_000);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      const warned = async (env: Record<string, string>, trustProxy?: number) => {
+        warn.mockClear();
+        for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+        const { GET } = createOpenFormRoute({
+          root,
+          storage: createMemoryStorage(),
+          secret: 'test-secret-0123456789abcdef',
+          trustProxy,
+        });
+        await GET(new Request(`${ORIGIN}/api/forms/rsvp`));
+        await GET(new Request(`${ORIGIN}/api/forms/rsvp`));
+        return warn.mock.calls.map((call) => String(call[0]));
+      };
+      const calls = await warned({ VERCEL: '' });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toMatch(/X-Forwarded-For/);
+      expect(await warned({ VERCEL: '' }, 1)).toEqual([]);
+      expect(await warned({ VERCEL: '1' })).toEqual([]);
+    } finally {
+      vi.unstubAllEnvs();
+      warn.mockRestore();
+    }
+  });
+
   it('points a missing bundle at outputFileTracingIncludes', async () => {
     const { GET } = route();
     await expect(GET(new Request(`${ORIGIN}/api/forms/rsvp`))).rejects.toThrow(

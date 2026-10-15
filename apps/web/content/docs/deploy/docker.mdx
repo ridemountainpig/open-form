@@ -1,0 +1,146 @@
+---
+title: Docker
+description: Build the workspace into an image and keep responses on a volume.
+---
+
+The image builds the workspace and runs `open-form start`. Responses and the
+signing secret live in `.open-form/`, so that folder is a volume: the image can
+be rebuilt and replaced without touching them.
+
+<Steps>
+<Step>
+
+### Add a Dockerfile
+
+Put it in the workspace root, next to `package.json`.
+
+<Tabs items={['pnpm', 'npm']}>
+<Tab value="pnpm">
+
+```dockerfile title="Dockerfile"
+FROM node:24-slim
+WORKDIR /app
+RUN npm install -g pnpm@10
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm build
+EXPOSE 3000
+CMD ["node_modules/.bin/open-form", "start"]
+```
+
+</Tab>
+<Tab value="npm">
+
+```dockerfile title="Dockerfile"
+FROM node:24-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["node_modules/.bin/open-form", "start"]
+```
+
+</Tab>
+</Tabs>
+
+`CMD` runs the CLI directly rather than through `pnpm start`, so `docker stop`
+reaches the server and it shuts down cleanly.
+
+</Step>
+<Step>
+
+### Keep local data out of the image
+
+```text title=".dockerignore"
+node_modules
+dist
+.git
+.open-form
+.env
+.env.*
+/responses*
+```
+
+Without it, `COPY . .` copies your local `.open-form/` into the image: the
+responses you collected while developing, and the secret.
+
+</Step>
+<Step>
+
+### Build and run
+
+```bash
+docker build -t my-forms .
+docker run -d --name my-forms --restart unless-stopped -p 3000:3000 \
+  -v my-forms-data:/app/.open-form \
+  -e OPEN_FORM_ADMIN_PASSWORD='a long passphrase you choose' \
+  my-forms
+```
+
+`-v my-forms-data:/app/.open-form` creates the named volume on the first run and
+reuses it after. Forms are at `http://localhost:3000/f/<id>` and Studio at
+`/studio`.
+
+</Step>
+</Steps>
+
+## On a server with Compose
+
+Keep the variables in a `.env` next to `compose.yaml` on the server. The
+`.dockerignore` above keeps it out of the image.
+
+```yaml title="compose.yaml"
+services:
+  forms:
+    build: .
+    ports:
+      - '127.0.0.1:3000:3000'
+    env_file: .env
+    volumes:
+      - data:/app/.open-form
+    restart: unless-stopped
+
+volumes:
+  data:
+```
+
+```text title=".env"
+OPEN_FORM_ADMIN_PASSWORD='a long passphrase you choose'
+OPEN_FORM_TRUST_PROXY=1
+```
+
+```bash
+docker compose up -d --build
+```
+
+Run the same command after pulling new code: it rebuilds the image and replaces
+the container, and the `data` volume carries the responses over.
+
+The port is bound to `127.0.0.1` so the only way in is the reverse proxy that
+ends HTTPS on the host (Caddy, nginx), which is why `OPEN_FORM_TRUST_PROXY` is
+`1`. If clients could reach port 3000 directly, they could send their own
+`X-Forwarded-For` and pick the address rate limits count. Without a proxy,
+publish `3000:3000` and leave `OPEN_FORM_TRUST_PROXY` out. See
+[HTTPS and proxies](/docs/deploy/production#https-and-proxies).
+
+## The volume
+
+The volume holds `open-form.db`, its `-wal` and `-shm` files, and `secret`.
+Set `OPEN_FORM_SECRET` instead to keep the secret off the volume, so a copy of
+the volume doesn't carry it; see [Production](/docs/deploy/production).
+
+Besides Studio's export, you can export from the running container:
+
+```bash
+docker exec my-forms node_modules/.bin/open-form responses export <id> > responses.csv
+```
+
+## What's next
+
+<Cards>
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Railway" href="/docs/deploy/railway" />
+</Cards>

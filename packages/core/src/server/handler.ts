@@ -7,6 +7,7 @@ import {
   formLocales,
   formTimeZone,
   getMessages,
+  isPublished,
   type Locale,
   type Messages,
   type OpenFormConfig,
@@ -24,7 +25,7 @@ import {
   type WindowStatus,
 } from '../schema/index.ts';
 import type { CreateSubmissionResult, StorageAdapter, StoredOverrides } from '../storage/index.ts';
-import { rateLimitSubject } from './address.ts';
+import { isLoopbackHost, rateLimitSubject } from './address.ts';
 import { type AdminAuth, createAdminGate, sentOverHttps } from './admin.ts';
 import { checkTimingToken, createSigner, issueTimingToken, type Signer } from './crypto.ts';
 import { responseColumns } from './export.ts';
@@ -237,7 +238,13 @@ async function readJson(request: Request, maxBytes: number): Promise<Record<stri
   }
 }
 
-function statusOf(window: WindowStatus, responses: number, max: number | undefined) {
+function statusOf(
+  window: WindowStatus,
+  responses: number,
+  max: number | undefined,
+  published: boolean,
+) {
+  if (!published) return 'unpublished';
   return window === 'open' && max !== undefined && responses >= max ? 'full' : window;
 }
 
@@ -332,23 +339,29 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     return def;
   }
 
+  /** A form respondents may reach: unpublished ones answer like ones that don't exist. */
+  async function loadPublicForm(id: string) {
+    const def = await loadForm(id);
+    const overrides = await storage.getFormOverrides(def.id);
+    if (!isPublished(def.config, overrides)) {
+      throw new HttpError(404, 'not_found', 'Form not found.');
+    }
+    return { def, overrides };
+  }
+
   // Not cached: deleting a form erases its versions, from Studio or from
   // `open-form delete` in another process, and a stale id would fail every insert.
   async function versionId(def: FormDefinition): Promise<string> {
     return (await storage.ensureFormVersion(def.id, def.version, def.schema)).id;
   }
 
-  /** What storing would answer, without storing: for bots caught by the honeypot. */
-  async function decoy(
-    formId: string,
-    uniqueKey: string | null,
-    maxResponses: number | undefined,
-  ): Promise<Outcome> {
+  /**
+   * What storing would answer, without storing: for bots caught by the honeypot.
+   * Never a duplicate: that would tell, without a trace, whether a value has already responded.
+   */
+  async function decoy(formId: string, maxResponses: number | undefined): Promise<Outcome> {
     if (maxResponses !== undefined && (await storage.countSubmissions(formId)) >= maxResponses) {
       return { ok: false, reason: 'full' };
-    }
-    if (uniqueKey && (await storage.hasUniqueKey(formId, uniqueKey))) {
-      return { ok: false, reason: 'duplicate' };
     }
     const [latest] = (await storage.listSubmissions(formId, { limit: 1 })).items;
     const number = Math.max(latest?.number ?? 0, decoyNumbers.get(formId) ?? 0) + 1;
@@ -379,8 +392,12 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     return { hash, setCookie };
   }
 
-  async function availability(def: FormDefinition, request: Request, now: number) {
-    const overrides = await storage.getFormOverrides(def.id);
+  async function availability(
+    def: FormDefinition,
+    overrides: StoredOverrides | null,
+    request: Request,
+    now: number,
+  ) {
     const policy = policyOf(def, overrides);
     const messages = messagesFor(def);
     const window = windowOf(def, overrides, now);
@@ -412,19 +429,18 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
   }
 
   async function getForm({ request, now }: RouteContext, [id]: string[]) {
-    const def = await loadForm(id as string);
-    const status = await availability(def, request, now);
+    const { def, overrides } = await loadPublicForm(id as string);
+    const status = await availability(def, overrides, request, now);
     const token = status.state === 'open' ? await issueTimingToken(signer, def.id, now) : undefined;
     return json({ id: def.id, title: def.schema.title, availability: status, token });
   }
 
   async function submit({ request, now }: RouteContext, [id]: string[]) {
     assertSameOrigin(request, embedOrigins);
-    const def = await loadForm(id as string);
+    const { def, overrides } = await loadPublicForm(id as string);
     const body = await readJson(request, maxBody);
     const locale = localeFor(def, body.locale);
     const messages = messagesFor(def, locale);
-    const overrides = await storage.getFormOverrides(def.id);
     const policy = policyOf(def, overrides);
     const window = windowOf(def, overrides, now);
     if (window.status !== 'open') {
@@ -498,10 +514,10 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       );
     };
 
-    // Bots that fill the honeypot get the answer a real submission would get
+    // Bots that fill the honeypot get the answer a new submission would get
     // (after the same checks), and nothing is stored.
     if (protection.honeypot && typeof body.hp === 'string' && body.hp.trim() !== '') {
-      return respond(await decoy(def.id, uniqueKey, policy?.maxResponses));
+      return respond(await decoy(def.id, policy?.maxResponses));
     }
 
     const created = await storage.createSubmission(
@@ -562,7 +578,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
             pages: def.schema.pages.length,
             responses,
             maxResponses: max,
-            status: statusOf(window, responses, max),
+            status: statusOf(window, responses, max, isPublished(def.config, overrides[id])),
           };
         } catch (err) {
           return {
@@ -583,6 +599,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     const policy = policyOf(def, overrides);
     const window = windowOf(def, overrides, now);
     const responses = await storage.countSubmissions(def.id);
+    const published = isPublished(def.config, overrides);
     const iso = (ms?: number) => (ms === undefined ? undefined : new Date(ms).toISOString());
     return json({
       id: def.id,
@@ -592,8 +609,9 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       timeZone: timeZoneOf(def, overrides),
       timeZoneFallback: !overrides?.timeZone && !def.config.timeZone && !opts.config?.timeZone,
       schedule: scheduleOf(policy),
+      published,
       overrides,
-      status: statusOf(window.status, responses, policy?.maxResponses),
+      status: statusOf(window.status, responses, policy?.maxResponses, published),
       opensAt: iso(window.opensAt),
       closesAt: iso(window.closesAt),
       protection: resolveProtection(opts.config?.protection, def.config.protection),
@@ -617,7 +635,11 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     const body = await readJson(request, 4096);
     let changes: ReturnType<typeof scheduleEdit>;
     try {
-      changes = scheduleEdit(body, { policy: def.config.submissions, timeZone: codeTimeZone(def) });
+      changes = scheduleEdit(body, {
+        policy: def.config.submissions,
+        timeZone: codeTimeZone(def),
+        published: isPublished(def.config, null),
+      });
     } catch (err) {
       throw new HttpError(422, 'invalid', (err as Error).message);
     }
@@ -727,10 +749,17 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     });
   }
 
-  async function signIn({ request, now }: RouteContext) {
+  let warnedPlainHttp = false;
+  async function signIn({ request, url, now }: RouteContext) {
     const admin = requireGate();
     if (!opts.adminAuth?.password) throw new HttpError(404, 'not_found', 'Not found.');
     assertSameOrigin(request);
+    if (!warnedPlainHttp && !sentOverHttps(request) && !isLoopbackHost(url.host)) {
+      warnedPlainHttp = true;
+      console.warn(
+        `[open-form] A Studio sign-in reached ${url.host} over plain HTTP, so the password and session cookie crossed the network unencrypted. Serve Studio over HTTPS: a reverse proxy or your platform's TLS.`,
+      );
+    }
     const body = await readJson(request, 4096);
     const address = rateLimitSubject(opts.clientAddress?.(request) ?? 'unknown');
     const key = (await signer.sign(`sign-in:${address}`)).slice(0, 32);

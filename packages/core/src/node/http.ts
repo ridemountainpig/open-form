@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
+import { isLoopbackHost } from '../server/address.ts';
 
 export type NodeRequestOptions = {
   /**
@@ -66,16 +67,6 @@ export function isLoopback(address: string | undefined): boolean {
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
 }
 
-function isLoopbackHost(host: string | undefined): boolean {
-  const name = host?.toLowerCase().replace(/:\d+$/, '');
-  return (
-    name === 'localhost' ||
-    name === '127.0.0.1' ||
-    name === '[::1]' ||
-    Boolean(name?.endsWith('.localhost'))
-  );
-}
-
 const PROXY_HEADERS = ['forwarded', 'x-forwarded-for', 'x-forwarded-host', 'x-real-ip'];
 
 /** Sent by a page on another origin, e.g. another dev server on localhost. */
@@ -119,6 +110,27 @@ export function requestHeaders(req: IncomingMessage): Headers {
   return headers;
 }
 
+/**
+ * Starts reading only when the handler asks for the body. One it never asks for
+ * (refused first, or too large by its Content-Length) Node then drains itself,
+ * instead of it stalling the next request on a kept-alive connection.
+ */
+function requestBody(req: IncomingMessage): ReadableStream<Uint8Array> {
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  return new ReadableStream<Uint8Array>(
+    {
+      async pull(controller) {
+        reader ??= (Readable.toWeb(req) as ReadableStream<Uint8Array>).getReader();
+        const { done, value } = await reader.read();
+        if (done) controller.close();
+        else controller.enqueue(value);
+      },
+      cancel: (reason) => reader?.cancel(reason),
+    },
+    { highWaterMark: 0 },
+  );
+}
+
 export function toWebRequest(req: IncomingMessage, opts: NodeRequestOptions = {}): Request {
   // Appended, not resolved: a target like `//evil.example/api` must stay a path.
   const url = new URL(`${requestOrigin(req, opts)}${requestTarget(req)}`);
@@ -128,7 +140,7 @@ export function toWebRequest(req: IncomingMessage, opts: NodeRequestOptions = {}
   return new Request(url, {
     method,
     headers,
-    body: hasBody ? (Readable.toWeb(req) as ReadableStream) : undefined,
+    body: hasBody ? requestBody(req) : undefined,
     // Required by Node's fetch for streamed request bodies.
     ...(hasBody ? { duplex: 'half' } : {}),
   } as RequestInit);
@@ -136,6 +148,9 @@ export function toWebRequest(req: IncomingMessage, opts: NodeRequestOptions = {}
 
 export async function sendWebResponse(res: ServerResponse, response: Response): Promise<void> {
   res.statusCode = response.status;
+  // Answered before the body arrived: the rest of it would sit in front of the
+  // next request a proxy sends down this connection.
+  if (res.req && !res.req.complete) res.setHeader('connection', 'close');
   const cookies = response.headers.getSetCookie();
   for (const [key, value] of response.headers) {
     if (key === 'set-cookie') continue;

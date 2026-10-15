@@ -149,7 +149,7 @@ responses. It receives `state`, `eyebrow` (the form's title), `title` and
 | `'not-open'` | Before `opensAt` | A built-in sentence with the opening date |
 | `'full'` | `maxResponses` reached | `fullMessage`, or a built-in sentence |
 | `'duplicate'` | `uniqueBy: 'device'` and this browser already responded | `duplicateMessage`, or a built-in sentence |
-| `'not-found'` | A [`<FormHost>`](/docs/deploy/nextjs) asked for a form the server doesn't have; `title` is "Form not found" | `closedMessage`, or a built-in sentence |
+| `'not-found'` | A [`<FormHost>`](/docs/deploy/nextjs) asked for a form the server doesn't have, or one that's [unpublished](/docs/reference/define-form#published); `title` is "Form not found" | A built-in sentence: the link may be mistyped, or the form is no longer available |
 
 ```tsx title="forms/meetup/index.tsx"
 import { Form, type NoticeUIProps, T } from '@open-form-build/core';

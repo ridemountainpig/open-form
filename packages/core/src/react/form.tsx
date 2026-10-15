@@ -1119,6 +1119,8 @@ function unavailableMessage(
       return format(messages.notOpenMessage, {
         date: availability.opensAt ? formatDateTime(availability.opensAt, messages.locale) : '',
       });
+    case 'not-found':
+      return messages.notFoundMessage;
     default:
       return own(config?.submissions?.closedMessage, messages.closedMessage);
   }

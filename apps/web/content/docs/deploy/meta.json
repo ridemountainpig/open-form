@@ -1,1 +1,1 @@
-{ "title": "Deploy", "pages": ["production", "nextjs", "embed", "webhooks"] }
+{ "title": "Deploy", "pages": ["production", "docker", "railway", "nextjs", "embed", "webhooks"] }

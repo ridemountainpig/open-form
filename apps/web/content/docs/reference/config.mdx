@@ -158,7 +158,16 @@ export default defineConfig({ storage: { path: '/data/open-form.db' } });
 ```
 
 Or leave the config alone and set `OPEN_FORM_DB=/data/open-form.db` on the
-server. See [Storage](/docs/reference/storage).
+server. The generated secret follows the database to `/data/secret`. To keep it
+off the volume, so a copy of the volume doesn't carry it, set `OPEN_FORM_SECRET`
+in your platform's secret settings instead:
+
+```bash
+OPEN_FORM_DB=/data/open-form.db
+OPEN_FORM_SECRET=<at least 16 random characters>
+```
+
+See [Storage](/docs/reference/storage).
 
 ### Remote IDE or tunnel during development
 

@@ -58,6 +58,12 @@ and ignores the zone.
   and `duplicateMessage` shows under the Submit button. `open-form check` warns
   when the field is optional or conditional, since responses that leave it blank
   or hidden aren't limited, and when no field has that name.
+
+  The value isn't verified: anyone can type someone else's email, which uses up
+  that person's one response, and a duplicate answer tells the sender that the
+  value has already responded. Fine for a meetup RSVP; for forms where taking
+  part is itself sensitive, leave `uniqueBy` off or confirm addresses yourself
+  (a webhook that emails a link) before counting a response.
 - **`'device'`**: a cookie remembers the browser, so a returning visitor sees the
   "already responded" screen before filling anything. It's lightweight, not
   identity: a different browser or cleared storage gets through.
@@ -69,7 +75,7 @@ project-wide defaults in `open-form.config.ts` (each form's own keys win).
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `honeypot` | `true` | A hidden field bots fill in. Those submissions get the answer a real one would and nothing is stored. |
+| `honeypot` | `true` | A hidden field bots fill in. Those submissions get the answer a new one would and nothing is stored. |
 | `minimumCompletionTime` | `'2s'` | The page gets a signed timing token on load; submissions sent faster are rejected. `false` disables it. |
 | `rateLimit` | `{ max: 10, window: '10m' }` | Valid submissions per IP per form; an IPv6 address counts as its /64. `false` disables it. |
 
@@ -124,7 +130,7 @@ POST /api/forms/:id/submissions
 | --- | --- |
 | `201` | Stored. Body: `{ id, number }`. |
 | `400` | `too_fast` (sent before `minimumCompletionTime`), `invalid_token`, `expired_token` (the page was open over 7 days; reloading it gets a new token), or a malformed body. |
-| `404` | `not_found`: no form with that id. |
+| `404` | `not_found`: no form with that id, or the form is [unpublished](/docs/reference/define-form#published). |
 | `409` | `duplicate`: the `uniqueBy` value or device already responded. |
 | `410` | `closed`, `not_open` or `full`. |
 | `422` | Validation failed. Body: `{ errors }`, mapped back to each field's step. |
@@ -138,7 +144,8 @@ bodies `413`, and non-JSON bodies `415`. See the
 
 People who run an event often need to move a deadline or raise a limit without a
 developer. Studio's **Settings** tab can edit `opensAt`, `closesAt`,
-`maxResponses`, `closed` and the `timeZone` they're read in, and nothing else.
+`maxResponses`, `closed`, the `timeZone` they're read in, and whether the form
+is [`published`](/docs/reference/define-form#published), and nothing else.
 
 - Under `open-form dev`, saving rewrites those keys in `forms/<id>/index.tsx`.
 - On a deployed server, saving stores **overrides** in the database. They apply

@@ -90,6 +90,7 @@ const STATUS_TONE: Record<FormStatus | 'error', Tone> = {
   'not-open': 'indigo',
   closed: 'zinc',
   full: 'amber',
+  unpublished: 'ink',
   error: 'red',
 };
 
@@ -218,6 +219,7 @@ const DOT: Record<FormStatus | 'error', string> = {
   'not-open': 'bg-indigo-500',
   closed: 'bg-zinc-400',
   full: 'bg-amber-500',
+  unpublished: 'border border-zinc-400 dark:border-zinc-500',
   error: 'bg-red-500',
 };
 

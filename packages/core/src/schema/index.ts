@@ -80,6 +80,7 @@ export {
 export type { FormOverrides, Schedule, SubmissionOverrides } from './schedule.ts';
 export {
   applyOverrides,
+  isPublished,
   overriddenTimeZone,
   parseSchedule,
   parseTimeZone,

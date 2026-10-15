@@ -59,6 +59,12 @@ describe('writeScheduleChanges', () => {
     ).toThrow(/export const config/);
   });
 
+  it('writes published: false and removes it again when published', () => {
+    const out = writeScheduleChanges(FORM, { published: false });
+    expect(out).toContain('  published: false,\n');
+    expect(writeScheduleChanges(out, { published: true })).toBe(FORM);
+  });
+
   it('writes the form’s own time zone next to its dates', () => {
     const out = writeScheduleChanges(FORM, {
       timeZone: 'Asia/Tokyo',

@@ -38,17 +38,24 @@ Open Form requires Node.js 22.13 or later.
 Responses live in a SQLite file, so the server needs a **persistent disk**:
 
 - A VPS or any machine you control.
-- Docker, with a volume for the data.
-- Railway or Fly.io, with a volume attached.
+- [Docker](/docs/deploy/docker), with a volume for the data.
+- [Railway](/docs/deploy/railway) or Fly.io, with a volume attached.
 
 Serverless platforms with an ephemeral filesystem (Vercel and similar) lose the
 file between invocations, so local SQLite doesn't work there. To run inside a
 Next.js app, see [Next.js](/docs/deploy/nextjs) and pass your own storage.
 
 By default the data lives in `.open-form/` in the project: the database and a
-generated signing secret. Either mount the volume at `.open-form/`, or point
-`OPEN_FORM_DB` at a file on the volume and set `OPEN_FORM_SECRET` so the secret
-survives redeploys too.
+generated signing secret, which is always written next to the database. Either
+mount the volume at `.open-form/`, or point `OPEN_FORM_DB` at a file on the
+volume (`/data/open-form.db`). The secret lands on the volume either way.
+
+The database isn't encrypted. Open Form makes it, its `-wal` / `-shm` files and
+the secret readable only by the user the server runs as, and overwrites deleted
+responses, but whoever has the disk, or a snapshot or backup of the volume, can
+read every response. Keep snapshots and backups as private as the responses
+themselves, and prefer `OPEN_FORM_SECRET` from your platform's secret settings
+over the generated file, so a copy of the volume doesn't carry the secret too.
 
 ## Environment variables
 
@@ -60,9 +67,9 @@ environment win, so your platform's settings override the file.
 | --- | --- |
 | `PORT` | Port to listen on without `--port` (default: `port` in `open-form.config.ts`, else `3000`). |
 | `HOST` | Address to bind without `--host` (default `0.0.0.0`). |
-| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio and the admin API. At least 16 characters; a passphrase of a few words works. |
+| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio and the admin API. At least 16 characters with at least 8 different ones, not one word or pattern repeated; a passphrase of a few words works. |
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`). |
-| `OPEN_FORM_SECRET` | Signs timing tokens and Studio sessions, and hashes visitor ids (default: generated into `.open-form/secret`). At least 16 characters. Keep it stable and private. |
+| `OPEN_FORM_SECRET` | Signs timing tokens and Studio sessions, and hashes visitor ids (default: generated into a `secret` file next to the database). At least 16 characters. Keep it stable and private. |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally prefixed `whsec_` as the Standard Webhooks libraries expect. |
 | `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` for one. Lets rate limits and sign-in attempts count each visitor instead of the proxy. |
 | `OPEN_FORM_SECURE_COOKIES` | With a trusted proxy, cookies are always marked `Secure`. `0` marks them `Secure` only for requests made over HTTPS. |
@@ -75,6 +82,13 @@ without any setting: a page on `https://` may submit to the server even though
 the server itself is reached over `http://`, and cookies are marked `Secure`
 whenever the browser is on HTTPS. The proxy has to pass on the browser's `Host`
 header, as those platforms do; with nginx, add `proxy_set_header Host $host;`.
+
+Pages served over HTTPS carry `Strict-Transport-Security` (one year, this host
+only), so browsers keep using HTTPS. The server knows a page is on HTTPS when
+TLS reaches it directly or when it trusts the proxy's `X-Forwarded-Proto`
+(below). A Studio sign-in that reaches the server over plain HTTP from anywhere
+but `localhost` logs a warning once: the password and session cookie crossed
+the network unencrypted.
 
 Behind a proxy, still set `OPEN_FORM_TRUST_PROXY` to the number of proxies.
 Without it every request seems to come from the proxy, so all visitors share one
@@ -107,8 +121,9 @@ forms and their submission endpoint. `open-form start` prints each form's URL an
 whether Studio is enabled.
 
 With a password, open `/studio` and sign in. The session lasts 7 days and signing
-out ends it on the server. Changing the password signs everyone out, and a
-password shorter than 16 characters stops the server from starting.
+out ends it on the server. Changing the password signs everyone out. A password
+shorter than 16 characters, with fewer than 8 different characters, or that only
+repeats itself (`passwordpassword`) stops the server from starting.
 
 Sign-in is limited to 10 attempts per IP (per /64 for IPv6) every 10 minutes.
 Behind a proxy, that IP is each visitor's own only while the server trusts the
@@ -121,8 +136,10 @@ redeploy; see [Submissions & protection](/docs/core-feature/submissions).
 Edit mode, comments, folder editing, deleting forms and the Themes pages are
 development-only: make those changes in code and deploy again.
 
-Studio's pages can't be framed by other sites. Public forms can be framed only by
-your own origin unless you allow others with [`embed.origins`](/docs/deploy/embed).
+Studio's pages can't be framed by other sites, and their `Content-Security-Policy`
+lets only the build's own scripts run there. Public forms can be framed only by
+your own origin unless you allow others with [`embed.origins`](/docs/deploy/embed);
+their scripts are left to your forms, which may load what they like.
 
 ## What's next
 

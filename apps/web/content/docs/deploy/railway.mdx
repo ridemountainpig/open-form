@@ -1,0 +1,105 @@
+---
+title: Railway
+description: Deploy from GitHub without a Dockerfile and keep responses on a Railway volume.
+---
+
+Railway builds the workspace with Railpack: it installs dependencies with the
+package manager your lockfile names, runs the `build` script and starts the
+`start` script. In a workspace from `open-form init` those are `open-form build`
+and `open-form start`, so there is nothing to configure for the build. What you
+add is a volume for `.open-form/` and a few variables.
+
+<Steps>
+<Step>
+
+### Push the workspace to GitHub
+
+The `.gitignore` that `open-form init` writes keeps `.open-form/`, `.env` and
+`dist/` out of the repository, so the responses and secret on your machine stay
+there. Commit the lockfile.
+
+</Step>
+<Step>
+
+### Create the service
+
+In Railway, choose **New Project → Deploy from GitHub repo** and pick the
+repository. The first build starts right away.
+
+</Step>
+<Step>
+
+### Attach a volume
+
+Open the command palette (`⌘K`) or right-click the project canvas, add a
+**Volume**, connect it to the service, and set the mount path to:
+
+```text
+/app/.open-form
+```
+
+Railpack puts the workspace in `/app`, so this is its `.open-form/` folder: the
+database and the generated secret both land on the volume. Railway mounts
+volumes when the service starts, not during the build.
+
+</Step>
+<Step>
+
+### Set the variables
+
+In the service's **Variables** tab:
+
+| Variable | Value |
+| --- | --- |
+| `OPEN_FORM_ADMIN_PASSWORD` | A passphrase of at least 16 characters. Without it Studio is off and only forms are served. |
+| `OPEN_FORM_TRUST_PROXY` | `1`. Railway's edge is the one proxy in front of the service. Without it every visitor counts as the edge, and ten wrong passwords lock everyone out of Studio. |
+| `OPEN_FORM_SECRET` | Optional. At least 16 random characters, to keep the secret out of the volume and its backups. |
+
+Leave `PORT` alone: Railway sets it and `open-form start` listens on it.
+
+Railway stages the volume and the variables as changes. Choose **Deploy** in
+the banner on the canvas to apply them; the service redeploys with both.
+
+</Step>
+<Step>
+
+### Add a domain
+
+In the service's **Settings → Networking**, choose **Generate Domain**, or add
+your own. Railway ends HTTPS there. Forms are at `https://<domain>/f/<id>` and
+Studio at `https://<domain>/studio`.
+
+</Step>
+</Steps>
+
+## With the CLI
+
+From the workspace folder, after `railway login`:
+
+```bash
+railway up
+railway volume add --mount-path /app/.open-form
+railway variable set OPEN_FORM_ADMIN_PASSWORD='a long passphrase you choose' OPEN_FORM_TRUST_PROXY=1
+railway domain
+```
+
+`railway up` uploads the folder and skips what `.gitignore` lists, so local
+responses aren't uploaded.
+
+## Redeploys
+
+Each push to the deployed branch builds and deploys again. With a volume
+attached, Railway stops the old deployment before the new one mounts the
+volume, so a redeploy has a few seconds of downtime but two servers never write
+to the same database. Responses, schedule changes saved in Studio, and Studio
+sessions carry over.
+
+A service with a volume runs one replica. Railway can back up the volume on a
+schedule; keep those backups as private as the responses themselves.
+
+## What's next
+
+<Cards>
+  <Card title="Production" href="/docs/deploy/production" />
+  <Card title="Docker" href="/docs/deploy/docker" />
+</Cards>

@@ -14,7 +14,8 @@ Responses are stored in SQLite, in a file inside your project:
 
 There's no database server to run. Open Form uses Node's built-in `node:sqlite`.
 Change the path with `storage.path` in `open-form.config.ts` or the `OPEN_FORM_DB`
-environment variable. Setting `OPEN_FORM_SECRET` replaces the `secret` file.
+environment variable; the `secret` file moves with the database. Setting
+`OPEN_FORM_SECRET` replaces it.
 
 ## Runtime data stays out of git
 

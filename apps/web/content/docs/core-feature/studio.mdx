@@ -22,15 +22,16 @@ ticked responses or an Edit mode selection stay with the form they were made on.
 Every folder in `forms/` is a form. The list shows each one as a card with a
 live thumbnail (the real form in its own theme and source language, rendered at
 desktop width and scaled down) and its status: **Open**, **Scheduled**,
-**Closed**, **Full** or **Error**.
+**Closed**, **Full**, **Unpublished** or **Error**.
 
 - **Search** matches the title, id and description.
-- **Status** narrows the list to *Open*, *Scheduled*, *Closed* or *Full*, with
-  a count for each.
+- **Status** narrows the list to *Open*, *Scheduled*, *Closed*, *Full* or
+  *Unpublished*, with a count for each.
 - **Sort** by *Recently edited*, *Latest response*, *Most responses* or *Name A–Z*.
 - Click anywhere on a card, thumbnail included, to open the form's **Preview**
   in Studio. The response count opens its **Responses**, and the arrow button
-  opens the live form in a new tab.
+  opens the live form in a new tab (unpublished forms have no live form, so no
+  arrow).
 - Under `open-form dev`, the trash button on a card deletes the form: its folder
   `forms/<id>/` and every response. Studio asks you to type the id first (click
   it to fill it in), and links Excel, CSV and JSON exports when there are
@@ -72,7 +73,7 @@ what respondents see.
 
 Open a form to land on **Preview**. On every tab, the header has **Copy link**,
 which copies the form's public URL, and **Open form**, which opens the live form
-in a new tab.
+in a new tab. An unpublished form has neither, but its Preview still works.
 
 The toolbar switches the device frame (**Desktop**, **Tablet**, **Mobile**) and,
 on a translated form, the **Preview language**: any language the form is
@@ -122,9 +123,11 @@ The **Settings** tab has two cards: **Submissions**, which you can edit, and
 Under `open-form dev`, **Delete this form** sits below them: the same action as
 the trash button on the [forms list](#forms-list).
 
-**Submissions** has **Accepting responses** (pauses the form when off), **Opens**
-and **Closes** (a date, optionally with a time), the **Time zone** those dates
-are read in, and **Response limit**. These map to `submissions.opensAt`,
+**Submissions** has **Published** (takes the form offline when off: its link
+shows "Form not found"), **Accepting responses** (pauses the form when off),
+**Opens** and **Closes** (a date, optionally with a time), the **Time zone**
+those dates are read in, and **Response limit**. These map to the form's
+[`published`](/docs/reference/define-form#published), `submissions.opensAt`,
 `closesAt`, `maxResponses`, `closed` and the form's `timeZone`.
 
 - Under `open-form dev`, **Save** writes the values into
@@ -169,8 +172,9 @@ See [Themes](/docs/core-feature/themes).
   including you. Set it before you expose dev in any way: a reverse proxy or a
   raw TCP tunnel (`ssh -R`, `socat`) can make a remote request look local.
 - **`open-form start`** enables Studio only when `OPEN_FORM_ADMIN_PASSWORD` is set
-  (at least 16 characters; a passphrase works). Without it, Studio and the admin
-  API don't exist and the server only serves public forms.
+  (at least 16 characters, not one word or pattern repeated; a passphrase
+  works). Without it, Studio and the admin API don't exist and the server only
+  serves public forms.
 
 Set `OPEN_FORM_ADMIN_PASSWORD` in the environment or in the workspace's `.env`,
 which every `open-form` command except `init` loads; a variable already set in

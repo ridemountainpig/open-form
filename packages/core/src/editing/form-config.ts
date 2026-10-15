@@ -17,11 +17,17 @@ function configObject(program: Program): ObjectExpression {
 
 const KEYS = ['opensAt', 'closesAt', 'maxResponses', 'closed'] as const;
 
-/** Apply schedule changes to a form's source. `null` (and `closed: false`) remove the setting. */
+/**
+ * Apply schedule changes to a form's source. `null`, `closed: false` and
+ * `published: true` remove the setting.
+ */
 export function writeScheduleChanges(source: string, changes: FormOverrides): string {
   let next = changes.timeZone
     ? setPath(source, configObject, ['timeZone'], changes.timeZone)
     : source;
+  if (changes.published !== undefined) {
+    next = setPath(next, configObject, ['published'], changes.published ? null : false);
+  }
   const submissions = changes.submissions ?? {};
   for (const key of KEYS) {
     if (!(key in submissions)) continue;

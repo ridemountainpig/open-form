@@ -72,6 +72,11 @@ export type FormConfig = {
   translations?: Translations;
   /** Show the language picker when the form has translations. Default `true`. */
   languageSwitch?: boolean;
+  /**
+   * `false` takes the form offline: its link and API answer "not found", and
+   * only Studio can still preview it. Its responses are kept. Default `true`.
+   */
+  published?: boolean;
   submissions?: SubmissionPolicy;
   protection?: ProtectionConfig;
   success?: SuccessConfig;

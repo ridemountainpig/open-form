@@ -72,6 +72,11 @@ A theme without components, such as `classic`, is `theme/index.ts` instead;
       default: 'true',
       description: 'Show the language picker when the form has translations.',
     },
+    published: {
+      type: 'boolean',
+      default: 'true',
+      description: 'false takes the form offline: its link answers "Form not found", and only Studio can still preview it.',
+    },
     submissions: {
       type: 'SubmissionPolicy',
       description: 'Limits, dates, uniqueness and closed-screen messages.',
@@ -193,11 +198,36 @@ deadline means the same on your laptop and in production. If you set a
 deadline, set a `timeZone` somewhere; `open-form check` warns when it's
 missing.
 
-People can change `opensAt`, `closesAt`, `maxResponses`, `closed` and the
-time zone in Studio. Under `open-form dev` that rewrites this config in the
+People can change `opensAt`, `closesAt`, `maxResponses`, `closed`, the
+time zone and `published` in Studio. Under `open-form dev` that rewrites this config in the
 form's code. On a deployed server it's stored in the database and wins over
 the code until someone restores it in Studio — see
 [Submissions](/docs/core-feature/submissions).
+
+## `published`
+
+`published: false` takes a form offline without deleting it. Its link shows
+"Form not found", and the API answers `404` to both loading and submitting, the
+same as for a form that doesn't exist. Studio still lists it as **Unpublished**,
+previews it, and keeps its responses; it just drops the form's links. Remove the
+line, or set it to `true`, to put the form back at the same URL.
+
+```tsx
+export const config = defineForm({
+  title: 'Spring Survey',
+  published: false,
+});
+```
+
+This is different from `submissions.closed`, which keeps the link working and
+shows a closed screen.
+
+<Callout type="info">
+  An unpublished form is still part of the build, so Studio can publish it
+  again on a deployed server without a redeploy. Its questions can still be
+  found in the built JavaScript, so don't rely on this to keep them secret: to
+  leave a form out of the build, move its folder out of `forms/`.
+</Callout>
 
 ## Checked at load
 

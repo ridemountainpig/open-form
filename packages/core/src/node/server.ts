@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
@@ -15,6 +16,7 @@ import { createSqliteStorage } from '../sqlite/index.ts';
 import {
   clientAddress,
   parseTrustProxy,
+  requestOrigin,
   requestTarget,
   sendWebResponse,
   toWebRequest,
@@ -124,16 +126,40 @@ function sendFile(res: ServerResponse, file: string, immutable: boolean): void {
     .pipe(res);
 }
 
+/** CSP sources (`'sha256-…'`) for the inline scripts in the page shell. */
+export function inlineScriptHashes(html: string): string[] {
+  return [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(
+    (match) =>
+      `'sha256-${createHash('sha256')
+        .update(match[1] ?? '')
+        .digest('base64')}'`,
+  );
+}
+
+export type PageHeaderOptions = {
+  /** `inlineScriptHashes` of the page shell, allowed to run in Studio. */
+  scriptHashes?: readonly string[];
+  /** The browser is on HTTPS: tell it to stay there. */
+  https?: boolean;
+};
+
 export function pageHeaders(
   page: 'studio' | 'form',
   config: OpenFormConfig,
+  opts: PageHeaderOptions = {},
 ): Record<string, string> {
+  const hsts: Record<string, string> = opts.https
+    ? { 'strict-transport-security': 'max-age=31536000' }
+    : {};
   if (page === 'studio') {
+    // Forms run their own code and may load anything; Studio runs only its build.
+    const scripts = ["'self'", ...(opts.scriptHashes ?? [])].join(' ');
     return {
-      'content-security-policy': "frame-ancestors 'self'",
+      'content-security-policy': `frame-ancestors 'self'; script-src ${scripts}; object-src 'none'; base-uri 'self'`,
       'x-frame-options': 'SAMEORIGIN',
       'referrer-policy': 'same-origin',
       'x-content-type-options': 'nosniff',
+      ...hsts,
     };
   }
   const origins = config.embed?.origins ?? [];
@@ -144,6 +170,7 @@ export function pageHeaders(
     ...(origins.length ? {} : { 'x-frame-options': 'SAMEORIGIN' }),
     'referrer-policy': 'strict-origin-when-cross-origin',
     'x-content-type-options': 'nosniff',
+    ...hsts,
   };
 }
 
@@ -164,9 +191,8 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   // Render every form once at startup so a broken form fails the deploy, not a respondent.
   for (const id of entry.formIds) await registry.load(id);
 
-  const storage = await createSqliteStorage({
-    path: resolveDatabasePath(root, config.storage?.path),
-  });
+  const databasePath = resolveDatabasePath(root, config.storage?.path);
+  const storage = await createSqliteStorage({ path: databasePath });
   const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
   const adminEnabled = Boolean(adminPassword);
   const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
@@ -179,7 +205,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     registry,
     storage,
     config,
-    secret: resolveSecret(root),
+    secret: resolveSecret(root, databasePath),
     adminAuth: adminPassword ? { password: adminPassword } : undefined,
     webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
     clientAddress: (request) => {
@@ -190,13 +216,22 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   });
 
   const indexHtml = await readFile(path.join(clientDir, 'index.html'));
+  const scriptHashes = inlineScriptHashes(indexHtml.toString('utf8'));
   // Studio signs in inside the page, so the shell itself is not secret; what
   // matters is that nobody can frame it. Forms may be framed by `embed.origins`.
-  const sendIndex = (res: ServerResponse, page: 'studio' | 'form', status = 200) => {
+  const sendIndex = (
+    req: IncomingMessage,
+    res: ServerResponse,
+    page: 'studio' | 'form',
+    status = 200,
+  ) => {
     res.statusCode = status;
     res.setHeader('content-type', 'text/html; charset=utf-8');
     res.setHeader('cache-control', 'no-cache');
-    for (const [key, value] of Object.entries(pageHeaders(page, config))) res.setHeader(key, value);
+    const https = requestOrigin(req, { trustProxy }).startsWith('https:');
+    for (const [key, value] of Object.entries(pageHeaders(page, config, { scriptHashes, https }))) {
+      res.setHeader(key, value);
+    }
     res.end(indexHtml);
   };
 
@@ -232,7 +267,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
 
       if (pathname === '/' || pathname === '/studio' || pathname.startsWith('/studio/')) {
         if (!adminEnabled) {
-          sendIndex(res, 'form', 404);
+          sendIndex(req, res, 'form', 404);
           return;
         }
         if (pathname === '/') {
@@ -241,10 +276,10 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
           res.end();
           return;
         }
-        sendIndex(res, 'studio');
+        sendIndex(req, res, 'studio');
         return;
       }
-      sendIndex(res, 'form', pathname.startsWith('/f/') ? 200 : 404);
+      sendIndex(req, res, 'form', pathname.startsWith('/f/') ? 200 : 404);
     } catch (err) {
       console.error('[open-form]', err);
       if (!res.headersSent) res.statusCode = 500;

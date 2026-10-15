@@ -26,14 +26,16 @@ type Draft = {
   max: string;
   closed: boolean;
   zone: string;
+  published: boolean;
 };
 
-const LABELS: Record<keyof SubmissionOverrides | 'timeZone', MessageKey> = {
+const LABELS: Record<keyof SubmissionOverrides | 'timeZone' | 'published', MessageKey> = {
   opensAt: 'settings.opens',
   closesAt: 'settings.closes',
   maxResponses: 'settings.limit',
   closed: 'schedule.accepting',
   timeZone: 'schedule.zone',
+  published: 'schedule.published',
 };
 
 /**
@@ -54,6 +56,7 @@ function toDraft(info: SchemaInfo): Draft {
     max: schedule.maxResponses === null ? '' : String(schedule.maxResponses),
     closed: schedule.closed,
     zone: (info.timeZoneFallback && undated && deviceTimeZone()) || timeZone,
+    published: info.published,
   };
 }
 
@@ -240,6 +243,7 @@ export function ScheduleSection({
   const changed: Array<keyof typeof LABELS> = [
     ...(Object.keys(overrides?.submissions ?? {}) as Array<keyof SubmissionOverrides>),
     ...(overrides?.timeZone ? (['timeZone'] as const) : []),
+    ...(overrides?.published !== undefined ? (['published'] as const) : []),
   ];
   const next = toSchedule(draft, initial, schedule);
   const problem = dirty ? scheduleProblem(next, draft.zone) : undefined;
@@ -276,7 +280,7 @@ export function ScheduleSection({
     event.preventDefault();
     if (problem) return;
     void run(async () => {
-      await saveSchedule(formId, next, draft.zone, { dev });
+      await saveSchedule(formId, next, { timeZone: draft.zone, published: draft.published, dev });
       // The draft started from the overridden values; once they're in code, the
       // overrides would only shadow later edits.
       if (dev && overrides) await clearOverrides(formId);
@@ -289,6 +293,20 @@ export function ScheduleSection({
         <h2 className="text-sm font-semibold">{t('settings.submissions')}</h2>
 
         <div className="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-1.5 py-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
+            <span id={`${ids}-published`} className="text-sm text-zinc-500 dark:text-zinc-400">
+              {t('schedule.published')}
+            </span>
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={draft.published}
+                onChange={(published) => update({ published })}
+                labelledBy={`${ids}-published`}
+              />
+              {!draft.published && <span className={SUBTLE}>{t('schedule.unpublishedHint')}</span>}
+            </div>
+          </div>
+
           <div className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-1.5 py-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
             <span id={`${ids}-accepting`} className="text-sm text-zinc-500 dark:text-zinc-400">
               {t('schedule.accepting')}
@@ -399,9 +417,13 @@ export function ScheduleSection({
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+            {/* Inline, not inline-flex: an empty dot would set the label's baseline at its bottom edge. */}
             {dirty && (
-              <span className="mr-2 inline-flex items-center gap-1.5 font-medium text-zinc-800 dark:text-zinc-200">
-                <span aria-hidden className="size-1.5 rounded-full bg-amber-500" />
+              <span className="mr-2 font-medium text-zinc-800 dark:text-zinc-200">
+                <span
+                  aria-hidden
+                  className="mr-1.5 inline-block size-1.5 rounded-full bg-amber-500 align-middle"
+                />
                 {t('schedule.unsaved')}
               </span>
             )}

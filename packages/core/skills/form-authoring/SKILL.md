@@ -243,6 +243,7 @@ defineForm({
   },
   success: { title: 'Thanks!', message: 'See you there.', redirect: 'https://…' },
   drafts: true,                    // long forms: keep unfinished answers in the browser 7 days ({ expires: '1d' }); off by default for shared computers
+  published: false,                // take it offline: the link says "Form not found", Studio still previews it and keeps its responses. Unlike `closed`, which shows a closed screen
 });
 ```
 
@@ -250,7 +251,7 @@ Only add what the user asked for; defaults are sensible.
 
 Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
 
-People can also change `opensAt`, `closesAt`, `maxResponses`, `closed` and the form's `timeZone` in Studio (form → Settings). Under `open-form dev` that rewrites these keys in the form's code; on a deployed server it is stored in the database and wins over the code until someone restores it there — so if a deployed form ignores a date you changed in code, it was likely changed in Studio.
+People can also change `opensAt`, `closesAt`, `maxResponses`, `closed`, the form's `timeZone` and `published` in Studio (form → Settings). Under `open-form dev` that rewrites these keys in the form's code; on a deployed server it is stored in the database and wins over the code until someone restores it there — so if a deployed form ignores a date you changed in code, it was likely changed in Studio.
 
 ### Sending responses elsewhere (webhooks)
 

@@ -44,7 +44,7 @@ pnpm test:e2e     # scaffold → build → start → submit → export, then `op
 
 - **Biome must pass** (`pnpm check`) and **tests must pass** (`pnpm test`) before committing.
 - **Client and server must agree.** Validation, conditions and coercion live once in `src/schema` and are used by both the runtime and the handler. Never duplicate a rule on one side.
-- **The schema is derived, never hand-written.** Anything the server needs to know about a form comes from the collector (`collectFormSchema`) or `config` — plus Studio's stored schedule overrides (`opensAt`/`closesAt`/`maxResponses`/`closed` and `timeZone` only; see ARCHITECTURE).
+- **The schema is derived, never hand-written.** Anything the server needs to know about a form comes from the collector (`collectFormSchema`) or `config` — plus Studio's stored schedule overrides (`opensAt`/`closesAt`/`maxResponses`/`closed`, `timeZone` and `published` only; see ARCHITECTURE).
 - **Docs follow the code.** A user-facing change in `packages/core`, `packages/cli` or `packages/create-open-form` updates the matching page in `apps/web/content/docs/` in the same change.
 - **Changes to `packages/core`, `packages/cli` or `packages/create-open-form` need a changeset** (`pnpm changeset`; one present-tense line, user-facing).
 - Don't add dependencies casually — `@open-form-build/core` installs into every user workspace.

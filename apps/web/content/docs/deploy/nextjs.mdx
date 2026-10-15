@@ -146,7 +146,7 @@ after a rebuild, so `--watch` plus `next dev` picks up edits to forms and to
     },
     secret: {
       type: 'string',
-      default: 'OPEN_FORM_SECRET, else a generated .open-form/secret',
+      default: 'OPEN_FORM_SECRET, else a generated secret file next to the database',
       description: 'Signs timing tokens and Studio session cookies, and hashes visitor ids. At least 16 characters.',
     },
     adminAuth: {
@@ -186,7 +186,10 @@ Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
   keep `next start` behind a reverse proxy that appends the client address (nginx:
   `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for`). Exposed directly,
   Next.js keeps whatever `X-Forwarded-For` the client sends, so anyone can pick
-  their own IP and get around both limits.
+  their own IP and get around both limits. The route can't tell the two apart,
+  so outside Vercel a production server that relies on the default logs a
+  warning once; set `trustProxy` (usually `1`) once a proxy is in front to
+  silence it.
 </Callout>
 
 ## `<FormHost>` props
@@ -221,10 +224,11 @@ Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
   persistent disk. On a serverless platform pass `storage` with an adapter that
   persists; see [Storage](/docs/reference/storage). Keep `.open-form/` and `dist/`
   out of git.
-- **Secret.** Without `OPEN_FORM_SECRET`, the route generates one into
-  `.open-form/secret`. Serverless functions can't write there, so on Vercel and
-  other read-only hosts set `OPEN_FORM_SECRET` (or pass `secret`). It must be at
-  least 16 characters. Generate one and keep it the same across deploys, or
+- **Secret.** Without `OPEN_FORM_SECRET`, the route generates one into a
+  `secret` file next to the database (`.open-form/secret` by default).
+  Serverless functions can't write there, so on Vercel and other read-only
+  hosts set `OPEN_FORM_SECRET` (or pass `secret`). It must be at least 16
+  characters. Generate one and keep it the same across deploys, or
   signed tokens and Studio sessions stop working:
 
   ```bash
@@ -233,10 +237,12 @@ Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
 
 - **Admin API.** The endpoints for responses, export and delete exist only when
   `OPEN_FORM_ADMIN_PASSWORD` is set or you pass `adminAuth`. The password must be
-  at least 16 characters; a passphrase of a few words works. To reuse your app's
-  sign-in, pass an `authorize` check.
-- **Setup errors.** The route sets up the API on its first request. A secret or
-  admin password under 16 characters, a webhook secret that isn't base64, or an
+  at least 16 characters with at least 8 different ones, not one word or pattern
+  repeated; a passphrase of a few words works. To reuse your app's sign-in, pass
+  an `authorize` check.
+- **Setup errors.** The route sets up the API on its first request. A secret
+  under 16 characters, an admin password that breaks the rules above, a webhook
+  secret that isn't base64, or an
   invalid `webhooks` or `embed.origins` entry makes that fail, and then every
   request fails with the error, public form routes included. Check the Next.js
   server logs.

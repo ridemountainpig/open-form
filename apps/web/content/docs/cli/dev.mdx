@@ -76,11 +76,12 @@ this machine. Pages served from another origin — another dev server on
 `localhost`, say — are refused, and so are requests through the network
 (`--host`), a tunnel or a reverse proxy that announces itself.
 
-Set `OPEN_FORM_ADMIN_PASSWORD` (at least 16 characters) to reach Studio from
-anywhere else. With a password, Studio requires signing in for every request,
-including from this machine: a reverse proxy that adds no `X-Forwarded-For`
-(nginx's default `proxy_pass`) or a raw TCP tunnel (`ssh -R`, `socat`) makes a
-remote request look local, so never expose dev without one.
+Set `OPEN_FORM_ADMIN_PASSWORD` (at least 16 characters, not one word or
+pattern repeated) to reach Studio from anywhere else. With a password, Studio
+requires signing in for every request, including from this machine: a reverse
+proxy that adds no `X-Forwarded-For` (nginx's default `proxy_pass`) or a raw TCP
+tunnel (`ssh -R`, `socat`) makes a remote request look local, so never expose
+dev without one.
 
 `dev` ignores `OPEN_FORM_TRUST_PROXY`. Behind a proxy, only `trustProxy` in
 [`open-form.config.ts`](/docs/reference/config) makes it read the client's

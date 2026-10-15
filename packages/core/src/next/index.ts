@@ -2,7 +2,7 @@ import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { forwardedAddress } from '../node/http.ts';
-import { DATA_DIR, resolveDatabasePath, resolveSecret } from '../node/secret.ts';
+import { resolveDatabasePath, resolveSecret, secretPath } from '../node/secret.ts';
 import { createEntryRegistry, type ServerEntry } from '../node/server.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import {
@@ -59,12 +59,12 @@ const errorCode = (err: unknown) =>
   (err as NodeJS.ErrnoException | undefined)?.code ?? (err instanceof Error ? err.message : err);
 
 /** Serverless functions can't write next to the app, so the secret has to come from the environment. */
-function defaultSecret(root: string): string {
+function defaultSecret(root: string, databasePath: string): string {
   try {
-    return resolveSecret(root);
+    return resolveSecret(root, databasePath);
   } catch (err) {
     throw new Error(
-      `Couldn't create the signing secret in ${path.join(root, DATA_DIR)} (${errorCode(err)}). ` +
+      `Couldn't create the signing secret at ${secretPath(databasePath)} (${errorCode(err)}). ` +
         `Set OPEN_FORM_SECRET, as you must on Vercel and other read-only hosts (${DOCS}).`,
     );
   }
@@ -135,17 +135,33 @@ export function createOpenFormRoute(opts: OpenFormRouteOptions = {}): OpenFormRo
 
   let storage: Promise<StorageAdapter> | undefined;
   let secret: string | undefined;
+  let warnedProxy = false;
   const createHandler = async ({ entry }: Loaded): Promise<OpenFormHandler> => {
     const config: OpenFormConfig = entry.config ?? {};
     const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
     const trustProxy = opts.trustProxy ?? config.trustProxy ?? 1;
+    // Route handlers never see the socket, so only the deployment knows whether
+    // the last X-Forwarded-For entry came from a proxy or from the client.
+    if (
+      !watch &&
+      !warnedProxy &&
+      opts.trustProxy === undefined &&
+      config.trustProxy === undefined &&
+      !process.env.VERCEL
+    ) {
+      warnedProxy = true;
+      console.warn(
+        `[open-form] Rate limits count the last X-Forwarded-For address (trustProxy: 1). That's right behind Vercel or a reverse proxy, but if \`next start\` is reachable directly, clients pick their own address and get past rate limits. Put a proxy in front and set \`trustProxy\` (createOpenFormRoute() or open-form.config.ts) to silence this (${DOCS}).`,
+      );
+    }
+    const databasePath = resolveDatabasePath(root, config.storage?.path);
     storage ??= opts.storage
       ? Promise.resolve(opts.storage)
-      : defaultStorage(resolveDatabasePath(root, config.storage?.path)).catch((err) => {
+      : defaultStorage(databasePath).catch((err) => {
           storage = undefined;
           throw err;
         });
-    secret ??= opts.secret ?? defaultSecret(root);
+    secret ??= opts.secret ?? defaultSecret(root, databasePath);
     return createOpenFormHandler({
       registry,
       storage: await storage,

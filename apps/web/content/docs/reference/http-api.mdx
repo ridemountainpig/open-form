@@ -51,7 +51,8 @@ with a generic message (the details only with `exposeErrors`).
 `availability.state` is `open`, `closed`, `not-open` (with `opensAt`),
 `full` or `duplicate` (for `uniqueBy: 'device'`). Closed states carry the
 form's `message`. `token` is a signed timing token, issued only while the form
-is open.
+is open. An [unpublished](/docs/reference/define-form#published) form answers
+`404` here and on submit, like a form that doesn't exist.
 
 For `duplicate`, the device is the `of_vid` cookie the server sets on submit
 (`HttpOnly`, `SameSite=Lax`, one year). Where cookies are blocked, as in
@@ -88,7 +89,7 @@ transaction, and webhooks go out after the response.
 | `201` | — | Stored. Body: `{ id, number }`. |
 | `400` | `too_fast`, `invalid_token`, `expired_token`, `bad_request` | Sent too quickly, bad token, a token over 7 days old (reloading the page gets a new one), or a body that isn't a JSON object |
 | `403` | `forbidden` | Cross-site request from an origin not in `embed.origins` |
-| `404` | `not_found` | No such form |
+| `404` | `not_found` | No such form, or it's unpublished |
 | `409` | `duplicate` | `uniqueBy` already has a response for this value or device |
 | `410` | `closed`, `not_open`, `full` | Outside the schedule, or `maxResponses` reached |
 | `413` | `too_large` | Body over the limit (256 KB by default) |
@@ -96,9 +97,10 @@ transaction, and webhooks go out after the response.
 | `422` | `invalid` | Validation failed; `errors` maps field names to messages |
 | `429` | `rate_limited` | Over the form's rate limit |
 
-A filled-in honeypot goes through the same checks and gets the answer a real
-submission would — `201` with `{ id, number }`, or `409` / `410` — but nothing
-is stored.
+A filled-in honeypot goes through the same checks and gets the answer a new
+submission would — `201` with `{ id, number }`, or `410` — but nothing is
+stored. It never answers `409`: that would tell, without leaving a trace,
+whether a `uniqueBy` value has already responded.
 
 Same origin means the `Origin` header matches the request URL. Behind a proxy
 that ends TLS the server sees `http://` while the browser sends an `https://`
@@ -122,8 +124,8 @@ that ends TLS the server sees `http://` while the browser sends an `https://`
 ## Overrides
 
 `PUT /api/forms/:id/overrides` takes the schedule Studio wants —
-`{ submissions: { opensAt, closesAt, maxResponses, closed }, timeZone }` — and
-stores only what differs from the code. It answers `{ overrides }`. Other
+`{ submissions: { opensAt, closesAt, maxResponses, closed }, timeZone, published }`
+— and stores only what differs from the code. It answers `{ overrides }`. Other
 policy keys can't be overridden; change them in code.
 
 ## Admin access
@@ -136,7 +138,7 @@ public forms only. With it, an unauthenticated admin request gets `401`
   type={{
     password: {
       type: 'string',
-      description: 'Shared password, at least 16 characters. Studio exchanges it for a signed session cookie. Changing it signs everyone out.',
+      description: 'Shared password, at least 16 characters with at least 8 different ones, not one word or pattern repeated. Studio exchanges it for a signed session cookie. Changing it signs everyone out.',
     },
     authorize: {
       type: '(request: Request) => boolean | Promise<boolean>',

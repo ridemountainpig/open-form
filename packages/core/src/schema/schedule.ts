@@ -21,7 +21,16 @@ export type FormOverrides = {
   submissions?: SubmissionOverrides;
   /** Read the policy dates in this IANA zone instead of the code's. */
   timeZone?: string;
+  published?: boolean;
 };
+
+/** Whether the form is online: Studio's override, else the code's `published`. */
+export function isPublished(
+  config: FormConfig | undefined,
+  overrides: FormOverrides | null | undefined,
+): boolean {
+  return (overrides?.published ?? config?.published) !== false;
+}
 
 /** The zone a form's policy dates are read in: Studio's override, else the form's, else the project's. */
 export function overriddenTimeZone(
@@ -113,13 +122,13 @@ export function parseTimeZone(input: unknown, fallback: string): string {
 }
 
 /**
- * A schedule sent by Studio (`{ submissions, timeZone }`) as changes to the code.
- * Dates compare in the zone they will be read in, so changing only the zone
- * keeps the code's wall-clock dates and moves them with it.
+ * A schedule sent by Studio (`{ submissions, timeZone, published }`) as changes
+ * to the code. Dates compare in the zone they will be read in, so changing only
+ * the zone keeps the code's wall-clock dates and moves them with it.
  */
 export function scheduleEdit(
-  body: { submissions?: unknown; timeZone?: unknown },
-  code: { policy: SubmissionPolicy | undefined; timeZone: string },
+  body: { submissions?: unknown; timeZone?: unknown; published?: unknown },
+  code: { policy: SubmissionPolicy | undefined; timeZone: string; published: boolean },
 ): FormOverrides {
   const timeZone = parseTimeZone(body.timeZone, code.timeZone);
   const submissions = scheduleChanges(
@@ -127,9 +136,14 @@ export function scheduleEdit(
     parseSchedule(body.submissions, timeZone),
     timeZone,
   );
+  if (body.published !== undefined && typeof body.published !== 'boolean') {
+    throw new Error('published must be true or false.');
+  }
+  const published = body.published ?? code.published;
   return {
     ...(Object.keys(submissions).length > 0 ? { submissions } : {}),
     ...(timeZone !== code.timeZone ? { timeZone } : {}),
+    ...(published !== code.published ? { published } : {}),
   };
 }
 

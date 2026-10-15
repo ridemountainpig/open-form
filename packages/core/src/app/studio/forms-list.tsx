@@ -46,7 +46,7 @@ function initialSort(): SortKey {
   return 'updated';
 }
 
-const STATUSES: FormStatus[] = ['open', 'not-open', 'closed', 'full'];
+const STATUSES: FormStatus[] = ['open', 'not-open', 'closed', 'full', 'unpublished'];
 type StatusFilter = FormStatus | 'all';
 const statusOf = (form: FormSummary) => (form.error ? undefined : (form.status ?? 'open'));
 
@@ -118,10 +118,13 @@ export function FormsList() {
   }, [inView, status, query, sort]);
 
   const counts = useMemo(() => {
-    const byStatus = { open: 0, 'not-open': 0, closed: 0, full: 0 } satisfies Record<
-      FormStatus,
-      number
-    >;
+    const byStatus = {
+      open: 0,
+      'not-open': 0,
+      closed: 0,
+      full: 0,
+      unpublished: 0,
+    } satisfies Record<FormStatus, number>;
     for (const form of inView) {
       const s = statusOf(form);
       if (s) byStatus[s] += 1;
@@ -424,17 +427,19 @@ function FormTile({ form, showFolder }: { form: FormSummary; showFolder: boolean
               )}
             </div>
           )}
-          <a
-            href={`/f/${form.id}`}
-            target="_blank"
-            rel="noreferrer"
-            draggable={false}
-            className="focus-ring grid size-7 place-items-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-            aria-label={t('forms.openLive', { title: form.title })}
-            title={t('forms.openLiveShort')}
-          >
-            <ArrowUpRight className="size-4" aria-hidden />
-          </a>
+          {form.status !== 'unpublished' && (
+            <a
+              href={`/f/${form.id}`}
+              target="_blank"
+              rel="noreferrer"
+              draggable={false}
+              className="focus-ring grid size-7 place-items-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              aria-label={t('forms.openLive', { title: form.title })}
+              title={t('forms.openLiveShort')}
+            >
+              <ArrowUpRight className="size-4" aria-hidden />
+            </a>
+          )}
         </div>
       </div>
     </article>

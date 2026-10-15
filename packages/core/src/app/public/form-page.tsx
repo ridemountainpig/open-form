@@ -8,7 +8,14 @@ import {
   type NavigationInfo,
 } from '../../react/index.ts';
 import { visitorHeaders } from '../../react/visitor.ts';
-import { getMessages, type Locale, sourceLocale, translate } from '../../schema/index.ts';
+import {
+  getMessages,
+  LOCALES,
+  type Locale,
+  pickLocale,
+  sourceLocale,
+  translate,
+} from '../../schema/index.ts';
 import { reportCurrent, useFormModule } from '../lib/forms.ts';
 import {
   forwardStudioKeys,
@@ -21,6 +28,7 @@ import {
 } from '../lib/preview-channel.ts';
 import '../../react/styles.css';
 import { type Inspector, startInspector } from './inspector.ts';
+import { MissingPage } from './not-found.tsx';
 import './public.css';
 
 type FormInfo = {
@@ -56,8 +64,20 @@ export function PublicFormPage() {
     })
       .then(async (res) => {
         const body = (await res.json().catch(() => ({}))) as FormInfo & { message?: string };
+        // An unpublished form is "not found" to respondents; signed-in Studio still previews it.
+        const studio =
+          res.status === 404 &&
+          preview &&
+          (
+            await fetch(`/api/forms/${encodeURIComponent(formId)}/schema`, {
+              credentials: 'same-origin',
+            }).catch(() => null)
+          )?.ok;
         if (cancelled) return;
-        if (res.status === 404) {
+        if (studio) {
+          setInfo({ availability: { state: 'open' } });
+          setInfoError(null);
+        } else if (res.status === 404) {
           setInfo({ availability: { state: 'not-found' } });
         } else if (!res.ok) {
           setInfoError({ detail: body.message });
@@ -72,7 +92,7 @@ export function PublicFormPage() {
     return () => {
       cancelled = true;
     };
-  }, [formId, known, revision]);
+  }, [formId, known, preview, revision]);
 
   const config = module?.config;
   const locale = config?.locale ?? appConfig.locale;
@@ -88,9 +108,11 @@ export function PublicFormPage() {
     [config],
   );
 
+  // Only once the server has the form: an unpublished one keeps its title to itself.
+  const found = Boolean(info) && info?.availability.state !== 'not-found';
   useEffect(() => {
-    document.title = config?.title ?? 'Open Form';
-  }, [config?.title]);
+    document.title = (found && config?.title) || 'Open Form';
+  }, [found, config?.title]);
 
   // Copy the form's page colors onto <html> for the background and scrollbar.
   useEffect(() => {
@@ -259,7 +281,21 @@ export function PublicFormPage() {
 
   const messages = getMessages(locale);
   if (!known || info?.availability.state === 'not-found' || (module && !module.default)) {
-    return <PageMessage title={messages.notFoundTitle} />;
+    // In the visitor's language: there's no form to take one from, and that says nothing about it.
+    const missing = getMessages(
+      pickLocale(
+        [locale, ...LOCALES.filter((l) => l !== locale)],
+        [params.get('lang')],
+        navigator.languages ?? [navigator.language],
+      ),
+    );
+    return (
+      <MissingPage
+        locale={missing.locale}
+        title={missing.notFoundTitle}
+        message={missing.notFoundMessage}
+      />
+    );
   }
 
   const failure: LoadError | null = error ? { detail: error.message } : infoError;

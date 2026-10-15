@@ -40,7 +40,7 @@ export function Settings() {
   return (
     <div className="space-y-6">
       <ScheduleSection
-        key={`${info.timeZone}|${JSON.stringify(info.schedule)}|${info.overrides?.updatedAt ?? ''}`}
+        key={`${info.timeZone}|${info.published}|${JSON.stringify(info.schedule)}|${info.overrides?.updatedAt ?? ''}`}
         formId={formId}
         info={info}
         onSaved={reloadInfo}

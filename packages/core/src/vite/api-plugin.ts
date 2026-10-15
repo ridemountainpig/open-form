@@ -77,12 +77,10 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
     configureServer(server) {
       let storage: Promise<StorageAdapter> | undefined;
       let handler: Promise<OpenFormHandler> | undefined;
-      const getStorage = () =>
-        (storage ??= createSqliteStorage({
-          path: resolveDatabasePath(paths.userCwd, config.storage?.path),
-        }));
+      const databasePath = resolveDatabasePath(paths.userCwd, config.storage?.path);
+      const getStorage = () => (storage ??= createSqliteStorage({ path: databasePath }));
       const sockets = new WeakMap<Request, IncomingMessage>();
-      const secret = resolveSecret(paths.userCwd);
+      const secret = resolveSecret(paths.userCwd, databasePath);
       const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
       const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
       if (passwordProblem) throw new Error(`OPEN_FORM_ADMIN_PASSWORD: ${passwordProblem}`);

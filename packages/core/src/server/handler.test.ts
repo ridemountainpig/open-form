@@ -261,13 +261,21 @@ describe('submissions', () => {
     expect(await storage.countSubmissions('meetup')).toBe(0);
   });
 
-  it('answers a duplicate or full form the same with the honeypot filled', async () => {
+  it('answers a full form the same with the honeypot filled', async () => {
     config = { submissions: { uniqueBy: 'email', maxResponses: 2 } };
     const handle = makeHandler();
     expect((await handle(post(alex))).status).toBe(201);
-    expect((await handle(post(alex, { hp: 'spam' }))).status).toBe(409);
     expect((await handle(post({ ...alex, email: 'b@x.co' }))).status).toBe(201);
     expect((await handle(post({ ...alex, email: 'c@x.co' }, { hp: 'spam' }))).status).toBe(410);
+  });
+
+  it('never reveals through the honeypot who has already responded', async () => {
+    config = { submissions: { uniqueBy: 'email' } };
+    const handle = makeHandler();
+    expect((await handle(post(alex))).status).toBe(201);
+    expect((await handle(post(alex, { hp: 'spam' }))).status).toBe(201);
+    expect((await handle(post(alex))).status).toBe(409);
+    expect(await storage.countSubmissions('meetup')).toBe(1);
   });
 
   it('enforces the minimum completion time with a signed token', async () => {
@@ -676,6 +684,52 @@ describe('schedule', () => {
     expect((await handle(post({ ...alex, email: 'b@x.co' }))).status).toBe(410);
   });
 
+  it('answers 404 for an unpublished form but keeps it in Studio', async () => {
+    config = { published: false };
+    const handle = makeHandler();
+    const status = async (request: Request) => (await handle(request)).status;
+    expect(await status(new Request(`${ORIGIN}/api/forms/meetup`))).toBe(404);
+    expect(await status(post(alex))).toBe(404);
+    expect(await storage.countSubmissions('meetup')).toBe(0);
+
+    const schema = async () =>
+      (await (await handle(new Request(`${ORIGIN}/api/forms/meetup/schema`))).json()) as {
+        published: boolean;
+        status: string;
+      };
+    expect(await schema()).toMatchObject({ published: false, status: 'unpublished' });
+    const forms = (await (await handle(new Request(`${ORIGIN}/api/forms`))).json()) as {
+      forms: Array<{ status: string }>;
+    };
+    expect(forms.forms[0]?.status).toBe('unpublished');
+  });
+
+  it('lets Studio unpublish and republish without touching the code', async () => {
+    config = {};
+    const handle = makeHandler();
+    const publish = (published: unknown) =>
+      handle(
+        new Request(`${ORIGIN}/api/forms/meetup/overrides`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json', origin: ORIGIN },
+          body: JSON.stringify({ submissions: {}, published }),
+        }),
+      );
+
+    const saved = await publish(false);
+    expect(((await saved.json()) as { overrides: unknown }).overrides).toEqual({
+      published: false,
+      updatedAt: expect.any(String),
+    });
+    expect((await handle(new Request(`${ORIGIN}/api/forms/meetup`))).status).toBe(404);
+    expect((await handle(post(alex))).status).toBe(404);
+
+    await publish(true);
+    expect(await storage.getFormOverrides('meetup')).toBeNull();
+    expect(await state(handle)).toBe('open');
+    expect((await publish('yes')).status).toBe(422);
+  });
+
   it('rejects schedules that make no sense', async () => {
     config = {};
     const handle = makeHandler();
@@ -908,8 +962,40 @@ describe('Studio sign-in', () => {
     expect(res.headers.get('set-cookie')).toMatch(/; Secure$/);
   });
 
+  it('warns once when the password crosses the network over plain HTTP', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const handle = passwordHandler();
+    const plain = () =>
+      handle(
+        new Request('http://forms.example/api/studio/session', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'http://forms.example' },
+          body: JSON.stringify({ password: PASSWORD }),
+        }),
+      );
+    expect((await signIn(handle, PASSWORD)).status).toBe(200);
+    expect(warn).not.toHaveBeenCalled();
+    await plain();
+    await plain();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/forms\.example over plain HTTP/);
+    warn.mockRestore();
+  });
+
   it('rejects short passwords', () => {
     expect(() => passwordHandler('short')).toThrow(/at least 16/);
+  });
+
+  it('rejects long passwords that repeat themselves', () => {
+    for (const weak of [
+      'aaaaaaaaaaaaaaaa',
+      'passwordpassword',
+      'abcabcabcabcabcabc',
+      'Summer2026!Summer2026!',
+    ]) {
+      expect(() => passwordHandler(weak), weak).toThrow(/repeats itself/);
+    }
+    expect(() => passwordHandler('correct horse battery staple')).not.toThrow();
   });
 });
 

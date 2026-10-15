@@ -55,6 +55,7 @@ export type Messages = {
   expiredToken: string;
   networkError: string;
   notFoundTitle: string;
+  notFoundMessage: string;
   draftRestored: string;
   draftDiscard: string;
 };
@@ -113,6 +114,7 @@ const en: Messages = {
   expiredToken: 'This page has been open too long. Reload it and submit again.',
   networkError: 'Could not reach the server. Check your connection and try again.',
   notFoundTitle: 'Form not found',
+  notFoundMessage: 'The link may be mistyped, or this form is no longer available.',
   draftRestored: 'We restored the answers you left unfinished.',
   draftDiscard: 'Start over',
 };
@@ -169,6 +171,7 @@ const zhTW: Messages = {
   expiredToken: '此頁面開啟太久了，請重新整理後再送出。',
   networkError: '無法連線到伺服器，請檢查網路後再試一次。',
   notFoundTitle: '找不到表單',
+  notFoundMessage: '連結可能有誤，或這份表單已不再公開。',
   draftRestored: '已還原你上次未完成的回答。',
   draftDiscard: '重新開始',
 };
@@ -226,6 +229,7 @@ const zhCN: Messages = {
   expiredToken: '此页面打开时间过长，请刷新后重新提交。',
   networkError: '无法连接到服务器，请检查网络后重试。',
   notFoundTitle: '找不到该表单',
+  notFoundMessage: '链接可能有误，或这份表单已不再公开。',
   draftRestored: '已恢复您上次未完成的回答。',
   draftDiscard: '重新开始',
 };
@@ -286,6 +290,7 @@ const ja: Messages = {
     'ページを開いてから時間が経ちすぎています。再読み込みしてからもう一度送信してください。',
   networkError: 'サーバーに接続できませんでした。通信環境を確認して、もう一度お試しください。',
   notFoundTitle: 'フォームが見つかりません',
+  notFoundMessage: 'リンクが間違っているか、このフォームは公開を終了しています。',
   draftRestored: '前回途中まで入力した回答を復元しました。',
   draftDiscard: '最初からやり直す',
 };

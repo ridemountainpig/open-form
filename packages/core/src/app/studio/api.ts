@@ -17,7 +17,7 @@ import type {
 import { onFormChanged } from '../lib/forms.ts';
 import { onThemeChanged } from '../lib/themes.ts';
 
-export type FormStatus = 'open' | 'closed' | 'not-open' | 'full';
+export type FormStatus = 'open' | 'closed' | 'not-open' | 'full' | 'unpublished';
 
 export type FormSummary = {
   id: string;
@@ -45,6 +45,8 @@ export type SchemaInfo = {
   timeZoneFallback: boolean;
   /** In effect now: the code's values with Studio's overrides applied. */
   schedule: Schedule;
+  /** Reachable at its link; like `schedule`, with Studio's override applied. */
+  published: boolean;
   /** Changes made in Studio on the running server, or null when it follows the code. */
   overrides: (FormOverrides & { updatedAt: string }) | null;
   status: FormStatus;
@@ -236,8 +238,7 @@ export async function submissionIds(
 export function saveSchedule(
   formId: string,
   schedule: Schedule,
-  timeZone: string,
-  { dev }: { dev: boolean },
+  { timeZone, published, dev }: { timeZone: string; published: boolean; dev: boolean },
 ) {
   const url = dev
     ? `/api/studio/forms/${encodeURIComponent(formId)}/schedule`
@@ -245,7 +246,7 @@ export function saveSchedule(
   return request<unknown>(url, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ submissions: schedule, timeZone }),
+    body: JSON.stringify({ submissions: schedule, timeZone, published }),
   });
 }
 

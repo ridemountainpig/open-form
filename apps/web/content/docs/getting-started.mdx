@@ -119,8 +119,9 @@ OPEN_FORM_ADMIN_PASSWORD='a long passphrase you choose' pnpm start
 ```
 
 `open-form start` serves the forms, the API and SQLite from one Node process.
-It needs a persistent disk for `.open-form/` — a VPS, Docker, or Railway /
-Fly.io with a volume. Studio is only available in production when
+It needs a persistent disk for `.open-form/` — a VPS,
+[Docker](/docs/deploy/docker), or [Railway](/docs/deploy/railway) / Fly.io with
+a volume. Studio is only available in production when
 `OPEN_FORM_ADMIN_PASSWORD` is set. See [Production](/docs/deploy/production),
 or mount the API inside an existing app with [Next.js](/docs/deploy/nextjs).
 

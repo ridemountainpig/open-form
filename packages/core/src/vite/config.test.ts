@@ -33,6 +33,7 @@ describe('devServerDeny', () => {
       at('.open-form', 'open-form.db-wal'),
       at('data', 'responses[1].db'),
       at('data', 'responses[1].db-shm'),
+      at('data', 'secret'),
     ]) {
       expect(isFileLoadingAllowed(config, file), file).toBe(false);
     }

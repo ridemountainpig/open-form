@@ -2,7 +2,7 @@ import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { type InlineConfig, normalizePath } from 'vite';
-import { DATA_DIR, resolveDatabasePath } from '../node/secret.ts';
+import { DATA_DIR, resolveDatabasePath, secretPath } from '../node/secret.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import { apiPlugin } from './api-plugin.ts';
 import { formsPlugin } from './forms-plugin.ts';
@@ -17,13 +17,14 @@ import {
   SRC_ROOT,
 } from './project.ts';
 
+const globEscape = (file: string) => normalizePath(file).replace(/[*?[\]{}()!+@\\]/g, '\\$&');
+
 /**
  * Files the dev server must never serve, not even to localhost: `allow` covers
  * the whole project, which holds the responses database and the signing secret.
  * Setting `deny` replaces Vite's own list, so that list is repeated first.
  */
 export function devServerDeny(databaseFile: string): string[] {
-  const database = normalizePath(databaseFile).replace(/[*?[\]{}()!+@\\]/g, '\\$&');
   return [
     '.env',
     '.env.*',
@@ -40,8 +41,9 @@ export function devServerDeny(databaseFile: string): string[] {
     '*.{db,sqlite,sqlite3}-{wal,shm,journal}',
     'responses*.{csv,xlsx,json}',
     '*-responses-*.{csv,xlsx,json}',
-    // A custom `storage.path` / OPEN_FORM_DB, with its -wal / -shm / -journal files.
-    `${database}*`,
+    // A custom `storage.path` / OPEN_FORM_DB, with its -wal / -shm / -journal files and secret.
+    `${globEscape(databaseFile)}*`,
+    globEscape(secretPath(databaseFile)),
   ];
 }
 

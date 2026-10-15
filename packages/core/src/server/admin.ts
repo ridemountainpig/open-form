@@ -5,7 +5,8 @@ import type { Signer } from './crypto.ts';
 /** Who may use Studio and the admin API. Without one, those endpoints don't exist. */
 export type AdminAuth = {
   /**
-   * A shared password you choose, at least 16 characters (a passphrase works).
+   * A shared password you choose: at least 16 characters, not one word or
+   * pattern repeated (a passphrase works).
    * Studio asks for it once and then keeps a signed session cookie; changing it
    * signs everyone out.
    */
@@ -19,12 +20,18 @@ export type AdminAuth = {
 };
 
 export const ADMIN_PASSWORD_MIN_LENGTH = 16;
+export const ADMIN_PASSWORD_MIN_DISTINCT = 8;
 export const SESSION_COOKIE = 'of_session';
 
 export function adminPasswordProblem(password: string): string | null {
-  return password.length < ADMIN_PASSWORD_MIN_LENGTH
-    ? `The admin password must be at least ${ADMIN_PASSWORD_MIN_LENGTH} characters. A passphrase of a few words works.`
-    : null;
+  if (password.length < ADMIN_PASSWORD_MIN_LENGTH) {
+    return `The admin password must be at least ${ADMIN_PASSWORD_MIN_LENGTH} characters. A passphrase of a few words works.`;
+  }
+  // Long but guessable: `aaaaaaaaaaaaaaaa`, `passwordpassword`.
+  if (new Set(password).size < ADMIN_PASSWORD_MIN_DISTINCT || /^([\s\S]+?)\1+$/.test(password)) {
+    return `The admin password repeats itself: use at least ${ADMIN_PASSWORD_MIN_DISTINCT} different characters, not one word or pattern over and over. A passphrase of a few words works.`;
+  }
+  return null;
 }
 
 export type AdminGate = {

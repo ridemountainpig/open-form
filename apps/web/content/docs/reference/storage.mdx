@@ -23,6 +23,11 @@ The database path is, in order: `OPEN_FORM_DB`, then `storage.path` in
 `.open-form/open-form.db`. Relative paths resolve from the project root.
 `open-form dev` and `open-form start` on the same machine share the file.
 
+The generated `secret` is written next to the database, so a database on a
+volume (`OPEN_FORM_DB=/data/open-form.db`) keeps its secret there too, in
+`/data/secret`. `OPEN_FORM_SECRET` replaces the file, and keeps the secret out
+of copies of the volume.
+
 <Callout type="warn">
   Responses are personal data. Keep `.open-form/` out of git — the
   `.gitignore` that `open-form init` writes already does — and back the file
