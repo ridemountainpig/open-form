@@ -2,15 +2,23 @@ import { existsSync } from 'node:fs';
 import { copyFile, cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  THEME_COLOR_KEYS,
+  THEME_TOKEN_KEYS,
+  type ThemeColors,
+  type ThemeTokens,
+} from '../schema/index.ts';
+import {
   findForms,
   findStarterThemes,
   findThemes,
+  formThemeFile,
   loadUserConfig,
   projectPaths,
   THEME_DIR,
   type ThemeEntry,
 } from '../vite/project.ts';
-import { fontImports } from './theme-fonts.ts';
+import { stringLiteral } from './source-object.ts';
+import { addCssImport, fontImports, readFontHeader, stackFamilies } from './theme-fonts.ts';
 
 const THEME_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 const TEXT_FILE_RE = /\.(tsx?|jsx?|css|md)$/;
@@ -65,16 +73,6 @@ export function rescope(text: string, from: string, to: string): string {
     new RegExp(`data-of-theme=(?:(["'])${id}\\1|${id}(?=\\]))`, 'g'),
     (_, quote?: string) => `data-of-theme=${quote ?? ''}${to}${quote ?? ''}`,
   );
-}
-
-/** Scopes other than `<scope>` still named in a file, e.g. left by a hand-renamed theme. */
-export function otherScopes(text: string, scope: string): string[] {
-  const found = new Set<string>();
-  for (const match of text.matchAll(/data-of-theme=(?:(["'])([\w-]+)\1|([\w-]+)(?=\]))/g)) {
-    const id = match[2] ?? match[3];
-    if (id && id !== scope) found.add(id);
-  }
-  return [...found];
 }
 
 export type AddThemeOptions = { as?: string; force?: boolean };
@@ -141,92 +139,105 @@ export async function addStarterTheme(
   return { name, dir, files: files.map((f) => path.relative(projectRoot, f)) };
 }
 
-export type CopyThemeResult = {
-  /** Where the theme came from: the project's `themes/` or a starter. */
-  source: 'project' | 'starter';
-  dir: string;
-  files: string[];
-  /** What the form imports: `./theme/index.tsx`. */
-  importPath: string;
-  warnings: string[];
+export type ReferenceTheme = ThemeEntry & { source: 'project' | 'starter' };
+
+/** A theme in the project's `themes/`, else the starter of that name. */
+export async function findReferenceTheme(
+  projectRoot: string,
+  themeId: string,
+): Promise<ReferenceTheme> {
+  const { themesRoot } = projectPaths(projectRoot, await loadUserConfig(projectRoot));
+  const own = findThemes(themesRoot).find((t) => t.id === themeId);
+  if (own) return { ...own, source: 'project' };
+  const starter = findStarterThemes().find((t) => t.id === themeId);
+  if (starter) return { ...starter, source: 'starter' };
+  const known = [...findThemes(themesRoot), ...findStarterThemes()].map((t) => t.id);
+  throw new Error(
+    `No theme "${themeId}" in themes/ or the starters. Available: ${[...new Set(known)].join(', ')}.`,
+  );
+}
+
+const literal = (value: string) => stringLiteral(value, "'");
+
+function colorLines(colors: ThemeColors, indent: string): string[] {
+  return THEME_COLOR_KEYS.flatMap((key) =>
+    colors[key] ? [`${indent}${key}: ${literal(colors[key])},`] : [],
+  );
+}
+
+/**
+ * `theme/index.ts` for a form: the given tokens, or the runtime's default look.
+ * Laid out one value per line, which Studio's token writer keeps when it edits.
+ */
+export function formThemeSource(tokens: ThemeTokens = {}): string {
+  const lines: string[] = [];
+  for (const key of THEME_TOKEN_KEYS) {
+    const value = tokens[key];
+    if (value) lines.push(`  ${key}: ${literal(value)},`);
+  }
+  for (const group of ['colors', 'dark'] as const) {
+    const value = tokens[group];
+    if (value === false) lines.push(`  ${group}: false,`);
+    else if (value && colorLines(value, '').length) {
+      lines.push(`  ${group}: {`, ...colorLines(value, '    '), '  },');
+    }
+  }
+  const body = lines.length ? `{\n${lines.join('\n')}\n}` : '{}';
+  return `import { defineTheme } from '@open-form-build/core';\n\nexport default defineTheme(${body});\n`;
+}
+
+export type FormThemeResult = {
+  file: string;
+  /** Web fonts brought in with the tokens. */
+  fonts: string[];
 };
 
 /**
- * Copy a theme into a form, `forms/<form>/theme/`: from then on the form owns its
- * look, and changing or deleting the theme in `themes/` never touches it. The
- * theme's scoped selectors are rewritten to the form id, the scope the runtime
- * gives a form's own theme. THEME.md stays behind with the reference.
+ * Write a form's own look file, `forms/<form>/theme/index.ts`. From a reference it
+ * takes the tokens and the web fonts they name, nothing else: the reference's CSS
+ * and components are for the agent to read and borrow from while writing this
+ * form's look, so the form never depends on the reference or carries what it
+ * doesn't use.
  */
-export async function copyThemeToForm(
+export async function writeFormTheme(
   projectRoot: string,
-  themeId: string,
   formId: string,
-  opts: { force?: boolean } = {},
-): Promise<CopyThemeResult> {
-  const { themesRoot, formsRoot } = projectPaths(projectRoot, await loadUserConfig(projectRoot));
-  const own = findThemes(themesRoot).find((t) => t.id === themeId);
-  const starter = own ? undefined : findStarterThemes().find((t) => t.id === themeId);
-  const theme: ThemeEntry | undefined = own ?? starter;
-  if (!theme) {
-    const known = [...findThemes(themesRoot), ...findStarterThemes()].map((t) => t.id);
-    throw new Error(
-      `No theme "${themeId}" in themes/ or the starters. Available: ${[...new Set(known)].join(', ')}.`,
-    );
-  }
+  seed?: { tokens: ThemeTokens; themeFile: string },
+): Promise<FormThemeResult> {
+  const { formsRoot } = projectPaths(projectRoot, await loadUserConfig(projectRoot));
   if (!findForms(formsRoot).some((f) => f.id === formId)) {
     throw new Error(`No form "${formId}" in ${path.relative(projectRoot, formsRoot) || '.'}/.`);
   }
+  const existing = formThemeFile(formsRoot, formId);
+  if (existing) throw new Error(`${path.relative(projectRoot, existing)} already exists.`);
 
   const dir = path.join(formsRoot, formId, THEME_DIR);
-  if (existsSync(dir)) {
-    if (!opts.force) {
-      throw new Error(
-        `${path.relative(projectRoot, dir)}/ already exists. Pass --force to replace it.`,
-      );
-    }
-    await rm(dir, { recursive: true, force: true });
-  }
-
-  const ext = path.extname(theme.file);
-  if (path.basename(theme.file).startsWith('index.')) {
-    await cp(path.dirname(theme.file), dir, {
-      recursive: true,
-      filter: (src) => path.basename(src) !== 'THEME.md',
-    });
-  } else {
-    await mkdir(dir, { recursive: true });
-    await copyFile(theme.file, path.join(dir, `index${ext}`));
-    // A single-file theme's fonts sit in the shared themes/fonts/; the form takes the ones it imports.
-    const fonts = path.join(path.dirname(theme.file), 'fonts');
-    for (const spec of fontImports(await readFile(theme.file, 'utf8'))) {
+  await mkdir(dir, { recursive: true });
+  let source = formThemeSource(seed?.tokens);
+  const fonts: string[] = [];
+  if (seed) {
+    const named = new Set([
+      ...stackFamilies(seed.tokens.font),
+      ...stackFamilies(seed.tokens.headingFont),
+    ]);
+    const from = path.dirname(seed.themeFile);
+    for (const spec of fontImports(await readFile(seed.themeFile, 'utf8'))) {
+      const css = await readFile(path.join(from, spec), 'utf8').catch(() => null);
+      const header = css && readFontHeader(css);
+      if (!header || !named.has(header.family.toLowerCase())) continue;
       const slug = path.basename(spec, '.css');
-      if (!existsSync(path.join(fonts, `${slug}.css`))) continue;
       await mkdir(path.join(dir, 'fonts'), { recursive: true });
-      await copyFile(path.join(fonts, `${slug}.css`), path.join(dir, 'fonts', `${slug}.css`));
-      if (existsSync(path.join(fonts, slug))) {
-        await cp(path.join(fonts, slug), path.join(dir, 'fonts', slug), { recursive: true });
+      await copyFile(path.join(from, spec), path.join(dir, 'fonts', `${slug}.css`));
+      if (existsSync(path.join(from, 'fonts', slug))) {
+        await cp(path.join(from, 'fonts', slug), path.join(dir, 'fonts', slug), {
+          recursive: true,
+        });
       }
+      source = addCssImport(source, `./fonts/${slug}.css`);
+      fonts.push(header.family);
     }
   }
-
-  const files = await walk(dir);
-  const warnings: string[] = [];
-  for (const file of files) {
-    if (!TEXT_FILE_RE.test(file)) continue;
-    const text = await readFile(file, 'utf8');
-    const scoped = rescope(text, themeId, formId);
-    if (scoped !== text) await writeFile(file, scoped);
-    for (const scope of otherScopes(scoped, formId)) {
-      warnings.push(
-        `${path.relative(projectRoot, file)} still targets [data-of-theme="${scope}"]; change it to "${formId}" or it won't apply.`,
-      );
-    }
-  }
-  return {
-    source: own ? 'project' : 'starter',
-    dir,
-    files: files.map((f) => path.relative(projectRoot, f)),
-    importPath: `./${THEME_DIR}/index${ext}`,
-    warnings,
-  };
+  const file = path.join(dir, 'index.ts');
+  await writeFile(file, source);
+  return { file, fonts };
 }

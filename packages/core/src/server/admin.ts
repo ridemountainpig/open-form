@@ -5,8 +5,8 @@ import type { Signer } from './crypto.ts';
 /** Who may use Studio and the admin API. Without one, those endpoints don't exist. */
 export type AdminAuth = {
   /**
-   * A shared password you choose: at least 16 characters, not one word or
-   * pattern repeated (a passphrase works).
+   * A shared password you choose: at least 16 characters with at least 8
+   * different ones, not one word or pattern repeated (a passphrase works).
    * Studio asks for it once and then keeps a signed session cookie; changing it
    * signs everyone out.
    */

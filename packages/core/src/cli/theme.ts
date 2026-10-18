@@ -1,15 +1,8 @@
 export { type AddThemeOptions, addStarterTheme } from '../editing/theme-files.ts';
 
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
 import chalk from 'chalk';
 import { addGoogleFont } from '../editing/google-fonts.ts';
-import {
-  type AddThemeOptions,
-  addStarterTheme,
-  copyThemeToForm,
-  readThemeDoc,
-} from '../editing/theme-files.ts';
+import { type AddThemeOptions, addStarterTheme, readThemeDoc } from '../editing/theme-files.ts';
 import { contrastReport, type OpenFormConfig, type Theme } from '../schema/index.ts';
 import {
   findForms,
@@ -37,7 +30,7 @@ export async function themeCatalog(projectRoot: string): Promise<ThemeRow[]> {
 
 /**
  * The theme file a command works on: `themes/<id>`, or with `--form` the form's
- * own copy in `forms/<id>/theme/`.
+ * own look in `forms/<id>/theme/`.
  */
 function themeFileFor(projectRoot: string, config: OpenFormConfig, id: string, form?: boolean) {
   const { themesRoot, formsRoot } = projectPaths(projectRoot, config);
@@ -46,7 +39,7 @@ function themeFileFor(projectRoot: string, config: OpenFormConfig, id: string, f
     const file = formThemeFile(formsRoot, id);
     if (!file) {
       throw new Error(
-        `forms/${id} has no theme of its own. Copy one in with \`open-form theme copy <theme> ${id}\`.`,
+        `forms/${id} has no theme/index.ts yet. Create it with \`export default defineTheme({})\` and pass it to <Form theme={theme}>, or use Adjust in Studio's preview.`,
       );
     }
     return file;
@@ -79,12 +72,12 @@ export async function listThemes(): Promise<void> {
     );
   }
   out.push(
-    `  ${chalk.dim('Themes are references: copy one into a form and the form keeps its own look.')}`,
-    `  open-form theme copy <theme> <form>`,
+    `  ${chalk.dim('Themes are references: read one, then write the form its own look. To start from its tokens:')}`,
+    `  open-form create <form> --theme <theme>`,
   );
   out.push(
     '',
-    `  ${chalk.bold('Starters')} ${chalk.dim('— copy into a form, or into themes/ to adapt:')}`,
+    `  ${chalk.bold('Starters')} ${chalk.dim('— references too; add one to themes/ to adapt:')}`,
   );
   out.push(
     table(
@@ -104,57 +97,8 @@ export async function addCommand(starter: string, opts: AddThemeOptions): Promis
   for (const file of files) process.stdout.write(`    ${chalk.dim(file)}\n`);
   process.stdout.write(
     `\n  ${chalk.dim('It is yours — edit its tokens, components, CSS and THEME.md freely.')}\n` +
-      `  ${chalk.dim('Use it for a form with')} open-form theme copy ${name} <form>\n\n`,
+      `  ${chalk.dim('Start a form from its tokens with')} open-form create <form> --theme ${name}\n\n`,
   );
-}
-
-/** The form's import of its own theme copy, if it has one. */
-export function themeImport(source: string): string | undefined {
-  return /from\s+['"](\.\/theme(?:\/index(?:\.tsx?)?)?)['"]/.exec(source)?.[1];
-}
-
-/** An import without an extension resolves to either file. */
-export function importsCopy(spec: string, importPath: string): boolean {
-  return !/\.tsx?$/.test(spec) || spec === importPath;
-}
-
-export async function copyCommand(
-  themeId: string,
-  formId: string,
-  opts: { force?: boolean },
-): Promise<void> {
-  const projectRoot = process.cwd();
-  const result = await copyThemeToForm(projectRoot, themeId, formId, opts);
-  const from = result.source === 'project' ? `themes/${themeId}/` : `the ${themeId} starter`;
-  const out = [
-    '',
-    `  ${chalk.green(glyph.check)} Copied ${chalk.bold(from)} into ${chalk.bold(`${path.relative(projectRoot, result.dir)}/`)}`,
-    ...result.files.map((file) => `    ${chalk.dim(file)}`),
-  ];
-  for (const warning of result.warnings) out.push(`  ${chalk.yellow(glyph.warn)} ${warning}`);
-
-  const { formsRoot } = projectPaths(projectRoot, await loadUserConfig(projectRoot));
-  const entry = findForms(formsRoot).find((f) => f.id === formId);
-  const source = entry && existsSync(entry.file) ? readFileSync(entry.file, 'utf8') : '';
-  const current = themeImport(source);
-  if (current && !importsCopy(current, result.importPath)) {
-    out.push(
-      `  ${chalk.yellow(glyph.warn)} ${entry ? path.relative(projectRoot, entry.file) : 'The form'} imports ${current}, but the copy is ${result.importPath}: update the import.`,
-    );
-  } else if (!current) {
-    out.push(
-      '',
-      `  ${chalk.dim('Apply it in the form, importing it above the form’s own CSS:')}`,
-      `    import theme from '${result.importPath}';`,
-      `    <Form theme={theme}>`,
-    );
-  }
-  out.push(
-    '',
-    `  ${chalk.dim('The form owns this copy: edit it freely. Changing themes/ won’t affect it.')}`,
-    '',
-  );
-  process.stdout.write(`${out.join('\n')}\n`);
 }
 
 function formatBytes(bytes: number): string {

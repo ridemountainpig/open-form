@@ -1,6 +1,7 @@
 ---
 title: Form
-description: The root component, the form file contract, Submit and Success.
+seoTitle: "Form component and the form file contract"
+description: "The root Form component and the form file contract: one file per form, render-to-collect, props, themes, Submit and the Success screen."
 ---
 
 `<Form>` is the root of every form. A form is one file — `forms/<id>/index.tsx`
@@ -36,9 +37,15 @@ export default function MeetupForm() {
 
 ## File contract
 
-- `forms/<id>/index.tsx` is required. Use a kebab-case id. Anything else in the
-  folder — local components, option lists, a stylesheet, `locales/*.json`, the
-  form's own `theme/` — is yours to import.
+- `forms/<id>/index.tsx` is required. Use a kebab-case id. Next to it you can
+  keep a stylesheet, `locales/*.json`, the form's own `theme/`, and local
+  components or option lists for the parts that would crowd `index.tsx`.
+- `index.tsx` shows the whole form at a glance: `config`, every `<Page>` and
+  `<When>`, and every field's `name` and `label` live there. A local component
+  gets its `name` and `label` as props instead of declaring a field of its own.
+- Keep the folder flat: other files sit next to `index.tsx`, and `theme/` and
+  `locales/` are the only subfolders. The `form-authoring` skill has agents
+  follow the same layout.
 - `export const config = defineForm({...})` holds the title, description and
   everything the server enforces: submission limits, dates, protection, the
   success screen. See [`defineForm`](/docs/reference/define-form).
@@ -108,7 +115,7 @@ Because of that:
     },
     theme: {
       type: 'FormTheme',
-      description: "This form's look: tokens, components and CSS from defineTheme, usually its own copy in ./theme/.",
+      description: "This form's look: tokens, components and CSS from defineTheme, written for it in ./theme/.",
     },
     components: {
       type: 'Partial<FormComponents>',
@@ -134,15 +141,12 @@ Because of that:
 
 ## Theme
 
-A form owns its look. `open-form theme copy <theme> <id>` copies a theme into
-`forms/<id>/theme/` and prints the line that imports it;
-`open-form create <id> --theme <theme>` does both for a new form. The copy
-keeps the theme's file type — `theme/index.ts` for a tokens-only theme like
-`classic`, `theme/index.tsx` for one with components — so import the path
-the command prints, and pass it to `theme`:
+A form owns its look, in `forms/<id>/theme/`: `index.ts` with its tokens,
+`index.tsx` once it adds components. `open-form create <id>` writes it and the
+import, from a theme's tokens with `--theme <theme>`. Pass it to `theme`:
 
 ```tsx title="forms/meetup/index.tsx"
-import theme from './theme/index.tsx'; // above the form's own CSS, so the form's CSS wins
+import theme from './theme/index.ts'; // above the form's own CSS, so the form's CSS wins
 import './meetup.css';
 
 <Form theme={theme}>…</Form>
@@ -154,9 +158,10 @@ replace the defaults: `defaultComponents` ← the theme's `components` ←
 theme's CSS is scoped to this form. Without `theme`, the form uses the base
 styles, which are the `classic` starter's look — or, under a
 [`<FormHost theme>`](/docs/deploy/nextjs), that fallback theme. To adjust the
-default look, copy it in with `open-form theme copy classic <id>`. Editing a
-copy changes only this form; themes in `themes/` are references and never
-change it. See [Themes](/docs/core-feature/themes) and
+default look, give the form a `theme/index.ts` with `defineTheme({})` and change
+what you need, or press **Create look file** under **Adjust** in Studio's
+preview. Editing it changes only this form; themes in `themes/` are references
+and never change it. See [Themes](/docs/core-feature/themes) and
 [`defineTheme`](/docs/reference/define-theme).
 
 For a form-specific tweak on top of the theme, import a local stylesheet after
@@ -164,7 +169,7 @@ it and scope it with `className`. Prefix every class and build on the `--of-*`
 tokens so the theme and dark mode keep working:
 
 ```tsx title="forms/pass/index.tsx"
-import theme from './theme/index.ts'; // a copy of classic
+import theme from './theme/index.ts';
 import './pass.css';
 
 <Form theme={theme} className="pass-root">…</Form>

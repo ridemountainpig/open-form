@@ -1,6 +1,6 @@
 ---
 title: /apply-comments
-description: Turns the notes you leave in Studio into code edits.
+description: "The /apply-comments skill turns the notes you leave on a form in Studio's Edit mode into code edits, then removes each marker it applied."
 ---
 
 `/apply-comments` closes the visual feedback loop. You leave notes on a form in
@@ -32,7 +32,7 @@ it's about:
   you picked: `(on “Next”) make this button full width`.
 
 Markers are ordinary comments, invisible at runtime. They live in the form's
-own files, never in its theme copy in `forms/<id>/theme/`, so they show up in
+own files, never in its theme in `forms/<id>/theme/`, so they show up in
 git and pull requests like any other change. See
 [Edit mode](/docs/core-feature/edit-mode).
 
@@ -49,9 +49,9 @@ git and pull requests like any other change. See
    `config` — and deletes the marker. Comments about the look (colors, fonts,
    spacing, how a theme-drawn part looks) go into the form's own theme in
    `forms/<id>/theme/`, never into `themes/`, whose references don't change
-   existing forms. A form without its own copy has the default look, the
-   `classic` starter: the agent copies that in first, so only what you asked
-   for changes.
+   existing forms. A form without a `theme/` folder has the default look: the
+   agent gives it a `theme/index.ts` with `defineTheme({})` first and changes
+   only what you asked for.
 4. **Checks** each form it touched with `open-form check <id>` (and
    `open-form theme check <id> --form` after a color change), then runs
    `open-form comments` again: only markers it kept on purpose should remain.

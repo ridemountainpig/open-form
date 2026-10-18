@@ -65,8 +65,8 @@ export default function Meetup() {
 - **Backend included** — `POST /api/forms/:id/submissions` with server validation, honeypot, signed timing token, rate limiting, submission windows, response limits and uniqueness.
 - **SQLite-first, zero infrastructure** — `node:sqlite`, no Docker, no database server, no API keys.
 - **Studio** — forms list, responsive preview, responses table + detail, delete, Excel / CSV / JSON export, settings overview.
-- **Designed, not defaulted** — like open-slide, themes are references: `open-form theme copy` puts a copy of one of five starters (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`), or of your own theme in `themes/`, into the form, which owns its look from then on — editing or deleting a theme never changes an existing form. Have `create-theme` turn your design system into a reference; replaceable field components and layouts; Studio previews every theme.
-- **Agent-native** — built-in skills (`create-form` proposes visual directions before writing, `create-theme` turns your design system into a theme, `form-authoring`, `current-form`) and a `current.json` cursor so "this form" means what you're looking at.
+- **Designed, not defaulted** — like open-slide, themes are references: five starters (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) and your own in `themes/` are what an agent reads to write each form its own look in `forms/<id>/theme/`, with only the tokens, CSS and components that form uses. Studio previews every theme, and **Adjust** fine-tunes a form's colors, fonts and shape.
+- **Agent-native** — built-in skills (`create-form` proposes visual directions before writing, `create-theme` turns your design system into a theme, `form-authoring`, `current-form`, `apply-comments` turns notes left in Studio into edits) and a `current.json` cursor so "this form" means what you're looking at.
 - **Repo owns the artifact, runtime data stays yours** — questions, logic and policy live in git; responses live in `.open-form/` and never do.
 
 ## Repo layout
@@ -74,7 +74,9 @@ export default function Meetup() {
 | Path | Description |
 | --- | --- |
 | [packages/core](packages/core) | The framework: runtime, server, Studio, CLI, skills, template. |
-| [apps/demo](apps/demo) | Dogfood workspace with five demo forms, one per look. |
+| [packages/create-open-form](packages/create-open-form) | `npm create open-form@latest`: runs the core package's `open-form init`. |
+| [packages/cli](packages/cli) | `npx @open-form-build/cli init`: runs the core package's `open-form` CLI. |
+| [apps/demo](apps/demo) | Dogfood workspace with demo forms, each in its own look. |
 | [apps/web](apps/web) | Website and docs (Next.js + Fumadocs). |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture and design decisions. |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | What's done and what's next. |

@@ -79,12 +79,12 @@ export function findThemes(themesRoot: string): FormEntry[] {
 
 export type ThemeEntry = FormEntry;
 
-/** The project's themes: references for new forms, copied into a form with `theme copy`. */
+/** The project's themes: references agents read when writing a form's own look. */
 export function resolveThemes(themesRoot: string): ThemeEntry[] {
   return findThemes(themesRoot);
 }
 
-/** The folder inside a form that holds its own copy of a theme: `forms/<id>/theme/`. */
+/** The folder inside a form that holds its own look: `forms/<id>/theme/`. */
 export const THEME_DIR = 'theme';
 
 /** A form's own theme entry, `forms/<id>/theme/index.ts(x)`, if it has one. */

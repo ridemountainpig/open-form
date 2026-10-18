@@ -2,7 +2,7 @@
 // create-open-form → install → create/list → build → start → submit → Studio API → CLI export.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,8 +68,13 @@ try {
   assert.match(readFileSync(path.join(WS, '.gitignore'), 'utf8'), /\.open-form\//);
 
   step('create + list');
-  cli(['create', 'waitlist', '--title', 'Beta waitlist']);
+  cli(['create', 'waitlist', '--title', 'Beta waitlist', '--theme', 'editorial']);
   assert.ok(existsSync(path.join(WS, 'forms/waitlist/index.tsx')));
+  // A reference lends its tokens, never its CSS or components.
+  const look = readFileSync(path.join(WS, 'forms/waitlist/theme/index.ts'), 'utf8');
+  assert.match(look, /primary: '#/);
+  assert.doesNotMatch(look, /\.css|components/);
+  assert.deepEqual(readdirSync(path.join(WS, 'forms/waitlist/theme')), ['index.ts']);
   const list = cli(['list']);
   assert.match(list, /waitlist/);
   assert.match(list, /Beta waitlist/);

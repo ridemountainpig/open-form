@@ -1,20 +1,20 @@
 ---
 title: defineTheme
-description: Theme tokens, dark mode, components and the --of-* CSS variables.
+seoTitle: "defineTheme: theme config reference"
+description: "Every defineTheme option: color tokens, dark mode, fonts, radius and spacing, theme components, contrast checks and the --of-* CSS variables."
 ---
 
 A theme's `index.ts` — `index.tsx` when it adds components — default-exports
 `defineTheme({...})`. It lives in one of two places:
 
-- `forms/<id>/theme/` — the form's own copy, made with
-  [`open-form theme copy`](/docs/cli/theme#theme-copy) or
-  `open-form create <id> --theme <theme>`. The form imports it from
-  `./theme/index.ts`, or `index.tsx` when the theme adds components
-  (`theme copy` prints the import), and passes it to
+- `forms/<id>/theme/` — the form's own look, written by
+  [`open-form create`](/docs/cli/create) (from a reference's tokens with
+  `--theme`) and then by you or your agent. The form imports it from
+  `./theme/index.ts`, or `index.tsx` once it adds components, and passes it to
   [`<Form theme>`](/docs/components/form#theme). Only that form uses it.
 - `themes/<id>/` — a reference for new forms, with a `THEME.md` beside it that
-  describes the look for people and agents. No form uses it directly, so
-  editing it never changes a form's copy.
+  describes the look for people and agents. No form imports it, so editing it
+  never changes a form.
 
 ```tsx title="forms/meetup/theme/index.tsx"
 import { defineTheme, SplitLayout } from '@open-form-build/core';
@@ -108,8 +108,8 @@ literal values: `open-form theme check` can't resolve `var()` or
 
 ## Contrast
 
-`pnpm exec open-form theme check <id>` measures every pair below in light and
-dark (WCAG); add `--form` to check a form's own copy, `<id>` being the form id.
+`open-form theme check <id>` measures every pair below in light and
+dark (WCAG); add `--form` to check a form's own look, `<id>` being the form id.
 Run it after any color change.
 
 | Pair | Minimum |
@@ -152,25 +152,39 @@ of naming one region's font. To use a web font, see
 ## Theme CSS
 
 Import a stylesheet from the theme's index file for details tokens can't
-express — button weight, header treatment, card border. Prefix
-theme classes, and scope overrides of built-in chrome (`.of-form`,
-`.of-title`, `.of-button`) with `[data-of-theme="<id>"]`:
+express. Scope everything with `[data-of-theme="<id>"]`: a form's root carries
+`data-of-theme="<form-id>"`, so in a form's own theme the scope is the form id,
+and in a reference it's the theme id. If you rename a form's folder, rename the
+selectors too.
 
-```css title="themes/brand/brand.css"
-[data-of-theme="brand"] .of-button-primary {
+```css title="forms/meetup/theme/theme.css"
+[data-of-theme="meetup"] .of-button-primary {
   font-weight: 600;
   letter-spacing: 0.01em;
 }
 ```
 
-A form's root carries `data-of-theme="<form-id>"`, so in a form's copy the
-scope is the form id. `open-form theme copy brand meetup` rewrites the selector
-above to `[data-of-theme="meetup"]`. If you rename the form's folder, rename the
-selectors too.
+Most of a look can be CSS on the runtime's own markup, before any component:
+
+| Part | Classes |
+| --- | --- |
+| Root, card, header | `.of-root`, `.of-form`, `.of-header`, `.of-title`, `.of-description` |
+| Steps | `.of-progress`, `.of-progress-label`, `.of-progress-track`, `.of-progress-bar`, `.of-page-title`, `.of-page-description` |
+| Field | `.of-field` (`data-invalid` when it has an error), `.of-label`, `.of-required`, `.of-help`, `.of-error` |
+| Inputs | `.of-input`, `.of-textarea`, `.of-counter`, `.of-input-group`, `.of-unit`, `.of-select-wrap` |
+| Choices | `.of-choices` (`data-variant`), `.of-choice`, `.of-radio`, `.of-checkbox`, `.of-choice-single`, `.of-choice-text` |
+| Rating | `.of-rating`, `.of-rating-item`, `.of-rating-labels` |
+| Buttons | `.of-nav`, `.of-button`, `.of-button-primary`, `.of-button-secondary` |
+| Endings | `.of-success`, `.of-success-icon`, `.of-notice`, `.of-eyebrow` |
+
+Glyphs belong in pseudo-elements with empty alt text, so screen readers skip
+them: `.of-label::before { content: "? " / ""; }`. Reach for a
+[component](/docs/components/layouts) only when the look needs markup or
+behavior CSS can't give.
 
 Prefixed classes such as `.brand-tile` aren't scoped. That only matters when
-several forms share a page and their copies of one theme have diverged; give one
-of them a new prefix.
+several forms share a page and style the same class differently; give one of
+them a new prefix.
 
 A form's theme is bundled with the form, on the client and in the server
 bundle (without its CSS), so don't touch `window` or `document` at the top level

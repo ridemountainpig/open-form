@@ -327,26 +327,53 @@ export function searchFonts(filter: FontFilter, signal?: AbortSignal) {
   return request<{ fonts: GoogleFont[] }>(`/api/studio/themes/_fonts?${params}`, { signal });
 }
 
+/** What the design panel edits: a reference in `themes/`, or a form's own look. */
+export type DesignTarget = { kind: 'theme' | 'form'; id: string };
+
+/** The part of a theme the design panel works with. */
+export type DesignDetail = Pick<ThemeDetail, 'file' | 'tokens' | 'fonts' | 'contrast'> & {
+  id: string;
+};
+
+/** A form's own look, or `missing` with the file it would be when the form has none yet. */
+export type FormThemeDetail = DesignDetail | { id: string; missing: true; file: string };
+
+const themePath = (id: string) => `/api/studio/themes/${encodeURIComponent(id)}`;
+const formThemePath = (id: string) => `/api/studio/forms/${encodeURIComponent(id)}/theme`;
+const designPath = (target: DesignTarget) =>
+  target.kind === 'theme' ? themePath(target.id) : formThemePath(target.id);
+
 /** Download a Google font into the theme's `fonts/` folder. */
-export function addThemeFont(id: string, family: string) {
-  return request<{ font: ThemeFont }>(`${themePath(id)}/fonts`, {
+export function addThemeFont(target: DesignTarget, family: string) {
+  return request<{ font: ThemeFont }>(`${designPath(target)}/fonts`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ family }),
   });
 }
 
-const themePath = (id: string) => `/api/studio/themes/${encodeURIComponent(id)}`;
-
 export function themeUrl(id: string) {
   return themePath(id);
 }
 
-export function saveThemeTokens(id: string, patch: ThemePatch) {
-  return request<Pick<ThemeDetail, 'tokens' | 'contrast'>>(themePath(id), {
+export function formThemeUrl(id: string) {
+  return formThemePath(id);
+}
+
+export function saveThemeTokens(target: DesignTarget, patch: ThemePatch) {
+  return request<Pick<ThemeDetail, 'tokens' | 'contrast'>>(designPath(target), {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ patch }),
+  });
+}
+
+/** Give a form its own `theme/index.ts` and pass it to the form's `<Form>`. */
+export function createFormTheme(id: string) {
+  return request<FormThemeDetail>(formThemePath(id), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{}',
   });
 }
 

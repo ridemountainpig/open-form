@@ -9,6 +9,7 @@ import {
   Textarea,
   When,
 } from '@open-form-build/core';
+import theme from './theme/index.ts';
 
 export const config = defineForm({
   title: 'Get in touch',
@@ -24,7 +25,7 @@ export const config = defineForm({
 
 export default function Contact() {
   return (
-    <Form>
+    <Form theme={theme}>
       <Row>
         <Text name="name" label="Name" required autoComplete="name" />
         <Email name="email" label="Email" required />

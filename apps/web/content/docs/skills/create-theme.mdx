@@ -4,7 +4,7 @@ description: Turns your design system, a screenshot or a brief into a reference 
 ---
 
 `/create-theme` builds a theme folder under `themes/<id>/`: a reference that new
-forms copy their look from. Reach for it with "make it look like our product", a
+forms take their look from. Reach for it with "make it look like our product", a
 brand or a mood. [`/create-form`](/docs/skills/create-form) hands off to it when
 the direction you picked needs a theme the project doesn't have. For a tweak to
 a single form, just ask for the tweak — it goes in that form's own
@@ -58,8 +58,8 @@ avoid `var()` and `color-mix()`, which the contrast check can't read.
 
 The agent starts from the closest starter, under the new id:
 
-```bash
-pnpm exec open-form theme add classic --as acme
+```npm
+npx open-form theme add classic --as acme
 ```
 
 `classic` for product UI, `editorial` for premium serif, `terminal` for
@@ -73,11 +73,12 @@ Then it goes only as deep as the look needs:
 
 1. **Tokens** — colors, fonts, radius, spacing, width and layout. Most product
    themes stop here; pill buttons are just `buttonRadius`.
-2. **Tokens and CSS** — a stylesheet for chrome details tokens can't express,
-   such as button weight, the header or the card border, scoped to the theme.
-3. **Components** — the theme's own fields or layout, when the product's
-   controls are structurally different: underline inputs, chips, a branded
-   layout.
+2. **Tokens and CSS** — a stylesheet on the runtime's own markup for what
+   tokens can't express, such as button weight, pill choices, the header or the
+   card border, scoped to the theme.
+3. **Components** — only where the look needs markup or behavior the runtime's
+   doesn't have: a branded layout, a wrapper for an animated underline,
+   keyboard shortcuts. Forms take such a piece only when they use it.
 
 Started from `classic`, the result looks like this:
 
@@ -86,13 +87,18 @@ themes/acme/
 ├── index.ts      # tokens: colors (light and dark), fonts, radius, spacing, layout
 ├── acme.css      # depth 2: chrome details tokens can't express
 ├── fonts/        # optional: web fonts, e.g. from `open-form theme font`
-└── THEME.md      # mood, palette, typography, layout, signature ideas, copy tone, do / don't
+└── THEME.md      # mood, palette and every token, typography, what's CSS and what's a component, signature ideas, copy tone, do / don't
 ```
 
 A theme with its own components uses `index.tsx`. Every color gets a dark value
 too, or `dark: false` for a light-only brand; a dark-only brand sets
 `colorScheme: 'dark'` and puts its dark palette in `colors`. Controls and
 buttons stay at least 44px tall.
+
+A custom `Layout`, or CSS that changes `.of-root`'s padding, keeps the
+top-right corner clear for the language picker translated forms show, at every
+width: the agent reserves the room or moves the picker. See
+[Layouts and chrome](/docs/components/layouts#layout-regions).
 
 `THEME.md` is what Studio shows on the theme's page and what `/create-form`
 reads when it compares themes. See [Themes](/docs/core-feature/themes) and
@@ -107,8 +113,8 @@ family, so Chinese and Japanese text gets fonts that match the form's
 `locale`. When the font is central to the brand, or you ask, it downloads it
 into the theme with [`open-form theme font`](/docs/cli/theme#theme-font):
 
-```bash
-pnpm exec open-form theme font acme Inter   # → themes/acme/fonts/
+```npm
+npx open-form theme font acme Inter   # → themes/acme/fonts/
 ```
 
 It never links `fonts.googleapis.com`: that would send every respondent's IP
@@ -117,9 +123,9 @@ address to Google, a problem under the GDPR. See
 
 ## Checking it
 
-```bash
-pnpm exec open-form theme check acme   # WCAG contrast, light and dark
-pnpm typecheck                         # tsc --noEmit: the theme's code compiles
+```npm
+npx open-form theme check acme  # WCAG contrast, light and dark
+npm run typecheck               # tsc --noEmit: the theme's code compiles
 ```
 
 Accessibility wins over brand for text and controls. When a brand color fails,
@@ -128,29 +134,30 @@ original and the new value. See [`open-form theme`](/docs/cli/theme).
 
 Contrast numbers don't show whether it looks right, so with a browser tool the
 agent also opens the theme's page in Studio (`/studio/themes/<id>`), takes
-screenshots in light and dark, and compares them with the source. Without one,
-it tells you it hasn't seen the theme.
+screenshots in light and dark, and compares them with the source. Once the
+theme is in a translated form, it also checks at phone and tablet width that the
+language picker in the corner covers nothing. Without a browser tool, it tells
+you it hasn't seen the theme.
 
 ## Applying it
 
-The new theme is a reference, so creating it changes no form. A form uses it by
-getting its own copy:
+The new theme is a reference, so creating it changes no form, and no form ever
+imports it. A new form starts from its tokens:
 
-```bash
-pnpm exec open-form theme copy acme meetup         # an existing form
-pnpm exec open-form create waitlist --theme acme   # a new one
+```npm
+npx open-form create waitlist --theme acme
 ```
 
-When the theme is for a form, the agent copies it in and wires it up with
-`<Form theme={theme}>`. "Our forms" or "everything" means copying it into each
-form you mean; there's no project-wide theme. A form that already has its own
-look needs `--force`, which replaces that copy and discards the form's own edits
-to it, so the agent looks first and tells you. It reports the theme's folder,
-where the tokens came from, any contrast adjustments, and which forms it copied
-the theme into.
+Then the agent writes the rest of that form's look in its own `theme/` folder,
+taking from the reference only the CSS and components the form uses. For a form
+that already exists, it sets the tokens in the form's `theme/` and keeps what the
+form already has, looking at it first. "Our forms" or "everything" means doing
+that for each form you mean; there's no project-wide theme. It reports the
+theme's folder, where the tokens came from, any contrast adjustments, and which
+forms now use it.
 
 The folder in `themes/` is yours from then on: edit it by hand, ask the agent,
 or fine-tune colors, fonts, radius, width and spacing in Studio's *Adjust*
 panel, which writes straight back to the theme file. Those changes reach forms
-you copy it into afterwards; forms that already have a copy keep theirs. See
+you start from it afterwards, never existing ones. See
 [Themes](/docs/core-feature/themes).

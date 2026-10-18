@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import chalk from 'chalk';
 import { createServer, mergeConfig, type ViteDevServer } from 'vite';
+import { importsOwnTheme } from '../editing/form-theme.ts';
 import {
   describeCondition,
   type FieldSchema,
@@ -17,6 +18,7 @@ import { createDevRegistry } from '../vite/api-plugin.ts';
 import { createViteConfig } from '../vite/config.ts';
 import { sourceFiles } from '../vite/form-files.ts';
 import {
+  findForms,
   formThemeFile,
   loadUserConfig,
   PKG_ROOT,
@@ -83,16 +85,29 @@ export async function checkForms(userCwd: string, only?: string): Promise<CheckR
         const definition = await registry.load(id);
         if (!definition) throw new Error(`forms/${id} has no index file.`);
         const theme = formThemeFile(paths.formsRoot, id);
+        const shownTheme = theme ? path.relative(userCwd, theme).split(path.sep).join('/') : null;
+        const entry = findForms(paths.formsRoot).find((f) => f.id === id);
+        const applied = Boolean(entry && importsOwnTheme(readFileSync(entry.file, 'utf8')));
         results.push({
           id,
           ok: true,
           definition,
           timeZone: formTimeZone(definition.config, config.timeZone),
-          theme: theme ? path.relative(userCwd, theme).split(path.sep).join('/') : null,
+          theme: applied ? shownTheme : null,
           warnings: [
             ...importWarnings(path.join(paths.formsRoot, id), paths),
             ...policyWarnings(definition.config, config),
             ...uniqueWarnings(definition),
+            ...(theme && shownTheme && entry && !applied
+              ? [unappliedThemeWarning(shownTheme, path.relative(userCwd, entry.file))]
+              : []),
+            ...(theme && shownTheme && applied
+              ? unusedComponentWarnings(
+                  shownTheme,
+                  await themeComponents(server, theme),
+                  definition.components,
+                )
+              : []),
           ],
         });
       } catch (err) {
@@ -126,7 +141,7 @@ export function importWarnings(
       if (theme) {
         const id = theme.split(path.sep)[0]?.replace(/\.[^.]+$/, '');
         warnings.add(
-          `${shown} imports themes/${id} — copy it into the form with \`open-form theme copy ${id} <form>\` so the form keeps its look when the theme changes.`,
+          `${shown} imports themes/${id} — themes are references: write what the form needs in its own theme/, reading themes/${id}, so the form keeps its look when the theme changes.`,
         );
         continue;
       }
@@ -138,6 +153,60 @@ export function importWarnings(
     }
   }
   return [...warnings];
+}
+
+async function themeComponents(
+  server: ViteDevServer,
+  file: string,
+): Promise<Record<string, unknown> | undefined> {
+  try {
+    const mod = (await server.ssrLoadModule(file)) as {
+      default?: { components?: Record<string, unknown> };
+    };
+    return mod.default?.components;
+  } catch {
+    // A theme file the form doesn't import can be broken without breaking the form.
+    return undefined;
+  }
+}
+
+export function unappliedThemeWarning(themeFile: string, formFile: string): string {
+  const shown = formFile.split(path.sep).join('/');
+  return `${themeFile} isn't applied: ${shown} doesn't import it. Import it and pass it to <Form theme={theme}>, or delete it.`;
+}
+
+/** Every form renders these around its fields, whatever the fields are. */
+const CHROME_SLOTS = new Set([
+  'Layout',
+  'LanguageSwitch',
+  'Header',
+  'Progress',
+  'Nav',
+  'Button',
+  'Success',
+  'Notice',
+  'Field',
+]);
+
+/**
+ * A form's look holds only what it uses: a component for a field type the form
+ * doesn't have is code nobody reads until it drifts from the rest of the look.
+ */
+export function unusedComponentWarnings(
+  themeFile: string,
+  components: Record<string, unknown> | undefined,
+  rendered: readonly string[] | undefined,
+): string[] {
+  if (!components || !rendered) return [];
+  const used = new Set(rendered);
+  const unused = Object.keys(components).filter(
+    (name) => components[name] && !CHROME_SLOTS.has(name) && !used.has(name),
+  );
+  if (!unused.length) return [];
+  const them = unused.length === 1 ? 'it' : 'them';
+  return [
+    `${themeFile} defines ${unused.join(', ')}, but the form never uses ${them} — a form's look holds only what it uses, so remove ${them}.`,
+  ];
 }
 
 function fieldLine(field: FieldSchema, pageWhen: number): string {

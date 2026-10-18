@@ -480,6 +480,7 @@ export function ThemeDetailPage() {
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4">
                 <DesignPanel
+                  target={{ kind: 'theme', id: info.id }}
                   detail={info}
                   draft={draft}
                   onDraft={setDraft}
@@ -687,7 +688,7 @@ function ShapeFacts({ tokens, layout }: { tokens: ThemeTokens; layout?: string }
   );
 }
 
-/** Themes are references: a form gets its own copy, so nothing here changes a form. */
+/** Themes are references: a form's look is written for it, so nothing here changes a form. */
 function UseIt({ themeId }: { themeId: string }) {
   const t = useT();
   const [copied, copy] = useCopy();
@@ -695,7 +696,7 @@ function UseIt({ themeId }: { themeId: string }) {
     <Fact title={t('themes.useTitle')}>
       <p className="text-[12px] leading-relaxed text-zinc-500">{t('themes.useBody')}</p>
       <p className="mt-2">
-        <Kbd>open-form theme copy {themeId} &lt;form&gt;</Kbd>
+        <Kbd>open-form create &lt;form&gt; --theme {themeId}</Kbd>
       </p>
       <Button className="mt-3" onClick={() => copy(t('themes.usePrompt', { id: themeId }))}>
         {copied ? <Check aria-hidden /> : <ClipboardCopy aria-hidden />}

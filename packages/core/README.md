@@ -88,11 +88,11 @@ export function RsvpForm() {
 
 On Windows `cmd`, `&` doesn't run the two in parallel; run `open-form build --server-only --watch` and `next dev` in two terminals instead.
 
-App Router route handlers can't render the forms to learn their fields, so the route reads the server bundle `open-form build --server-only` writes to `dist/server/entry.js` (outside production it reloads it after each rebuild) — validation still comes from the same form files as the browser. Next.js can't trace that file, so with `output: 'standalone'` or on Vercel add `outputFileTracingIncludes: { '/api/*': ['./dist/server/**/*'] }` to `next.config`, and set `OPEN_FORM_SECRET`, since serverless functions can't write the generated `.open-form/secret`. Responses go to SQLite in `.open-form/` by default, which needs a persistent disk; pass `storage` for anything else. The admin API exists only when `OPEN_FORM_ADMIN_PASSWORD` is set or you pass `adminAuth` (for example `authorize: async () => isAdmin(await auth())`). On Vercel, pass `waitUntil: after` (from `next/server`) so webhooks finish after the response.
+App Router route handlers can't render the forms to learn their fields, so the route reads the server bundle `open-form build --server-only` writes to `dist/server/entry.js` (outside production it reloads it after each rebuild) — validation still comes from the same form files as the browser. Next.js can't trace that file, so with `output: 'standalone'` or on Vercel add `outputFileTracingIncludes: { '/api/*': ['./dist/server/**/*'] }` to `next.config`, and set `OPEN_FORM_SECRET`, since serverless functions can't write the `secret` file generated next to the database. Responses go to SQLite in `.open-form/` by default, which needs a persistent disk; pass `storage` for anything else. The admin API exists only when `OPEN_FORM_ADMIN_PASSWORD` is set or you pass `adminAuth` (for example `authorize: async () => isAdmin(await auth())`). On Vercel, pass `waitUntil: after` (from `next/server`) so webhooks finish after the response.
 
 ## CLI
 
-`open-form init | dev | build [--server-only] [--watch] | start | create <id> [--theme] | delete <id> | list | check [id] | comments [id] | responses export <id> | theme list|check|add|copy|font | sync:skills`
+`open-form init | dev | build [--server-only] [--watch] | start | create <id> [--theme] | delete <id> | list | check [id] | comments [id] | responses export <id> | theme list|check|add|font | sync:skills`
 
 Every command except `init` loads `.env` from the current folder when there is one; variables already set in the environment win.
 

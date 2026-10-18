@@ -58,7 +58,7 @@ export async function run(argv: string[]): Promise<void> {
     .command('build')
     .description('Build for production')
     .option('--out-dir <dir>', 'output directory (default: dist)')
-    .option('--server-only', 'only the server entry (for open-form/next)')
+    .option('--server-only', 'only the server entry (for @open-form-build/core/next)')
     .option('--watch', 'rebuild the server entry on change (with --server-only)')
     .action(async (flags) => {
       const { build } = await import('./build.ts');
@@ -85,7 +85,7 @@ export async function run(argv: string[]): Promise<void> {
     .description('Create a new form from the starter')
     .argument('<id>', 'kebab-case form id, e.g. event-registration')
     .option('-t, --title <title>', 'form title')
-    .option('--theme <theme>', 'copy a theme (from themes/ or a starter) into the form')
+    .option('--theme <theme>', "start the form's look from a theme's tokens (themes/ or a starter)")
     .action(async (id: string, flags) => {
       const { createForm } = await import('./commands.ts');
       await createForm(id, flags);
@@ -143,7 +143,7 @@ export async function run(argv: string[]): Promise<void> {
 
   const theme = program
     .command('theme')
-    .description('Browse themes and copy one into a form, which then owns its look');
+    .description('Browse the reference themes forms take their looks from');
   theme
     .command('list')
     .description("List the project's themes and the starters")
@@ -170,16 +170,6 @@ export async function run(argv: string[]): Promise<void> {
     .action(async (starter: string, flags: { as?: string; force?: boolean }) => {
       const { addCommand } = await import('./theme.ts');
       await addCommand(starter, flags);
-    });
-  theme
-    .command('copy')
-    .description('Copy a theme into a form (forms/<form>/theme/); the form owns it from then on')
-    .argument('<theme>', 'a theme in themes/ or a starter (see `theme list`)')
-    .argument('<form>', 'form id')
-    .option('-f, --force', "replace the form's current theme copy")
-    .action(async (themeId: string, formId: string, flags: { force?: boolean }) => {
-      const { copyCommand } = await import('./theme.ts');
-      await copyCommand(themeId, formId, flags);
     });
   theme
     .command('font')

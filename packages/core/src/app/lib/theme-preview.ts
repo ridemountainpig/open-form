@@ -29,6 +29,9 @@ export function forceScheme(
   return { ...theme, colorScheme: 'dark', colors: { ...theme?.colors, ...(theme?.dark || {}) } };
 }
 
+/** The draft channel for a form's own theme, apart from the reference themes' ids. */
+export const formDraftKey = (formId: string) => `form:${formId}`;
+
 /** Unsaved tokens sent by the Studio design panel for this theme, if any. */
 export function useThemeDraft(themeId: string | undefined): ThemeTokens | null {
   const [draft, setDraft] = useState<ThemeTokens | null>(null);

@@ -16,7 +16,7 @@ You don't usually invoke it directly. Other skills and the rules do.
 
 | Topic | What the agent learns |
 | --- | --- |
-| File contract | `forms/<id>/index.tsx`, one `<Form>`, header text in `config`, a default export named after the form, render-safe code (the form renders once on the server to derive its schema) |
+| File contract | `forms/<id>/index.tsx`, one `<Form>`, header text in `config`, a default export named after the form, render-safe code (the form renders once on the server to derive its schema). `index.tsx` reads as the whole form: `config`, every `<Page>` and `<When>`, and every field's `name` and `label` stay there; other files only for large components or option lists, in a flat folder with `theme/` and `locales/` as the only subfolders |
 | Structure | `<Form>`, `<Page>`, `<When>`, `<Row>`, `<Heading>`, `<Paragraph>`, `<Submit>`, `<Success>` |
 | Fields | Every field, what it stores, and its props |
 | Conditions | `<When>` operators (and what they mean on a `CheckboxGroup`), `all` / `any` / `not` / `condition`, conditional steps, hidden answers dropped on the server |
@@ -24,8 +24,8 @@ You don't usually invoke it directly. Other skills and the rules do.
 | Custom fields | `useField` and `FieldShell` |
 | Live answers | `useFieldValue`, `useFormValues` and `<Form aside>` for previews and totals |
 | Custom styling | A local stylesheet scoped with `<Form className>`, prefixed classes on `--of-*` tokens, `--of-aside-width`, and the `.of-*` classes to target when restyling what the runtime renders |
-| Config | Submission policy, protection, success screen, drafts, time zones; webhooks and embeds in `open-form.config.ts` |
-| Themes | The form's own copy in `forms/<id>/theme/` and `<Form theme>`, references in `themes/` and the starters, `theme copy`, tokens, replaceable components, layouts, closed screens (`Notice`), `useFormNav` and `useFormMessages` |
+| Config | Submission policy, protection, success screen, drafts, time zones, `published: false` to take a form offline, and the keys Studio can override; webhooks and embeds in `open-form.config.ts` |
+| Themes | The form's own look in `forms/<id>/theme/` and `<Form theme>`, written with only what the form uses — tokens, then CSS on the runtime's markup, then components for what CSS can't do; references in `themes/` and the starters, `create --theme`, replaceable components, layouts (keeping the language picker's corner clear), closed screens (`Notice`), `useFormNav` and `useFormMessages` |
 | Languages | `locale`, `translations`, `<T>`, language-neutral option values |
 | Design guidelines | Questions: ask less, order easy to hard, 3–7 fields per page, `RadioGroup` vs. `Select` vs. cards. Look: each header fact once, one signature element tied to the form's purpose, the theme's palette only, the first question on a phone's first screen, success copy written for the form |
 
@@ -47,7 +47,8 @@ instead:
 | API routes, SQL, Express handlers | `config.submissions` / `protection` |
 | `fetch()` to Slack or Zapier on submit | `webhooks` in `open-form.config.ts` |
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
-| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | `open-form theme copy terminal <id>` + `<Form theme={theme}>` |
+| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (`open-form create <id> --theme terminal`) + `<Form theme={theme}>` |
+| Copying a reference theme's whole folder into the form | Only what the form renders: tokens, then CSS on the runtime's classes, then components that need their own markup or behavior |
 | CSS grid or flex to arrange fields | `<Row>`, `<Page>` |
 | Styling tags (`button[type="submit"]`, `h1`) or unscoped `.of-*` rules | The `.of-*` classes under `[data-of-theme="<id>"]` |
 | Hex colors in the form's CSS | `var(--of-*)` tokens; tints via `color-mix()` |
@@ -69,16 +70,17 @@ Before handing off, the agent checks:
    nothing more was added.
 4. **Nothing hand-rolled** — no state, fetch, validation or styling outside the
    theme and form CSS.
-5. **The look was chosen** — the form has its own copy of the agreed theme in
-   `forms/<id>/theme/`, imported above the form's CSS and passed to
-   `<Form theme>`; nothing imports from `themes/`; copy follows the theme's
-   `THEME.md`; conversational forms have one question per page. Each header
+5. **The look was chosen** — the form's own look in `forms/<id>/theme/` follows
+   the agreed direction and holds only what this form renders, with no
+   component `check` reports as unused, imported above the form's CSS and
+   passed to `<Form theme>`; nothing imports from `themes/`;
+   copy follows the reference's `THEME.md`; conversational forms have one question per page. Each header
    fact appears once, there's at most one signature element, the form's CSS
    adds no new hues, and the success copy is written for this form.
 6. **Custom components** spread `field.controlProps`, attach `field.ref`, keep
    native inputs and a visible focus style.
 7. **`open-form check <id>`** passes and its steps, fields, conditions,
-   required flags and policy match the plan; `pnpm typecheck` passes.
+   required flags and policy match the plan; the `typecheck` script passes.
 8. **Closed screens** — the messages are in the form's voice, and a custom
    `Notice` handles every state the form can reach without inventing facts.
 9. **Translations** — `locale` is set, options have explicit values, every
@@ -87,8 +89,8 @@ Before handing off, the agent checks:
    edited text.
 10. **Seen, not assumed** — screenshots of `/f/<id>` at desktop and phone
     width match the plan: the title shows, the form's own CSS applies, nothing
-    is low-contrast or clipped, and the first question fits a phone's first
-    screen. Then Studio's Preview: conditional pages through the step buttons,
+    is low-contrast or clipped, nothing sits under the language picker on a
+    translated form, and the first question fits a phone's first screen. Then Studio's Preview: conditional pages through the step buttons,
     each closed screen under *When closed*, and each translation through the
     language picker. Without a browser tool, the agent says it hasn't seen the
     form.

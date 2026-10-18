@@ -2,16 +2,10 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { copyThemeToForm, otherScopes, rescope } from '../editing/theme-files.ts';
+import { findReferenceTheme, rescope, writeFormTheme } from '../editing/theme-files.ts';
 import { formThemeFile, resolveThemes } from '../vite/project.ts';
 import { importWarnings } from './check.ts';
-import {
-  addStarterTheme,
-  importsCopy,
-  starterCatalog,
-  themeCatalog,
-  themeImport,
-} from './theme.ts';
+import { addStarterTheme, starterCatalog, themeCatalog } from './theme.ts';
 
 let root: string;
 
@@ -85,93 +79,82 @@ function makeForm(id: string): string {
   return dir;
 }
 
-describe('theme copy', () => {
-  it('copies a starter into the form, scoped to the form, without THEME.md', async () => {
+function fontCss(family: string): string {
+  return `/*\n * open-form font: "${family}", sans-serif\n */\n@font-face {}\n`;
+}
+
+describe("a form's own look", () => {
+  it('starts as the default look in theme/index.ts', async () => {
     makeForm('meetup');
-    const result = await copyThemeToForm(root, 'terminal', 'meetup');
-    expect(result.source).toBe('starter');
-    expect(result.importPath).toBe('./theme/index.tsx');
-    expect(result.files.sort()).toEqual([
-      'forms/meetup/theme/index.tsx',
-      'forms/meetup/theme/terminal.css',
-    ]);
-    expect(result.warnings).toEqual([]);
-    const css = readFileSync(path.join(root, 'forms/meetup/theme/terminal.css'), 'utf8');
-    expect(css).toContain('[data-of-theme="meetup"].of-root');
-    expect(css).not.toContain('data-of-theme="terminal"');
+    const result = await writeFormTheme(root, 'meetup');
+    expect(result.fonts).toEqual([]);
+    expect(readFileSync(result.file, 'utf8')).toBe(
+      "import { defineTheme } from '@open-form-build/core';\n\nexport default defineTheme({});\n",
+    );
     expect(formThemeFile(path.join(root, 'forms'), 'meetup')).toBe(
-      path.join(root, 'forms/meetup/theme/index.tsx'),
+      path.join(root, 'forms/meetup/theme/index.ts'),
     );
   });
 
-  it("prefers the project's theme and leaves the form alone when it changes later", async () => {
+  it("takes a reference's tokens and nothing else", async () => {
     makeForm('signup');
-    await addStarterTheme(root, 'editorial', { as: 'terminal' });
-    const result = await copyThemeToForm(root, 'terminal', 'signup');
-    expect(result.source).toBe('project');
-    expect(result.files).toContain('forms/signup/theme/editorial.css');
-
-    rmSync(path.join(root, 'themes'), { recursive: true });
-    expect(existsSync(path.join(root, 'forms/signup/theme/index.tsx'))).toBe(true);
+    const ref = await addStarterTheme(root, 'terminal');
+    const themeFile = path.join(root, 'themes/terminal/index.tsx');
+    expect(ref.files).toContain('themes/terminal/terminal.css');
+    const result = await writeFormTheme(root, 'signup', {
+      tokens: { radius: '4px', colors: { primary: '#3fb950' }, dark: false },
+      themeFile,
+    });
+    const source = readFileSync(result.file, 'utf8');
+    expect(source).toContain("radius: '4px'");
+    expect(source).toContain("primary: '#3fb950'");
+    expect(source).toContain('dark: false');
+    expect(source).not.toContain('.css');
+    expect(existsSync(path.join(root, 'forms/signup/theme/terminal.css'))).toBe(false);
   });
 
-  it('turns a single-file theme into theme/index and refuses to overwrite without --force', async () => {
+  it('brings only the web fonts its tokens name, however they quote them', async () => {
     makeForm('survey');
-    mkdirSync(path.join(root, 'themes'));
-    writeFileSync(path.join(root, 'themes', 'night.ts'), 'export default { radius: "4px" };\n');
-    const result = await copyThemeToForm(root, 'night', 'survey');
-    expect(result.files).toEqual(['forms/survey/theme/index.ts']);
-    expect(result.importPath).toBe('./theme/index.ts');
-    await expect(copyThemeToForm(root, 'classic', 'survey')).rejects.toThrow(/already exists/);
-    await expect(
-      copyThemeToForm(root, 'classic', 'survey', { force: true }),
-    ).resolves.toMatchObject({ files: ['forms/survey/theme/index.ts'] });
-  });
-
-  it("brings a single-file theme's own fonts along", async () => {
-    makeForm('survey');
-    mkdirSync(path.join(root, 'themes/fonts/inter'), { recursive: true });
+    mkdirSync(path.join(root, 'themes/night/fonts/inter'), { recursive: true });
+    const themeFile = path.join(root, 'themes/night/index.ts');
     writeFileSync(
-      path.join(root, 'themes', 'night.ts'),
-      "import './fonts/inter.css';\nexport default { font: 'Inter' };\n",
+      themeFile,
+      "import './fonts/inter.css';\nimport './fonts/mono.css';\nexport default {};\n",
     );
-    writeFileSync(path.join(root, 'themes/fonts/inter.css'), '@font-face {}\n');
-    writeFileSync(path.join(root, 'themes/fonts/inter/latin.woff2'), '');
-    writeFileSync(path.join(root, 'themes/fonts/mono.css'), '@font-face {}\n');
-    await copyThemeToForm(root, 'night', 'survey');
-    expect(existsSync(path.join(root, 'forms/survey/theme/fonts/inter.css'))).toBe(true);
-    expect(existsSync(path.join(root, 'forms/survey/theme/fonts/inter/latin.woff2'))).toBe(true);
-    expect(existsSync(path.join(root, 'forms/survey/theme/fonts/mono.css'))).toBe(false);
+    writeFileSync(path.join(root, 'themes/night/fonts/inter.css'), fontCss('Inter'));
+    writeFileSync(path.join(root, 'themes/night/fonts/inter/latin.woff2'), '');
+    writeFileSync(path.join(root, 'themes/night/fonts/mono.css'), fontCss('Mono'));
+    const result = await writeFormTheme(root, 'survey', {
+      tokens: { font: "'inter', sans-serif" },
+      themeFile,
+    });
+    expect(result.fonts).toEqual(['Inter']);
+    const dir = path.join(root, 'forms/survey/theme');
+    expect(existsSync(path.join(dir, 'fonts/inter.css'))).toBe(true);
+    expect(existsSync(path.join(dir, 'fonts/inter/latin.woff2'))).toBe(true);
+    expect(existsSync(path.join(dir, 'fonts/mono.css'))).toBe(false);
+    const source = readFileSync(result.file, 'utf8');
+    expect(source).toContain("import './fonts/inter.css';");
+    expect(source).not.toContain('mono.css');
   });
 
-  it("spots a form whose import no longer matches its copy's file", () => {
-    expect(themeImport("import theme from './theme/index.ts';")).toBe('./theme/index.ts');
-    expect(themeImport('import theme from "./theme";')).toBe('./theme');
-    expect(themeImport("import t from '../shared/theme/index.ts';")).toBeUndefined();
-    expect(importsCopy('./theme/index.ts', './theme/index.tsx')).toBe(false);
-    expect(importsCopy('./theme/index.tsx', './theme/index.tsx')).toBe(true);
-    expect(importsCopy('./theme/index', './theme/index.tsx')).toBe(true);
-  });
-
-  it('rejects unknown themes and forms', async () => {
+  it('never replaces a look the form already has, and needs the form', async () => {
     makeForm('contact');
-    await expect(copyThemeToForm(root, 'nope', 'contact')).rejects.toThrow(/No theme "nope"/);
-    await expect(copyThemeToForm(root, 'classic', 'missing')).rejects.toThrow(/No form "missing"/);
+    await writeFormTheme(root, 'contact');
+    await expect(writeFormTheme(root, 'contact')).rejects.toThrow(/already exists/);
+    await expect(writeFormTheme(root, 'missing')).rejects.toThrow(/No form "missing"/);
   });
 
-  it('warns about selectors still aimed at another scope', async () => {
-    makeForm('rsvp');
-    mkdirSync(path.join(root, 'themes', 'brand'), { recursive: true });
-    writeFileSync(
-      path.join(root, 'themes/brand/index.ts'),
-      "import './brand.css';\nexport default {};\n",
-    );
-    writeFileSync(
-      path.join(root, 'themes/brand/brand.css'),
-      '[data-of-theme="brand"] .a {}\n[data-of-theme="old-name"] .b {}\n',
-    );
-    const result = await copyThemeToForm(root, 'brand', 'rsvp');
-    expect(result.warnings).toEqual([expect.stringContaining('[data-of-theme="old-name"]')]);
+  it("finds a reference in the project's themes first, then the starters", async () => {
+    await expect(findReferenceTheme(root, 'terminal')).resolves.toMatchObject({
+      source: 'starter',
+    });
+    await addStarterTheme(root, 'editorial', { as: 'terminal' });
+    await expect(findReferenceTheme(root, 'terminal')).resolves.toMatchObject({
+      source: 'project',
+      file: path.join(root, 'themes/terminal/index.tsx'),
+    });
+    await expect(findReferenceTheme(root, 'nope')).rejects.toThrow(/No theme "nope"/);
   });
 
   it('rescopes every quoting style', () => {
@@ -179,7 +162,6 @@ describe('theme copy', () => {
     expect(rescope(css, 'a', 'form')).toBe(
       `[data-of-theme="form"] x, [data-of-theme='form'] y, [data-of-theme=form] z, [data-of-theme="ab"] w`,
     );
-    expect(otherScopes(rescope(css, 'a', 'form'), 'form')).toEqual(['ab']);
   });
 });
 

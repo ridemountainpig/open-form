@@ -1,5 +1,6 @@
 ---
 title: Languages
+seoTitle: "Multilingual forms and translations"
 description: Write a form in one language, translate it into others, and keep every response in one table.
 ---
 
@@ -69,18 +70,20 @@ entry falls back to the source text, so the form never breaks.
 
 The title, description, success copy and policy messages (`fullMessage`, …),
 `<Page>` titles and descriptions, field `label`, `description`, `placeholder` and
-`unit`, option labels, `Rating` end labels, `Checkbox` text, `<Submit>` text,
-`<Heading>` and `<Paragraph>` text, and messages returned by `validate`.
+`unit`, option labels, `Rating` end labels, a `Matrix`'s question, columns and
+row labels, `Checkbox` text, `<Submit>` text, `<Heading>` and `<Paragraph>`
+text, and messages returned by `validate`. A `Tel` country picker names the
+countries in the form's language on its own.
 
 ### Your own markup
 
 Wrap text in custom components with `<T>`, or call `useTranslate()`. Placeholders
 in braces are filled after translating, so a translation can move them:
 
-```tsx title="forms/workshop/summary.tsx"
-import { T, useFieldValue, useTranslate } from '@open-form-build/core';
+```tsx title="forms/workshop/index.tsx"
+import { Form, T, useFieldValue, useTranslate } from '@open-form-build/core';
 
-export function Summary() {
+function Summary() {
   const tr = useTranslate();
   const n = Number(useFieldValue('workshops') ?? 0);
   return (
@@ -89,6 +92,10 @@ export function Summary() {
       <p>{tr('Workshops × {n}', { n })}</p>
     </div>
   );
+}
+
+export default function Workshop() {
+  return <Form aside={<Summary />}>{/* … */}</Form>;
 }
 ```
 
@@ -125,15 +132,17 @@ For a translated form, the runtime picks the first match:
 3. The browser's preferred languages.
 4. The source language.
 
-A picker in the corner lets respondents switch. `languageSwitch: false` hides it,
-and a `LanguageSwitch` component replaces it. The submission carries the chosen
+A picker in the top-right corner lets respondents switch. The built-in layouts
+leave room for it, and a custom layout must too (see
+[Layouts and chrome](/docs/components/layouts#layout-regions)).
+`languageSwitch: false` hides it, and a `LanguageSwitch` component replaces it. The submission carries the chosen
 language; the server accepts only languages the form offers and uses it for its
 error messages.
 
 ## Check coverage
 
-```bash
-pnpm exec open-form check feedback
+```npm
+npx open-form check feedback
 ```
 
 `check` renders the form like the server does and prints, per language,

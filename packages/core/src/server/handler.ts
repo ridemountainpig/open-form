@@ -41,6 +41,8 @@ export type FormDefinition = {
   validators: ReadonlyMap<string, CustomValidator>;
   /** Every string respondents see, for translation coverage. Optional. */
   texts?: readonly string[];
+  /** The component slots the form renders, for `open-form check`. Optional. */
+  components?: readonly string[];
 };
 
 export type FormRegistry = {

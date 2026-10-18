@@ -89,8 +89,8 @@ export type FormProps = {
    */
   aside?: ReactNode;
   /**
-   * This form's look: tokens, components and CSS, usually the copy in
-   * `./theme/` made by `open-form theme copy`. Wins over a host's theme.
+   * This form's look: its tokens and components, written for it in
+   * `./theme/index.ts`. Wins over a host's theme.
    */
   theme?: FormTheme;
   /** Replace how this form's fields look, on top of the theme's components. */
@@ -180,6 +180,19 @@ export function Form(props: FormProps) {
     () => mergeComponents(themeComponents, props.components),
     [themeComponents, props.components],
   );
+  // A slot `<Form components>` replaces never renders the theme's version.
+  const tracked = useMemo(() => {
+    if (!collecting || !collector?.addComponent) return components;
+    const own = props.components ?? {};
+    return new Proxy(components, {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && !own[key as keyof FormComponents]) {
+          collector.addComponent?.(key);
+        }
+        return Reflect.get(target, key, receiver);
+      },
+    });
+  }, [collecting, collector, components, props.components]);
 
   if (collecting) {
     collector?.markForm();
@@ -192,6 +205,7 @@ export function Form(props: FormProps) {
       addField() {},
       markForm() {},
       addText: (text) => collector?.addText?.(text),
+      addComponent: (name) => collector?.addComponent?.(name),
     };
     for (const text of [
       props.title,
@@ -205,7 +219,7 @@ export function Form(props: FormProps) {
     return (
       <TranslateContext.Provider value={i18n}>
         <FormContext.Provider value={ctx}>
-          <ComponentsContext.Provider value={components}>
+          <ComponentsContext.Provider value={tracked}>
             <ScopeContext.Provider value={ROOT_SCOPE}>{parts.loose}</ScopeContext.Provider>
             {parts.steps.map((step, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: steps are positional
@@ -877,8 +891,12 @@ function InteractiveForm({
 
   // Project theme ids always match; anything else (a crafted preview URL) would
   // otherwise be spliced into the CSS selector below.
-  // A form's own theme is scoped to the form, so `theme copy` rewrites its CSS to the form id.
-  const theme = props.theme ?? runtime.theme;
+  // A form's own theme is scoped to the form, so its CSS targets the form id.
+  const own =
+    props.theme && runtime.preview && runtime.themeDraft
+      ? { ...runtime.themeDraft, components: props.theme.components }
+      : props.theme;
+  const theme = own ?? runtime.theme;
   const scope = props.theme ? runtime.formId : runtime.themeId;
   const themeId = scope && THEME_ID_RE.test(scope) ? scope : 'default';
   const themeCss = useMemo(

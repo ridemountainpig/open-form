@@ -22,7 +22,13 @@ import {
   type ThemeTokens,
   toHex,
 } from '../../schema/index.ts';
-import { ApiError, saveThemeTokens, type ThemeDetail, type ThemeFont } from './api.ts';
+import {
+  ApiError,
+  type DesignDetail,
+  type DesignTarget,
+  saveThemeTokens,
+  type ThemeFont,
+} from './api.ts';
 import { FontPicker } from './font-picker.tsx';
 import { formatBytes } from './format.ts';
 import { type Translate, useT } from './i18n.tsx';
@@ -406,16 +412,21 @@ export function ContrastList({ tokens, scheme }: { tokens: Theme; scheme: Palett
 }
 
 export function DesignPanel({
+  target,
   detail,
   draft,
   onDraft,
   onFontsChanged,
+  onPalette,
 }: {
-  detail: ThemeDetail;
+  target: DesignTarget;
+  detail: DesignDetail;
   draft: ThemeTokens | null;
   onDraft(draft: ThemeTokens | null): void;
   /** A font was downloaded into the theme. */
   onFontsChanged(): void;
+  /** The palette being edited, so a preview can show it. */
+  onPalette?(palette: Palette): void;
 }) {
   const t = useT();
   const saved = detail.tokens;
@@ -442,6 +453,7 @@ export function DesignPanel({
   const forced = tokens.colorScheme;
   const showDark = !forced && tokens.dark !== false;
   const active: Palette = forced ? forced : showDark ? palette : 'light';
+  useEffect(() => onPalette?.(active), [active, onPalette]);
 
   const set = (next: Partial<ThemeTokens>) => onDraft({ ...tokens, ...next });
   const setColor = (key: ThemeColorKey, value: string | undefined) => {
@@ -476,7 +488,7 @@ export function DesignPanel({
     setSaving(true);
     setMessage(undefined);
     try {
-      await saveThemeTokens(detail.id, patch);
+      await saveThemeTokens(target, patch);
       setMessage({ tone: 'ok', text: t('design.saved', { file: detail.file }) });
     } catch (err) {
       setMessage({
@@ -490,7 +502,7 @@ export function DesignPanel({
 
   return (
     <div>
-      <AskAgent detail={detail} />
+      <AskAgent target={target} detail={detail} />
 
       <Section title={t('design.quick')}>
         <ColorToken
@@ -692,7 +704,7 @@ export function DesignPanel({
 
       {picking !== undefined && (
         <FontPicker
-          themeId={detail.id}
+          target={target}
           folder={`${detail.file.replace(/[^/]*$/, '')}fonts/`}
           installed={detail.fonts}
           onPicked={fontPicked}
@@ -754,14 +766,14 @@ function countChanges(patch: ReturnType<typeof diffTokens>): number {
 }
 
 /** The main way to change a theme: say what you want and hand it to your agent. */
-function AskAgent({ detail }: { detail: ThemeDetail }) {
+function AskAgent({ target, detail }: { target: DesignTarget; detail: DesignDetail }) {
   const t = useT();
   const [request, setRequest] = useState('');
   const [copied, setCopied] = useState(false);
   const id = useId();
 
   const copy = async () => {
-    const prompt = t('design.agentPrompt', {
+    const prompt = t(target.kind === 'form' ? 'design.formAgentPrompt' : 'design.agentPrompt', {
       id: detail.id,
       file: detail.file,
       request: request.trim(),

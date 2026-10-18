@@ -8,6 +8,7 @@ import type {
   Locale,
   Messages,
   PageSchema,
+  Theme,
 } from '../schema/index.ts';
 import type { FormStore } from './store.ts';
 import type { FormTheme } from './theme.ts';
@@ -76,6 +77,8 @@ export type FormRuntime = {
   redirect?: (url: string) => void;
   /** Preview only: lets Studio jump to any step. Jumping turns submission off. */
   previewControl?: { subscribe(listener: (command: PreviewCommand) => void): () => void };
+  /** Preview only: unsaved tokens from Studio's Adjust panel, in place of the form's own theme's tokens. */
+  themeDraft?: Theme;
 };
 
 export const RuntimeContext = createContext<FormRuntime>({ mode: 'interactive' });
@@ -120,6 +123,8 @@ export type Collector = {
   /** Every string that goes through translation, for coverage checks. */
   addText?(text: string): void;
   addField(field: FieldSchema, validator: CustomValidator | undefined): void;
+  /** A component slot the form renders, so `check` can spot theme components it never uses. */
+  addComponent?(name: string): void;
   markForm(): void;
 };
 

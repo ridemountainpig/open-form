@@ -1,6 +1,7 @@
 ---
 title: Overview
-description: One CLI to scaffold, run, check and ship your forms.
+seoTitle: "CLI overview: scaffold, run and ship forms"
+description: "One open-form CLI to scaffold, develop, check, build and serve forms, and the package.json scripts every workspace gets."
 ---
 
 Open Form ships a single binary, `open-form`, in the `@open-form-build/core`
@@ -21,10 +22,11 @@ command runs inside that workspace.
 }
 ```
 
-So day to day you type `pnpm dev`, `pnpm build` and `pnpm start`, and
-`pnpm exec open-form <command>` for the rest. These docs use pnpm; with npm,
-yarn or bun, run the CLI as `npx open-form`, `yarn open-form` or
-`bunx open-form`.
+So day to day you run the `dev`, `build` and `start` scripts, and the
+`open-form` binary for the rest: `npx open-form <command>`,
+`pnpm exec open-form <command>`, `yarn open-form <command>` or
+`bunx open-form <command>`. Commands in these docs come in a tab for each
+package manager.
 
 ## Commands
 
@@ -35,11 +37,11 @@ yarn or bun, run the CLI as `npx open-form`, `yarn open-form` or
 | [`build`](/docs/cli/build) | Build for production. |
 | [`start`](/docs/cli/start) | Serve the production build: forms, API, SQLite. |
 | [`check [id]`](/docs/cli/check) | Load forms like the server does and print their schema, or the error. |
-| [`create <id>`](/docs/cli/create) | Create a new form from the starter, optionally with a copy of a theme (`--theme`). |
+| [`create <id>`](/docs/cli/create) | Create a new form from the starter, with its own `theme/index.ts`, optionally from a theme's tokens (`--theme`). |
 | [`delete <id>`](/docs/cli/delete) | Delete a form, its files and every response. |
 | [`list`](/docs/cli/list) | List forms and their response counts. |
 | [`responses export <formId>`](/docs/cli/responses-export) | Export responses as CSV, Excel or JSON. |
-| [`theme list\|copy\|check\|add\|font`](/docs/cli/theme) | List themes, copy one into a form, check contrast, add a starter to `themes/`, download a Google Fonts family. |
+| [`theme list\|check\|add\|font`](/docs/cli/theme) | List reference themes, check contrast, add a starter to `themes/`, download a Google Fonts family. |
 | [`comments [id]`](/docs/cli/comments) | List review comments left in Studio. |
 | [`sync:skills`](/docs/cli/sync-skills) | Update the agent skills in `.agents/skills/`. |
 

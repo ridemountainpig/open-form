@@ -19,9 +19,9 @@ export type OpenFormRouteOptions = {
   root?: string;
   /** `open-form build` output directory. Default `dist`. */
   outDir?: string;
-  /** Default: SQLite at `OPEN_FORM_DB`, else `.open-form/open-form.db`. Needs a persistent disk. */
+  /** Default: SQLite at `OPEN_FORM_DB`, else `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`. Needs a persistent disk. */
   storage?: StorageAdapter;
-  /** Default: `OPEN_FORM_SECRET`, else a generated `.open-form/secret`. */
+  /** Default: `OPEN_FORM_SECRET`, else a `secret` file generated next to the database. */
   secret?: string;
   /**
    * Who may use the admin API. Default: sign in with `OPEN_FORM_ADMIN_PASSWORD`

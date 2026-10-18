@@ -78,7 +78,10 @@ export function toFormDefinition(id: string, mod: FormModule): LoadedFormDefinit
     );
   }
   const config = mod.config ?? {};
-  const { schema, validators, texts } = collectFormSchema(mod.default, { id, config });
+  const { schema, validators, texts, components } = collectFormSchema(mod.default, {
+    id,
+    config,
+  });
   assertValidConfig(id, config, schema);
-  return { id, schema, validators, texts, config, version: schemaVersion(schema) };
+  return { id, schema, validators, texts, components, config, version: schemaVersion(schema) };
 }

@@ -3,9 +3,9 @@ title: open-form check
 description: Load forms the way the server does and print their schema, or the exact error.
 ---
 
-```bash
-pnpm exec open-form check            # every form
-pnpm exec open-form check meetup     # one form
+```npm
+npx open-form check         # every form
+npx open-form check meetup  # one form
 ```
 
 Loads each form through the same SSR and render-to-collect path the server uses,
@@ -29,13 +29,21 @@ verifies a form before anyone opens it, and it works whether or not
 - **Schema** — each step and its condition, and each field: `name`, type,
   `required`, the number of options, a custom validator, and its own `<When>`
   condition. `v…` is a fingerprint of the schema; it changes when the fields do.
-  The header line says `own theme` when the form has `forms/<id>/theme/`, or
-  `default look` when it doesn't.
+  The header line says `own theme` when the form imports its
+  `forms/<id>/theme/`, or `default look` when it doesn't.
 - **Policy** — `maxResponses`, `uniqueBy`, and `opensAt` / `closesAt` with the
   time zone they're read in.
 - **Imports** — a warning when a form imports from `themes/` or from another
-  form's folder. A form keeps its own copy of its look (`open-form theme copy`),
-  so changing a theme or another form never changes it.
+  form's folder. A form's look is written for it in its own `theme/`, so
+  changing a theme or another form never changes it.
+- **Unapplied theme** — a warning when `forms/<id>/theme/` has a look file
+  but the form's `index.tsx` doesn't import it, so the form shows the default
+  look.
+- **Unused theme components** — a warning when the form's own theme defines
+  components for parts the form never renders: a `Rating` in a form without a
+  rating, or a `Select` that `<Form components>` replaces. Chrome (`Layout`,
+  `Header`, `Progress`, `Nav`, `Button`, `Success`, `Notice`,
+  `LanguageSwitch`, `Field`) is never flagged.
 - **One response per** — a warning when `uniqueBy` names a field that isn't
   there, or one that's optional or conditional: responses that leave it blank or
   hidden aren't limited.
@@ -61,7 +69,8 @@ by edited text.
 With `--json`, each form is an object with `id`, `ok`, `version`, `theme`,
 `schema`, `submissions`, `timeZone`, `warnings` and `languages`; a form that
 failed is `{ id, ok: false, error }`. `theme` is the project-relative path of the
-form's own theme file, such as `forms/meetup/theme/index.tsx`, or `null`.
+form's own theme file, such as `forms/meetup/theme/index.tsx`, or `null` when
+the form has none or doesn't import it.
 
 The command exits with code 1 when any form fails to load, or when there's no
 form with the `id` you gave. Warnings don't change the exit code.

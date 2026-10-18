@@ -17,6 +17,8 @@ export type CollectedForm = {
   validators: Map<string, CustomValidator>;
   /** Every string respondents can see, in render order — what translations must cover. */
   texts: string[];
+  /** The component slots the form renders, sorted. Not part of the schema. */
+  components: string[];
 };
 
 export type Collection = {
@@ -39,6 +41,7 @@ export function createCollection(config?: FormConfig, { dedupe = false } = {}): 
   const entries: Entry[] = [];
   const seen = new Set<string>();
   const texts = new Set<string>(configTexts(config));
+  const components = new Set<string>();
   let forms = 0;
 
   const collector: Collector = {
@@ -61,6 +64,9 @@ export function createCollection(config?: FormConfig, { dedupe = false } = {}): 
     },
     addText(text) {
       if (text.trim()) texts.add(text);
+    },
+    addComponent(name) {
+      components.add(name);
     },
   };
 
@@ -111,7 +117,10 @@ export function createCollection(config?: FormConfig, { dedupe = false } = {}): 
       };
       if (config?.title) schema.title = config.title;
       if (config?.description) schema.description = config.description;
-      return { collected: { schema, validators, texts: [...texts] }, problems: [...problems] };
+      return {
+        collected: { schema, validators, texts: [...texts], components: [...components].sort() },
+        problems: [...problems],
+      };
     },
   };
 }

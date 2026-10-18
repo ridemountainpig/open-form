@@ -120,7 +120,7 @@
                 "patterns": [
                   {
                     "group": ["**/themes/**"],
-                    "message": "A form owns its look: copy the theme in with `open-form theme copy <theme> <form>` and import ./theme instead."
+                    "message": "Themes are references: write what this form needs in its own ./theme/, reading the theme, and import that instead."
                   }
                 ]
               }

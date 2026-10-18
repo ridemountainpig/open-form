@@ -9,6 +9,7 @@ import {
   PanelLeftOpen,
   PencilLine,
   RotateCw,
+  SlidersHorizontal,
   Smartphone,
   Tablet,
   UserCheck,
@@ -39,6 +40,7 @@ import {
 } from '../lib/preview-channel.ts';
 import { type SchemaInfo, useResource } from './api.ts';
 import { type Comment, EditPanel } from './edit-panel.tsx';
+import { FormDesign } from './form-design.tsx';
 import { useFormDetail } from './form-detail.tsx';
 import { useT } from './i18n.tsx';
 import { IS_APPLE } from './sidebar.tsx';
@@ -156,8 +158,9 @@ export function Preview() {
 
   // Edit mode (dev only: the dev server stamps source locations on the form).
   // Both belong to the form they were made on, never to the next one shown here.
-  const [editingForm, setEditingForm] = useState<string | null>(null);
-  const editing = editingForm === formId;
+  const [mode, setMode] = useState<{ formId: string; mode: 'edit' | 'adjust' } | null>(null);
+  const editing = mode?.formId === formId && mode.mode === 'edit';
+  const adjusting = mode?.formId === formId && mode.mode === 'adjust';
   const [picked, setPicked] = useState<{ formId: string; pick: InspectPick } | null>(null);
   const selection = picked?.formId === formId ? picked.pick : null;
   // The selection now, for saves that finish after the user picked something else.
@@ -189,7 +192,7 @@ export function Preview() {
     [formId],
   );
   const leave = useCallback(() => {
-    setEditingForm(null);
+    setMode(null);
     select(null);
   }, [select]);
   const onMissing = useCallback(
@@ -254,7 +257,7 @@ export function Preview() {
   };
 
   // Edit mode needs the room for its panel, so the rail shows just the numbers there too.
-  const compact = editing || stepsCollapsed;
+  const compact = editing || adjusting || stepsCollapsed;
   const toggleSteps = useCallback(() => setStepsCollapsed((collapsed) => !collapsed), []);
   useEffect(() => {
     try {
@@ -520,27 +523,36 @@ export function Preview() {
             )}
             <div className="ml-auto flex items-center gap-1">
               {appConfig.dev && (
-                <span title={t('edit.editHint')}>
-                  <Segmented<'preview' | 'edit'>
-                    label={t('edit.mode')}
-                    value={editing ? 'edit' : 'preview'}
-                    onChange={(mode) => (mode === 'edit' ? setEditingForm(formId) : leave())}
-                    options={[
-                      { value: 'preview', label: t('edit.preview'), icon: <Eye aria-hidden /> },
-                      {
-                        value: 'edit',
-                        label: t('edit.edit'),
-                        icon: <PencilLine aria-hidden />,
-                        detail:
-                          commentList.length > 0 ? (
-                            <span className="rounded-full bg-current/15 px-1.5 text-[10.5px] tabular-nums">
-                              {commentList.length}
-                            </span>
-                          ) : null,
-                      },
-                    ]}
-                  />
-                </span>
+                <Segmented<'preview' | 'edit' | 'adjust'>
+                  label={t('edit.mode')}
+                  value={editing ? 'edit' : adjusting ? 'adjust' : 'preview'}
+                  onChange={(next) => {
+                    if (next === 'preview') return leave();
+                    if (next === 'adjust') select(null);
+                    setMode({ formId, mode: next });
+                  }}
+                  options={[
+                    { value: 'preview', label: t('edit.preview'), icon: <Eye aria-hidden /> },
+                    {
+                      value: 'edit',
+                      label: t('edit.edit'),
+                      title: t('edit.editHint'),
+                      icon: <PencilLine aria-hidden />,
+                      detail:
+                        commentList.length > 0 ? (
+                          <span className="rounded-full bg-current/15 px-1.5 text-[10.5px] tabular-nums">
+                            {commentList.length}
+                          </span>
+                        ) : null,
+                    },
+                    {
+                      value: 'adjust',
+                      label: t('adjust.mode'),
+                      title: t('adjust.hint'),
+                      icon: <SlidersHorizontal aria-hidden />,
+                    },
+                  ]}
+                />
               )}
               <Button
                 variant="ghost"
@@ -595,9 +607,10 @@ export function Preview() {
             className={cx(
               'grid items-start gap-4 @3xl:gap-5',
               editing && '@4xl:grid-cols-[minmax(0,1fr)_20rem]',
+              adjusting && '@4xl:grid-cols-[minmax(0,1fr)_22rem]',
             )}
           >
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-[radial-gradient(circle_at_1px_1px,rgb(0_0_0/0.06)_1px,transparent_0)] [background-size:16px_16px] p-3 sm:p-6 dark:border-zinc-800 dark:bg-[radial-gradient(circle_at_1px_1px,rgb(255_255_255/0.06)_1px,transparent_0)]">
+            <div className="flex min-w-0 flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-[radial-gradient(circle_at_1px_1px,rgb(0_0_0/0.06)_1px,transparent_0)] [background-size:16px_16px] p-3 sm:p-6 dark:border-zinc-800 dark:bg-[radial-gradient(circle_at_1px_1px,rgb(255_255_255/0.06)_1px,transparent_0)]">
               {(shown.inspecting || revealable) && (
                 <div className="flex max-w-full items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12px] text-zinc-600 shadow-[0_1px_2px_rgb(0_0_0/0.04)] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
                   <Eye className="size-3.5 shrink-0" aria-hidden />
@@ -658,6 +671,14 @@ export function Preview() {
                   onCommented={onCommented}
                   onClose={leave}
                 />
+              </aside>
+            )}
+            {adjusting && (
+              <aside
+                aria-label={t('adjust.panel')}
+                className="flex max-h-[80dvh] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white @4xl:sticky @4xl:top-6 @4xl:max-h-[calc(100dvh-3rem)] dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <FormDesign formId={formId} frame={frame} onClose={leave} />
               </aside>
             )}
           </div>

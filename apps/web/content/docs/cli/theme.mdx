@@ -1,63 +1,29 @@
 ---
 title: open-form theme
-description: List themes, copy one into a form, check contrast, add a starter, and add Google Fonts.
+description: List reference themes, check contrast, add a starter, and add Google Fonts.
 ---
 
-Themes in your project's `themes/` folder are references for new forms. A form
-uses one by keeping its own copy in `forms/<id>/theme/`. See
-[Themes](/docs/core-feature/themes). `open-form theme` has five subcommands.
+Themes in your project's `themes/` folder are references for new forms: a form
+starts from one's tokens with
+[`open-form create <id> --theme <theme>`](/docs/cli/create), and its own look
+lives in `forms/<id>/theme/`. See [Themes](/docs/core-feature/themes).
+`open-form theme` has four subcommands.
 
 ## theme list
 
-```bash
-pnpm exec open-form theme list
+```npm
+npx open-form theme list
 ```
 
 Lists the project's themes with the one-line description from each `THEME.md`,
-and how to copy one into a form. Then it lists the starters: `brutalist`,
+and how to start a form from one. Then it lists the starters: `brutalist`,
 `classic`, `conversational`, `editorial` and `terminal`.
-
-## theme copy
-
-```bash
-pnpm exec open-form theme copy terminal meetup
-pnpm exec open-form theme copy brand meetup --force
-```
-
-Copies a theme into `forms/<form>/theme/`, where the form owns it. The theme
-comes from `themes/<theme>` when the project has one with that id, otherwise
-from the starter of that name. Everything in the theme's folder is copied —
-`index.ts` or `index.tsx`, CSS, `fonts/` — except `THEME.md`, which stays with
-the reference; a single-file `themes/<id>.ts` becomes `theme/index.ts` and
-takes the fonts it imports from `themes/fonts/` along.
-Selectors scoped to `[data-of-theme="<theme>"]` are rewritten to the form id,
-and the command warns about any that still target another id.
-
-Then it prints what to add to the form, with the copy's own `index.ts` or
-`index.tsx`, unless the form already imports from `./theme/`. If that import
-names the other file — say `./theme/index.ts` after `--force` replaced it with
-a theme that has components — it warns you to update the import instead.
-
-```tsx title="forms/meetup/index.tsx"
-import theme from './theme/index.tsx'; // above the form's own CSS
-import './meetup.css';
-
-<Form theme={theme}>…</Form>
-```
-
-From then on, changing or deleting the theme in `themes/` doesn't affect the
-form. To start a new form with a copy already wired up, use
-[`open-form create <id> --theme <theme>`](/docs/cli/create).
-
-| Flag | Default | Description |
-| --- | --- | --- |
-| `-f, --force` | off | Replace the form's existing `theme/` folder. Without it, the command stops. |
 
 ## theme check
 
-```bash
-pnpm exec open-form theme check <id>
-pnpm exec open-form theme check <form> --form
+```npm
+npx open-form theme check <id>
+npx open-form theme check <form> --form
 ```
 
 Checks the WCAG contrast of every color pair forms actually use, in light and
@@ -88,15 +54,16 @@ token's lightness and keeping its hue.
 
 ## theme add
 
-```bash
-pnpm exec open-form theme add editorial
-pnpm exec open-form theme add editorial --as brand
+```npm
+npx open-form theme add editorial
+npx open-form theme add editorial --as brand
 ```
 
 Copies a starter's whole folder into `themes/<name>/`: its tokens, `THEME.md`,
 and any components and CSS it has. It's a reference to adapt into your own
-look; forms use it through `theme copy`. Editing it later only affects forms
-you copy it into afterwards.
+look; new forms start from its tokens with `create --theme`, and agents read
+the rest while writing a form's look. Editing it later never changes an
+existing form.
 
 | Flag | Default | Description |
 | --- | --- | --- |
@@ -105,10 +72,10 @@ you copy it into afterwards.
 
 ## theme font
 
-```bash
-pnpm exec open-form theme font brand Inter
-pnpm exec open-form theme font brand Noto Sans TC
-pnpm exec open-form theme font meetup Inter --form
+```npm
+npx open-form theme font brand Inter
+npx open-form theme font brand Noto Sans TC
+npx open-form theme font meetup Inter --form
 ```
 
 Downloads a [Google Fonts](https://fonts.google.com) family into the `fonts/`

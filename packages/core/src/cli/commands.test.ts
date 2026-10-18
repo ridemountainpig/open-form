@@ -28,4 +28,10 @@ describe('componentName', () => {
     expect(componentName('2026-survey')).toBe('Form2026Survey');
     expect(starterForm('email', 'Email')).toContain('export default function EmailForm()');
   });
+
+  it('applies the look the form owns', () => {
+    const source = starterForm('meetup', 'Meetup');
+    expect(source).toContain("import theme from './theme/index.ts';");
+    expect(source).toContain('<Form theme={theme}>');
+  });
 });

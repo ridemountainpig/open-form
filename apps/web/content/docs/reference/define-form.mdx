@@ -1,6 +1,7 @@
 ---
 title: defineForm
-description: Every key of a form's config export, with defaults.
+seoTitle: "defineForm: form config reference"
+description: "Every key of a form's config export, with defaults: title, language, schedule, submission limits, spam protection, drafts and the success screen."
 ---
 
 Each form exports its config from `forms/<id>/index.tsx`: its title, language,
@@ -22,19 +23,18 @@ export const config = defineForm({
 });
 ```
 
-The form's look isn't config: it's the form's own theme.
-`open-form theme copy <theme> <id>` (or `open-form create <id> --theme <theme>`)
-copies one into `forms/<id>/theme/`, and the form imports it and passes it to
+The form's look isn't config: it's the form's own theme in `forms/<id>/theme/`,
+which `open-form create <id>` writes (from a theme's tokens with
+`--theme <theme>`). The form imports it and passes it to
 [`<Form theme>`](/docs/components/form#theme):
 
 ```tsx
-import theme from './theme/index.tsx';
+import theme from './theme/index.ts';
 
 <Form theme={theme}>…</Form>
 ```
 
-A theme without components, such as `classic`, is `theme/index.ts` instead;
-`open-form theme copy` prints the import to use.
+It's `theme/index.tsx` once it adds components.
 
 <Callout type="info">
   A form's config is bundled into the browser. Secrets — webhook URLs, API

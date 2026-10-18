@@ -26,6 +26,7 @@ import {
   reportPick,
   reportPreviewNav,
 } from '../lib/preview-channel.ts';
+import { formDraftKey, useThemeDraft } from '../lib/theme-preview.ts';
 import '../../react/styles.css';
 import { type Inspector, startInspector } from './inspector.ts';
 import { MissingPage } from './not-found.tsx';
@@ -157,6 +158,9 @@ export function PublicFormPage() {
     [embedded, formId, preview, thumb],
   );
 
+  // Unsaved tokens from Studio's Adjust panel for this form's own theme.
+  const themeDraft = useThemeDraft(embedded ? formDraftKey(formId) : undefined);
+
   const previewControl = useMemo(
     () =>
       embedded
@@ -260,6 +264,7 @@ export function PublicFormPage() {
         params.get('lang') ?? (thumb ? sourceLocale(config, appConfig.locale) : undefined),
       onLocaleChange,
       previewControl,
+      themeDraft: themeDraft ?? undefined,
       onSubmitted,
       redirect,
     }),
@@ -274,6 +279,7 @@ export function PublicFormPage() {
       thumb,
       onLocaleChange,
       previewControl,
+      themeDraft,
       onSubmitted,
       redirect,
     ],

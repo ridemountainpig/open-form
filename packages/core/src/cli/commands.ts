@@ -4,8 +4,9 @@ import path from 'node:path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { deleteForm } from '../editing/delete-form.ts';
-import { copyThemeToForm } from '../editing/theme-files.ts';
+import { findReferenceTheme, writeFormTheme } from '../editing/theme-files.ts';
 import { resolveDatabasePath } from '../node/secret.ts';
+import { pickTokens, type Theme } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
 import { exportFormResponses, FORM_ID_RE } from '../server/index.ts';
 import { createSqliteStorage } from '../sqlite/index.ts';
@@ -38,10 +39,9 @@ function titleCase(id: string): string {
     .join(' ');
 }
 
-/** `themeImport`: the form's own theme, e.g. `./theme/index.tsx` after `theme copy`. */
-export function starterForm(id: string, title: string, themeImport?: string): string {
-  const theme = themeImport ? `\nimport theme from '${themeImport}';` : '';
-  return `import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';${theme}
+export function starterForm(id: string, title: string): string {
+  return `import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
+import theme from './theme/index.ts';
 
 export const config = defineForm({
   title: ${JSON.stringify(title)},
@@ -50,7 +50,7 @@ export const config = defineForm({
 
 export default function ${componentName(id)}() {
   return (
-    <Form${themeImport ? ' theme={theme}' : ''}>
+    <Form theme={theme}>
       <Text name="name" label="Name" required autoComplete="name" />
       <Email name="email" label="Email" required />
       <Textarea name="message" label="Message" maxLength={2000} />
@@ -72,23 +72,38 @@ export async function createForm(
   const { formsRoot } = projectPaths(userCwd, await loadUserConfig(userCwd));
   const dir = path.join(formsRoot, id);
   if (existsSync(dir)) throw new Error(`forms/${id} already exists.`);
+  const reference = opts.theme ? await findReferenceTheme(userCwd, opts.theme) : undefined;
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, 'index.tsx');
-  const title = opts.title ?? titleCase(id);
-  await writeFile(file, starterForm(id, title));
-  let themeLine = '';
-  if (opts.theme) {
-    try {
-      const copied = await copyThemeToForm(userCwd, opts.theme, id);
-      await writeFile(file, starterForm(id, title, copied.importPath));
-      themeLine = `    ${chalk.dim(`Its look is a copy of ${opts.theme} in`)} ${path.relative(userCwd, copied.dir)}/\n`;
-    } catch (error) {
-      await rm(dir, { recursive: true, force: true });
-      throw error;
+  let themeLines = '';
+  try {
+    await writeFile(file, starterForm(id, opts.title ?? titleCase(id)));
+    if (reference) {
+      const tokens = await withSsrServer(userCwd, async (server) => {
+        const mod = (await server.ssrLoadModule(reference.file)) as { default?: Theme };
+        if (!mod.default) throw new Error(`${reference.file} has no default export.`);
+        return pickTokens(mod.default);
+      });
+      const result = await writeFormTheme(userCwd, id, { tokens, themeFile: reference.file });
+      const from =
+        reference.source === 'project' ? `themes/${opts.theme}` : `the ${opts.theme} starter`;
+      const doc =
+        reference.source === 'project'
+          ? `themes/${opts.theme}/THEME.md`
+          : `node_modules/@open-form-build/core/themes/${opts.theme}/THEME.md`;
+      const fonts = result.fonts.length ? ` and ${result.fonts.join(', ')}` : '';
+      themeLines =
+        `    ${chalk.dim(`Its look starts from ${from}'s tokens${fonts} in`)} ${path.relative(userCwd, result.file)}\n` +
+        `    ${chalk.dim('Write its styles and components for this form, reading')} ${doc}\n`;
+    } else {
+      await writeFormTheme(userCwd, id);
     }
+  } catch (error) {
+    await rm(dir, { recursive: true, force: true });
+    throw error;
   }
   const rel = path.relative(userCwd, file);
-  process.stdout.write(`\n  ${chalk.green(glyph.check)} Created ${chalk.bold(rel)}\n${themeLine}`);
+  process.stdout.write(`\n  ${chalk.green(glyph.check)} Created ${chalk.bold(rel)}\n${themeLines}`);
   process.stdout.write(`    ${chalk.dim('Preview at')} ${chalk.cyan(`/f/${id}`)}\n\n`);
   return file;
 }

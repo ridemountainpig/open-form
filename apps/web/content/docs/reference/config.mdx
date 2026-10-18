@@ -1,6 +1,7 @@
 ---
 title: open-form.config.ts
-description: Project-wide configuration with defineConfig.
+seoTitle: "open-form.config.ts: project config"
+description: "Project-wide settings in open-form.config.ts: storage, port, locale, protection, proxies, webhooks, embedding and Studio access."
 ---
 
 The project config lives at the workspace root. Every key is optional.
@@ -37,7 +38,7 @@ loads `.env` itself.
     themesDir: {
       type: 'string',
       default: "'themes'",
-      description: 'Folder that holds the reference themes new forms start from. Forms keep their own copy in forms/<id>/theme/.',
+      description: 'Folder that holds the reference themes new forms start from. Each form’s own look is in forms/<id>/theme/.',
     },
     port: {
       type: 'number',

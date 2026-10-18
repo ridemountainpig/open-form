@@ -52,6 +52,20 @@ export function fontStack(family: string, category: string): string {
   return `${name}, ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif`;
 }
 
+/** The families a stack names, however they're quoted: `'Inter', "Fira Sans", serif` → `inter`, `fira sans`, `serif`. */
+export function stackFamilies(stack: string | undefined): string[] {
+  return (stack ?? '')
+    .split(',')
+    .map((part) =>
+      part
+        .trim()
+        .replace(/^(["'])(.*)\1$/, '$2')
+        .trim()
+        .toLowerCase(),
+    )
+    .filter(Boolean);
+}
+
 function descriptor(block: string, name: string): string | undefined {
   return new RegExp(`${name}\\s*:\\s*([^;]+);`).exec(block)?.[1]?.trim();
 }

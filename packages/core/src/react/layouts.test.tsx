@@ -77,6 +77,24 @@ describe('theme scope', () => {
     expect(html).not.toContain('#ff0000');
     expect(render(<Own />, { formId: 'x"]{}' })).toContain('.of-root[data-of-theme="default"]');
   });
+
+  it("previews Studio's unsaved tokens over a form's own theme, keeping its components", () => {
+    const own = {
+      colors: { primary: '#00aa55' },
+      components: { Header: () => <p>own header</p> },
+    };
+    const draft = { colors: { primary: '#123abc' } };
+    const Own = () => (
+      <Form theme={own}>
+        <Text name="name" label="Name" />
+      </Form>
+    );
+    const previewed = render(<Own />, { formId: 'meetup', preview: true, themeDraft: draft });
+    expect(previewed).toContain('{--of-primary:#123abc}');
+    expect(previewed).toContain('own header');
+    const live = render(<Own />, { formId: 'meetup', themeDraft: draft });
+    expect(live).toContain('{--of-primary:#00aa55}');
+  });
 });
 
 describe('layout slots', () => {

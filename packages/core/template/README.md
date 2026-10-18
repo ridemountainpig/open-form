@@ -11,8 +11,8 @@ pnpm start      # serve forms + API + SQLite
 - Forms live in `forms/<id>/index.tsx` and are served at `/f/<id>`.
 - Responses are stored in `.open-form/open-form.db` (SQLite, gitignored).
 - Export: `pnpm exec open-form responses export <id> -o responses.xlsx` (or `.csv`, `.json`).
-- Each form owns its look: a copy of a theme in `forms/<id>/theme/`, made with `pnpm exec open-form theme copy <theme> <id>` (or `pnpm exec open-form create <id> --theme <theme>`). Edit it freely; no other form changes.
-- `themes/` holds your reference themes for new forms — browse them in Studio → Themes. Start from a starter (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) with `pnpm exec open-form theme add <starter>`, or ask your agent for a new one (`create-theme`). Changing a theme there never changes a form that already copied it.
+- Each form owns its look in `forms/<id>/theme/`: its tokens, plus the CSS and components it needs. `pnpm exec open-form create <id> --theme <theme>` starts it from a theme's tokens; your agent writes the rest, and Studio's preview has **Adjust** for colors, fonts and shape. No other form changes.
+- `themes/` holds your reference themes for new forms — browse them in Studio → Themes. Start from a starter (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) with `pnpm exec open-form theme add <starter>`, or ask your agent for a new one (`create-theme`). Forms never import them, so changing a theme there never changes a form.
 
 ## Deploying
 
@@ -22,7 +22,7 @@ pnpm start      # serve forms + API + SQLite
 | --- | --- |
 | `PORT` | Port to listen on (default: `port` in `open-form.config.ts`, else 3000) |
 | `HOST` | Address to bind (default `0.0.0.0`) |
-| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio in production; a password you choose and sign in with. At least 16 characters, not one word or pattern repeated — a passphrase of a few words works |
+| `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio in production; a password you choose and sign in with. At least 16 characters with at least 8 different ones, not one word or pattern repeated — a passphrase of a few words works |
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`) |
 | `OPEN_FORM_SECRET` | Signs form tokens and Studio sessions; at least 16 characters (default: generated into a `secret` file next to the database) |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs `webhooks` deliveries ([Standard Webhooks](https://www.standardwebhooks.com)); base64, optionally prefixed `whsec_` |

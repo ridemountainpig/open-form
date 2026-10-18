@@ -1,6 +1,7 @@
 ---
 title: Layouts and chrome
-description: Replace how fields, steps and screens look without touching behavior.
+seoTitle: "Form layouts and custom components"
+description: "Replace how fields, steps and screens look without touching behavior: theme components, the Stepper, Split and Focus layouts, and closed screens."
 ---
 
 Built-in fields own behavior; their markup comes from replaceable
@@ -19,13 +20,16 @@ import { Form, SplitLayout } from '@open-form-build/core';
 
 | Component | Renders | Key props |
 | --- | --- | --- |
-| `Field` | Label, help and error around every field | `field`, `children`, `as`, `hideLabel`, `hideDescription` |
+| `Field` | Label, help and error around every field except `Matrix`, which `Matrix` and `MatrixRow` draw themselves | `field`, `children`, `as`, `hideLabel`, `hideDescription` |
 | `TextInput` | `Text`, `Email`, `Url`, `Tel`, `NumberInput`, `DateInput` | `field`, `type`, `value`, `onChange(string)`, `unit`, `placeholder`, `inputMode`, `autoComplete`, `maxLength`, `min` / `max` / `step` |
 | `Textarea` | `Textarea` | `field`, `value`, `onChange`, `rows`, `maxLength`, `placeholder`, `autoComplete` |
 | `Select` | `Select` | `field`, `options`, `value`, `onChange`, `placeholder` |
+| `PhoneInput` | `Tel` with a country picker | `field`, `country`, `countries`, `onCountryChange(country)`, `value`, `onChange(string)`, `countryLabel`, `placeholder`, `autoComplete`. The default renders the active `Select` and `TextInput` side by side |
 | `ChoiceGroup` | `RadioGroup`, `CheckboxGroup` | `field`, `options`, `multiple`, `selected`, `onToggle(value, checked)`, `variant` |
 | `Checkbox` | `Checkbox` | `field`, `checked`, `onChange(boolean)`, `children`, `markRequired` |
 | `Rating` | `Rating` | `field`, `scores`, `value`, `onChange(number)`, `lowLabel`, `highLabel` |
+| `Matrix` | The frame of a `Matrix`: question, column headings, rows | `label`, `description`, `required`, `columns`, `children` (the rows) |
+| `MatrixRow` | One row of a `Matrix` | `field` (the row's own), `columns`, `value`, `onChange(string)`, `markRequired` |
 | `Layout` | The whole form | The regions below |
 | `Header` | Title and description | `title`, `description` |
 | `Progress` | Step indicator | `nav`, `label` ("Step 2 of 5", localized) |
@@ -50,7 +54,7 @@ asterisk, for a custom `Field` or `Checkbox`.
 ## Override order
 
 `defaultComponents` ← the theme's `components` ← `<Form components>`. The
-theme is the form's own copy, passed as `<Form theme>`, so its components apply
+theme is the form's own look, passed as `<Form theme>`, so its components apply
 to that form only; `<Form components>` wins over them for one-off changes.
 
 ```ts title="forms/survey/theme/index.ts"
@@ -60,7 +64,7 @@ export default defineTheme({ components: { Layout: StepperLayout } });
 ```
 
 ```tsx title="forms/survey/index.tsx"
-import theme from './theme/index.ts'; // the path `theme copy` printed
+import theme from './theme/index.ts';
 
 <Form theme={theme} components={{ ChoiceGroup: Chips }}>…</Form>
 ```
@@ -136,6 +140,18 @@ function Centered({ state, header, progress, content, alert, actions }: LayoutUI
 
 A custom `Nav` or `Button` must keep `type="submit"` on the primary button so
 Enter still advances.
+
+On a translated form, the language picker (`.of-lang`) sits 12px inside the
+top-right corner of `.of-root` and is 32px tall. The built-in layouts start
+below it. A custom `Layout`, or CSS that changes `.of-root`'s padding, has to
+keep that corner clear at every width, phones included. Reserve the room, or
+move the picker into space your layout leaves free:
+
+```css
+.of-root[data-of-theme="acme"]:has(> .of-lang) {
+  padding-top: clamp(56px, 6vw, 64px);
+}
+```
 
 ## Closed screens — `Notice`
 

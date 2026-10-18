@@ -1,6 +1,7 @@
 ---
 title: Overview
-description: How Open Form and your coding agent work together.
+seoTitle: "Agent skills overview"
+description: "How Open Form works with your coding agent: the skills and AGENTS.md rules in every workspace, which skill fits which request, and how they update."
 ---
 
 Open Form treats your coding agent as the author. You describe a form in chat,
@@ -17,7 +18,7 @@ symlinks so Claude Code finds them; copies on Windows):
 - [`/create-form`](/docs/skills/create-form) — the workflow for a new form.
 - [`/form-authoring`](/docs/skills/form-authoring) — the technical reference.
 - [`/create-theme`](/docs/skills/create-theme) — a new look in `themes/<id>/`,
-  for forms to copy.
+  a reference new forms take their look from.
 - [`/current-form`](/docs/skills/current-form) — resolves "this form", "this
   step", "this field".
 - [`/apply-comments`](/docs/skills/apply-comments) — turns notes left in Studio
@@ -34,9 +35,10 @@ calls for one.
   form id and its public URL, `/f/<id>`.
 - The file exports `config = defineForm({ … })` and a default component that
   renders exactly one `<Form>`.
-- A form owns its look: its own copy of a theme in `forms/<id>/theme/`, passed
-  as `<Form theme={theme}>`. Themes in `themes/` are references for new forms,
-  so a form never imports from them.
+- A form owns its look in `forms/<id>/theme/`, passed as `<Form theme={theme}>`:
+  its tokens plus the CSS and components it uses. Themes in `themes/` are
+  references for new forms, so a form never imports from them or copies one
+  whole.
 - Import from `@open-form-build/core` and the form's own folder only. Don't add
   dependencies.
 - Never hand-roll what the runtime does: no `useState` for field values, no
@@ -79,7 +81,7 @@ whose contents differ, and again while it runs whenever the installed package's
 skills change (for example, `@open-form-build/core` linked from source) — so don't edit
 them in place.
 
-- After upgrading (`pnpm up open-form`), run `pnpm sync:skills` to update them
+- After upgrading `@open-form-build/core`, run the `sync:skills` script to update them
   without starting the dev server. See
   [`open-form sync:skills`](/docs/cli/sync-skills).
 - Set `OPEN_FORM_SKIP_SKILLS_SYNC=1` to stop `dev` from syncing.

@@ -39,7 +39,7 @@ the dev server writes it to `node_modules/.open-form/current.json`:
 | Field | Meaning |
 | --- | --- |
 | `formId` / `formPath` | The open form and its source file. `null` on the Studio forms list and the Themes pages. |
-| `formThemePath` | The form's own theme, `forms/<id>/theme/index.ts(x)`, or `null` when the form has the default look, the `classic` starter, which the agent copies in before tweaking it. "This form's colors" means this file and the CSS beside it, never a theme in `themes/`. |
+| `formThemePath` | The form's own theme, `forms/<id>/theme/index.ts(x)`, or `null` when the form has the default look; the agent then creates `theme/index.ts` before tweaking it. "This form's colors" means this file and the CSS beside it, never a theme in `themes/`. |
 | `view` | `forms`, `preview`, `responses`, `schema`, `settings` (Studio tabs), `form` (the public page) or `themes`. |
 | `step` | 0-based index into the form's `<Page>`s, hidden conditional pages included. |
 | `stepNumber` / `totalSteps` | What you see: "step 2 of 3". |

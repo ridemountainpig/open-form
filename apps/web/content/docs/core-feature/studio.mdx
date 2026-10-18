@@ -1,13 +1,14 @@
 ---
 title: Studio
+seoTitle: "Studio: the admin UI for your forms"
 description: Browse forms, preview them on every device, read responses and adjust the schedule.
 ---
 
 Studio is the admin UI that ships with Open Form. Start the dev server and open
 it in the browser:
 
-```bash
-pnpm dev    # Studio at http://localhost:3000/studio
+```npm
+npm run dev    # Studio at http://localhost:3000/studio
 ```
 
 The sidebar lists **Forms** and, under `open-form dev`, **Themes** with their
@@ -60,7 +61,8 @@ Folders are stored in `forms/.folders.json`, so they live in git with the forms:
 Folders are only an organizing layer. Forms stay flat in `forms/<id>/`, and their
 ids, URLs and responses don't change when you move them. Folders are editable
 under `open-form dev`. A production build takes a snapshot and shows it read-only,
-only to people signed in to Studio.
+only to people signed in to Studio, or to everyone in a
+[public read-only Studio](/docs/reference/config#a-public-demo-studio).
 
 ### Preferences
 
@@ -78,9 +80,22 @@ in a new tab. An unpublished form has neither, but its Preview still works.
 The toolbar switches the device frame (**Desktop**, **Tablet**, **Mobile**) and,
 on a translated form, the **Preview language**: any language the form is
 translated into, or **Respondent’s language** to pick one as the respondent's
-browser would. Under `open-form dev` it also switches between **Preview** and
-**Edit** (see [Edit mode](/docs/core-feature/edit-mode)); **Edit** shows how
-many notes the form has. **Reload preview** starts the form again from the top.
+browser would. Under `open-form dev` it also switches between **Preview**,
+**Edit** (see [Edit mode](/docs/core-feature/edit-mode)), which shows how many
+notes the form has, and **Adjust**. **Reload preview** starts the form again
+from the top.
+
+**Adjust** opens a panel beside the preview for the form's own look in
+`forms/<id>/theme/index.ts`: primary and background colors, body and heading
+fonts (including **Add from Google Fonts…**), radius, color scheme, every color
+in the light and dark palettes, button radius, width, spacing and frame, with a
+contrast check. The preview follows each change before you save, showing the
+palette you're editing, and **Save to source** writes the tokens into the form's
+theme file. A form without a `theme/` folder gets **Create look file**, which
+writes `theme/index.ts` and passes it to the form's `<Form>`; if the `<Form>`
+already gets another theme, it says so and changes nothing. For anything
+bigger, describe the change and copy the prompt to your agent. See
+[Themes](/docs/core-feature/themes#adjust-a-forms-look).
 
 - **Steps** lists every page with its title and question count. Pages tagged
   **If** only appear for certain answers. Click any step to open it directly. While
@@ -144,11 +159,12 @@ languages and translation coverage, webhooks, and the embed snippet. See
 
 `/studio/themes` is a gallery of the reference themes in `themes/`: what you and
 your agent start new forms from. Each theme's page previews it on a sample form,
-shows its `THEME.md` and spec, and gives the `open-form theme copy` command and
-an agent prompt for using it in a form. **New theme** adds a starter, and
-**Adjust** fine-tunes a reference's tokens, which affects only forms copied from
-it later. A form's own look lives in `forms/<id>/theme/`; change it there by hand
-or with your agent. The Themes pages are available under `open-form dev` only.
+shows its `THEME.md` and spec, and gives the `open-form create <form> --theme`
+command and an agent prompt for using it in a form. **New theme** adds a
+starter, and **Adjust** fine-tunes a reference's tokens, which affects only
+forms started from it later. A form's own look lives in `forms/<id>/theme/`;
+change it with **Adjust** in its preview, by hand or with your agent. The Themes
+pages are available under `open-form dev` only.
 See [Themes](/docs/core-feature/themes).
 
 ## Routes
@@ -172,13 +188,14 @@ See [Themes](/docs/core-feature/themes).
   including you. Set it before you expose dev in any way: a reverse proxy or a
   raw TCP tunnel (`ssh -R`, `socat`) can make a remote request look local.
 - **`open-form start`** enables Studio only when `OPEN_FORM_ADMIN_PASSWORD` is set
-  (at least 16 characters, not one word or pattern repeated; a passphrase
-  works). Without it, Studio and the admin API don't exist and the server only
-  serves public forms. With
+  (at least 16 characters with at least 8 different ones, not one word or
+  pattern repeated; a passphrase works). Without it, Studio and the admin API
+  don't exist and the server only serves public forms. With
   [`studio: { public: 'read-only' }`](/docs/reference/config#a-public-demo-studio),
   anyone can open Studio and read it without signing in; the sidebar says
   *read-only*, and deleting responses or changing the schedule still takes the
-  password, through **Sign in** at the bottom of the sidebar.
+  password, through the **Sign in to make changes** button at the bottom of the
+  sidebar.
 
 Set `OPEN_FORM_ADMIN_PASSWORD` in the environment or in the workspace's `.env`,
 which every `open-form` command except `init` loads; a variable already set in
