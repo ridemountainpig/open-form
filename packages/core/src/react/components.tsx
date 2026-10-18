@@ -7,6 +7,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
 } from 'react';
@@ -63,6 +64,42 @@ export type SelectUIProps = {
   placeholder: string;
 };
 
+export type PhoneInputUIProps = {
+  field: FieldApi;
+  /** ISO 3166-1 alpha-2 code of the picked country, e.g. `'TW'`. */
+  country: string;
+  /** The countries on offer, labeled like `"Taiwan +886"`. */
+  countries: FieldOption[];
+  onCountryChange(country: string): void;
+  /** The number after the country code, as typed. */
+  value: string;
+  onChange(value: string): void;
+  /** Accessible name for the country picker, localized ("Country code"). */
+  countryLabel: string;
+  placeholder?: string;
+  autoComplete?: string;
+};
+
+export type MatrixUIProps = {
+  label?: string;
+  description?: string;
+  /** Every row is required: mark the question rather than each row. */
+  required: boolean;
+  columns: FieldOption[];
+  /** The rows, each drawn by `MatrixRow`. */
+  children: ReactNode;
+};
+
+export type MatrixRowUIProps = {
+  /** The row's own field: its label, value, error and focus. */
+  field: FieldApi;
+  columns: FieldOption[];
+  value: string;
+  onChange(value: string): void;
+  /** Show the required marker on this row (not every row is required). */
+  markRequired: boolean;
+};
+
 export type ChoiceGroupUIProps = {
   field: FieldApi;
   options: FieldOption[];
@@ -99,7 +136,7 @@ export type LayoutUIProps = {
   /** `'success'` / `'unavailable'` put a Success / Notice in `content` instead of a step. */
   state: 'form' | 'success' | 'unavailable';
   nav: FormNav;
-  /** Preview-only notice that the live form is closed. */
+  /** Status line above the step: a restored draft, or in Studio's preview, inspecting or the live form being closed. */
   banner: ReactNode;
   /** The form's title and description, rendered by `Header`. */
   header: ReactNode;
@@ -176,9 +213,12 @@ export type FormComponents = {
   TextInput: ComponentType<TextInputUIProps>;
   Textarea: ComponentType<TextareaUIProps>;
   Select: ComponentType<SelectUIProps>;
+  PhoneInput: ComponentType<PhoneInputUIProps>;
   ChoiceGroup: ComponentType<ChoiceGroupUIProps>;
   Checkbox: ComponentType<CheckboxUIProps>;
   Rating: ComponentType<RatingUIProps>;
+  Matrix: ComponentType<MatrixUIProps>;
+  MatrixRow: ComponentType<MatrixRowUIProps>;
 };
 
 export function RequiredMark() {
@@ -297,6 +337,58 @@ function DefaultSelect({ field, options, value, onChange, placeholder }: SelectU
   );
 }
 
+// Built from the active Select and TextInput, so the pair matches any theme.
+// Errors belong to the number: only it shows as invalid and takes focus.
+function DefaultPhoneInput({
+  field,
+  country,
+  countries,
+  onCountryChange,
+  value,
+  onChange,
+  countryLabel,
+  placeholder,
+  autoComplete,
+}: PhoneInputUIProps) {
+  const { Select, TextInput } = useFormComponents();
+  const pickerId = `${field.id}-country`;
+  const picker: FieldApi = {
+    ...field,
+    id: pickerId,
+    error: undefined,
+    invalid: false,
+    required: true,
+    ref: () => {},
+    controlProps: {
+      ...field.controlProps,
+      id: pickerId,
+      name: `${field.name}-country`,
+      'aria-invalid': undefined,
+      'aria-label': countryLabel,
+    },
+  };
+  return (
+    <div className="of-phone">
+      <Select
+        field={picker}
+        options={countries}
+        value={country}
+        onChange={onCountryChange}
+        placeholder={countryLabel}
+      />
+      <TextInput
+        field={field}
+        type="tel"
+        inputMode="tel"
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
 function DefaultChoiceGroup({
   field,
   options,
@@ -382,6 +474,83 @@ function DefaultRating({ field, scores, value, onChange, lowLabel, highLabel }: 
         </div>
       )}
     </>
+  );
+}
+
+// A grid on a wide form; on a narrow one each row is a card with its options
+// spelled out. Column headings are visual only: every radio is labelled.
+function DefaultMatrix({ label, description, required, columns, children }: MatrixUIProps) {
+  const id = useId();
+  return (
+    <fieldset
+      className="of-field of-matrix"
+      aria-describedby={description ? `${id}-description` : undefined}
+      style={{ '--of-matrix-columns': columns.length } as object}
+    >
+      {label && (
+        <legend className="of-label">
+          {label}
+          {required && <RequiredMark />}
+        </legend>
+      )}
+      {description && (
+        <p className="of-help" id={`${id}-description`}>
+          {description}
+        </p>
+      )}
+      <div className="of-matrix-grid">
+        <div className="of-matrix-head" aria-hidden="true">
+          <span />
+          {columns.map((column) => (
+            <span key={column.value}>{column.label}</span>
+          ))}
+        </div>
+        {children}
+      </div>
+    </fieldset>
+  );
+}
+
+function DefaultMatrixRow({ field, columns, value, onChange, markRequired }: MatrixRowUIProps) {
+  const { controlProps } = field;
+  return (
+    <div
+      className="of-matrix-row"
+      role="radiogroup"
+      aria-labelledby={`${field.id}-label`}
+      aria-describedby={controlProps['aria-describedby']}
+      aria-required={controlProps['aria-required']}
+      aria-invalid={controlProps['aria-invalid']}
+      data-invalid={field.invalid || undefined}
+    >
+      <div className="of-matrix-label">
+        <span id={`${field.id}-label`}>
+          {field.label}
+          {markRequired && <RequiredMark />}
+        </span>
+        {field.error && (
+          <span className="of-error" id={field.errorId}>
+            {field.error}
+          </span>
+        )}
+      </div>
+      {columns.map((column, index) => (
+        <label key={column.value} className="of-matrix-cell">
+          <input
+            ref={index === 0 ? field.ref : undefined}
+            type="radio"
+            className="of-radio"
+            name={field.name}
+            value={column.value}
+            checked={value === column.value}
+            data-of-loc={controlProps['data-of-loc']}
+            onBlur={field.onBlur}
+            onChange={() => onChange(column.value)}
+          />
+          <span className="of-matrix-option">{column.label}</span>
+        </label>
+      ))}
+    </div>
   );
 }
 
@@ -627,9 +796,12 @@ export const defaultComponents: FormComponents = {
   TextInput: DefaultTextInput,
   Textarea: DefaultTextarea,
   Select: DefaultSelect,
+  PhoneInput: DefaultPhoneInput,
   ChoiceGroup: DefaultChoiceGroup,
   Checkbox: DefaultCheckbox,
   Rating: DefaultRating,
+  Matrix: DefaultMatrix,
+  MatrixRow: DefaultMatrixRow,
 };
 
 export const ComponentsContext = createContext<FormComponents>(defaultComponents);

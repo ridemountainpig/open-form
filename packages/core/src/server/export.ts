@@ -56,10 +56,15 @@ export function formatCell(value: unknown): string {
 
 // Spreadsheet apps execute cells starting with these characters as formulas.
 const FORMULA_START = /^[=+\-@\t\r]/;
+// A `+` and digits alone, like an international phone number, can't call or
+// reference anything, so it stays as stored.
+const PLUS_DIGITS = /^\+\d+$/;
 
 function csvCell(value: unknown): string {
   let text = formatCell(value);
-  if (typeof value !== 'number' && FORMULA_START.test(text)) text = `'${text}`;
+  if (typeof value !== 'number' && FORMULA_START.test(text) && !PLUS_DIGITS.test(text)) {
+    text = `'${text}`;
+  }
   // `;` and tabs too: Excel splits on them in many locales, which would start a new cell.
   return /[",;\t\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }

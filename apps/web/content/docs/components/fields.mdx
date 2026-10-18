@@ -1,6 +1,7 @@
 ---
 title: Fields
-description: Every built-in input, what it stores, and how it validates.
+seoTitle: "Built-in form fields and validation"
+description: "Every built-in field, from text and choices to ratings, matrices and phone numbers: what each one stores and how it's validated on both sides."
 ---
 
 Fields are behavior: each one wires a value into the form's state,
@@ -61,7 +62,7 @@ skipping see no answer, so put answers they need from the start in
 | `<Text>` | string | `placeholder`, `minLength`, `maxLength`, `pattern`, `patternMessage`, `autoComplete` |
 | `<Email>` | string | Same as `Text`; checks the email format |
 | `<Url>` | string | Same as `Text`; requires `http://` or `https://` |
-| `<Tel>` | string | Same as `Text`; loose phone format |
+| `<Tel>` | string | Same as `Text`; loose phone format. With `defaultCountry` or `countries`, a country picker and `+886912345678` answers ([Phone numbers](#phone-numbers)) |
 | `<Textarea>` | string | Same as `Text`, plus `rows` (default `4`); shows a counter when `maxLength` is set |
 | `<NumberInput>` | number | `min`, `max`, `step`, `integer`, `unit` (a suffix like `"years"`), `placeholder` |
 | `<DateInput>` | `YYYY-MM-DD` string | `min`, `max` as `YYYY-MM-DD` |
@@ -70,6 +71,7 @@ skipping see no answer, so put answers they need from the start in
 | `<CheckboxGroup>` | string[] | `options`, `minSelected`, `maxSelected`, `variant` |
 | `<Checkbox>` | boolean | Children are the text beside the box |
 | `<Rating>` | number | `min` (default `1`), `max` (default `5`), `lowLabel`, `highLabel` |
+| `<Matrix>` | One string per row | `rows`, `columns`, `label`, `description`, `required` ([Matrix](#matrix)) |
 
 Text answers are trimmed before they're validated and stored, and a blank
 answer counts as no answer.
@@ -108,6 +110,97 @@ renders: a choice field with no options fails to load.
 or `'cards'` (a responsive grid of tiles). It's a hint: a theme's own
 `ChoiceGroup` may render choices its own way. Prefer `RadioGroup` for five or
 fewer options and `Select` for longer lists.
+
+## Matrix
+
+A matrix asks several single-choice questions that share one set of answers —
+rate each part of a course, say — and lays them out as a grid: the answers
+head the columns once, each row is a question.
+
+```tsx
+<Matrix
+  label="Rate the course"
+  columns={['Poor', 'Fair', 'Good', 'Great']}
+  rows={[
+    { name: 'content', label: 'Content' },
+    { name: 'teacher', label: 'Teacher' },
+    { name: 'venue', label: 'Venue', required: false },
+  ]}
+  required
+/>
+```
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `columns` | `OptionInput[]` | The answers every row offers, like `options`. |
+| `rows` | `{ name, label, required? }[]` | One question per row. `name` is its key, like any field's. |
+| `required` | `boolean` | Every row must be answered; a row's own `required` overrides it. |
+| `label`, `description` | `string` | The question above the grid. |
+
+Each row is an ordinary single-choice field, exactly as if you'd written a
+`RadioGroup` with the columns as its options: it's stored under its own
+`name`, gets its own column in Responses and exports, can be named in
+[`<When>`](/docs/components/when) (`<When field="venue" equals="Poor">`), and
+shows its own error. The row's `label` is its column heading, so make it
+readable on its own.
+
+The [shared props](#shared-props) don't apply to a matrix: it has no `name`,
+`defaultValue` or `validate` of its own, and rows take only `name`, `label`
+and `required`. To start a row with an answer, pass it in
+[`<Form defaultValues>`](/docs/components/form#props) under the row's `name`.
+
+On a wide form the grid has a column per answer; on a narrow one, or a phone,
+each row becomes a card listing its answers. Prefer a matrix to a run of
+`RadioGroup`s when three or more questions share the same answers.
+
+## Phone numbers
+
+A plain `<Tel>` is one box that takes any phone-like answer, stored as typed.
+Give it `defaultCountry` or `countries` and it becomes two: a country picker
+and the number.
+The answer is stored as one international number, so Responses and exports get
+a single, consistent column:
+
+```tsx
+<Tel name="phone" label="Mobile" defaultCountry="TW" required />
+<Tel name="phone" label="Mobile" countries={['TW', 'HK', 'JP']} />
+```
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `defaultCountry` | `PhoneCountry` | The country the picker starts on, as an ISO 3166-1 alpha-2 code: `'TW'`, `'US'`, `'GB'`. With `countries` it must be one of them; without it, the picker starts on the first of `countries`. |
+| `countries` | `PhoneCountry[]` | The countries in the picker, in this order. Numbers without one of their country codes are rejected. Without it the picker lists every country, sorted by name. |
+
+An unknown country code, an empty `countries` list, or a `defaultCountry` that
+isn't in `countries` is a mistake in the form,
+so the form fails to load with an error naming the field, as `open-form check`
+shows.
+
+- Someone in Taiwan who picks `Taiwan +886` and types `0912-345-678` is stored
+  as `+886912345678`: spaces, dashes and brackets go, and so does the leading
+  `0` people dial at home. Where a leading 0 belongs to the number (Italy), it
+  stays.
+- An answer typed with its own code, such as a pasted `+44 20 7946 0958` or
+  `0044 20 7946 0958` (`00` is read as `+`), keeps that code. Once the
+  respondent leaves the box, the picker switches to that country if it's one
+  of `countries`; otherwise the answer is rejected. Picking another country
+  afterwards replaces the code, so the picker always shows the stored one.
+- Country names follow the form's language.
+- The check is the international format: `+`, a country code and up to 15
+  digits. Per-country lengths aren't checked, so real numbers are never turned
+  away; use `pattern` for a stricter rule. With `countries`, the country code
+  must be one of theirs. Countries that share a code, like the US and Canada,
+  accept each other's numbers.
+- `pattern`, `minLength` and `maxLength` test the stored international number,
+  not what was typed: `pattern="^\+8869\d{8}$"` accepts only Taiwanese mobiles.
+- `defaultValue`, and a `<Form defaultValues>` entry, can be international
+  (`'+886912345678'`) or national (`'0912345678'`): a national one is stored
+  with the starting country's code, like a typed answer.
+- The number box autocompletes as `tel-national`; pass `autoComplete` to change it.
+
+The picker and the box are the theme's own `Select` and `TextInput`, so they
+match any theme. To draw them differently, replace
+[`PhoneInput`](/docs/components/layouts#replaceable-components).
 
 ## Autocomplete
 

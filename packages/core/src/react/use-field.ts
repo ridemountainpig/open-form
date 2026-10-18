@@ -50,6 +50,8 @@ export type FieldApi = {
     'aria-invalid': boolean | undefined;
     'aria-describedby': string | undefined;
     'aria-required': boolean | undefined;
+    /** Names a control that has no visible label of its own, like a phone field's country picker. */
+    'aria-label'?: string;
     onBlur(): void;
     /** Dev only: where the field is written, for Studio's inspector. */
     'data-of-loc'?: string;
@@ -74,6 +76,8 @@ function toDefinition(opts: UseFieldOptions): FieldDefinition {
     'step',
     'minSelected',
     'maxSelected',
+    'international',
+    'countries',
   ] as const;
   for (const key of keys) {
     const value = opts[key];

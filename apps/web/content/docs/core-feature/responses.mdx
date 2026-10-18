@@ -57,8 +57,9 @@ Open a form and choose **Responses**.
   work together with search, and the count shows how many of the form's
   responses are left. A filtered question's column stays in the table.
 - **Sort** from a column heading: click it for **Sort ascending**, **Sort
-  descending** or **Filter**. The sorted column shows an arrow and stays in the
-  table, and a chip above the table reverses the order when clicked; its **×**
+  descending** or **Filter**, plus **Remove sort** on the sorted column. The
+  sorted column shows an arrow and stays in the table, and a chip above the
+  table reverses the order when clicked; its **×**
   goes back to newest first. Text sorts A–Z regardless of case, numbers by value,
   and select, radio and checkbox-group answers in the order of the form's
   options. Empty answers come last either way; responses with the same answer
@@ -69,7 +70,10 @@ Open a form and choose **Responses**.
   response as question and answer pairs.
 - **Delete** removes one response after a confirmation. Select rows to delete
   several (Shift-click ticks a range), or select every response on the page,
-  every response, or every response matching your search and filters.
+  every response, or every response matching your search and filters. In a
+  [public read-only Studio](/docs/reference/config#a-public-demo-studio),
+  visitors who haven't signed in can search, filter, open and export responses,
+  but see no checkboxes or **Delete**.
 
 <Callout type="warn">
   Deleting cannot be undone. Export first if you might need the data.
@@ -81,7 +85,7 @@ Open a form and choose **Responses**.
 | --- | --- |
 | Text, email, URL, phone, long text | contains, does not contain, is, is not, starts with, ends with, is empty, is not empty. Case doesn't matter. |
 | Number | `=`, `≠`, `>`, `<`, `≥`, `≤`, is empty, is not empty |
-| Select, radio | is, is not — pick one or more options |
+| Select, radio, matrix row | is, is not — pick one or more options; is empty, is not empty |
 | Checkbox group | has any of, has all of, has none of, is empty, is not empty |
 | Checkbox | is checked, is not checked |
 | Date | is on, is before, is after, is on or before, is on or after, is between, is empty, is not empty |
@@ -97,10 +101,10 @@ always contain every response, oldest first.
 In Studio's Responses tab, **Export** offers **Excel**, **CSV** and **JSON**.
 From the terminal:
 
-```bash
-pnpm exec open-form responses export meetup                      # CSV to stdout
-pnpm exec open-form responses export meetup -o responses.xlsx    # format from the extension
-pnpm exec open-form responses export meetup --format json -o responses-meetup.json
+```npm
+npx open-form responses export meetup                    # CSV to stdout
+npx open-form responses export meetup -o responses.xlsx  # format from the extension
+npx open-form responses export meetup --format json -o responses-meetup.json
 ```
 
 | Flag | Effect |

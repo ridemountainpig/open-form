@@ -60,6 +60,10 @@ export type FieldConstraints = {
   step?: number;
   minSelected?: number;
   maxSelected?: number;
+  /** Tel fields: answers are international numbers, `+` and the country code (`+886912345678`). */
+  international?: boolean;
+  /** Tel fields: the countries (ISO 3166-1 alpha-2) whose numbers are accepted. Implies `international`. */
+  countries?: string[];
 };
 
 export type FieldSchema = FieldConstraints & {

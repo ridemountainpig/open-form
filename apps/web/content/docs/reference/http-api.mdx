@@ -1,5 +1,6 @@
 ---
 title: HTTP API
+seoTitle: "HTTP API for submissions and export"
 description: The routes every Open Form server answers under /api, and the handler behind them.
 ---
 
@@ -17,12 +18,12 @@ the admin routes.
 | `POST` | `/api/forms/:id/submissions` | Public | Submit a response |
 | `GET` | `/api/forms` | Admin | Every form with response counts and status |
 | `GET` | `/api/forms/:id/schema` | Admin | Schema, config, effective schedule and status |
-| `GET` | `/api/forms/:id/submissions` | Admin | Responses, paged: `limit` (default 50, max 500) and `offset` as whole numbers, `q` |
+| `GET` | `/api/forms/:id/submissions` | Admin | Responses, paged: `limit` (default 50, max 500) and `offset` as whole numbers, `q`, and Studio's `filter` and `sort` as JSON (see [below](#listing-responses)) |
 | `GET` | `/api/forms/:id/submissions/:sid` | Admin | One response with the schema it was submitted under |
 | `DELETE` | `/api/forms/:id/submissions/:sid` | Admin | Delete one response |
 | `POST` | `/api/forms/:id/submissions/delete` | Admin | Delete 1–500 responses: `{ ids }` |
-| `PUT` | `/api/forms/:id/overrides` | Admin | Save Studio's schedule changes |
-| `DELETE` | `/api/forms/:id/overrides` | Admin | Go back to the schedule in code |
+| `PUT` | `/api/forms/:id/overrides` | Admin | Save Studio's schedule, time zone and Published changes |
+| `DELETE` | `/api/forms/:id/overrides` | Admin | Go back to the settings in code |
 | `GET` | `/api/forms/:id/export` | Admin | Download responses: `format=csv`, `xlsx` or `json` |
 | `GET` | `/api/studio/folders` | Admin | Studio's form folders, from `forms/.folders.json` (as of the build in production) |
 | `GET` | `/api/studio/session` | Open | Whether this browser is signed in to Studio |
@@ -107,6 +108,28 @@ that ends TLS the server sees `http://` while the browser sends an `https://`
 `Origin` for the same host; that counts as the same origin. The reverse, an
 `http://` page calling an `https://` server, doesn't.
 
+## Listing responses
+
+`GET /api/forms/:id/submissions` answers
+`{ items, total, columns, limit, offset }`, newest first unless `sort` says
+otherwise. `total` counts the
+responses that match `q` and `filter`, and `columns` lists the table's columns
+as `{ key, header, type? }`: the newest schema's fields in order, then fields
+only older versions had.
+
+`filter` and `sort` are what Studio's Responses tab sends, as URL-encoded JSON:
+
+- `filter`: `{ match?: 'all' | 'any', rules, timeZone? }`, where each rule is
+  `{ field?, op, value?, values?, to? }`; a rule without `field` tests when the
+  response was submitted. Up to 20 rules.
+- `sort`: `{ field?, direction: 'asc' | 'desc', values? }`; `values` orders a
+  choice question's answers by the options' order.
+
+Both types, `ResponseFilter` and `ResponseSort`, and their parsers
+`parseResponseFilter` and `parseResponseSort` are exported from
+`@open-form-build/core/server`. A value that isn't valid JSON or isn't a valid
+rule answers `400 bad_request`.
+
 ## Export
 
 `GET /api/forms/:id/export?format=csv` downloads every response as
@@ -114,9 +137,11 @@ that ends TLS the server sees `http://` while the browser sends an `https://`
 
 - **CSV** (default): `#`, `Submitted at`, `Language` on translated forms once
   a response has one, then one column per field headed by its label. Fields
-  that only older versions had keep their columns. UTF-8 with a BOM, and cells
-  that start with `=`, `+`, `-` or `@` are escaped so spreadsheets don't run
-  them as formulas.
+  that only older versions had keep their columns. UTF-8 with a BOM, and text
+  cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return are
+  escaped so spreadsheets don't run them as formulas, except a `+` followed
+  only by digits, such as an international phone number, which is written as
+  stored.
 - **xlsx**: the same columns with typed numbers and dates; `Submitted at` is
   shown in the form's time zone.
 - **json**: `[{ id, number, submittedAt, locale?, data }]`.

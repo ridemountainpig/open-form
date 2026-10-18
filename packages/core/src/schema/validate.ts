@@ -1,5 +1,6 @@
 import { evaluateAll, isFilled, ownValue } from './conditions.ts';
 import { format, formatDate, getMessages, type Messages } from './messages.ts';
+import { cleanPhone, isInternationalPhone, phoneInCountries } from './phone.ts';
 import { isStandardSchema, type StandardSchemaV1 } from './standard-schema.ts';
 import type {
   Condition,
@@ -36,8 +37,19 @@ const PHONE_RE = /^\+?[\d\s\-().]{6,}$/;
 const CUSTOM_MAX_DEPTH = 10;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function coerceValue(field: Pick<FieldSchema, 'type'>, raw: unknown): unknown {
+function isInternationalTel(field: Pick<FieldSchema, 'type' | 'international' | 'countries'>) {
+  return field.type === 'tel' && Boolean(field.international || field.countries);
+}
+
+export function coerceValue(
+  field: Pick<FieldSchema, 'type' | 'international' | 'countries'>,
+  raw: unknown,
+): unknown {
   if (raw === undefined || raw === null) return undefined;
+  if (isInternationalTel(field) && typeof raw === 'string') {
+    const cleaned = cleanPhone(raw.trim());
+    return cleaned === '' ? undefined : cleaned;
+  }
   switch (field.type) {
     case 'text':
     case 'email':
@@ -172,7 +184,14 @@ export function validateField(
       return messages.invalidEmail;
     }
     if (field.type === 'url' && !isValidUrl(value)) return messages.invalidUrl;
-    if (field.type === 'tel' && !PHONE_RE.test(value)) return messages.invalidPhone;
+    if (isInternationalTel(field)) {
+      if (!isInternationalPhone(value)) return messages.invalidPhone;
+      if (field.countries && !phoneInCountries(value, field.countries)) {
+        return messages.phoneCountry;
+      }
+    } else if (field.type === 'tel' && !PHONE_RE.test(value)) {
+      return messages.invalidPhone;
+    }
     if (field.pattern && !matchesPattern(field.pattern, value)) {
       return field.patternMessage ?? messages.pattern;
     }

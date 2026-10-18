@@ -1121,6 +1121,27 @@ describe('toCsv', () => {
     expect(csv).toContain(',"\'=1+1; b"\r\n');
   });
 
+  it('keeps international phone numbers as stored, but not formulas starting with +', () => {
+    const csv = toCsv(
+      [
+        { key: 'phone', header: 'Phone' },
+        { key: 'sum', header: 'Sum' },
+      ],
+      [
+        {
+          id: 'a',
+          formId: 'f',
+          number: 1,
+          formVersionId: 'v',
+          visitorHash: null,
+          createdAt: 'now',
+          data: { phone: '+886912345678', sum: '+1+cmd' },
+        },
+      ],
+    );
+    expect(csv).toContain(",+886912345678,'+1+cmd\r\n");
+  });
+
   it('quotes cells that a semicolon-separated Excel would split', () => {
     const csv = toCsv(
       [{ key: 'note', header: 'Note' }],

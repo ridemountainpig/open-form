@@ -10,6 +10,7 @@ export type Messages = {
   invalidEmail: string;
   invalidUrl: string;
   invalidPhone: string;
+  phoneCountry: string;
   invalidNumber: string;
   integer: string;
   minLength: string;
@@ -41,6 +42,7 @@ export type Messages = {
   shownWhen: string;
   optional: string;
   selectPlaceholder: string;
+  countryCode: string;
   successTitle: string;
   successMessage: string;
   closedTitle: string;
@@ -67,6 +69,7 @@ const en: Messages = {
   invalidEmail: 'Enter a valid email address.',
   invalidUrl: 'Enter a valid URL, starting with http:// or https://.',
   invalidPhone: 'Enter a valid phone number.',
+  phoneCountry: 'This country code isn’t accepted here.',
   invalidNumber: 'Enter a number.',
   integer: 'Enter a whole number.',
   minLength: 'Use at least {n} characters.',
@@ -100,6 +103,7 @@ const en: Messages = {
   shownWhen: 'Shown when {condition}',
   optional: 'Optional',
   selectPlaceholder: 'Select…',
+  countryCode: 'Country code',
   successTitle: 'Thank you!',
   successMessage: 'Your response has been recorded.',
   closedTitle: 'This form is closed',
@@ -126,6 +130,7 @@ const zhTW: Messages = {
   invalidEmail: '請輸入有效的 Email。',
   invalidUrl: '請輸入有效的網址（http:// 或 https:// 開頭）。',
   invalidPhone: '請輸入有效的電話號碼。',
+  phoneCountry: '這裡不接受這個國碼。',
   invalidNumber: '請輸入數字。',
   integer: '請輸入整數。',
   minLength: '至少需要 {n} 個字元。',
@@ -157,6 +162,7 @@ const zhTW: Messages = {
   shownWhen: '{condition}時顯示',
   optional: '選填',
   selectPlaceholder: '請選擇…',
+  countryCode: '國碼',
   successTitle: '感謝你的填寫！',
   successMessage: '我們已收到你的回覆。',
   closedTitle: '表單已關閉',
@@ -184,6 +190,7 @@ const zhCN: Messages = {
   invalidEmail: '请输入有效的邮箱地址。',
   invalidUrl: '请输入有效的网址（以 http:// 或 https:// 开头）。',
   invalidPhone: '请输入有效的电话号码。',
+  phoneCountry: '这里不接受这个国家代码。',
   invalidNumber: '请输入数字。',
   integer: '请输入整数。',
   minLength: '至少输入 {n} 个字符。',
@@ -215,6 +222,7 @@ const zhCN: Messages = {
   shownWhen: '{condition}时显示',
   optional: '选填',
   selectPlaceholder: '请选择…',
+  countryCode: '国家代码',
   successTitle: '感谢您的填写！',
   successMessage: '我们已收到您的回复。',
   closedTitle: '表单已关闭',
@@ -242,6 +250,7 @@ const ja: Messages = {
   invalidEmail: '有効なメールアドレスを入力してください。',
   invalidUrl: '有効なURLを入力してください（http:// または https:// で始まるもの）。',
   invalidPhone: '有効な電話番号を入力してください。',
+  phoneCountry: 'この国番号は使用できません。',
   invalidNumber: '数値を入力してください。',
   integer: '整数を入力してください。',
   minLength: '{n}文字以上で入力してください。',
@@ -275,6 +284,7 @@ const ja: Messages = {
   shownWhen: '{condition}のときに表示',
   optional: '任意',
   selectPlaceholder: '選択してください…',
+  countryCode: '国番号',
   successTitle: 'ありがとうございました！',
   successMessage: '回答を受け付けました。',
   closedTitle: 'このフォームは締め切りました',

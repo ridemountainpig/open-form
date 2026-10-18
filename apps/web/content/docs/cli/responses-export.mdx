@@ -1,12 +1,12 @@
 ---
 title: open-form responses export
-description: Export a form's responses as CSV, Excel or JSON.
+description: "Export a form's responses from the workspace's SQLite database as CSV, Excel or JSON, to stdout or a file, oldest first."
 ---
 
-```bash
-pnpm exec open-form responses export meetup                    # CSV to stdout
-pnpm exec open-form responses export meetup -o responses.xlsx  # Excel file
-pnpm exec open-form responses export meetup --format json > responses.json
+```npm
+npx open-form responses export meetup                    # CSV to stdout
+npx open-form responses export meetup -o responses.xlsx  # Excel file
+npx open-form responses export meetup --format json > responses.json
 ```
 
 Reads one form's responses from the workspace's SQLite database (`OPEN_FORM_DB`,
@@ -51,7 +51,10 @@ show as `�` so they can't send escape sequences to it. Files written with `-o`
 are readable by you only, and the `.gitignore` that `open-form init` writes
 keeps `responses*.csv`, `.xlsx` and `.json` at the workspace root out of git.
 CSV cells that contain a comma, semicolon, tab, quote or line break are quoted,
-and cells that would start a spreadsheet formula get a leading `'`.
+and cells that would start a spreadsheet formula get a leading `'`. A `+` followed
+only by digits, like an international phone number (`+886912345678`), can't run
+anything and is written as stored; spreadsheets may show it as a number, so
+export `.xlsx` to keep it as text there.
 
 When writing to a file, the summary line goes to stderr, so stdout stays clean
 for pipes.

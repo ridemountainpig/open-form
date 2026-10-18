@@ -8,6 +8,7 @@ export type {
   FormValues,
   Locale,
   OpenFormConfig,
+  PhoneCountry,
   ProtectionConfig,
   StandardSchemaV1,
   SubmissionPolicy,

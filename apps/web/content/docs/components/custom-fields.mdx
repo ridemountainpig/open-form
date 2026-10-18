@@ -1,6 +1,7 @@
 ---
 title: Custom fields
-description: Turn any React UI into a field with useField and FieldShell.
+seoTitle: "Custom form fields with useField"
+description: "Turn any React UI into a form field with useField and FieldShell: value, validation, errors, focus, ARIA and storage, just like the built-ins."
 ---
 
 Any React UI can be a field. `useField` connects it to the form — value,
@@ -94,7 +95,10 @@ export function PlanPicker({ name, label }: { name: string; label: string }) {
 produces to get its coercion and checks for free — a slider that yields a
 number should say `'number'` and pass `min` / `max`. The constraint props of
 built-in fields are accepted too: `minLength`, `maxLength`, `pattern`,
-`patternMessage`, `min`, `max`, `integer`, `step`, `minSelected`, `maxSelected`.
+`patternMessage`, `min`, `max`, `integer`, `step`, `minSelected`, `maxSelected`,
+and for `'tel'`, `international` (answers must be `+886912345678`-style
+numbers, cleaned of spaces and dashes) and `countries` (only those countries'
+codes; implies `international`).
 
 With `'custom'`, only `required` and `validate` apply, and the value is stored
 as it is. Keep it JSON-serializable and nested at most 10 levels deep; deeper

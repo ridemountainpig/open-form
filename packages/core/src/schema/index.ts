@@ -57,6 +57,18 @@ export {
   localeProblem,
   suggestLocale,
 } from './messages.ts';
+export type { PhoneCountry } from './phone.ts';
+export {
+  cleanPhone,
+  composePhone,
+  dialCode,
+  hasCountryCode,
+  isInternationalPhone,
+  isPhoneCountry,
+  PHONE_COUNTRIES,
+  phoneInCountries,
+  splitPhone,
+} from './phone.ts';
 export type {
   FilterableResponse,
   ResponseFilter,
