@@ -81,6 +81,18 @@ describe('writeThemeTokens', () => {
   });
 });
 
+describe('writeThemeTokens on one-line groups', () => {
+  it('adds to a one-line group on its line, and escapes what a string literal must', () => {
+    const source = "export default defineTheme({\n  dark: { primary: '#111' },\n});\n";
+    const out = writeThemeTokens(source, {
+      dark: { background: '#000' },
+      font: 'Odd\\Name\n"Inter"',
+    });
+    expect(out).toContain("dark: { primary: '#111', background: '#000' },");
+    expect(out).toContain(`font: '${'Odd\\\\Name\\n"Inter"'}',`);
+  });
+});
+
 describe('validatePatch', () => {
   it('accepts known tokens and rejects the rest', () => {
     expect(validatePatch({ radius: '8px', colors: { primary: 'oklch(0.6 0.1 160)' } })).toEqual({

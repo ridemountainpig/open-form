@@ -21,6 +21,11 @@ describe('pageHeaders', () => {
     );
   });
 
+  it('keeps Studio out of search results but leaves forms indexable', () => {
+    expect(pageHeaders('studio', {})['x-robots-tag']).toBe('noindex, nofollow');
+    expect(pageHeaders('form', {})['x-robots-tag']).toBeUndefined();
+  });
+
   it('leaves scripts on form pages alone and frames them per embed.origins', () => {
     const headers = pageHeaders('form', { embed: { origins: ['https://blog.example'] } });
     expect(headers['content-security-policy']).toBe("frame-ancestors 'self' https://blog.example");

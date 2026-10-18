@@ -3,6 +3,7 @@ import {
   type ComponentProps,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -130,7 +131,7 @@ export function Segmented<T extends string>({
   disabled?: boolean;
   title?: string;
   value: T | null;
-  options: Array<{ value: T; label: string; icon?: ReactNode; detail?: ReactNode }>;
+  options: Array<{ value: T; label: string; icon?: ReactNode; detail?: ReactNode; title?: string }>;
   onChange(value: T): void;
 }) {
   return (
@@ -145,6 +146,7 @@ export function Segmented<T extends string>({
           key={o.value}
           type="button"
           aria-pressed={value === o.value}
+          title={o.title}
           onClick={() => onChange(o.value)}
           className={cx(
             'focus-ring flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium whitespace-nowrap transition-colors [&_svg]:size-3.5',
@@ -267,6 +269,10 @@ export function PageHeader({
   );
 }
 
+const POPOVER_GAP = 4;
+const VIEWPORT_EDGE = 8;
+const DROPDOWN_MAX_HEIGHT = 384;
+
 export type MenuOption<T extends string> = {
   value: T;
   label: string;
@@ -284,6 +290,7 @@ export function ChoiceMenu<T extends string>({
   onSelect,
   placement = 'top',
   display = 'icon',
+  className,
 }: {
   label: string;
   trigger: ReactNode;
@@ -293,10 +300,15 @@ export function ChoiceMenu<T extends string>({
   placement?: 'top' | 'bottom';
   /** `icon`: a small square icon button; `button`: a bordered button showing `trigger`. */
   display?: 'icon' | 'button';
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
+
+  // Fixed and kept inside the viewport: a menu wider than its button would
+  // otherwise run off the screen's edge on a phone.
+  useAnchoredPanel(list, open, { side: placement === 'top' ? 'above' : 'below' });
 
   useEffect(() => {
     if (!open) return;
@@ -324,7 +336,7 @@ export function ChoiceMenu<T extends string>({
   };
 
   return (
-    <div ref={root} className="relative">
+    <div ref={root} className={cx('relative', className)}>
       <button
         type="button"
         aria-label={label}
@@ -335,7 +347,7 @@ export function ChoiceMenu<T extends string>({
         className={
           display === 'icon'
             ? 'focus-ring grid size-7 place-items-center rounded-md text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 [&_svg]:size-4'
-            : 'focus-ring flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 [&_svg]:size-3.5 [&_svg]:text-zinc-400'
+            : 'focus-ring flex h-8 w-full items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-[13px] font-medium whitespace-nowrap text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-zinc-400'
         }
       >
         {trigger}
@@ -346,10 +358,7 @@ export function ChoiceMenu<T extends string>({
           role="menu"
           aria-label={label}
           onKeyDown={onKeyDown}
-          className={cx(
-            'absolute right-0 z-50 min-w-40 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900',
-            placement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
-          )}
+          className="fixed z-50 w-max max-w-[calc(100vw-1rem)] min-w-40 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
         >
           {options.map((option) => (
             <button
@@ -361,7 +370,7 @@ export function ChoiceMenu<T extends string>({
                 onSelect(option.value);
                 setOpen(false);
               }}
-              className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] text-zinc-700 outline-none hover:bg-zinc-100 focus-visible:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:focus-visible:bg-zinc-800 [&_svg]:size-3.5"
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] whitespace-nowrap text-zinc-700 outline-none hover:bg-zinc-100 focus-visible:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:focus-visible:bg-zinc-800 [&_svg]:size-3.5 [&_svg]:shrink-0"
             >
               {option.icon}
               <span className="flex-1">{option.label}</span>
@@ -382,9 +391,57 @@ export function ChoiceMenu<T extends string>({
   );
 }
 
-const POPOVER_GAP = 4;
-const VIEWPORT_EDGE = 8;
-const DROPDOWN_MAX_HEIGHT = 384;
+/**
+ * Keep a `fixed` panel beside its parent: lined up with one of its edges, inside
+ * the viewport, and on the other side when the preferred one has no room.
+ */
+function useAnchoredPanel(
+  ref: RefObject<HTMLElement | null>,
+  open: boolean,
+  { align = 'end', side = 'below' }: { align?: 'start' | 'end'; side?: 'above' | 'below' },
+) {
+  const reposition = useRef<(() => void) | null>(null);
+  // The page around the anchor can move it without a scroll or resize (a
+  // toolbar that wraps), and that comes with a render, so follow it.
+  useLayoutEffect(() => reposition.current?.());
+  useLayoutEffect(() => {
+    const panel = ref.current;
+    const anchor = panel?.parentElement;
+    if (!open || !panel || !anchor) return;
+    const place = () => {
+      const box = anchor.getBoundingClientRect();
+      const { offsetWidth: width, offsetHeight: height } = panel;
+      const { clientWidth, clientHeight } = document.documentElement;
+      const left = align === 'end' ? box.right - width : box.left;
+      const below = box.bottom + POPOVER_GAP;
+      const above = box.top - POPOVER_GAP - height;
+      const fitsBelow = below + height <= clientHeight - VIEWPORT_EDGE;
+      const fitsAbove = above >= VIEWPORT_EDGE;
+      const top =
+        side === 'below'
+          ? fitsBelow || !fitsAbove
+            ? below
+            : above
+          : fitsAbove || !fitsBelow
+            ? above
+            : below;
+      panel.style.left = `${Math.max(VIEWPORT_EDGE, Math.min(left, clientWidth - width - VIEWPORT_EDGE))}px`;
+      panel.style.top = `${top}px`;
+    };
+    reposition.current = place;
+    place();
+    const resize = new ResizeObserver(place);
+    resize.observe(panel);
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      reposition.current = null;
+      resize.disconnect();
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [ref, open, align, side]);
+}
 
 /**
  * A panel anchored under its parent. It is `fixed` and placed from the parent's
@@ -412,38 +469,7 @@ export function Popover({
   align?: 'start' | 'end';
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const reposition = useRef<(() => void) | null>(null);
-  // The page around the anchor can move it without a scroll or resize (a
-  // toolbar that wraps), and that comes with a render, so follow it.
-  useLayoutEffect(() => reposition.current?.());
-  useLayoutEffect(() => {
-    const panel = ref.current;
-    const anchor = panel?.parentElement;
-    if (!open || !panel || !anchor) return;
-    const place = () => {
-      const box = anchor.getBoundingClientRect();
-      const { offsetWidth: width, offsetHeight: height } = panel;
-      const { clientWidth, clientHeight } = document.documentElement;
-      const left = align === 'end' ? box.right - width : box.left;
-      const below = box.bottom + POPOVER_GAP;
-      const above = box.top - POPOVER_GAP - height;
-      const flip = below + height > clientHeight - VIEWPORT_EDGE && above >= VIEWPORT_EDGE;
-      panel.style.left = `${Math.max(VIEWPORT_EDGE, Math.min(left, clientWidth - width - VIEWPORT_EDGE))}px`;
-      panel.style.top = `${flip ? above : below}px`;
-    };
-    reposition.current = place;
-    place();
-    const resize = new ResizeObserver(place);
-    resize.observe(panel);
-    window.addEventListener('scroll', place, true);
-    window.addEventListener('resize', place);
-    return () => {
-      reposition.current = null;
-      resize.disconnect();
-      window.removeEventListener('scroll', place, true);
-      window.removeEventListener('resize', place);
-    };
-  }, [open, align]);
+  useAnchoredPanel(ref, open, { align });
   useEffect(() => {
     if (!open) return;
     const anchor = ref.current?.parentElement;

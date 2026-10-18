@@ -161,6 +161,8 @@ export function pageHeaders(
       'x-frame-options': 'SAMEORIGIN',
       'referrer-policy': 'same-origin',
       'x-content-type-options': 'nosniff',
+      // An admin UI (even a public read-only demo) has nothing for search results.
+      'x-robots-tag': 'noindex, nofollow',
       ...hsts,
     };
   }

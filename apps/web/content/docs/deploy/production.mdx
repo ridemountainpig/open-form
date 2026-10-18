@@ -1,14 +1,15 @@
 ---
 title: Production
+seoTitle: "Self-host forms in production"
 description: Build once, run one Node process, and keep the database on a persistent disk.
 ---
 
 A production deployment is one Node.js process that serves the forms, the API,
 Studio and SQLite. There are no other services to run.
 
-```bash
-pnpm build    # open-form build
-pnpm start    # open-form start
+```npm
+npm run build  # open-form build
+npm start      # open-form start
 ```
 
 `open-form build` writes two things to `dist/`:
@@ -84,16 +85,17 @@ whenever the browser is on HTTPS. The proxy has to pass on the browser's `Host`
 header, as those platforms do; with nginx, add `proxy_set_header Host $host;`.
 
 Pages served over HTTPS carry `Strict-Transport-Security` (one year, this host
-only), so browsers keep using HTTPS. The server knows a page is on HTTPS when
-TLS reaches it directly or when it trusts the proxy's `X-Forwarded-Proto`
-(below). A Studio sign-in that reaches the server over plain HTTP from anywhere
-but `localhost` logs a warning once: the password and session cookie crossed
-the network unencrypted.
+only), so browsers keep using HTTPS. `open-form start` itself speaks plain HTTP,
+so it learns that a page is on HTTPS only from the proxy's `X-Forwarded-Proto`,
+which it reads only while it trusts the proxy (below): without proxy trust, no
+`Strict-Transport-Security` is sent. A Studio sign-in that reaches the server
+over plain HTTP from anywhere but `localhost` logs a warning once: the password
+and session cookie crossed the network unencrypted.
 
 Behind a proxy, still set `OPEN_FORM_TRUST_PROXY` to the number of proxies.
 Without it every request seems to come from the proxy, so all visitors share one
-count: one person can use up a form's rate limit for everyone, and ten wrong
-passwords lock everyone out of Studio sign-in for 10 minutes. With it, the server
+count: one person can use up a form's rate limit for everyone, and ten sign-in
+attempts lock everyone out of Studio sign-in for 10 minutes. With it, the server
 reads the protocol and host from `X-Forwarded-Proto` and `X-Forwarded-Host`,
 and the visitor's IP from the `X-Forwarded-For` entry your outermost proxy
 added: the address that connected to it. Entries to its left came from the
@@ -115,15 +117,19 @@ included.
 
 ## Studio in production
 
-Studio exists in production only when `OPEN_FORM_ADMIN_PASSWORD` is set. Without
-it, `/studio` and the admin API answer `404` and the server only serves public
-forms and their submission endpoint. `open-form start` prints each form's URL and
-whether Studio is enabled.
+Studio exists in production only when `OPEN_FORM_ADMIN_PASSWORD` is set or
+Studio is public (below). Without either, `/studio` and the admin API answer
+`404` and the server only serves public forms and their submission endpoint.
+`open-form start` prints each form's URL and whether Studio is enabled.
 
 For a public demo, set
 [`studio: { public: 'read-only' }`](/docs/reference/config#a-public-demo-studio):
 anyone can then read Studio, responses included, without signing in, and only
 the password can change anything.
+
+Studio's pages are sent with `X-Robots-Tag: noindex, nofollow`, so search
+engines leave it out of their results, public demo included. Form pages at
+`/f/<id>` carry no such header.
 
 With a password, open `/studio` and sign in. The session lasts 7 days and signing
 out ends it on the server. Changing the password signs everyone out. A password

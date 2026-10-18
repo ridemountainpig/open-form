@@ -153,7 +153,7 @@ export function FormsList() {
         title={title}
         count={data ? (filtered ? shown.length : inView.length) : undefined}
         aside={
-          <div className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
             {inView.length > 0 && (
               <span className="mr-1 hidden text-[13px] text-zinc-500 tabular-nums lg:inline dark:text-zinc-400">
                 {t.n('responses.count', responses)}
@@ -163,11 +163,12 @@ export function FormsList() {
               label={t('forms.status')}
               display="button"
               placement="bottom"
+              className="min-w-0 flex-1 sm:flex-none"
               trigger={
                 <>
                   {status === 'all' ? <ListFilter /> : <StatusDot status={status} />}
-                  {statusLabel(status)}
-                  <ChevronDown />
+                  <span className="truncate">{statusLabel(status)}</span>
+                  <ChevronDown className="ml-auto" />
                 </>
               }
               value={status}
@@ -191,11 +192,12 @@ export function FormsList() {
               label={t('forms.sort')}
               display="button"
               placement="bottom"
+              className="min-w-0 flex-1 sm:flex-none"
               trigger={
                 <>
                   {sort === 'name' ? <ArrowDownAZ /> : <Clock />}
-                  {t(`forms.sort.${sort}`)}
-                  <ChevronDown />
+                  <span className="truncate">{t(`forms.sort.${sort}`)}</span>
+                  <ChevronDown className="ml-auto" />
                 </>
               }
               value={sort}
@@ -206,7 +208,7 @@ export function FormsList() {
                 icon: key === 'name' ? <ArrowDownAZ /> : <Clock />,
               }))}
             />
-            <div className="relative min-w-0 flex-1 sm:w-60 sm:flex-none">
+            <div className="relative w-full sm:w-60">
               <Search
                 className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-400"
                 aria-hidden

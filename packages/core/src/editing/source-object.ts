@@ -94,16 +94,24 @@ function quoteFor(source: string, object: ObjectExpression): string {
   return "'";
 }
 
+/** A JS string literal in `quote`, with backslashes, quotes and line breaks escaped. */
+export function stringLiteral(value: string, quote: string): string {
+  const json = JSON.stringify(value).slice(1, -1);
+  const body = quote === '"' ? json : json.replace(/\\"/g, '"').replaceAll(quote, `\\${quote}`);
+  return `${quote}${body}${quote}`;
+}
+
 function literal(value: Exclude<SourceValue, null>, quote: string): string {
-  if (typeof value !== 'string') return String(value);
-  const escaped = value.replace(/\\/g, '\\\\').replaceAll(quote, `\\${quote}`);
-  return `${quote}${escaped}${quote}`;
+  return typeof value === 'string' ? stringLiteral(value, quote) : String(value);
 }
 
 function lineIndent(source: string, offset: number): string {
   const lineStart = source.lastIndexOf('\n', offset - 1) + 1;
   return /^[ \t]*/.exec(source.slice(lineStart))?.[0] ?? '';
 }
+
+const oneLine = (source: string, node: Node) =>
+  !source.slice(node.start ?? 0, node.end ?? 0).includes('\n');
 
 export function insertProperty(source: string, object: ObjectExpression, text: string): Edit {
   const end = object.end ?? 0;
@@ -116,6 +124,9 @@ export function insertProperty(source: string, object: ObjectExpression, text: s
       text: `\n${indent}${text},\n${lineIndent(source, object.start ?? 0)}`,
     };
   }
+  // A one-line object stays on one line: `{ primary: '#111', background: '#fff' }`.
+  if (oneLine(source, object))
+    return { start: last.end ?? 0, end: last.end ?? 0, text: `, ${text}` };
   const indent = lineIndent(source, last.start ?? 0);
   const between = source.slice(last.end ?? 0, end - 1);
   const comma = between.indexOf(',');

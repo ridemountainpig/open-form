@@ -75,8 +75,9 @@ export function FormDetail() {
         )}
       </div>
 
+      {/* The line is an inset shadow, not a border, so the active tab's underline covers it inside the scroller. */}
       <nav
-        className="mt-6 flex gap-1 border-b border-zinc-200 dark:border-zinc-800"
+        className="mt-6 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-zinc-200)] [scrollbar-width:none] dark:shadow-[inset_0_-1px_0_var(--color-zinc-800)]"
         aria-label={t('detail.sections')}
       >
         {tabs.map((tab) => (
@@ -86,7 +87,7 @@ export function FormDetail() {
             end={tab.end}
             className={({ isActive }) =>
               cx(
-                'focus-ring relative -mb-px flex items-center gap-2 rounded-t-md border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium transition-colors',
+                'focus-ring relative flex shrink-0 items-center gap-2 rounded-t-md border-b-2 px-2.5 pt-1 pb-2.5 text-sm font-medium whitespace-nowrap transition-colors sm:px-3',
                 isActive
                   ? 'border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200',
