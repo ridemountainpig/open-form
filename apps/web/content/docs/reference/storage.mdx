@@ -1,5 +1,6 @@
 ---
 title: Storage
+seoTitle: "SQLite storage and adapters"
 description: The SQLite database, the StorageAdapter interface and its built-in adapters.
 ---
 
@@ -26,7 +27,10 @@ The database path is, in order: `OPEN_FORM_DB`, then `storage.path` in
 The generated `secret` is written next to the database, so a database on a
 volume (`OPEN_FORM_DB=/data/open-form.db`) keeps its secret there too, in
 `/data/secret`. `OPEN_FORM_SECRET` replaces the file, and keeps the secret out
-of copies of the volume.
+of copies of the volume. Up to 0.1.1 the secret always stayed in
+`.open-form/secret`; when the database lives elsewhere and that file is still
+there, the first start after upgrading copies it next to the database, so
+Studio sessions, open form pages and `uniqueBy: 'device'` keep working.
 
 <Callout type="warn">
   Responses are personal data. Keep `.open-form/` out of git — the
@@ -57,7 +61,7 @@ of copies of the volume.
 | `form_versions` | One row per schema version of each form: `id`, `form_id`, `version`, `schema` (JSON), `created_at`. Unique per `form_id` + `version`. |
 | `submissions` | Responses: `id`, `form_id`, `number`, `form_version_id`, `data` (JSON), `visitor_hash`, `unique_key`, `locale`, `created_at`, `updated_at`. Unique per `form_id` + `unique_key`. |
 | `form_counters` | The last response `number` per form. Numbers only go up, so they're never reused after a delete. |
-| `form_overrides` | Schedule changes saved in Studio on a running server, per form. |
+| `form_overrides` | Schedule, time zone and **Published** changes saved in Studio on a running server, per form. |
 | `rate_limits` | Fixed-window counters for submissions and Studio sign-ins, keyed by hashed IPs (IPv6 by /64). |
 | `revoked_sessions` | Studio sessions ended by signing out, kept until they would have expired. |
 | `submission_files` | Reserved for file uploads; unused today. |
@@ -112,7 +116,7 @@ along with the ones its methods use: `StoredSubmission`, `CreateSubmissionInput`
 | `deleteSubmission(formId, id)` | Delete one response; `false` if it didn't exist. |
 | `deleteForm(formId)` | Erase everything stored for a form — responses, versions, overrides and its response numbering — and return how many responses it held. Used when a form is deleted. |
 | `hasUniqueKey(formId, uniqueKey)` | Whether a response already holds this key, e.g. `device:<hash>`. |
-| `getFormOverrides` / `setFormOverrides` / `listFormOverrides` | Studio's schedule overrides. `setFormOverrides` takes `FormOverrides`, or `null` to clear them; the getters return `StoredOverrides`, which add `updatedAt`. |
+| `getFormOverrides` / `setFormOverrides` / `listFormOverrides` | Studio's overrides: schedule, time zone and `published`. `setFormOverrides` takes `FormOverrides`, or `null` to clear them; the getters return `StoredOverrides`, which add `updatedAt`. |
 | `hitRateLimit(key, windowMs, now?)` | Increment a fixed-window counter and return the count. |
 | `revokeSession(id, expiresAt, now?)` / `isSessionRevoked(id)` | Record a signed-out Studio session until `expiresAt` (epoch ms), and check for one. Expired entries may be dropped. |
 | `close()` | Release the connection. |

@@ -115,6 +115,7 @@ and the Next.js route:
 POST /api/forms/:id/submissions
   │
   ├─ request guard    same origin (or embed.origins), JSON only, body size limit
+  ├─ form             unknown or unpublished → 404
   ├─ policy           config.submissions + Studio overrides
   ├─ window           closed / opensAt / closesAt, in the form's time zone
   ├─ timing token     signed; checks minimumCompletionTime

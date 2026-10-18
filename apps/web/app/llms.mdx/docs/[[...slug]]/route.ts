@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { siteUrl } from '@/lib/shared';
 import { getLLMText, getPageMarkdownUrl, source } from '@/lib/source';
 
 export const revalidate = false;
@@ -11,6 +12,9 @@ export async function GET(_req: Request, { params }: RouteContext<'/llms.mdx/doc
   return new Response(await getLLMText(page), {
     headers: {
       'Content-Type': 'text/markdown',
+      // The same page as HTML is the one to index.
+      'X-Robots-Tag': 'noindex',
+      Link: `<${siteUrl}${page.url}>; rel="canonical"`,
     },
   });
 }

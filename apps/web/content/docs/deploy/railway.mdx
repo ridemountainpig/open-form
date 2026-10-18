@@ -1,5 +1,6 @@
 ---
 title: Railway
+seoTitle: "Deploy forms on Railway"
 description: Deploy from GitHub without a Dockerfile and keep responses on a Railway volume.
 ---
 
@@ -51,8 +52,8 @@ In the service's **Variables** tab:
 
 | Variable | Value |
 | --- | --- |
-| `OPEN_FORM_ADMIN_PASSWORD` | A passphrase of at least 16 characters. Without it Studio is off and only forms are served. |
-| `OPEN_FORM_TRUST_PROXY` | `1`. Railway's edge is the one proxy in front of the service. Without it every visitor counts as the edge, and ten wrong passwords lock everyone out of Studio. |
+| `OPEN_FORM_ADMIN_PASSWORD` | At least 16 characters with at least 8 different ones, not one word or pattern repeated; a passphrase of a few words works. A password that breaks these rules stops the service from starting. Without it Studio is off and only forms are served, unless [`studio.public`](/docs/reference/config#a-public-demo-studio) is `'read-only'`. |
+| `OPEN_FORM_TRUST_PROXY` | `1`. Railway's edge is the one proxy in front of the service. Without it every visitor counts as the edge, ten sign-in attempts lock everyone out of Studio, and pages are sent without `Strict-Transport-Security`. |
 | `OPEN_FORM_SECRET` | Optional. At least 16 random characters, to keep the secret out of the volume and its backups. |
 
 Leave `PORT` alone: Railway sets it and `open-form start` listens on it.

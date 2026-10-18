@@ -1,11 +1,11 @@
 ---
 title: open-form delete
-description: Delete a form, its files and every response it has.
+description: "Delete a form for good: its responses, schema versions, Studio settings and its folder in forms/. Export the responses first to keep them."
 ---
 
-```bash
-pnpm exec open-form delete event-registration
-pnpm exec open-form delete event-registration --yes
+```npm
+npx open-form delete event-registration
+npx open-form delete event-registration --yes
 ```
 
 Deletes a form for good:
@@ -19,8 +19,8 @@ Deletes a form for good:
 The data goes first, so a failure can't leave responses behind with no form to
 manage them from. Export them before you delete if you want to keep them:
 
-```bash
-pnpm exec open-form responses export event-registration -o responses.xlsx
+```npm
+npx open-form responses export event-registration -o responses.xlsx
 ```
 
 `delete` asks you to type the form id to confirm. Without a terminal (in CI, or

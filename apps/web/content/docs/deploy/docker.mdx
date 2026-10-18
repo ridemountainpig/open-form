@@ -1,6 +1,7 @@
 ---
 title: Docker
-description: Build the workspace into an image and keep responses on a volume.
+seoTitle: "Deploy forms with Docker"
+description: "Self-host Open Form with Docker: build the workspace into an image, run open-form start, and keep responses and the signing secret on a volume."
 ---
 
 The image builds the workspace and runs `open-form start`. Responses and the
@@ -14,7 +15,7 @@ be rebuilt and replaced without touching them.
 
 Put it in the workspace root, next to `package.json`.
 
-<Tabs items={['pnpm', 'npm']}>
+<Tabs items={['pnpm', 'npm']} groupId="package-manager" persist>
 <Tab value="pnpm">
 
 ```dockerfile title="Dockerfile"
@@ -46,7 +47,11 @@ CMD ["node_modules/.bin/open-form", "start"]
 </Tab>
 </Tabs>
 
-`CMD` runs the CLI directly rather than through `pnpm start`, so `docker stop`
+With yarn or bun, start from the npm version: install that package manager in
+the image and copy its lockfile instead. Keep the `node` base image, since the
+server runs on Node.js.
+
+`CMD` runs the CLI directly rather than through the `start` script, so `docker stop`
 reaches the server and it shuts down cleanly.
 
 </Step>

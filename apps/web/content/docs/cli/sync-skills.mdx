@@ -3,10 +3,10 @@ title: open-form sync:skills
 description: Update the agent skills in your workspace from the installed open-form.
 ---
 
-```bash
-pnpm sync:skills
+```npm
+npm run sync:skills
 # or
-pnpm exec open-form sync:skills
+npx open-form sync:skills
 ```
 
 Copies the built-in skills from your installed `@open-form-build/core` into
@@ -23,7 +23,7 @@ finds them too. Each skill is listed with its status:
 
 `open-form dev` does the same every time it starts, so you only need this to
 update the skills without starting the dev server — typically right after
-`pnpm up open-form`.
+upgrading `@open-form-build/core`.
 
 Run it in your workspace (a folder with `open-form.config.ts`, or a
 `package.json` that depends on `@open-form-build/core`). Elsewhere — your home folder, say,

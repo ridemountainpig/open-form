@@ -78,6 +78,8 @@ element it is about:
 
 - In an expression position, such as right after `return (`, the marker is a plain
   `/* @form-comment: … */`.
+- When the element doesn't start its line, such as a link inside a sentence,
+  the marker goes inline, just before it on the same line.
 - Notes about text in `config` (title, description, success message) sit on the
   line above that property.
 - Notes about a part whose text comes from one string in your code sit above
@@ -93,10 +95,10 @@ separate database. The panel's **Notes** list shows the form's comments, and
 
 List every marker from the terminal:
 
-```bash
-pnpm exec open-form comments          # all forms
-pnpm exec open-form comments meetup   # one form
-pnpm exec open-form comments --json
+```npm
+npx open-form comments         # all forms
+npx open-form comments meetup  # one form
+npx open-form comments --json
 ```
 
 Then run [`/apply-comments`](/docs/skills/apply-comments) in your agent. It

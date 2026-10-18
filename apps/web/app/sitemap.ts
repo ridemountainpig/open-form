@@ -5,7 +5,6 @@ import type { MetadataRoute } from 'next';
 import { siteUrl } from '@/lib/shared';
 import { source } from '@/lib/source';
 
-const buildDate = new Date();
 const cwd = process.cwd();
 const docsRoot = path.resolve(cwd, 'content/docs');
 const homePath = path.resolve(cwd, 'app/(home)/page.tsx');
@@ -18,26 +17,33 @@ function resolvePagePath(slugs: readonly string[]): string | null {
   return candidates.find((c) => existsSync(c)) ?? null;
 }
 
-function gitMtime(file: string): Date {
+function git(args: string[]): string | null {
   try {
-    const stdout = execFileSync('git', ['log', '-1', '--format=%cI', '--', file], {
+    return execFileSync('git', args, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
-    if (!stdout) return buildDate;
-    const d = new Date(stdout);
-    return Number.isNaN(d.getTime()) ? buildDate : d;
   } catch {
-    return buildDate;
+    return null;
   }
+}
+
+// A build without history (no .git, or a shallow clone) would stamp every page
+// with the same date, which teaches search engines to ignore lastmod; leave it out.
+const hasHistory = git(['rev-parse', '--is-shallow-repository']) === 'false';
+
+function gitMtime(file: string | null): Date | undefined {
+  if (!hasHistory || !file) return undefined;
+  const stdout = git(['log', '-1', '--format=%cI', '--', file]);
+  const d = stdout ? new Date(stdout) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : undefined;
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const docs: MetadataRoute.Sitemap = source.getPages().map((page) => {
-    const filePath = resolvePagePath(page.slugs);
     return {
       url: `${siteUrl}${page.url}`,
-      lastModified: filePath ? gitMtime(filePath) : buildDate,
+      lastModified: gitMtime(resolvePagePath(page.slugs)),
       changeFrequency: 'weekly',
       priority: 0.7,
     };
@@ -46,7 +52,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: siteUrl,
-      lastModified: existsSync(homePath) ? gitMtime(homePath) : buildDate,
+      lastModified: gitMtime(existsSync(homePath) ? homePath : null),
       changeFrequency: 'weekly',
       priority: 1,
     },

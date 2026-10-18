@@ -4,5 +4,7 @@ import { source } from '@/lib/source';
 export const revalidate = false;
 
 export async function GET() {
-  return new Response(await llms(source).index());
+  return new Response(await llms(source).index(), {
+    headers: { 'X-Robots-Tag': 'noindex' },
+  });
 }
