@@ -6,6 +6,7 @@ import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { isTimeZone } from '../schema/index.ts';
 import { PACKAGE_NAME, PKG_ROOT, readPackageVersion } from '../vite/project.ts';
+import { EXEC, PACKAGE_MANAGERS, type PackageManager, RUN } from './package-managers.ts';
 import { syncSkills } from './skills.ts';
 
 const TEMPLATE_DIR = path.join(PKG_ROOT, 'template');
@@ -30,9 +31,6 @@ const GITIGNORE = [
   '/responses*.xlsx',
   '/responses*.json',
 ];
-
-export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const;
-export type PackageManager = (typeof PACKAGE_MANAGERS)[number];
 
 export type InitFlags = {
   force?: boolean;
@@ -236,20 +234,6 @@ export async function gitInit(cwd: string): Promise<GitInitResult> {
   return commit.ok ? { status: 'committed' } : { status: 'uncommitted', output: commit.output };
 }
 
-const EXEC: Record<PackageManager, string> = {
-  pnpm: 'pnpm exec',
-  npm: 'npx',
-  yarn: 'yarn',
-  bun: 'bunx',
-};
-
-const RUN: Record<PackageManager, string> = {
-  pnpm: 'pnpm',
-  npm: 'npm run',
-  yarn: 'yarn',
-  bun: 'bun run',
-};
-
 /** The template's guides say `pnpm`; a workspace gets its own package manager's commands. */
 export function forPackageManager(text: string, pm: PackageManager): string {
   if (pm === 'pnpm') return text;
@@ -359,12 +343,7 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
     }
   }
 
-  const dev =
-    pkg.scripts?.dev !== 'open-form dev'
-      ? `${EXEC[pm]} open-form dev`
-      : pm === 'npm'
-        ? 'npm run dev'
-        : `${pm} dev`;
+  const dev = pkg.scripts?.dev !== 'open-form dev' ? `${EXEC[pm]} open-form dev` : `${RUN[pm]} dev`;
   const next = [
     ...(target !== process.cwd() ? [`cd ${shellQuote(dir)}`] : []),
     ...(installed ? [] : [`${pm} install`]),
