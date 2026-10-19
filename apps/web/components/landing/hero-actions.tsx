@@ -23,8 +23,8 @@ export function HeroActions() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      <div className="flex flex-col items-center gap-3 sm:flex-row">
+    <div className="flex flex-col items-start gap-5">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
         <ButtonLink href="/docs/getting-started" size="lg">
           Get started
         </ButtonLink>

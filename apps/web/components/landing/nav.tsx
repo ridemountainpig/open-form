@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { appName, repoUrl } from '@/lib/shared';
+import { appName, demoUrl, repoUrl } from '@/lib/shared';
 import { ButtonLink } from './button';
+import { MobileMenu } from './mobile-menu';
 import { ThemeToggle } from './theme-toggle';
 
 const linkClass =
@@ -18,12 +19,18 @@ export function Nav({ githubStars }: { githubStars?: string | null }) {
           <span className="text-[color:var(--color-text)]">{appName}</span>
         </Link>
 
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
+        <nav
+          aria-label="Main"
+          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex"
+        >
           <Link href="/docs" className={linkClass}>
             Docs
           </Link>
-          <a href="#demo" className={linkClass}>
+          <a href={demoUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
             Demo
+          </a>
+          <a href="#compare" className={linkClass}>
+            Compare
           </a>
           <a
             href={repoUrl}
@@ -41,11 +48,18 @@ export function Nav({ githubStars }: { githubStars?: string | null }) {
           </a>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
           <ButtonLink href="/docs/getting-started">Get started</ButtonLink>
+          <MobileMenu githubStars={githubStars} />
         </div>
       </div>
+      <span
+        aria-hidden="true"
+        className="read-progress absolute inset-x-0 -bottom-px h-px bg-[color:var(--color-text)]"
+      />
     </header>
   );
 }

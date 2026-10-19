@@ -23,8 +23,13 @@ export function FaqItem({ item, index }: { item: QA; index: number }) {
           onClick={() => setOpen((v) => !v)}
           className="group flex w-full items-center justify-between gap-6 py-5 text-left"
         >
-          <span className="text-[16px] font-medium leading-[1.4] tracking-[-0.01em] text-[color:var(--color-text)] sm:text-[17px]">
-            {item.q}
+          <span className="flex items-baseline gap-4">
+            <span className="nums w-7 shrink-0 font-[family-name:var(--font-mono)] text-[12px] text-[color:var(--color-muted)]">
+              Q{index + 1}
+            </span>
+            <span className="text-[16px] font-medium leading-[1.4] tracking-[-0.01em] text-[color:var(--color-text)] sm:text-[17px]">
+              {item.q}
+            </span>
           </span>
           <motion.span
             aria-hidden="true"
@@ -70,7 +75,7 @@ export function FaqItem({ item, index }: { item: QA; index: number }) {
               }
               animate={{ transform: 'translateY(0px)', filter: 'blur(0px)' }}
               transition={{ duration: 0.45, ease: EASE_OUT_STRONG }}
-              className="max-w-[60ch] pb-5 text-[15px] leading-[1.65] text-[color:var(--color-text-soft)]"
+              className="max-w-[60ch] pb-5 pl-11 text-[15px] leading-[1.65] text-[color:var(--color-text-soft)]"
             >
               {item.a}
             </motion.p>

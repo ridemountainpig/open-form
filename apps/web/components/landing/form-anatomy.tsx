@@ -431,7 +431,7 @@ function OutputWindow({
         {controls}
       </div>
       <div className="relative min-h-[380px] flex-1 overflow-hidden rounded-[6px] border border-[color:var(--color-rule)]">
-        <div className="absolute inset-0 overflow-y-auto overscroll-contain p-5 sm:p-6 [&_.of-root]:bg-transparent">
+        <div className="absolute inset-0 overflow-y-auto overscroll-contain p-5 max-sm:static max-sm:overflow-visible sm:p-6 [&_.of-root]:bg-transparent">
           {children}
         </div>
       </div>

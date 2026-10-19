@@ -6,11 +6,11 @@ export type QA = { q: string; a: string };
 export const faqs: QA[] = [
   {
     q: 'What is Open Form?',
-    a: 'Open Form is a form framework for the agent era. A form is a small React component in your repo — questions, conditions and submission rules. Open Form supplies the runtime around it: state, validation on the client and the server, multi-step flow, accessible responsive UI, the submission API, spam protection, SQLite storage and a Studio for previews and responses.',
+    a: 'Open Form is an open-source form framework for the agent era, for sign-ups, surveys, applications and feedback. A form is a small React component in your repo — questions, conditions and submission rules. Open Form supplies the runtime around it: state, validation on the client and the server, multi-step flow, accessible responsive UI, the submission API, spam protection, SQLite storage and a Studio for previews and responses.',
   },
   {
     q: 'How is it different from Typeform, Google Forms or Tally?',
-    a: 'Those are hosted builders: the form and the answers live in someone else’s product. With Open Form the form is code in your repo — reviewed in pull requests, written by your agent — and the responses live in a SQLite file on your own server. There is deliberately no drag-and-drop builder.',
+    a: 'Those are hosted form builders: the form and the answers live in someone else’s product. With Open Form the form is code in your repo — reviewed in pull requests, written by your agent — and everything is self-hosted: the responses live in a SQLite file on your own server. There is deliberately no drag-and-drop builder.',
   },
   {
     q: 'How is it different from React Hook Form or Formik?',
@@ -26,7 +26,7 @@ export const faqs: QA[] = [
   },
   {
     q: 'Can I use it inside my Next.js app?',
-    a: 'Yes. open-form/next mounts the submission and admin API as a route handler, and <FormHost> renders a form inside any React page. Validation still comes from the same form files.',
+    a: 'Yes. @open-form-build/core/next mounts the submission and admin API as a route handler, and <FormHost> renders a form inside any React page. Validation still comes from the same form files.',
   },
   {
     q: 'Is Open Form open source?',
@@ -38,11 +38,11 @@ export function FAQ() {
   return (
     <section id="faq">
       <Container className="pb-24 sm:pb-32">
-        <SectionHeading eyebrow="FAQ" title="Questions, answered." />
+        <SectionHeading number="07" label="FAQ" title="What people ask first." />
 
         <dl
           data-reveal="stagger"
-          className="mx-auto max-w-[760px] divide-y divide-[color:var(--color-rule-soft)] border-y border-[color:var(--color-rule-soft)]"
+          className="max-w-[820px] divide-y divide-[color:var(--color-rule-soft)] border-b border-[color:var(--color-rule-soft)] lg:ml-auto"
         >
           {faqs.map((item, idx) => (
             <FaqItem key={item.q} item={item} index={idx} />

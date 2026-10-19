@@ -1,4 +1,4 @@
-import { appName, npmUrl, repoUrl } from '@/lib/shared';
+import { appName, gitConfig, npmUrl, repoUrl } from '@/lib/shared';
 import { Container } from './frame';
 
 export function Footer() {
@@ -18,15 +18,18 @@ export function Footer() {
             <span className="tracking-[-0.01em]">{appName}</span>
           </div>
           <p className="max-w-[38ch] text-[14px] leading-[1.6] text-[color:var(--color-muted)]">
-            The form framework built for agents. Free and open source under the MIT license.
+            Forms your agent writes, responses you own. Free and open source under the MIT license.
           </p>
         </div>
 
         <FooterCol
           title="Product"
           links={[
-            ['Live demo', '#demo'],
-            ['Features', '#features'],
+            ['Try it', '#try'],
+            ['Data flow', '#journey'],
+            ['Fields', '#fields'],
+            ['Themes', '#themes'],
+            ['Compare', '#compare'],
             ['FAQ', '#faq'],
           ]}
         />
@@ -52,9 +55,8 @@ export function Footer() {
 
       <div className="border-t border-[color:var(--color-rule-soft)]">
         <Container className="flex flex-col items-start justify-between gap-3 py-5 text-[13px] text-[color:var(--color-muted)] sm:flex-row sm:items-center sm:gap-0">
-          <span>MIT License</span>
           <span>
-            Inspired by{' '}
+            MIT License · Inspired by{' '}
             <a
               href="https://open-slide.dev"
               target="_blank"
@@ -63,7 +65,17 @@ export function Footer() {
             >
               open-slide
             </a>
-            .
+          </span>
+          <span>
+            Made by{' '}
+            <a
+              href={`https://github.com/${gitConfig.owner}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[color:var(--color-text)] transition-colors hover:text-[color:var(--color-muted)]"
+            >
+              @{gitConfig.owner}
+            </a>
           </span>
         </Container>
       </div>

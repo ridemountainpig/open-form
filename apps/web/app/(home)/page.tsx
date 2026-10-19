@@ -1,11 +1,16 @@
+import type { Metadata } from 'next';
+import { Compare } from '@/components/landing/compare';
 import { FAQ, faqs } from '@/components/landing/faq';
 import { Features } from '@/components/landing/features';
+import { FieldIndex } from '@/components/landing/field-index';
 import { Footer } from '@/components/landing/footer';
 import { GetStarted } from '@/components/landing/get-started';
 import { Hero } from '@/components/landing/hero';
-import { HowItWorks } from '@/components/landing/how-it-works';
+import { Journey } from '@/components/landing/journey';
 import { Nav } from '@/components/landing/nav';
 import { ScrollReveal } from '@/components/landing/scroll-reveal';
+import { StepRail } from '@/components/landing/step-rail';
+import { ThemeWall } from '@/components/landing/theme-wall';
 import { fetchGitHubStars, formatStarCount } from '@/lib/github';
 import {
   appName,
@@ -16,6 +21,11 @@ import {
   repoUrl,
   siteUrl,
 } from '@/lib/shared';
+
+// Set here rather than in the root layout, which every page (404s included) would inherit.
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 const jsonLd = [
   {
@@ -63,7 +73,7 @@ const jsonLd = [
       {
         '@type': 'HowToStep',
         position: 1,
-        name: 'Spin up a workspace',
+        name: 'Scaffold a workspace',
         text: `Run ${initCommand} my-forms to scaffold the workspace, then npm run dev to open Studio.`,
       },
       {
@@ -75,8 +85,8 @@ const jsonLd = [
       {
         '@type': 'HowToStep',
         position: 3,
-        name: 'Share it, collect responses',
-        text: 'Run pnpm build and pnpm start. Responses are stored in SQLite and shown in Studio.',
+        name: 'Ship one server',
+        text: 'Run npm run build, then npm start with OPEN_FORM_ADMIN_PASSWORD set. Responses are stored in SQLite and shown in Studio.',
       },
     ],
   },
@@ -91,9 +101,12 @@ const jsonLd = [
   },
 ];
 
+/** Below this, a star count reads as a warning rather than social proof. */
+const STAR_COUNT_FLOOR = 100;
+
 export default async function HomePage() {
   const stars = await fetchGitHubStars();
-  const githubStars = stars !== null ? formatStarCount(stars) : null;
+  const githubStars = stars !== null && stars >= STAR_COUNT_FLOOR ? formatStarCount(stars) : null;
 
   return (
     <>
@@ -104,10 +117,14 @@ export default async function HomePage() {
       />
       <Nav githubStars={githubStars} />
       <ScrollReveal />
+      <StepRail />
       <main className="relative flex-1">
         <Hero />
-        <HowItWorks />
+        <Journey />
         <Features />
+        <FieldIndex />
+        <ThemeWall />
+        <Compare />
         <FAQ />
         <GetStarted />
       </main>

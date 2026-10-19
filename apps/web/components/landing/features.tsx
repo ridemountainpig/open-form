@@ -3,7 +3,7 @@ import { AgentLogos } from './agents';
 import { FormAnatomy } from './form-anatomy';
 import { Container, SectionHeading } from './frame';
 import { PromptComposer } from './prompt-composer';
-import { CommentVisual, PipelineVisual, ResponsesVisual, ThemesVisual } from './visuals';
+import { CommentVisual } from './visuals';
 
 const mono = 'font-[family-name:var(--font-mono)] text-[13px] text-[color:var(--color-text)]';
 
@@ -12,69 +12,54 @@ export function Features() {
     <section id="features">
       <Container className="pb-24 sm:pb-32">
         <SectionHeading
-          eyebrow="Features"
-          title="Just React. And everything around it."
-          lead="No builder, no schema to keep in sync. A form is a component in your repo — the runtime, the API, the database and the dashboard come with it."
+          number="03"
+          label="Authoring"
+          title="Written by your agent. Reviewed by you."
+          lead="A form is one React component in your repo. Your agent drafts it, Studio previews it, and your notes go back into the file."
         />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <FeatureCard
+        <div
+          data-reveal
+          className="grid grid-cols-1 gap-px overflow-hidden rounded-md border border-[color:var(--color-rule)] bg-[color:var(--color-rule)] lg:grid-cols-2"
+        >
+          <FeatureCell
             wide
-            title="A form is a file."
-            body="Fields, pages and conditions are components in one .tsx file. Open Form renders it once on the server to learn its fields, so the browser and the API enforce the same rules."
+            number="3.1"
+            title="One file holds the whole form."
+            body="Fields, pages, conditions and submission rules are components in one .tsx file. Open Form renders it once on the server to learn its fields, so the browser and the API enforce the same rules."
             visual={<FormAnatomy />}
           />
 
-          <FeatureCard
-            title="Prompt to form."
-            body={
+          <FeatureCell
+            number="3.2"
+            title={
               <>
-                <span className={mono}>/create-form</span> asks what it needs, proposes three visual
-                directions for your audience, then writes and checks the form.
+                <span className={mono}>/create-form</span> writes the first draft.
               </>
             }
+            body="It asks what it needs, proposes three visual directions for your audience, then writes the form and checks it."
             visual={<PromptComposer />}
           />
 
-          <FeatureCard
-            title="Bring your own agent."
-            body="Forms are plain .tsx files and the skills are Markdown, so any agent that edits code already works."
+          <FeatureCell
+            number="3.3"
+            title="Works with the agent you already use."
+            body="Forms are plain .tsx files and the skills are Markdown, so any agent that edits code can write one."
             visual={<AgentLogos />}
           />
 
-          <FeatureCard
-            title="The backend is included."
-            body="Server validation, honeypot, signed timing token, rate limits, response caps and one-per-email — stored in SQLite with no infrastructure to run."
-            visual={<PipelineVisual />}
-          />
-
-          <FeatureCard
-            title="Responses, not a database."
-            body="Studio lists every response with search, detail and delete. Export to Excel, CSV or JSON, or send each one to a webhook."
-            visual={<ResponsesVisual />}
-          />
-
-          <FeatureCard
-            title="Comment. The agent applies."
+          <FeatureCell
+            wide
+            side
+            number="3.4"
+            title="Mark it up like a paper form."
             body={
               <>
-                Select anything in Studio&apos;s Edit mode and leave a note. It lands in the source;{' '}
-                <span className={mono}>/apply-comments</span> makes the change.
+                Select anything in Studio&apos;s Edit mode and leave a note. It lands in the source
+                as a comment, and <span className={mono}>/apply-comments</span> makes the change.
               </>
             }
             visual={<CommentVisual />}
-          />
-
-          <FeatureCard
-            title="Designed, not defaulted."
-            body={
-              <>
-                Five starters to start from. Each form keeps its own copy of its theme, so the look
-                is yours to change. Or have <span className={mono}>/create-theme</span> match your
-                design system.
-              </>
-            }
-            visual={<ThemesVisual />}
           />
         </div>
       </Container>
@@ -82,28 +67,40 @@ export function Features() {
   );
 }
 
-function FeatureCard({
+function FeatureCell({
+  number,
   title,
   body,
   visual,
   wide = false,
+  side = false,
 }: {
-  title: string;
+  number: string;
+  title: ReactNode;
   body: ReactNode;
   visual: ReactNode;
   wide?: boolean;
+  side?: boolean;
 }) {
   return (
     <article
-      data-reveal
-      className={`flex flex-col overflow-hidden rounded-2xl border border-[color:var(--color-rule-soft)] bg-[color:var(--color-panel)] transition-colors duration-300 hover:border-[color:var(--color-rule)] ${
-        wide ? 'lg:col-span-2' : ''
+      className={`flex flex-col bg-[color:var(--color-panel)] ${wide ? 'lg:col-span-2' : ''} ${
+        side ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]' : ''
       }`}
     >
-      <div className="flex flex-1 items-center justify-center bg-[color:var(--color-panel-hi)] p-6 sm:p-8">
+      <div
+        className={`flex flex-1 items-center justify-center bg-[color:var(--color-panel-hi)] p-6 sm:p-8 ${
+          side ? 'lg:order-2' : ''
+        }`}
+      >
         <div className="w-full">{visual}</div>
       </div>
-      <div className="flex flex-col gap-1.5 px-6 py-5 sm:px-7 sm:py-6">
+      <div
+        className={`flex flex-col gap-2 px-6 py-5 sm:px-7 sm:py-6 ${side ? 'lg:justify-center lg:py-10' : ''}`}
+      >
+        <span className="font-[family-name:var(--font-mono)] text-[11.5px] text-[color:var(--color-muted)]">
+          {number}
+        </span>
         <h3 className="text-[17px] font-medium leading-[1.3] tracking-[-0.015em] text-[color:var(--color-text)]">
           {title}
         </h3>

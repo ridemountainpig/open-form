@@ -3,9 +3,18 @@ import './global.css';
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import type { Metadata, Viewport } from 'next';
+import { Newsreader } from 'next/font/google';
 import { appName, description, siteUrl } from '@/lib/shared';
 
-const title = `${appName} — the form framework built for agents`;
+const display = Newsreader({
+  subsets: ['latin'],
+  axes: ['opsz'],
+  style: ['normal', 'italic'],
+  variable: '--font-newsreader',
+  display: 'swap',
+});
+
+const title = `${appName} — open-source form framework for coding agents`;
 
 export const metadata: Metadata = {
   title: {
@@ -29,9 +38,6 @@ export const metadata: Metadata = {
     'registration form',
   ],
   category: 'technology',
-  alternates: {
-    canonical: '/',
-  },
   formatDetection: {
     email: false,
     address: false,
@@ -75,7 +81,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${GeistSans.className} ${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${GeistSans.className} ${GeistSans.variable} ${GeistMono.variable} ${display.variable}`}
     >
       <body className="flex min-h-screen flex-col">
         <RootProvider>{children}</RootProvider>

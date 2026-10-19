@@ -12,6 +12,7 @@
   /* Monochrome like Studio: ink is the accent. Green only means "done". */
   --color-accent: oklch(0.145 0 0);
   --color-success: oklch(0.55 0.13 155);
+  --color-danger: oklch(0.55 0.19 27);
 
   --shadow-edge: 0 0 0 0.5px oklch(0 0 0 / 0.06), 0 1px 0 oklch(0 0 0 / 0.025);
   --shadow-floating: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px -8px oklch(0 0 0 / 0.1);
@@ -24,6 +25,7 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-newsreader), ui-serif, Georgia, serif;
 
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -51,6 +53,7 @@ html.dark .landing {
 
   --color-accent: oklch(0.93 0 0);
   --color-success: oklch(0.74 0.14 155);
+  --color-danger: oklch(0.72 0.16 25);
 
   --shadow-edge: 0 0 0 0.5px oklch(0 0 0 / 0.2);
   --shadow-floating: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -8px oklch(0 0 0 / 0.5);
@@ -61,6 +64,42 @@ html.dark .landing {
 .landing ::selection {
   background: color-mix(in oklab, var(--color-text) 14%, transparent);
   color: var(--color-text);
+}
+
+/* Scrollbars: a thin ink thumb on a clear track, as in Studio. The color is
+   inherited, so every scroll area on the page shares it. */
+html:has(.landing) {
+  --scrollbar-thumb: oklch(0.145 0 0 / 0.2);
+  --scrollbar-thumb-hover: oklch(0.145 0 0 / 0.38);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+html.dark:has(.landing) {
+  --scrollbar-thumb: oklch(1 0 0 / 0.18);
+  --scrollbar-thumb-hover: oklch(1 0 0 / 0.34);
+}
+/* Layered so the [scrollbar-width:none] utilities on swipe rows still win. */
+@layer base {
+  .landing * {
+    scrollbar-width: thin;
+  }
+}
+
+/* Safari: the same thin, rounded thumb. */
+html:has(.landing)::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+html:has(.landing)::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has(.landing)::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb) padding-box;
+}
+html:has(.landing)::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 .landing .caption {
@@ -81,6 +120,37 @@ html.dark .landing {
   color: var(--color-muted);
 }
 
+.landing .display {
+  font-family: var(--font-display);
+  font-weight: 420;
+  font-optical-sizing: auto;
+  letter-spacing: -0.022em;
+  color: var(--color-text);
+}
+.landing .display em {
+  font-style: italic;
+  letter-spacing: -0.03em;
+}
+
+/* Reading progress under the nav, like a form's step bar. Scroll-driven, so
+   browsers without animation-timeline simply don't show it. */
+.landing .read-progress {
+  display: none;
+}
+@keyframes lp-progress {
+  from {
+    transform: scaleX(0);
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .landing .read-progress {
+    display: block;
+    transform-origin: 0 50%;
+    animation: lp-progress linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
 .landing section[id] {
   scroll-margin-top: 60px;
 }
@@ -96,7 +166,7 @@ html.dark .landing {
 
 @keyframes lp-rise {
   from {
-    opacity: 0;
+    opacity: var(--rise-opacity, 0);
     transform: translateY(var(--rise-y, 12px));
     filter: blur(var(--rise-blur, 6px));
   }
@@ -173,6 +243,19 @@ html.dark .landing {
   display: inline-block;
   animation: lp-swap 320ms var(--ease-out-strong) backwards;
 }
+.landing .panel-in {
+  --swap-y: 8px;
+  animation: lp-swap 480ms var(--ease-out-strong) backwards;
+}
+@keyframes lp-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.landing .menu-in {
+  animation: lp-menu-in 180ms var(--ease-out-strong) backwards;
+}
 
 /* Press feedback for anything clickable. Transition list covers the hover
    color moves those elements already rely on, since this shorthand wins
@@ -244,6 +327,8 @@ html.dark .landing {
   .landing .rise,
   .landing .rise-frame,
   .landing .swap-in,
+  .landing .panel-in,
+  .landing .menu-in,
   .landing .code-pulse,
   .landing .row-in,
   .landing .tick-in {
@@ -283,6 +368,10 @@ html.dark .landing .agent-mono {
    fill the viewport (Split, Focus) fill the frame instead. */
 .landing .demo-frame {
   container-type: size;
+  /* --frame-* are the form's own colors (LiveForm), so the scrollbar sits on
+     the theme and uses its thumb, as in the runtime's own scroll areas. */
+  background: var(--frame-bg, transparent);
+  scrollbar-color: color-mix(in srgb, var(--frame-fg, currentColor) 26%, transparent) transparent;
 }
 .landing .demo-host {
   display: flex;
@@ -297,6 +386,103 @@ html.dark .landing .agent-mono {
 .landing .demo-frame .of-split,
 .landing .demo-frame .of-focus {
   min-height: 100cqh;
+}
+/* On phones the frames grow with the form instead of scrolling inside the
+   page, so a swipe over a demo always moves the page. */
+@media (width < 40rem) {
+  .landing .demo-frame {
+    container-type: normal;
+  }
+  .landing .demo-frame .demo-host,
+  .landing .demo-frame .of-split,
+  .landing .demo-frame .of-focus {
+    min-height: var(--frame-min, 0px);
+  }
+}
+/* Field index: each specimen is a real form card on a dotted canvas. The
+   card is the runtime's own markup; only its chrome is restyled here. */
+.landing .field-stage {
+  --card-pad: 24px;
+  --card-radius: calc(var(--of-radius, 10px) * 1.6);
+  position: relative;
+  isolation: isolate;
+  background-color: var(--color-panel-hi);
+}
+.landing .field-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(var(--color-rule) 1px, transparent 1px);
+  background-size: 14px 14px;
+  background-position: 7px 7px;
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 35%, transparent 100%);
+}
+.landing .field-stage .of-root {
+  background: transparent;
+  padding: 0;
+}
+.landing .field-stage .of-form {
+  max-width: 440px;
+  padding: var(--card-pad);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 4px 12px -4px rgb(0 0 0 / 0.06),
+    0 24px 48px -24px rgb(0 0 0 / 0.14);
+}
+.landing .field-stage .of-form:has(.of-matrix) {
+  /* The matrix only lays out as a grid from 32rem wide. */
+  max-width: 562px;
+}
+.landing .field-stage .of-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 16px;
+  margin: calc(var(--card-pad) * -1) calc(var(--card-pad) * -1) var(--card-pad);
+  padding: 14px var(--card-pad) 13px;
+  border-bottom: 1px solid var(--of-border);
+}
+.landing .field-stage .of-header .of-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.landing .field-stage .of-header .of-description {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.landing .field-stage .of-nav {
+  align-items: center;
+  margin: var(--card-pad) calc(var(--card-pad) * -1) calc(var(--card-pad) * -1);
+  padding: 12px var(--card-pad);
+  border-top: 1px solid var(--of-border);
+  border-radius: 0 0 calc(var(--card-radius) - 1px) calc(var(--card-radius) - 1px);
+  background: color-mix(in srgb, var(--of-fg) 2.5%, var(--of-surface));
+}
+/* Brutalist and conversational keep their own button height: it's part of the look. */
+.landing
+  .field-stage
+  .of-root:not([data-of-theme="brutalist"], [data-of-theme="conversational"])
+  .of-nav
+  .of-button {
+  min-height: 40px;
+}
+.landing .field-stage .of-success {
+  padding-block: 12px;
+}
+.landing .field-stage .of-success .of-title {
+  font-size: 1.25rem;
+}
+.landing .field-stage .of-success .of-description {
+  font-size: 14px;
+}
+.landing .field-stage .of-success-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.875rem;
 }
 .landing .demo-host :where(.of-root) :focus-visible {
   border-radius: revert;

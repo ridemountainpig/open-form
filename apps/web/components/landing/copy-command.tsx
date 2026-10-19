@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { writeToClipboard } from './clipboard';
 
 const sizes = {
@@ -79,7 +79,7 @@ function CopyGlyph({ className }: { className?: string }) {
   );
 }
 
-export function CheckGlyph({ className }: { className?: string }) {
+export function CheckGlyph({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg
       aria-hidden="true"
@@ -88,6 +88,7 @@ export function CheckGlyph({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       className={className}
+      style={style}
     >
       <path
         d="M5 12.5 10 17.5 19 7.5"

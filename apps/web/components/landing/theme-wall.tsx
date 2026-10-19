@@ -1,17 +1,17 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { type KeyboardEvent, useId, useRef, useState } from 'react';
 import { CodeLines } from './code-lines';
 import { MeetupConversational, MeetupForm, meetupConfig, starters } from './demo-forms';
-import { Container } from './frame';
+import { Container, SectionHeading } from './frame';
 import { LiveForm } from './live-form';
+import { ThemeSwatch } from './visuals';
 
 function meetupSource(themeId: string): string[] {
   const head = [
     "import { defineForm, Email, Form, Page, Select, Submit, Text, When } from '@open-form-build/core';",
-    `import theme from './theme/index.tsx'; // this form's copy of ${themeId}`,
+    `import theme from './theme/index.tsx'; // its own look, after ${themeId}`,
     '',
     'export const config = defineForm({',
     "  title: 'Developer Meetup',",
@@ -74,9 +74,8 @@ function meetupSource(themeId: string): string[] {
 const THEME_LINE = 1;
 type View = 'form' | 'code';
 
-export function LiveDemo() {
+export function ThemeWall() {
   const baseId = useId();
-  const reduced = useReducedMotion();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [index, setIndex] = useState(0);
   const [view, setView] = useState<View>('form');
@@ -102,23 +101,81 @@ export function LiveDemo() {
   };
 
   return (
-    <section id="demo" aria-labelledby="demo-heading">
-      <Container className="pt-14 pb-8 sm:pt-16 sm:pb-12">
-        <h2 id="demo-heading" className="sr-only">
-          Live demo
-        </h2>
+    <section id="themes">
+      <Container className="pb-24 sm:pb-32">
+        <SectionHeading
+          number="05"
+          label="Looks"
+          title="Same questions, five starting looks."
+          lead={
+            <>
+              Each form's look is written for it from a theme, so restyling one never changes
+              another. Start from a starter, or have{' '}
+              <span className="font-[family-name:var(--font-mono)] text-[14px] text-[color:var(--color-text)]">
+                /create-theme
+              </span>{' '}
+              match your design system.
+            </>
+          }
+        />
+
         <div
+          role="tablist"
+          aria-label="Starter theme"
+          onKeyDown={onKeyDown}
           data-reveal
-          className="rise-frame relative overflow-hidden rounded-2xl border border-[color:var(--color-rule)] bg-[color:var(--color-panel)] shadow-[var(--shadow-lift)]"
-          style={{ animationDelay: '560ms' }}
+          className="-mx-6 flex gap-2.5 overflow-x-auto px-6 pt-1 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible sm:px-0"
         >
-          <div className="flex h-11 items-center gap-3 border-b border-[color:var(--color-rule-soft)] px-4">
-            <span aria-hidden="true" className="hidden gap-1.5 sm:flex">
-              <i className="size-2.5 rounded-full bg-[color:var(--color-rule)]" />
-              <i className="size-2.5 rounded-full bg-[color:var(--color-rule)]" />
-              <i className="size-2.5 rounded-full bg-[color:var(--color-rule)]" />
-            </span>
-            <span className="min-w-0 flex-1 truncate text-center font-[family-name:var(--font-mono)] text-[12px] text-[color:var(--color-muted)]">
+          {starters.map((s, i) => {
+            const selected = i === index;
+            return (
+              <button
+                key={s.id}
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                type="button"
+                role="tab"
+                id={`${baseId}-tab-${s.id}`}
+                aria-selected={selected}
+                aria-controls={`${baseId}-panel`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => select(i)}
+                className="group flex w-[132px] shrink-0 flex-col gap-2 text-left sm:w-auto sm:min-w-0"
+              >
+                <span
+                  className={`block overflow-hidden rounded-[4px] outline-offset-2 transition-[outline-color,opacity] duration-200 ${
+                    selected
+                      ? 'outline outline-2 outline-[color:var(--color-text)]'
+                      : 'opacity-80 shadow-[var(--shadow-edge)] group-hover:opacity-100'
+                  }`}
+                >
+                  <ThemeSwatch id={s.id} />
+                </span>
+                <span
+                  className={`flex items-center gap-2 truncate font-[family-name:var(--font-mono)] text-[11px] sm:text-[12px] ${
+                    selected
+                      ? 'text-[color:var(--color-text)]'
+                      : 'text-[color:var(--color-muted)] group-hover:text-[color:var(--color-text)]'
+                  }`}
+                >
+                  <span className="hidden sm:inline">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="truncate">{s.label}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          id={`${baseId}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${baseId}-tab-${starter.id}`}
+          data-reveal
+          className="relative mt-6 overflow-hidden rounded-md border border-[color:var(--color-rule)] bg-[color:var(--color-panel)] shadow-[var(--shadow-lift)] sm:mt-8"
+        >
+          <div className="flex h-11 items-center gap-3 border-b border-[color:var(--color-rule-soft)] pr-1.5 pl-4">
+            <span className="min-w-0 flex-1 truncate font-[family-name:var(--font-mono)] text-[12px] text-[color:var(--color-muted)]">
               {view === 'form' ? 'localhost:3000/f/meetup' : 'forms/meetup/index.tsx'}
             </span>
             <div
@@ -144,9 +201,9 @@ export function LiveDemo() {
             </div>
           </div>
 
-          <div className="relative h-[600px] sm:h-[640px]">
+          <div className="relative h-[600px] [--frame-min:600px] max-sm:h-auto max-sm:min-h-[600px] sm:h-[640px]">
             {view === 'form' ? (
-              <div className="demo-frame absolute inset-0 overflow-y-auto overscroll-contain">
+              <div className="demo-frame absolute inset-0 overflow-y-auto overscroll-contain max-sm:static max-sm:overflow-visible">
                 <LiveForm
                   key={`${starter.id}-${run}`}
                   form={conversational ? MeetupConversational : MeetupForm}
@@ -156,7 +213,7 @@ export function LiveDemo() {
                 />
               </div>
             ) : (
-              <pre className="absolute inset-0 overflow-auto bg-[color:var(--color-panel)] p-5 font-[family-name:var(--font-mono)] text-[12.5px] leading-[1.7] sm:p-7 sm:text-[13px]">
+              <pre className="absolute inset-0 overflow-auto max-sm:static bg-[color:var(--color-panel)] p-5 font-[family-name:var(--font-mono)] text-[12.5px] leading-[1.7] sm:p-7 sm:text-[13px]">
                 <CodeLines
                   lines={meetupSource(starter.id)}
                   pulse={[THEME_LINE]}
@@ -167,59 +224,15 @@ export function LiveDemo() {
           </div>
         </div>
 
-        <div
-          className="rise mt-4 flex flex-col-reverse items-start justify-between gap-3 sm:flex-row sm:items-center"
-          style={{ animationDelay: '760ms' }}
-        >
-          <p className="text-[13px] text-[color:var(--color-muted)]">
-            The real runtime: validation, conditions and steps all work.{' '}
-            <Link
-              href="/docs/core-feature/themes"
-              className="font-medium text-[color:var(--color-text-soft)] underline decoration-[color:var(--color-rule)] underline-offset-4 hover:text-[color:var(--color-text)]"
-            >
-              Themes
-            </Link>
-          </p>
-          <div
-            role="tablist"
-            aria-label="Starter theme"
-            onKeyDown={onKeyDown}
-            className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full bg-[color:var(--color-panel-hi)] p-0.5"
+        <p className="mt-4 text-[13px] text-[color:var(--color-muted)]">
+          The real runtime: validation, conditions and steps all work.{' '}
+          <Link
+            href="/docs/core-feature/themes"
+            className="font-medium text-[color:var(--color-text-soft)] underline decoration-[color:var(--color-rule)] underline-offset-4 hover:text-[color:var(--color-text)]"
           >
-            {starters.map((s, i) => {
-              const selected = i === index;
-              return (
-                <button
-                  key={s.id}
-                  ref={(el) => {
-                    tabRefs.current[i] = el;
-                  }}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  tabIndex={selected ? 0 : -1}
-                  onClick={() => select(i)}
-                  className={`relative h-7 shrink-0 rounded-full px-3 text-[12.5px] font-medium transition-colors duration-200 ${
-                    selected
-                      ? 'text-[color:var(--color-text)]'
-                      : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-text)]'
-                  }`}
-                >
-                  {selected ? (
-                    <motion.span
-                      layoutId={`${baseId}-pill`}
-                      className="absolute inset-0 rounded-full bg-[color:var(--color-panel)] shadow-[var(--shadow-edge)]"
-                      transition={
-                        reduced ? { duration: 0 } : { type: 'spring', bounce: 0.15, duration: 0.45 }
-                      }
-                    />
-                  ) : null}
-                  <span className="relative">{s.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+            Themes
+          </Link>
+        </p>
       </Container>
     </section>
   );

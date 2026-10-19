@@ -7,7 +7,7 @@ import { useLoop } from './use-loop';
 
 const MONO = 'font-[family-name:var(--font-mono)]';
 
-function Window({
+export function Window({
   title,
   meta,
   children,
@@ -250,7 +250,7 @@ type Swatch = {
   prompt: string;
 };
 
-const SWATCHES: Swatch[] = [
+export const SWATCHES: Swatch[] = [
   {
     id: 'classic',
     page: '#f4f4f6',
@@ -312,57 +312,195 @@ const SWATCHES: Swatch[] = [
   },
 ];
 
-export function ThemesVisual() {
+export function ThemeSwatch({ id }: { id: string }) {
+  const s = SWATCHES.find((swatch) => swatch.id === id);
+  if (!s) return null;
   return (
-    <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
-      {SWATCHES.map((s) => (
-        <li key={s.id} className="flex min-w-0 flex-col items-center gap-2">
-          <div
-            aria-hidden="true"
-            className="flex aspect-[3/4] w-full flex-col justify-center overflow-hidden rounded-md p-2 shadow-[var(--shadow-edge)]"
-            style={{ background: s.page }}
-          >
-            <div
-              className="flex flex-col gap-2 px-2 py-3"
-              style={{
-                background: s.card,
-                border: s.border,
-                boxShadow: s.shadow,
-                borderRadius: s.radius,
-                color: s.ink,
-                fontFamily: s.font,
-              }}
-            >
-              <span className="truncate text-[10px] leading-none font-semibold">{s.prompt}</span>
-              <span
-                className="block h-4"
-                style={{
-                  borderBottom: `1px solid ${s.ink}66`,
-                  background:
-                    s.id === 'editorial' || s.id === 'terminal' ? 'transparent' : `${s.ink}0a`,
-                  borderRadius: Math.min(s.radius, 6),
-                }}
-              />
-              <span
-                className="self-start px-2 py-1 text-[8.5px] leading-none font-semibold"
-                style={{
-                  background: s.accent,
-                  color: s.accentInk,
-                  borderRadius: s.id === 'conversational' ? 999 : Math.min(s.radius, 6),
-                  border: s.id === 'brutalist' ? '1.5px solid #000' : undefined,
-                }}
-              >
-                {s.id === 'terminal' ? 'next ↵' : 'Next'}
-              </span>
-            </div>
-          </div>
-          <span
-            className={`max-w-full truncate text-[11px] text-[color:var(--color-muted)] ${MONO}`}
-          >
-            {s.id}
+    <div
+      aria-hidden="true"
+      className="flex aspect-[5/4] w-full flex-col justify-center overflow-hidden p-2 sm:p-4"
+      style={{ background: s.page }}
+    >
+      <div
+        className="flex flex-col gap-2 px-2 py-3 sm:px-3"
+        style={{
+          background: s.card,
+          border: s.border,
+          boxShadow: s.shadow,
+          borderRadius: s.radius,
+          color: s.ink,
+          fontFamily: s.font,
+        }}
+      >
+        <span className="truncate text-[10px] leading-none font-semibold sm:text-[11px]">
+          {s.prompt}
+        </span>
+        <span
+          className="block h-4"
+          style={{
+            borderBottom: `1px solid ${s.ink}66`,
+            background: s.id === 'editorial' || s.id === 'terminal' ? 'transparent' : `${s.ink}0a`,
+            borderRadius: Math.min(s.radius, 6),
+          }}
+        />
+        <span
+          className="self-start px-2 py-1 text-[8.5px] leading-none font-semibold sm:text-[9.5px]"
+          style={{
+            background: s.accent,
+            color: s.accentInk,
+            borderRadius: s.id === 'conversational' ? 999 : Math.min(s.radius, 6),
+            border: s.id === 'brutalist' ? '1.5px solid #000' : undefined,
+          }}
+        >
+          {s.id === 'terminal' ? 'next ↵' : 'Next'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const FIELD_CUES = [1800] as const;
+const FIELD_LOOP = 3800;
+
+export function FieldVisual() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { phase, cycle } = useLoop(ref, FIELD_CUES, FIELD_LOOP);
+  const valid = phase > 0;
+
+  return (
+    <div ref={ref}>
+      <Window title="localhost:3000/f/meetup">
+        <div className="flex flex-col gap-2 px-5 pt-6 pb-5">
+          <span className="text-[13px] font-medium text-[color:var(--color-text)]">
+            Email <span className="text-[color:var(--color-danger)]">*</span>
           </span>
-        </li>
-      ))}
-    </ul>
+          <span
+            className={`flex h-10 items-center justify-between rounded-[6px] border px-3 text-[14px] transition-colors duration-300 ${
+              valid ? 'border-[color:var(--color-rule)]' : 'border-[color:var(--color-danger)]'
+            }`}
+          >
+            <span className="text-[color:var(--color-text)]">
+              mei@example
+              {valid ? (
+                <span key={cycle} className="swap-in">
+                  .com
+                </span>
+              ) : null}
+            </span>
+            {valid ? (
+              <CheckGlyph
+                key={cycle}
+                className="tick-in size-4 text-[color:var(--color-success)]"
+              />
+            ) : null}
+          </span>
+          <span
+            key={`${cycle}-${valid}`}
+            className={`swap-in h-4 text-[12.5px] ${valid ? 'text-[color:var(--color-muted)]' : 'text-[color:var(--color-danger)]'}`}
+          >
+            {valid ? 'Looks good.' : 'Enter a valid email address.'}
+          </span>
+        </div>
+        <div className="border-t border-[color:var(--color-rule-soft)] px-5 py-4">
+          <pre
+            className={`-mx-2 overflow-x-auto px-2 text-[12px] leading-[1.7] sm:text-[12.5px] ${MONO}`}
+          >
+            <CodeLines lines={['<Email name="email" label="Email" required />']} />
+          </pre>
+          <p className="mt-2 text-[12.5px] text-[color:var(--color-muted)]">
+            The server reads this same line and runs the same check.
+          </p>
+        </div>
+      </Window>
+    </div>
+  );
+}
+
+const REQUEST_BODY = [
+  '{',
+  '  "data": {',
+  '    "name": "Mei Chen",',
+  '    "email": "mei@example.com",',
+  '    "role": "Student",',
+  '    "school": "NTU"',
+  '  },',
+  '  "locale": "en",',
+  '  "token": "4f2c9e…",',
+  '  "hp": "",',
+  '  "visitor": "a91e07…"',
+  '}',
+];
+const REQUEST_NOTES = [8, 9];
+
+export function RequestVisual() {
+  return (
+    <Window
+      title="POST /api/forms/meetup/submissions"
+      meta={<span className="shrink-0">application/json</span>}
+    >
+      <pre
+        className={`overflow-x-auto px-4 py-4 text-[12px] leading-[1.7] sm:text-[12.5px] ${MONO}`}
+      >
+        <CodeLines lines={REQUEST_BODY} live={REQUEST_NOTES} />
+      </pre>
+      <div
+        className={`flex min-h-10 flex-wrap items-center gap-x-4 gap-y-1 border-t border-[color:var(--color-rule-soft)] px-4 py-2 text-[12px] text-[color:var(--color-muted)] ${MONO}`}
+      >
+        <span>token · signed when the page loaded</span>
+        <span>hp · a field only bots fill</span>
+      </div>
+    </Window>
+  );
+}
+
+const STORED = [
+  ['47', '{"name":"Kenji Mori","email":"kenji@…","role":"Engineer"}'],
+  ['46', '{"name":"Priya Shah","email":"priya@…","role":"Designer"}'],
+] as const;
+const STORED_NEW = ['48', '{"name":"Mei Chen","email":"mei@…","role":"Student","school":"NTU"}'];
+const STORE_CUES = [900] as const;
+const STORE_LOOP = 5200;
+
+export function StorageVisual() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { phase, cycle } = useLoop(ref, STORE_CUES, STORE_LOOP);
+  const rows = phase > 0 ? [STORED_NEW, ...STORED] : STORED;
+
+  return (
+    <div ref={ref}>
+      <Window title=".open-form/open-form.db" meta={<span className="shrink-0">node:sqlite</span>}>
+        <div className={`px-4 py-4 text-[12px] leading-[1.7] sm:text-[12.5px] ${MONO}`}>
+          <p className="text-[color:var(--color-muted)]">
+            <span className="text-[color:var(--color-text)]">sqlite&gt;</span> SELECT number, data
+            FROM submissions WHERE form_id = &apos;meetup&apos; ORDER BY number DESC;
+          </p>
+          <table className="mt-3 w-full table-fixed text-left">
+            <thead>
+              <tr className="border-b border-[color:var(--color-rule-soft)] text-[color:var(--color-muted)]">
+                <th className="w-16 py-1.5 font-normal">number</th>
+                <th className="py-1.5 font-normal">data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(([n, data]) => (
+                <tr
+                  key={n === '48' ? `48-${cycle}` : n}
+                  className={`border-b border-[color:var(--color-rule-soft)] last:border-0 ${n === '48' ? 'row-in' : ''}`}
+                >
+                  <td className="nums py-1.5 text-[color:var(--color-text)]">{n}</td>
+                  <td className="truncate py-1.5 text-[color:var(--color-text-soft)]">{data}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div
+          className={`flex h-10 items-center justify-between gap-3 border-t border-[color:var(--color-rule-soft)] px-4 text-[12px] text-[color:var(--color-muted)] ${MONO}`}
+        >
+          <span className="truncate">.gitignore · .open-form/</span>
+          <span className="shrink-0">no database server</span>
+        </div>
+      </Window>
+    </div>
   );
 }
