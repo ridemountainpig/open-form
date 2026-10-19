@@ -291,6 +291,13 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 - ✅ `theme check` / `theme font` take `--form` for a form's own copy; `current.json` reports `formThemePath`
 - ✅ Demo: every form carries its own theme; `conference-pass` got its dark `midnight` look back as `forms/conference-pass/theme/`
 
+### A form's look holds only what it uses (aligned with open-slide) ✅
+
+- ✅ Removed `open-form theme copy`: a reference is read, never copied in whole. `open-form create` always writes `forms/<id>/theme/index.ts` and wires it in; `--theme <theme>` starts it from that theme's tokens and the web fonts they name, no CSS or components
+- ✅ Agents write the rest of a form's look from the reference, only what the form renders: tokens → CSS on the runtime's own classes → components only for markup or behavior CSS can't give; the skills, the template and the docs say so, and each starter's `THEME.md` lists every token and which parts are CSS or components
+- ✅ Studio: the form's Preview has an **Adjust** mode for its own colors, fonts and shape, with a live preview (`runtime.themeDraft`), saving to `forms/<id>/theme/index.ts`; a form without one gets **Create look file**
+- ✅ Demo: `contact`, `developer-meetup` and `feedback` slimmed to what they use, looking the same; the reference themes in `apps/demo/themes/` re-synced with the starters
+
 ### Submission window ✅
 
 - ✅ Time zones: `opensAt` / `closesAt` are interpreted in the form → project `timeZone` → UTC, no longer the server's time zone (a laptop in Taiwan and a UTC container now agree); supports `YYYY-MM-DDTHH:mm`; `open-form init` writes the local time zone; `open-form check` shows the time zone and warns when none is set

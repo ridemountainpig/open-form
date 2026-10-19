@@ -16,7 +16,7 @@ In Studio's Preview, the user switches to **Edit**, selects something and writes
 - When the element doesn't start its line (`<p>Read our <a href="…">terms</a></p>`), the marker goes inline, just before it on the same line.
 - Notes about text that lives in `config` (the form's title, description, success message) sit above that property: `/* @form-comment: … */` on the line before `title: '…',`.
 - A note about something the runtime or theme draws inside an element — its title, the progress bar, the Next button — sits above that element and starts with what was picked: `(on “Next ↵”) make this button full width`. That text is as the user saw it, possibly translated.
-- Markers are always in the form's own files, never in its theme copy in `forms/<id>/theme/`.
+- Markers are always in the form's own files, never in its theme in `forms/<id>/theme/`.
 
 ## Workflow
 
@@ -27,10 +27,10 @@ Run `open-form` through the workspace's package manager, as AGENTS.md → Comman
 3. **For each comment, top to bottom per file:**
    - Read the element the marker is about and enough context to understand it (its `<Page>`, `<When>`, the form's `config`).
    - Do what the comment asks with the DSL — props, `<When>`, `validate`, `config` — never hand-rolled state or CSS.
-   - A comment about the look (colors, fonts, spacing, how a theme-drawn part looks) is applied in the form's own theme in `forms/<id>/theme/` — tokens, components or its CSS — never in `themes/`: those are references and don't change existing forms. A form without one has the default look, which is the `classic` starter: copy that in first (`open-form theme copy classic <id>`) so nothing else changes — another theme would restyle the whole form — or ask.
+   - A comment about the look (colors, fonts, spacing, how a theme-drawn part looks) is applied in the form's own theme in `forms/<id>/theme/` — tokens, components or its CSS — never in `themes/`: those are references and don't change existing forms. A form without one has the default look: create `forms/<id>/theme/index.ts` with `export default defineTheme({})`, pass it as `<Form theme={theme}>` and change only what the comment asks — copying a whole theme in would restyle the form — or ask.
    - Delete the marker line (or the inline marker). Leave no `@form-comment` behind for a comment you applied.
    - If a comment is unclear, conflicts with another, or would rename a field that already has responses, **skip it, keep its marker**, and ask the user about it at the end.
-4. **Check**: `open-form check <id>` for each form you touched (plus `open-form theme check <id> --form` after a color change), and `open-form comments` should list only the ones you deliberately kept.
+4. **Check**: `open-form check <id>` for each form you touched (plus `open-form theme check <id> --form` after a color change), and `open-form comments` should list only the ones you deliberately kept. After a comment about the look, also look at the result, as `create-form` → Step 6 → *Look at it* describes.
 5. **Report** briefly: what you changed for each comment, and which you left (with your question).
 
 ## Rules

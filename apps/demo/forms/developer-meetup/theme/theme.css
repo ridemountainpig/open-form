@@ -1,5 +1,5 @@
-/* Terminal theme. Component classes are prefixed `tm-`; overrides of built-in
-   elements are scoped to [data-of-theme="developer-meetup"]. */
+/* The meetup's own look, after the terminal reference. Its own markup uses `tm-`
+   classes; the runtime's is restyled under [data-of-theme="developer-meetup"]. */
 
 [data-of-theme="developer-meetup"].of-root {
   background:
@@ -136,44 +136,64 @@
   gap: 22px 28px;
 }
 
-.tm-field {
+/* Fields: `? question` prompts, `#` help, `✖` errors. Glyphs are drawn, not read. */
+
+[data-of-theme="developer-meetup"] .of-field {
   display: grid;
   gap: 6px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.tm-field > legend {
-  padding: 0;
-  margin-bottom: 6px;
+[data-of-theme="developer-meetup"] .of-field > * + *,
+[data-of-theme="developer-meetup"] .of-field > legend,
+[data-of-theme="developer-meetup"] .of-field > legend:has(+ .of-help) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.tm-label {
+[data-of-theme="developer-meetup"] .of-label {
   color: var(--of-fg);
+  font-size: inherit;
   font-weight: 700;
+  line-height: inherit;
 }
 
-.tm-q {
+[data-of-theme="developer-meetup"] .of-label::before {
+  content: "? " / "";
   color: var(--of-primary);
 }
 
-.tm-help {
+[data-of-theme="developer-meetup"] .of-required {
+  margin-left: 0;
+  color: var(--of-muted);
+}
+
+[data-of-theme="developer-meetup"] .of-required::before {
+  content: " ";
+}
+
+[data-of-theme="developer-meetup"] .of-help,
+[data-of-theme="developer-meetup"] .of-field > .of-help {
   display: block;
   margin: 0;
   color: var(--of-muted);
   font-size: 13px;
+  line-height: inherit;
 }
 
-.tm-help::before {
-  content: "# ";
+[data-of-theme="developer-meetup"] .of-help::before {
+  content: "# " / "";
 }
 
-.tm-error {
+[data-of-theme="developer-meetup"] .of-field > .of-error {
   margin: 0;
   color: var(--of-error);
   font-size: 13px;
+  line-height: inherit;
+  animation: none;
+}
+
+[data-of-theme="developer-meetup"] .of-error::before {
+  content: "✖ " / "";
 }
 
 .tm-line {
@@ -193,7 +213,7 @@
   color: var(--of-primary);
 }
 
-.tm-field[data-invalid] .tm-caret {
+[data-of-theme="developer-meetup"] .of-field[data-invalid] .tm-caret {
   color: var(--of-error);
 }
 
@@ -245,103 +265,164 @@
   color: var(--of-fg);
 }
 
-.tm-choices {
+/* Choices: `( )` / `(•)` and `[ ]` / `[x]` marks, a `❯` on the one under the pointer. */
+
+[data-of-theme="developer-meetup"] .of-choices,
+[data-of-theme="developer-meetup"] .of-choices[data-variant] {
   display: grid;
+  grid-template-columns: none;
   gap: 2px;
 }
 
-.tm-choice {
+[data-of-theme="developer-meetup"] .of-choice,
+[data-of-theme="developer-meetup"] .of-choice:hover,
+[data-of-theme="developer-meetup"] .of-choice:has(input:checked) {
   position: relative;
   display: flex;
   align-items: baseline;
   gap: 10px;
   padding: 2px 0 2px 18px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  line-height: inherit;
   cursor: pointer;
 }
 
-.tm-choice input {
+[data-of-theme="developer-meetup"] .of-choice:has(input:focus-visible) {
+  outline: none;
+}
+
+[data-of-theme="developer-meetup"] .of-choice > input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.tm-choice::before {
+[data-of-theme="developer-meetup"] .of-choice::before {
   content: "";
   position: absolute;
   left: 0;
   color: var(--of-primary);
 }
 
-.tm-choice:hover::before,
-.tm-choice:has(input:focus-visible)::before {
-  content: "❯";
+[data-of-theme="developer-meetup"] .of-choice:hover::before,
+[data-of-theme="developer-meetup"] .of-choice:has(input:focus-visible)::before {
+  content: "❯" / "";
 }
 
-.tm-mark {
+[data-of-theme="developer-meetup"] .of-choice::after {
+  content: "( )" / "";
+  order: -1;
   flex: none;
   color: var(--of-muted);
   white-space: pre;
 }
 
-.tm-choice:has(input:checked) {
+[data-of-theme="developer-meetup"] .of-choice:has(input:checked)::after {
+  content: "(•)" / "";
+}
+
+[data-of-theme="developer-meetup"] .of-choice:has(.of-checkbox)::after {
+  content: "[ ]" / "";
+}
+
+[data-of-theme="developer-meetup"] .of-choice:has(.of-checkbox:checked)::after {
+  content: "[x]" / "";
+}
+
+[data-of-theme="developer-meetup"] .of-choice:has(input:checked),
+[data-of-theme="developer-meetup"] .of-choice:has(input:checked)::after {
   color: var(--of-primary);
 }
 
-.tm-choice:has(input:checked) .tm-mark {
-  color: var(--of-primary);
-}
-
-.tm-field[data-invalid] .tm-mark {
+[data-of-theme="developer-meetup"] .of-field[data-invalid] .of-choice::after {
   color: var(--of-error);
 }
 
-.tm-single {
+[data-of-theme="developer-meetup"] .of-choice-single {
   padding-left: 0;
 }
 
-.tm-single::before {
+[data-of-theme="developer-meetup"] .of-choice-single::before {
   display: none;
 }
 
-.tm-single > span:last-child {
+[data-of-theme="developer-meetup"] .of-choice-text {
   display: grid;
   gap: 2px;
 }
 
-.tm-rating {
+/* Rating: `[1] [2] …`, with its ends spelled out under it. */
+
+[data-of-theme="developer-meetup"] .of-rating {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 10px;
 }
 
-.tm-rating-item {
+[data-of-theme="developer-meetup"] .of-rating-item {
   position: relative;
   cursor: pointer;
 }
 
-.tm-rating-item input {
-  position: absolute;
-  opacity: 0;
+[data-of-theme="developer-meetup"] .of-rating-item input {
+  inset: auto;
+  width: auto;
+  height: auto;
   pointer-events: none;
 }
 
-.tm-rating-item span {
+[data-of-theme="developer-meetup"] .of-rating-item span,
+[data-of-theme="developer-meetup"] .of-rating-item:hover span {
+  display: inline;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
   color: var(--of-muted);
+  font-size: inherit;
+  font-weight: inherit;
   white-space: pre;
+  transition: none;
 }
 
-.tm-rating-item:hover span {
+[data-of-theme="developer-meetup"] .of-rating-item span::before {
+  content: "[";
+}
+
+[data-of-theme="developer-meetup"] .of-rating-item span::after {
+  content: "]";
+}
+
+[data-of-theme="developer-meetup"] .of-rating-item:hover span {
   color: var(--of-fg);
 }
 
-.tm-rating-item input:checked + span {
+[data-of-theme="developer-meetup"] .of-rating-item input:checked + span {
   background: var(--of-primary);
   color: var(--of-primary-fg);
 }
 
-.tm-rating-item input:focus-visible + span {
+[data-of-theme="developer-meetup"] .of-rating-item input:focus-visible + span {
   outline: 1px solid var(--of-primary);
   outline-offset: 2px;
+}
+
+[data-of-theme="developer-meetup"] .of-rating-labels {
+  display: block;
+  margin-top: -6px;
+  color: var(--of-muted);
+  font-size: 13px;
+}
+
+/* This form's scale runs 1–5. */
+[data-of-theme="developer-meetup"] .of-rating-labels::before {
+  content: "# 1 = ";
+}
+
+[data-of-theme="developer-meetup"] .of-rating-labels span + span::before {
+  content: " · 5 = ";
 }
 
 [data-of-theme="developer-meetup"] .of-alert {
@@ -360,8 +441,12 @@
   margin-top: 30px;
 }
 
-.tm-btn {
+[data-of-theme="developer-meetup"] .of-button {
+  display: inline-block;
+  flex: none;
+  min-width: 0;
   min-height: 40px;
+  margin: 0;
   padding: 0 14px;
   border: 1px solid var(--of-border);
   border-radius: 0;
@@ -376,16 +461,32 @@
     border-color 0.12s ease;
 }
 
-.tm-btn:hover {
-  border-color: var(--of-muted);
+/* Stronger than the runtime's phone rule that stretches nav buttons. */
+[data-of-theme="developer-meetup"] .of-nav .of-button {
+  flex: none;
+  min-width: 0;
 }
 
-.tm-btn:focus-visible {
+[data-of-theme="developer-meetup"] .of-button:hover,
+[data-of-theme="developer-meetup"] .of-button-secondary:hover {
+  border-color: var(--of-muted);
+  background: transparent;
+}
+
+[data-of-theme="developer-meetup"] .of-button:active {
+  transform: none;
+}
+
+[data-of-theme="developer-meetup"] .of-button:focus-visible {
   outline: 1px solid var(--of-primary);
   outline-offset: 3px;
 }
 
-.tm-btn-primary {
+[data-of-theme="developer-meetup"] .of-button-secondary::before {
+  content: "← " / "";
+}
+
+[data-of-theme="developer-meetup"] .of-button-primary {
   order: -1;
   border-color: var(--of-primary);
   background: var(--of-primary);
@@ -393,11 +494,15 @@
   font-weight: 700;
 }
 
-.tm-btn-primary:hover {
+[data-of-theme="developer-meetup"] .of-button-primary::after {
+  content: " ↵" / "";
+}
+
+[data-of-theme="developer-meetup"] .of-button-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--of-primary) 85%, #fff);
 }
 
-.tm-btn:disabled {
+[data-of-theme="developer-meetup"] .of-button:disabled {
   opacity: 0.6;
   cursor: progress;
 }
@@ -444,4 +549,9 @@
   .tm-titlebar-text {
     transform: none;
   }
+}
+
+/* Room above the window for the language picker in the corner, at every width. */
+[data-of-theme="developer-meetup"].of-root:has(> .of-lang) {
+  padding-top: clamp(56px, 6vw, 64px);
 }

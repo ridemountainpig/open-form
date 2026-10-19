@@ -1,5 +1,5 @@
-/* Conversational theme. Component classes are prefixed `cv-`; overrides of
-   built-in elements are scoped to [data-of-theme="feedback"]. */
+/* Feedback's own look, after the conversational reference. Its own markup uses
+   `cv-` classes; the runtime's is restyled under [data-of-theme="feedback"]. */
 
 [data-of-theme="feedback"].of-root {
   background:
@@ -58,21 +58,20 @@
 
 /* Questions */
 
-.cv-field {
+[data-of-theme="feedback"] .of-field {
   display: grid;
   gap: 12px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.cv-field > legend {
-  padding: 0;
-  margin-bottom: 12px;
+[data-of-theme="feedback"] .of-field > * + *,
+[data-of-theme="feedback"] .of-field > legend,
+[data-of-theme="feedback"] .of-field > legend:has(+ .of-help) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.cv-question {
+[data-of-theme="feedback"] .of-label,
+[data-of-theme="feedback"] .of-focus .of-label {
   font-family: var(--of-heading-font);
   font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
   font-weight: 650;
@@ -81,7 +80,7 @@
   text-wrap: pretty;
 }
 
-.cv-req {
+[data-of-theme="feedback"] .of-required {
   position: relative;
   top: -0.2em;
   margin-left: 4px;
@@ -89,7 +88,7 @@
   font-size: 0.75em;
 }
 
-.cv-help {
+[data-of-theme="feedback"] .of-field > .of-help {
   display: block;
   margin: -4px 0 4px;
   color: var(--of-muted);
@@ -98,11 +97,11 @@
   line-height: 1.5;
 }
 
-.cv-field > legend + .cv-help {
+[data-of-theme="feedback"] .of-field > legend + .of-help {
   margin-top: -8px;
 }
 
-.cv-error {
+[data-of-theme="feedback"] .of-field > .of-error {
   justify-self: start;
   display: inline-flex;
   align-items: center;
@@ -114,11 +113,14 @@
   color: var(--of-error);
   font-size: 0.9375rem;
   font-weight: 600;
+  line-height: inherit;
+  animation: none;
 }
 
 /* Text answers: a large underline, typed in the primary color. */
 
-.cv-line {
+.cv-line,
+[data-of-theme="feedback"] .of-field > .cv-line {
   position: relative;
   display: flex;
   align-items: baseline;
@@ -132,7 +134,7 @@
   border-bottom-color: var(--of-primary);
 }
 
-.cv-field[data-invalid] .cv-line {
+[data-of-theme="feedback"] .of-field[data-invalid] .cv-line {
   border-bottom-color: var(--of-error);
 }
 
@@ -174,27 +176,10 @@
   font-size: 0.9375rem;
 }
 
-.cv-select::after {
-  content: "";
-  position: absolute;
-  right: 6px;
-  bottom: 22px;
-  width: 9px;
-  height: 9px;
-  border-right: 2px solid var(--of-primary);
-  border-bottom: 2px solid var(--of-primary);
-  transform: rotate(45deg);
-  pointer-events: none;
-}
-
-.cv-select select {
-  padding-right: 28px;
-  cursor: pointer;
-}
-
 /* Choices: rows with letter keys. */
 
-.cv-choices {
+.cv-choices,
+[data-of-theme="feedback"] .of-field > .cv-choices {
   display: grid;
   gap: 10px;
   max-width: 480px;
@@ -299,35 +284,9 @@
   transform: none;
 }
 
-.cv-field[data-invalid] .cv-choice {
+[data-of-theme="feedback"] .of-field[data-invalid] .cv-choice {
   border-color: color-mix(in srgb, var(--of-error) 60%, var(--of-control));
 }
-
-.cv-single {
-  align-items: flex-start;
-  max-width: 480px;
-}
-
-.cv-box {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-top: 2px;
-  border: 1px solid var(--of-control);
-  border-radius: 7px;
-  background: var(--of-surface);
-  color: transparent;
-}
-
-.cv-single:has(input:checked) .cv-box {
-  border-color: var(--of-primary);
-  background: var(--of-primary);
-  color: var(--of-primary-fg);
-}
-
-/* Rating: a row of number tiles; 0–10 wraps to two rows on phones. */
 
 .cv-rating {
   display: grid;
@@ -396,11 +355,13 @@
 
 /* Buttons: a pill with an arrow; Back is a quiet text button. */
 
-.cv-btn {
+[data-of-theme="feedback"] .of-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  flex: none;
+  min-width: auto;
   min-height: 48px;
   padding: 0 22px;
   border: 0;
@@ -415,16 +376,22 @@
     transform 0.12s ease;
 }
 
-.cv-btn:active {
+/* Stronger than the runtime's phone rule that stretches nav buttons. */
+[data-of-theme="feedback"] .of-nav .of-button {
+  flex: none;
+  min-width: auto;
+}
+
+[data-of-theme="feedback"] .of-button:active {
   transform: scale(0.97);
 }
 
-.cv-btn:focus-visible {
+[data-of-theme="feedback"] .of-button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--of-primary) 40%, transparent);
   outline-offset: 3px;
 }
 
-.cv-btn-primary {
+[data-of-theme="feedback"] .of-button-primary {
   background: var(--of-primary);
   color: var(--of-primary-fg);
   box-shadow:
@@ -432,25 +399,33 @@
     0 10px 24px -12px var(--of-primary);
 }
 
-.cv-btn-primary:hover {
+[data-of-theme="feedback"] .of-button-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--of-primary) 90%, #000);
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.08),
     0 14px 28px -12px var(--of-primary);
 }
 
-.cv-btn-mark {
-  display: grid;
+/* The arrow; gone while it sends. */
+[data-of-theme="feedback"] .of-button-primary:not(:disabled)::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4 10h11m-4.5-4.5L15 10l-4.5 4.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
   transition: transform 0.15s ease;
 }
 
-.cv-btn-primary:hover .cv-btn-mark {
+[data-of-theme="feedback"] .of-button-primary:hover::after {
   transform: translateX(2px);
 }
 
-.cv-btn-secondary {
+[data-of-theme="feedback"] .of-button-secondary {
   order: 2;
   min-height: 40px;
+  margin-right: 0;
   margin-left: auto;
   padding: 0 10px;
   background: transparent;
@@ -458,11 +433,12 @@
   font-weight: 550;
 }
 
-.cv-btn-secondary:hover {
+[data-of-theme="feedback"] .of-button-secondary:hover {
+  background: transparent;
   color: var(--of-fg);
 }
 
-.cv-btn:disabled {
+[data-of-theme="feedback"] .of-button:disabled {
   opacity: 0.7;
   cursor: progress;
 }
@@ -528,7 +504,7 @@
     min-height: 50px;
   }
 
-  [data-of-theme="feedback"] .of-focus-actions .cv-btn-primary {
+  [data-of-theme="feedback"] .of-focus-actions .of-button-primary {
     flex: 1;
   }
 }

@@ -5,7 +5,7 @@ description: Use when the user wants a new form in this Open Form workspace — 
 
 # Create a form
 
-This skill is the **workflow**. Read `form-authoring` for the *how* (components, props, conditions, config, themes, layouts) before writing code. You write `forms/<id>/`, its own look in `forms/<id>/theme/` included — and `themes/<id>/` only when the chosen direction needs a new theme (via `create-theme`).
+This skill is the **workflow**. Read `form-authoring` for the *how* (components, props, conditions, config, themes, layouts) before writing code. You write `forms/<id>/`, its own look in `forms/<id>/theme/` included — and `themes/<id>/` only when the chosen direction needs a new reference theme (via `create-theme`).
 
 Run `open-form` through the workspace's package manager and type-check with its `typecheck` script, as AGENTS.md → Commands shows (`pnpm exec open-form`, `npx open-form`, …; `pnpm typecheck`, `npm run typecheck`, …).
 
@@ -29,28 +29,29 @@ If the purpose or the core questions are unclear, ask about them first, in a que
 
 ### 2a. Know what's available
 
-- Run `open-form theme list`: the project's themes (the references in `themes/`) and the **starters** that ship with Open Form (`brutalist`, `classic`, `conversational`, `editorial`, `terminal`). Any of them can be copied into a form.
-- Read the `THEME.md` of the candidates you're considering: the project's in `themes/<id>/THEME.md` (a `themes/<id>.ts` without one is tokens only — read the file), starters' in `node_modules/open-form/themes/<id>/THEME.md`.
+- Run `open-form theme list`: the project's themes (the references in `themes/`) and the **starters** that ship with Open Form (`brutalist`, `classic`, `conversational`, `editorial`, `terminal`). All of them are references: you read one and write this form's look from it; a form never imports or copies one.
+- Read the `THEME.md` of the candidates you're considering: the project's in `themes/<id>/THEME.md` (a `themes/<id>.ts` without one is tokens only — read the file), starters' in `node_modules/@open-form-build/core/themes/<id>/THEME.md`.
 - Check `themes/` for a house/brand theme — one with real brand colors or a `THEME.md`. **If the project has a brand theme, it is the recommended option** unless the form clearly needs a different voice.
 
 ### 2b. Propose three directions
 
-Ask the user — with a multiple-choice question tool if you have one — to pick from **three directions tailored to this form and audience**. Each option combines a theme, a layout and a vibe with concrete visual cues, so the user can picture it — never bare labels like "modern" or "clean".
+Ask the user — with a multiple-choice question tool if you have one — to pick from **three directions tailored to this form and audience**. Each option combines a theme, a layout, a vibe with concrete visual cues and — when the form has one — its **signature element**: the one piece of UI that belongs to this form's purpose (*Design guidelines → Look* in `form-authoring`). Start from the *Signature ideas* in the theme's THEME.md, which say what fits that theme and where it goes in its layout, and fit them to this form. Never bare labels like "modern" or "clean"; "theme X" alone gives a form that looks like every other form in theme X.
 
 Each direction is one of:
 
-- a **project theme or a starter as-is** — e.g. `terminal` · CLI prompts, green on black, ASCII progress;
-- a **theme + a different layout** — e.g. `brutalist` + `StepperLayout` · yellow, thick borders, a step rail;
-- a **new theme** — e.g. "match our product: navy + coral from your Tailwind config, Inter, split layout" (built with `create-theme` in `themes/` before writing the form, then copied in).
+- a **project theme or a starter, followed closely** — e.g. `terminal` · CLI prompts, green on black, ASCII progress;
+- a **theme adapted for this form** — the form's look is written for it (2c), so recolor it, change its fonts or pair it with a different layout: e.g. `editorial` in forest green and cream; `brutalist` + `StepperLayout` · yellow, thick borders, a step rail;
+- a **new theme** — e.g. "match our product: navy + coral from your Tailwind config, Inter, split layout" (built with `create-theme` in `themes/` before writing the form, then used as its reference).
 
 Directions must fit the form's size: pair a theme with `StepperLayout` only when the form has 3+ natural sections, and propose `conversational` / `FocusLayout` only when most questions work one per screen. The three should feel meaningfully different, not three shades of one idea. Mark the best fit for the purpose and audience as "(Recommended)", and leave room for the user's own answer ("Other").
 
 How the options should shift with the brief:
 
-- *Developer meetup registration* → **terminal** (CLI prompts, green on black — insiders will smile) · **brutalist** (loud yellow card, chunky blocks, very shareable) · **editorial split** (serif headline, ink panel — feels curated).
+- *Developer meetup registration* → **terminal** (CLI prompts, green on black, the agenda printed as `$ cat agenda` beside the questions — insiders will smile) · **brutalist** (loud yellow card, chunky blocks, a seats-left sticker — very shareable) · **editorial split** (serif headline, ink panel with the date and venue set like a masthead — feels curated).
+- *Conference registration with ticket tiers* → **dark brand + aside** (a pass that fills in with the name, role and tier as people answer) · **editorial split** (tier tiles with prices, a running total in the ink panel) · **classic** (compact card, fastest to fill).
 - *Post-purchase NPS survey* → **conversational** (one question per screen, letter keys, finishes in 30s) · **classic** (compact single card, embeds anywhere) · **brand theme** (your colors, so it feels like part of the product).
-- *Enterprise onboarding application, 4 sections* → **editorial split** (premium, considered) · **brand theme + StepperLayout** (product-native, a step list for the sections) · **classic** (neutral, fastest to fill).
-- *Kids' summer camp sign-up for parents* → **conversational** with warm colors (friendly, mobile-first) · **classic** with a bright primary · a new **soft playful** theme (rounded, pastel, illustrated feel).
+- *Enterprise onboarding application, 4 sections* → **editorial split** (premium, considered, a summary of the answers in the panel) · **brand theme + StepperLayout** (product-native, a step list for the sections) · **classic** (neutral, fastest to fill).
+- *Kids' summer camp sign-up for parents* → **conversational** with warm colors (friendly, mobile-first) · **classic** with a bright primary and a week-by-week schedule card · a new **soft playful** theme (rounded, pastel, illustrated feel).
 
 In the **same** question, also ask anything else still open that shapes the build, e.g.:
 
@@ -62,9 +63,9 @@ Skip the visual question only when the user already named the look ("use our bra
 
 ### 2c. How the look gets into the form
 
-Themes in `themes/` and the starters are references. The form gets its **own copy** of the chosen one in `forms/<id>/theme/` (Step 5) and owns its look from then on: editing or deleting the theme in `themes/` never changes it, and you're free to adapt the copy for this form — tokens, components, CSS.
+Themes in `themes/` and the starters are **references**: you read the chosen one, and the form never imports or copies it. The form's look is written for it in `forms/<id>/theme/` (Step 5): `index.ts` with its tokens, the form's own CSS, and components only where the look needs markup or behavior the runtime doesn't give. It carries only what this form uses, and editing or deleting a theme in `themes/` never changes it.
 
-A direction that needs a new theme: use the `create-theme` skill first — it writes a reusable reference in `themes/<id>/` — then come back here and copy it in like any other.
+A direction that needs a new theme: use the `create-theme` skill first — it writes a reusable reference in `themes/<id>/` — then come back here and use it like any other.
 
 ## Step 3 — Pick an id
 
@@ -78,30 +79,31 @@ Re-read the chosen theme's `THEME.md` — its **Copy tone** and **Do / Don't** s
 - **Single page**: up to ~7 fields — the default for short forms in any theme.
 - **Sections / multi-step**: when there are more fields or clearly separate topics; 3–7 fields per `<Page>`, short page titles (they become the step list or the theme's section headings), last page short.
 - Order: easy → personal → effortful; free text near the end; follow-ups right after the question they depend on.
+- **Plan the look**, by *Design guidelines → Look* in `form-authoring`: where each header fact goes (once), the signature element and where it lives (`aside`, a custom field, the success screen), what the first screen on a phone shows, and the success copy.
 - Field types per question (table in `form-authoring`). Names camelCase, stable, unique — they become Responses columns.
 - Write copy in the theme's voice and the form's main language. Set `locale` to that language — `'en'`, `'zh-TW'` (Traditional Chinese), `'zh-CN'` (Simplified Chinese) or `'ja'` (Japanese). It localizes buttons, validation messages and dates, and picks matching CJK fonts. A form with translations must set it.
 - **Multilingual**: give choice options explicit, language-neutral values — `{ value: 'engineer', label: '工程師' }` — so answers mean the same in every language; plain strings would store the main-language label.
-- **Plan the closed screen** (*Closed screens* in `form-authoring`). Every form gets one when it closes — by date or from Studio — and the default is generic. Always write `closedMessage` in the form's voice, and `fullMessage` / `duplicateMessage` when you set a limit or uniqueness. When the form is tied to a date, has limited spots or one response per person, or the direction has a strong look, also give it its own `Notice`: the same voice and look as the form, a line per `state` it can reach, and what to do next using only facts the user gave (next date, where to follow, who to contact). If the theme ships its own `Notice` (see its `index.tsx`), the form's copy gets it too: adapt it in `forms/<id>/theme/`, or build yours from its markup and classes so the screen still looks like the theme — or, when the messages already say everything, skip the component.
+- **Plan the closed screen** (*Closed screens* in `form-authoring`). Every form gets one when it closes — by date or from Studio — and the default is generic. Always write `closedMessage` in the form's voice, and `fullMessage` / `duplicateMessage` when you set a limit or uniqueness. When the form is tied to a date, has limited spots or one response per person, or the direction has a strong look, also give it its own `Notice`: the same voice and look as the form, a line per `state` it can reach, and what to do next using only facts the user gave (next date, where to follow, who to contact). If the reference has its own `Notice` (see its `index.tsx`), build the form's from its markup so the screen still looks like the rest of the form — or, when the messages already say everything, skip the component.
 
 ## Step 5 — Write `forms/<id>/index.tsx`
 
-Scaffold it with the look already copied in, then replace the body:
+Scaffold it from the reference's tokens, then replace the body:
 
 ```bash
-open-form create <id> --theme <theme>   # forms/<id>/index.tsx + forms/<id>/theme/, wired up
-open-form theme copy <theme> <id>       # the folder already exists: copy the theme in, then wire it yourself
+open-form create <id> --theme <theme>   # forms/<id>/index.tsx + theme/index.ts with <theme>'s tokens, wired up
 ```
 
-`<theme>` is the project's theme when `themes/<theme>` exists, otherwise the starter of that name.
+`<theme>` is the project's theme when `themes/<theme>` exists, otherwise the starter of that name. Only its tokens (colors, fonts, radius, width, spacing) and the web fonts they name come in — no CSS, no components. Without `--theme` the form starts with an empty `theme/index.ts`: the runtime's default look.
 
 - `export const config = defineForm({ title, description, … })` with only the policy the user asked for. The look isn't config.
-- `import theme from './theme/index.tsx';` (or `index.ts` — whichever the copy has) and `<Form theme={theme}>`. Put that import **above** the form's own CSS import, so the form's CSS wins. Never import from `themes/`.
+- `import theme from './theme/index.ts';` (`index.tsx` once it has components) and `<Form theme={theme}>`. Put that import **above** the form's own CSS import, so the form's CSS wins. Never import from `themes/`.
 - `export default function <Name>Form() { return <Form theme={theme}>…</Form>; }` (e.g. `MeetupForm`). Never name it after an `@open-form-build/core` export (`Form`, `Email`): it would render itself, and `open-form check` refuses it. Avoid globals too (`Date`, `Number`): the name shadows them.
-- Adapt the copy in `forms/<id>/theme/` when the direction calls for it — tokens, components, CSS. It's this form's alone. After color changes run `open-form theme check <id> --form`.
-- Layout only via the form's theme or `<Form components={{ Layout: … }}>` when the direction pairs a theme with a different layout.
+- **Write the rest of the look for this form** in `forms/<id>/theme/`, reading the reference's `THEME.md` and its `index.tsx` and CSS (`themes/<theme>/`, or `node_modules/@open-form-build/core/themes/<theme>/` for a starter). Bring over only what this form uses, in this order (`form-authoring` → *Themes*): tokens; then CSS on the runtime's own classes, scoped to `[data-of-theme="<id>"]`; then a component only where the look needs markup or behavior CSS can't give — a window frame, keyboard shortcuts, auto-advance, a glyph in front of an `<input>`. After color changes run `open-form theme check <id> --form`.
+- Layout via the form's theme (`components: { Layout: SplitLayout }`) or `<Form components={{ Layout: … }}>`.
 - The closed screen you planned: a `Notice` component in the form's file (or beside it), passed as `<Form components={{ Notice: … }}>`.
 - Import from `@open-form-build/core` and the form's own folder only. No state, fetch, API routes or CSS frameworks.
 - Custom UI the DSL can't express → a local component with `useField` + `FieldShell` in `forms/<id>/` (see `form-authoring`), styled with the theme's `--of-*` tokens.
+- The signature element: a local component (`forms/<id>/<name>.tsx`) passed as `aside` or used as a field, styled in the form's CSS with prefixed classes on `--of-*` tokens. Restyle the runtime's own parts only through the classes in `form-authoring` → *Custom styling*.
 - **Translations** (multilingual forms): after the form is final, write `forms/<id>/locales/<lang>.json` for each extra language — every string respondents see, keyed by the exact text in the form — and pass them as `translations` (see *Languages* in `form-authoring`). Translate for meaning and tone, not word by word; keep it as warm or as formal as the original.
 
 ## Step 6 — Self-review
@@ -115,21 +117,26 @@ pnpm typecheck         # tsc --noEmit, via the workspace's package manager
 
 For a multilingual form, `check` lists each language as `N/N translated`; fix every `missing` line before handing off. "Not seen" entries are fine when they're text shown only for certain answers or `validate` messages; otherwise they're keys left behind by edited text — re-key or remove them.
 
-If the dev server is running, also open these on the URL `open-form dev` printed (default `http://localhost:3000`):
+### Look at it
 
-- `/studio/<id>/schema` — the **Schema** tab: the derived steps, fields, required flags and conditions match your plan;
-- `/studio/<id>` — Preview on desktop **and** mobile; the direction reads as intended. The step list next to the preview jumps to any page (conditional ones included) without filling earlier ones; nothing is submitted in that mode. *When closed* after the steps shows each closed screen the form can reach — check every one reads right. Multilingual forms have a language picker there too.
+`check` proves the form works, not that it looks right. Only a screenshot catches a missing title, CSS that never applied, or a panel that pushes the questions off a phone's first screen. Use whatever browser tool you have (a browser MCP, Playwright, Claude in Chrome, your editor's preview) on the URL `open-form dev` printed (default `http://localhost:3000`); if nothing answers there, start the `dev` script in the background and stop it when you're done.
 
-If it isn't running, `open-form check` is enough to hand off; mention that the user can preview with the dev script (`open-form dev`).
+1. `/f/<id>` at desktop (~1440×900) and phone (~390×844) width — screenshot both and compare them with the agreed direction and *Design guidelines → Look* in `form-authoring`: the title and description show; the form's own CSS applies (`.of-root` has `data-of-theme="<id>"` when the form has its own theme); the signature element reads right; nothing is low-contrast, clipped or overlapping — with translations, nothing sits under the language picker in the top-right corner (`form-authoring` → *Layouts and chrome*); on the phone the first question is on the first screen.
+2. `/studio/<id>/schema` — the **Schema** tab: the derived steps, fields, required flags and conditions match your plan.
+3. `/studio/<id>` — Preview: the step list next to the preview jumps to any page (conditional ones included) without filling earlier ones; nothing is submitted in that mode. *When closed* after the steps shows each closed screen the form can reach — check every one reads right. Multilingual forms have a language picker there too.
+
+Fix what you see and look again. If none of the form's styles apply and `.of-root` says `data-of-theme="default"` although the form passes `<Form theme>`, that's a runtime problem: tell the user instead of working around it with unscoped CSS.
+
+Without a browser tool, `open-form check` is enough to hand off — but say that you haven't seen the form, and ask the user to open `/f/<id>`.
 
 ## Step 7 — Hand off
 
 Tell the user, briefly:
 
 - the public link `/f/<id>` and Studio `/studio/<id>`, on the dev server's URL (default `http://localhost:3000`);
-- the direction you built (theme + layout) and any policy you applied;
+- the direction you built (theme + layout + signature element) and any policy you applied, and whether you looked at it on desktop and phone;
 - what respondents see once it closes, and that Studio's Preview shows it under *When closed*;
 - for multilingual forms: the languages, that respondents get theirs automatically (or via the picker / `?lang=ja`), and that editing text means updating each `locales/*.json`;
 - assumptions you made;
 - that preview submissions are real and can be deleted under Responses;
-- that the form's look lives in `forms/<id>/theme/` and is theirs to change (edit it, or ask you); `themes/` is the reference library for new forms, and changing it won't touch this one.
+- that the form's look lives in `forms/<id>/theme/` and is theirs to change — edit it, ask you, or use **Adjust** in Studio's preview for colors, fonts and shape; `themes/` is the reference library for new forms, and changing it won't touch this one.
