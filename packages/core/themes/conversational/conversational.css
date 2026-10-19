@@ -1,5 +1,5 @@
-/* Conversational theme. Component classes are prefixed `cv-`; overrides of
-   built-in elements are scoped to [data-of-theme="conversational"]. */
+/* Conversational theme. The runtime's own markup is restyled under
+   [data-of-theme="conversational"]; the `cv-` classes are the components' own markup. */
 
 [data-of-theme="conversational"].of-root {
   background:
@@ -58,21 +58,20 @@
 
 /* Questions */
 
-.cv-field {
+[data-of-theme="conversational"] .of-field {
   display: grid;
   gap: 12px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.cv-field > legend {
-  padding: 0;
-  margin-bottom: 12px;
+[data-of-theme="conversational"] .of-field > * + *,
+[data-of-theme="conversational"] .of-field > legend,
+[data-of-theme="conversational"] .of-field > legend:has(+ .of-help) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.cv-question {
+[data-of-theme="conversational"] .of-label,
+[data-of-theme="conversational"] .of-focus .of-label {
   font-family: var(--of-heading-font);
   font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
   font-weight: 650;
@@ -81,7 +80,7 @@
   text-wrap: pretty;
 }
 
-.cv-req {
+[data-of-theme="conversational"] .of-required {
   position: relative;
   top: -0.2em;
   margin-left: 4px;
@@ -89,7 +88,7 @@
   font-size: 0.75em;
 }
 
-.cv-help {
+[data-of-theme="conversational"] .of-field > .of-help {
   display: block;
   margin: -4px 0 4px;
   color: var(--of-muted);
@@ -98,11 +97,12 @@
   line-height: 1.5;
 }
 
-.cv-field > legend + .cv-help {
+[data-of-theme="conversational"] .of-field > legend + .of-help {
   margin-top: -8px;
 }
 
-.cv-error {
+[data-of-theme="conversational"] .of-error,
+[data-of-theme="conversational"] .of-field > .of-error {
   justify-self: start;
   display: inline-flex;
   align-items: center;
@@ -114,11 +114,14 @@
   color: var(--of-error);
   font-size: 0.9375rem;
   font-weight: 600;
+  line-height: inherit;
+  animation: none;
 }
 
 /* Text answers: a large underline, typed in the primary color. */
 
-.cv-line {
+.cv-line,
+[data-of-theme="conversational"] .of-field > .cv-line {
   position: relative;
   display: flex;
   align-items: baseline;
@@ -132,7 +135,7 @@
   border-bottom-color: var(--of-primary);
 }
 
-.cv-field[data-invalid] .cv-line {
+[data-of-theme="conversational"] .of-field[data-invalid] .cv-line {
   border-bottom-color: var(--of-error);
 }
 
@@ -174,27 +177,62 @@
   font-size: 0.9375rem;
 }
 
-.cv-select::after {
-  content: "";
-  position: absolute;
+/* Select: the runtime's wrapper takes the answer line and a chevron. */
+
+[data-of-theme="conversational"] .of-select-wrap,
+[data-of-theme="conversational"] .of-field > .of-select-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 8px;
+  border-bottom: 2px solid var(--of-control);
+  transition: border-color 0.2s ease;
+}
+
+[data-of-theme="conversational"] .of-select-wrap:focus-within {
+  border-bottom-color: var(--of-primary);
+}
+
+[data-of-theme="conversational"] .of-field[data-invalid] .of-select-wrap {
+  border-bottom-color: var(--of-error);
+}
+
+[data-of-theme="conversational"] .of-select-wrap::after {
+  top: auto;
   right: 6px;
   bottom: 22px;
   width: 9px;
   height: 9px;
+  translate: none;
   border-right: 2px solid var(--of-primary);
   border-bottom: 2px solid var(--of-primary);
+  background: none;
+  mask: none;
   transform: rotate(45deg);
-  pointer-events: none;
 }
 
-.cv-select select {
-  padding-right: 28px;
+[data-of-theme="conversational"] .of-select-wrap > .of-select,
+[data-of-theme="conversational"] .of-select-wrap > .of-select[data-placeholder] {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px 28px 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--of-primary);
+  font: inherit;
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  font-weight: 500;
+  outline: none;
   cursor: pointer;
 }
 
 /* Choices: rows with letter keys. */
 
-.cv-choices {
+.cv-choices,
+[data-of-theme="conversational"] .of-field > .cv-choices {
   display: grid;
   gap: 10px;
   max-width: 480px;
@@ -299,32 +337,108 @@
   transform: none;
 }
 
-.cv-field[data-invalid] .cv-choice {
+[data-of-theme="conversational"] .of-field[data-invalid] .cv-choice {
   border-color: color-mix(in srgb, var(--of-error) 60%, var(--of-control));
 }
 
-.cv-single {
+/* Checkbox: a choice row; the input itself is the box. */
+
+[data-of-theme="conversational"] .of-choice-single,
+[data-of-theme="conversational"] .of-choice-single:hover,
+[data-of-theme="conversational"] .of-choice-single:has(input:checked) {
+  position: relative;
+  display: flex;
   align-items: flex-start;
+  gap: 12px;
   max-width: 480px;
+  min-height: 56px;
+  padding: 10px 16px 10px 12px;
+  border: 1px solid var(--of-control);
+  border-radius: var(--of-radius);
+  background: var(--of-input);
+  color: var(--of-fg);
+  font-size: 1.0625rem;
+  line-height: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.cv-box {
-  display: grid;
-  flex: none;
-  place-items: center;
+[data-of-theme="conversational"] .of-choice-single:hover {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 5%, var(--of-input));
+}
+
+[data-of-theme="conversational"] .of-choice-single:active {
+  transform: scale(0.99);
+}
+
+[data-of-theme="conversational"] .of-choice-single:has(input:checked) {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 9%, var(--of-input));
+  box-shadow: inset 0 0 0 1px var(--of-primary);
+  animation: cv-blink 0.3s ease;
+}
+
+[data-of-theme="conversational"] .of-choice-single:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--of-primary) 40%, transparent);
+  outline-offset: 2px;
+}
+
+[data-of-theme="conversational"] .of-field[data-invalid] .of-choice-single {
+  border-color: color-mix(in srgb, var(--of-error) 60%, var(--of-control));
+}
+
+[data-of-theme="conversational"] .of-choice-single > .of-checkbox {
   width: 24px;
   height: 24px;
-  margin-top: 2px;
+  margin: 2px 0 0;
   border: 1px solid var(--of-control);
   border-radius: 7px;
   background: var(--of-surface);
-  color: transparent;
+  transition: none;
 }
 
-.cv-single:has(input:checked) .cv-box {
+[data-of-theme="conversational"] .of-choice-single > .of-checkbox::before {
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.5l3.5 3.5 7.5-8' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  transform: none;
+  transition: none;
+}
+
+[data-of-theme="conversational"] .of-choice-single > .of-checkbox:checked {
   border-color: var(--of-primary);
   background: var(--of-primary);
-  color: var(--of-primary-fg);
+}
+
+[data-of-theme="conversational"] .of-choice-single > .of-checkbox:checked::before {
+  background: var(--of-primary-fg);
+}
+
+[data-of-theme="conversational"] .of-choice-single > .of-checkbox:focus-visible {
+  outline: none;
+}
+
+[data-of-theme="conversational"] .of-choice-single > .of-choice-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+[data-of-theme="conversational"] .of-choice-text > .of-help {
+  display: block;
+  margin: -4px 0 4px;
+  color: var(--of-muted);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 /* Rating: a row of number tiles; 0–10 wraps to two rows on phones. */
@@ -394,13 +508,187 @@
   font-size: 0.875rem;
 }
 
+/* Matrix: a card of answer tiles per row when narrow; once the form is wide,
+   one rounded row per question with the radio drawn as a dot under each heading. */
+
+[data-of-theme="conversational"] .of-matrix-grid,
+[data-of-theme="conversational"] .of-field > .of-matrix-grid {
+  gap: 12px;
+  margin-top: 4px;
+}
+
+[data-of-theme="conversational"] .of-matrix-row {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7rem), 1fr));
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--of-border);
+  border-radius: var(--of-radius);
+  background: var(--of-input);
+  transition: border-color 0.15s ease;
+}
+
+[data-of-theme="conversational"] .of-matrix-row:focus-within {
+  border-color: var(--of-primary);
+}
+
+[data-of-theme="conversational"] .of-matrix-row[data-invalid] {
+  border-color: color-mix(in srgb, var(--of-error) 60%, var(--of-control));
+}
+
+[data-of-theme="conversational"] .of-matrix-label {
+  grid-column: 1 / -1;
+  gap: 6px;
+  margin: 0 0 2px;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+[data-of-theme="conversational"] .of-matrix-label .of-error {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+[data-of-theme="conversational"] .of-matrix-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 0;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 1px solid var(--of-control);
+  border-radius: calc(var(--of-radius) - 4px);
+  background: var(--of-input);
+  color: var(--of-fg);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+[data-of-theme="conversational"] .of-matrix-cell > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-of-theme="conversational"] .of-matrix-cell:hover {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 7%, var(--of-input));
+  color: var(--of-primary);
+}
+
+[data-of-theme="conversational"] .of-matrix-cell:has(input:checked) {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="conversational"] .of-matrix-cell:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--of-primary) 40%, transparent);
+  outline-offset: 2px;
+}
+
+@container (min-width: 32rem) {
+  [data-of-theme="conversational"] .of-matrix-grid,
+  [data-of-theme="conversational"] .of-field > .of-matrix-grid {
+    gap: 8px;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-head,
+  [data-of-theme="conversational"] .of-matrix-row {
+    grid-template-columns: minmax(8rem, 1.6fr) repeat(var(--of-matrix-columns), minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-head {
+    align-items: end;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-head span {
+    padding: 0 4px;
+    color: var(--of-muted);
+    font-size: 0.875rem;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-row {
+    padding: 0;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-label {
+    grid-column: auto;
+    align-self: center;
+    margin: 0;
+    padding: 14px 12px 14px 18px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-cell,
+  [data-of-theme="conversational"] .of-matrix-cell:hover,
+  [data-of-theme="conversational"] .of-matrix-cell:has(input:checked) {
+    min-height: 56px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-cell:has(input:focus-visible) {
+    outline: none;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-cell > .of-radio,
+  [data-of-theme="conversational"] .of-matrix-row[data-invalid] .of-radio:not(:checked) {
+    position: static;
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    border: 1px solid var(--of-control);
+    background: var(--of-surface);
+    opacity: 1;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-cell > .of-radio::before {
+    width: 14px;
+    height: 14px;
+    border-radius: 0;
+    mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.5l3.5 3.5 7.5-8' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  [data-of-theme="conversational"] .of-matrix-row .of-matrix-cell:hover > .of-radio,
+  [data-of-theme="conversational"] .of-matrix-cell > .of-radio:checked {
+    border-color: var(--of-primary);
+  }
+
+  [data-of-theme="conversational"] .of-matrix-cell > .of-radio:checked {
+    background: var(--of-primary);
+  }
+
+  [data-of-theme="conversational"] .of-matrix-cell:has(input:focus-visible) > .of-radio {
+    outline: 3px solid color-mix(in srgb, var(--of-primary) 40%, transparent);
+    outline-offset: 2px;
+  }
+}
+
 /* Buttons: a pill with an arrow; Back is a quiet text button. */
 
-.cv-btn {
+[data-of-theme="conversational"] .of-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  flex: none;
+  min-width: auto;
   min-height: 48px;
   padding: 0 22px;
   border: 0;
@@ -415,16 +703,22 @@
     transform 0.12s ease;
 }
 
-.cv-btn:active {
+/* Stronger than the runtime's phone rule that stretches nav buttons. */
+[data-of-theme="conversational"] .of-nav .of-button {
+  flex: none;
+  min-width: auto;
+}
+
+[data-of-theme="conversational"] .of-button:active {
   transform: scale(0.97);
 }
 
-.cv-btn:focus-visible {
+[data-of-theme="conversational"] .of-button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--of-primary) 40%, transparent);
   outline-offset: 3px;
 }
 
-.cv-btn-primary {
+[data-of-theme="conversational"] .of-button-primary {
   background: var(--of-primary);
   color: var(--of-primary-fg);
   box-shadow:
@@ -432,25 +726,33 @@
     0 10px 24px -12px var(--of-primary);
 }
 
-.cv-btn-primary:hover {
+[data-of-theme="conversational"] .of-button-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--of-primary) 90%, #000);
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.08),
     0 14px 28px -12px var(--of-primary);
 }
 
-.cv-btn-mark {
-  display: grid;
+/* The arrow; gone while it sends. */
+[data-of-theme="conversational"] .of-button-primary:not(:disabled)::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4 10h11m-4.5-4.5L15 10l-4.5 4.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
   transition: transform 0.15s ease;
 }
 
-.cv-btn-primary:hover .cv-btn-mark {
+[data-of-theme="conversational"] .of-button-primary:hover::after {
   transform: translateX(2px);
 }
 
-.cv-btn-secondary {
+[data-of-theme="conversational"] .of-button-secondary {
   order: 2;
   min-height: 40px;
+  margin-right: 0;
   margin-left: auto;
   padding: 0 10px;
   background: transparent;
@@ -458,11 +760,12 @@
   font-weight: 550;
 }
 
-.cv-btn-secondary:hover {
+[data-of-theme="conversational"] .of-button-secondary:hover {
+  background: transparent;
   color: var(--of-fg);
 }
 
-.cv-btn:disabled {
+[data-of-theme="conversational"] .of-button:disabled {
   opacity: 0.7;
   cursor: progress;
 }
@@ -528,7 +831,7 @@
     min-height: 50px;
   }
 
-  [data-of-theme="conversational"] .of-focus-actions .cv-btn-primary {
+  [data-of-theme="conversational"] .of-focus-actions .of-button-primary {
     flex: 1;
   }
 }

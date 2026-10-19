@@ -45,10 +45,10 @@ open-form/                         ← this repo (pnpm + Turborepo monorepo)
 │   │   │   ├── vite/              Vite plugin: form discovery, virtual modules, dev API middleware
 │   │   │   ├── editing/           dev write-back to source (Babel AST): submission settings, theme tokens, text, translations, comments, folders, loc markers
 │   │   │   ├── cli/               `open-form` CLI: init / dev / build / start / create / check / comments / list /
-│   │   │   │                      responses export / theme list|check|add|copy|font / sync:skills
+│   │   │   │                      responses export / theme list|check|add|font / sync:skills
 │   │   │   ├── app/               hidden Vite app (shipped as source): public form page + Studio
 │   │   │   └── index.ts           public DSL entry imported by forms
-│   │   ├── themes/                starter themes (classic, editorial, terminal, brutalist, conversational), the source for `theme add` / `theme copy`
+│   │   ├── themes/                starter themes (classic, editorial, terminal, brutalist, conversational): references for `theme add` and `create --theme`
 │   │   ├── skills/                built-in agent skills (create-form, create-theme, form-authoring, current-form, apply-comments)
 │   │   ├── template/              workspace template for `open-form init`
 │   │   └── e2e/                   smoke test: scaffold → build → start → submit → export
@@ -70,7 +70,7 @@ my-forms/
 ├── forms/
 │   └── event-registration/
 │       ├── index.tsx              ← where the agent writes
-│       └── theme/                 ← the form's own copy of a theme (theme copy), only this form uses it
+│       └── theme/                 ← the form's own look (tokens + the CSS and components it uses), only this form uses it
 ├── themes/
 │   └── <id>/index.tsx + THEME.md  ← references for new forms (a starter added with theme add, or made by create-theme)
 ├── open-form.config.ts
@@ -217,7 +217,7 @@ components.Field      ← label / description / error
 | `TextInput` | `Text`, `Email`, `Url`, `Tel`, `NumberInput`, `DateInput` |
 | `Textarea`, `Select`, `ChoiceGroup`, `Checkbox`, `Rating` | The fields of the same name; `ChoiceGroup` covers both `RadioGroup` and `CheckboxGroup` |
 
-Override order: `defaultComponents` ← the theme's `components` ← `<Form components>`. The theme comes from `<Form theme>` (the form's own copy), else from a host (`FormHost`, the landing site, Studio's theme preview) through `runtime.theme`. A form's own theme is scoped to the form: the root gets `data-of-theme="<form-id>"`. It's imported by the form module, so it loads with the form (no second request) and also sits in the server bundle (its CSS is dropped there). Render-to-collect never applies theme components, so the field list the server reads is unaffected by appearance; field registration happens in the behavior layer.
+Override order: `defaultComponents` ← the theme's `components` ← `<Form components>`. The theme comes from `<Form theme>` (the form's own look), else from a host (`FormHost`, the landing site, Studio's theme preview) through `runtime.theme`. A form's own theme is scoped to the form: the root gets `data-of-theme="<form-id>"`. It's imported by the form module, so it loads with the form (no second request) and also sits in the server bundle (its CSS is dropped there). Render-to-collect never applies theme components, so the field list the server reads is unaffected by appearance; field registration happens in the behavior layer.
 
 ### Layout and chrome (v0.2 Step 2)
 
@@ -237,7 +237,7 @@ The form's "chrome" is made of replaceable components too: `Layout`, `LanguageSw
 
 `useFormNav()` exposes the current step, the list of visible steps, and `next()` / `back()` / `goTo()`. Three layouts are built in: `StepperLayout` (side steps), `SplitLayout` (brand panel) and `FocusLayout` (one question at a time; the form's title / description is shown first as a welcome screen, disabled with `cover={false}`). Because the framework still decides and renders the current step, no layout can affect validation, focus management or server-side field discovery.
 
-### Starter themes, theme add and theme copy (v0.2 Step 3; starters and form copies since v0.4)
+### Starter themes, theme add and form-owned looks (v0.2 Step 3; starters and form-owned looks since v0.4)
 
 ```text
 packages/core/themes/<id>/
@@ -254,9 +254,11 @@ packages/core/themes/<id>/
 | `brutalist` | Card | Neo-brutalism |
 | `conversational` | `FocusLayout` | One question at a time, letter shortcuts, auto-advance |
 
-As in open-slide, **themes are references, and each form owns its look**. A theme in the project's `themes/` is what an agent reads and copies when it creates a form; nothing renders from it. `open-form theme copy <theme> <form>` (or `open-form create <id> --theme <theme>`) copies a project theme, or else the starter of that name, into `forms/<form>/theme/` (THEME.md stays behind with the reference) and rewrites `[data-of-theme="<theme>"]` selectors to the form id; the form imports it above its own CSS and passes `<Form theme={theme}>`. From then on, editing or deleting the theme in `themes/` never changes the form, and editing the form's copy changes only that form. A form without its own theme gets the runtime's base styles; there's no project default theme and no missing-theme fallback to manage.
+As in open-slide, **themes are references, and each form owns its look**. A theme in the project's `themes/` is what an agent reads when it writes a form's look; nothing renders from it and no form imports or copies it. `open-form create <id>` always writes `forms/<id>/theme/index.ts` and wires it into the form (`import theme from './theme/index.ts'` above the form's CSS, `<Form theme={theme}>`); with `--theme <theme>` that file starts from the reference's tokens (`pickTokens()` on the loaded module, written by `formThemeSource()`), and the web fonts those tokens name come along (`writeFormTheme()` in `src/editing/theme-files.ts`). The reference's CSS and components never come in wholesale: the agent takes only what the form renders, in the order tokens → CSS on the runtime's own classes → components for markup or behavior CSS can't give (a window frame, an input wrapper, keyboard shortcuts). So a form carries no unused component, and the starters' later improvements never need copying into existing forms. Editing or deleting a theme in `themes/` never changes a form; editing a form's look changes only that form. A form without a `theme/` folder gets the runtime's base styles; there's no project default theme and no missing-theme fallback to manage.
 
-The five above are **starters**: `open-form theme add <starter> [--as name]` (or "New theme" in Studio) copies one into `themes/` (renaming also rewrites the `data-of-theme` selector and the THEME.md title) to adapt as a reference — the shadcn model. `themes/` is empty after `init`. Production builds don't include `themes/`, and `/theme-preview/:themeId` exists only in dev. `open-form check` warns when a form imports from `themes/` or another form's folder (the repo's Biome config forbids it in `apps/demo`), since that would tie the form's look back to a file that can change. A theme's own component classes (`.tm-*`, …) stay global; only two diverged copies of the same starter on one page could collide.
+The starters' and references' `index.tsx` and CSS stay complete, because Studio's gallery and `/theme-preview`, and the website's theme wall, render them; each `THEME.md` lists every token and which parts are CSS on runtime classes and which need components, so it works as a recipe.
+
+The five above are **starters**: `open-form theme add <starter> [--as name]` (or "New theme" in Studio) copies one into `themes/` (renaming also rewrites the `data-of-theme` selector and the THEME.md title) to adapt as a reference — the shadcn model. `themes/` is empty after `init`. Production builds don't include `themes/`, and `/theme-preview/:themeId` exists only in dev. `open-form check` warns when a form imports from `themes/` or another form's folder (the repo's Biome config forbids it in `apps/demo`), since that would tie the form's look back to a file that can change. Class prefixes a form takes from a reference (`.tm-*`, …) stay global; only two forms on one page styling the same prefix differently could collide.
 
 ### Localization (v0.3 Step 1)
 
@@ -377,9 +379,9 @@ meta             (key, value)                                                -- 
 | `open-form build --server-only [--watch]` | Produces only `dist/server/entry.js` (a single file), for `@open-form-build/core/next`. |
 | `open-form start` | Node http server: static files + SPA fallback + `/api/*`. Reads `PORT`, `OPEN_FORM_DB`, `OPEN_FORM_ADMIN_PASSWORD`, `OPEN_FORM_SECRET`, `OPEN_FORM_TRUST_PROXY` (`true`, `false` or the number of proxy hops; any other value fails startup), `OPEN_FORM_SECURE_COOKIES` (with trust proxy, cookies are marked `Secure` by default; `0` turns it off), `OPEN_FORM_WEBHOOK_SECRET`. |
 | `open-form check [id]` | Loads forms the way the server does and prints the schema or errors; also checks for missing translations and time zones, and warns when a form imports from `themes/` or another form. |
-| `open-form create <id> [--theme]` / `list` / `responses export <id>` | Create a form from a starter (with a copy of a theme) / list forms and response counts / export CSV, Excel or JSON. |
+| `open-form create <id> [--theme]` / `list` / `responses export <id>` | Create a form from the starter with its own `theme/index.ts` (from a theme's tokens with `--theme`) / list forms and response counts / export CSV, Excel or JSON. |
 | `open-form delete <id> [--yes]` | Delete a form: `StorageAdapter.deleteForm` (responses, versions, overrides, counter), its `.folders.json` entry, then `forms/<id>/` (`src/editing/delete-form.ts`, shared with Studio's `DELETE /api/studio/forms/:id` under `open-form dev`). Asks for the id; `--yes` without a terminal. |
-| `open-form theme list` / `check <id> [--form]` / `add <starter> [--as]` / `copy <theme> <form>` / `font <id> <family> [--form]` | List project themes and starters / check contrast / copy a starter into `themes/` / copy a theme into `forms/<form>/theme/` / download a Google Fonts family into a theme (`--form`: the form's own copy). |
+| `open-form theme list` / `check <id> [--form]` / `add <starter> [--as]` / `font <id> <family> [--form]` | List project themes and starters / check contrast / copy a starter into `themes/` / download a Google Fonts family into a theme (`--form`: the form's own look). |
 | `open-form comments [id]` | List the `@form-comment` markers left from Studio (see §11). |
 
 App routes:
@@ -428,23 +430,27 @@ Studio sends commands to the preview iframe via postMessage (`open-form:preview-
 ### Studio design panel (v0.2 Step 5)
 
 ```text
-Studio design panel ──postMessage(open-form:theme-draft)──▶ preview iframe (/theme-preview/:themeId)
+Studio design panel ──postMessage(open-form:theme-draft)──▶ preview iframe (/theme-preview/:themeId, or /f/:id?preview=1)
       │                                                  └─ draft tokens replace the theme's tokens; components and CSS unchanged
-      └─ Save ─▶ PUT /api/studio/themes/:id { patch } ─▶ src/editing/theme-tokens.ts (Babel AST)
-                                                          └─ write file → Vite watcher → open-form:theme-changed → preview reloads the theme
+      └─ Save ─▶ PUT /api/studio/themes/:id { patch }      ─▶ src/editing/theme-tokens.ts (Babel AST)
+             or PUT /api/studio/forms/:id/theme { patch }       └─ write file → Vite watcher → the preview reloads the theme
 ```
+
+The panel (`DesignPanel`) takes a target, `{ kind: 'theme' | 'form', id }`, and the server side is one set of helpers in `src/vite/theme-design.ts` that work on a theme file path (`themeDesign`, `saveThemeTokens`, `addThemeFont`), mounted for references in `studio-themes.ts` and for forms in `studio-forms.ts`:
+
+- **A form's look**: the form's Preview tab has a third mode, **Adjust**, beside Preview and Edit (`FormDesign` in `app/studio/form-design.tsx`). `GET /api/studio/forms/:id/theme` returns the tokens, fonts and contrast of `forms/<id>/theme/index.ts(x)`, or `{ missing: true, file }`; `PUT` saves a patch; `POST …/theme/fonts` downloads a Google font into `theme/fonts/`; `POST …/theme` writes an empty `theme/index.ts` and wires it into `index.tsx` (`wireFormTheme()` in `src/editing/form-theme.ts`: the import above the form's CSS and `theme={theme}` on its one `<Form>`). The draft goes to the form's preview iframe on the `form:<id>` channel (`formDraftKey`); the public page passes it as `runtime.themeDraft`, which `<Form>` lays over its own theme's tokens only in preview, keeping its components. Studio sends the draft forced to the palette being edited (`forceScheme`), so the dark palette can be seen on a light system.
 
 - **Only tokens are editable** (`schema/theme-patch.ts` defines the keys and `diffTokens()` computes the patch, shared by frontend and backend). Components, CSS and `THEME.md` are still written by hand, by people or agents.
 - **Write-back strategy**: every edit re-parses and replaces only the character range of the value; new properties follow the existing indentation and quotes; `null` removes a property; `dark: false` ↔ an object can be converted either way. Computed values (`colors: palette`) are rejected outright with a request to edit by hand, rather than guessed at.
 - **Security**: `/api/studio/themes` is dev server middleware (not part of the production handler), uses Studio's loopback / admin password authorization, and writes require same-origin + a JSON body; patches are validated against a whitelist (known keys, single-line strings, no backticks).
-- **Every reference is editable**: all themes live in the project's `themes/`; there are no read-only built-in themes and no need to save a copy first. Saving changes the reference only — forms already carry their own copy, so only forms copied later get the change. (A per-form look editor would point the same writer at `forms/<id>/theme/index.tsx`.)
-- **Theme fonts (Google Fonts)**: the font dropdown gains "Add from Google Fonts…", with the CLI counterpart `open-form theme font <id> <family>` (`--form` adds it to a form's own copy); both share `src/editing/google-fonts.ts` + `theme-fonts.ts`. As in open-slide, fonts are **downloaded into the project**, but instead of grabbing a single TTF the way it does:
+- **Every reference is editable**: all themes live in the project's `themes/`; there are no read-only built-in themes and no need to save a copy first. Saving changes the reference only — no form imports it, so only forms started from it later see the change.
+- **Theme fonts (Google Fonts)**: the font dropdown gains "Add from Google Fonts…", with the CLI counterpart `open-form theme font <id> <family>` (`--form` adds it to a form's own look); both share `src/editing/google-fonts.ts` + `theme-fonts.ts`. As in open-slide, fonts are **downloaded into the project**, but instead of grabbing a single TTF the way it does:
   - The catalog comes from `fonts.google.com/metadata/fonts` (no API key, cached for an hour by the dev server); `GET /api/studio/themes/_fonts?q=&category=&cjk=1` searches and `POST /api/studio/themes/:id/fonts { family }` downloads.
   - woff2 is requested from `css2` with a browser UA: variable fonts take the whole `wght` axis (the file is the same size), static fonts only 400–700; Google's `unicode-range` subsets are kept, and only `fonts.gstatic.com` URLs are accepted.
   - Files are written to `fonts/<slug>/` next to the theme entry, a `fonts/<slug>.css` is generated (its header records the family and the `font` stack, which Studio uses to list the theme's fonts), and `import './fonts/<slug>.css'` is added to the theme file. At build time Vite bundles them as assets, so **respondents never connect to Google** (loading Google Fonts directly sends respondents' IPs to Google, which a German court ruled a GDPR violation in 2022).
   - CJK fonts come in about 100 subsets totalling several MB (e.g. Noto Sans TC 400–700 is about 4 MB), but browsers only download the subsets a page uses; the UI labels them "several MB" and shows the actual size after adding.
   - Studio's own search preview loads Google's `css2?text=` directly (in the author's browser, not the respondent's); the theme page loads the theme's font CSS via `/@fs/` so the spec card shows the real font.
-- **Theme page** (v0.2.1; aligned with open-slide in v0.4): understand first, then decide whether to change anything. The list shows the project's references: thumbnail, name and one-line description, with a flag when THEME.md is missing, under a note that each form keeps its own copy; with no themes, an empty state points to adding a starter or asking an agent to run `/create-theme`. The detail page is a large preview + `THEME.md` (rendered as-is) + a spec card computed from the tokens (`effectivePalettes()` swatches, contrast report, type specimens, shapes) + a "Use it in a form" card (`open-form theme copy <id> <form>` and a copy-to-agent prompt). There's no "used by" list: no form depends on a reference. Editing happens in an "Adjust" drawer that's collapsed by default (docked on the right at `lg` and up, keeping the preview visible). "New theme" can add a starter in one click (`POST /api/studio/themes { starter, as? }`; the starter list `GET /api/studio/themes/_starters` includes the main swatches), or produce an instruction to copy to an agent after you describe what you want; filling in a missing THEME.md is also a copy-to-agent instruction.
+- **Theme page** (v0.2.1; aligned with open-slide in v0.4): understand first, then decide whether to change anything. The list shows the project's references: thumbnail, name and one-line description, with a flag when THEME.md is missing, under a note that each form's look is its own; with no themes, an empty state points to adding a starter or asking an agent to run `/create-theme`. The detail page is a large preview + `THEME.md` (rendered as-is) + a spec card computed from the tokens (`effectivePalettes()` swatches, contrast report, type specimens, shapes) + a "Use it in a form" card (`open-form create <form> --theme <id>` and a copy-to-agent prompt). There's no "used by" list: no form depends on a reference. Editing happens in an "Adjust" drawer that's collapsed by default (docked on the right at `lg` and up, keeping the preview visible). "New theme" can add a starter in one click (`POST /api/studio/themes { starter, as? }`; the starter list `GET /api/studio/themes/_starters` includes the main swatches), or produce an instruction to copy to an agent after you describe what you want; filling in a missing THEME.md is also a copy-to-agent instruction.
 
 ---
 
@@ -453,7 +459,7 @@ Studio design panel ──postMessage(open-form:theme-draft)──▶ preview if
 Following open-slide's approach:
 
 - **Skills** live in the package's `skills/` and are copied to the workspace's `.agents/skills/` on `init`, with `.claude/skills/*` as symlinks. `dev` syncs them automatically on startup (built-in skills are always overwritten, so don't edit them in place) and keeps watching the package's `skills/` while running (syncing immediately when open-form is linked from source and they change); `open-form sync:skills` syncs manually without starting dev. Both refuse to run outside a workspace, where `.claude/skills/` could be the user-wide folder. `OPEN_FORM_SKIP_SKILLS_SYNC=1` turns syncing off.
-  - `create-form`: the workflow from requirements to a complete form (clarify the questions → **decide the aesthetic direction first**: read each theme's `THEME.md` and propose 3 directions based on the form and its audience → choose an id → copy the chosen theme into the form (`create --theme` / `theme copy`) → plan the structure and copy according to the direction → write the file → self-check).
+  - `create-form`: the workflow from requirements to a complete form (clarify the questions → **decide the aesthetic direction first**: read each theme's `THEME.md` and propose 3 directions based on the form and its audience → choose an id → start the form from the chosen theme's tokens (`create --theme`) → plan the structure and copy according to the direction → write the file and the form's own look, taking only what it uses from the reference → self-check).
   - `create-theme`: generates a reference `themes/<id>/` (tokens, components, CSS, `THEME.md`) from the repo's existing design system (Tailwind, CSS variables, shadcn, fonts), images or a description, starting from the closest starter via `theme add --as`, and checks contrast.
   - `form-authoring`: technical reference (file contract, components, conditions, validation, policy, themes, appearance components, layouts, anti-patterns).
   - `current-form`: reads `node_modules/.open-form/current.json` (reported by Studio via `POST /api/studio/current`, behind Studio's gate; its contents enter the agent's context, so unauthorized writes aren't allowed) to know which form and step the user is "looking at right now", which element they selected in Studio (`selection`), the form's own theme (`formThemePath`), or which reference theme is open (`themeId` / `themePath`).

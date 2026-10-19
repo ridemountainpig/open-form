@@ -1,12 +1,8 @@
 import {
-  type ButtonUIProps,
-  type CheckboxUIProps,
   type ChoiceGroupUIProps,
   defineTheme,
-  type FieldUIProps,
   FocusLayout,
   type RatingUIProps,
-  type SelectUIProps,
   type SuccessUIProps,
   type TextareaUIProps,
   type TextInputUIProps,
@@ -17,6 +13,10 @@ import './conversational.css';
 
 // Conversational: one question per screen, big friendly type, soft color,
 // letter keys for choices and auto-advance — Typeform-like. See THEME.md.
+// Questions, help, errors, the select, the checkbox, the matrix and the buttons
+// are the runtime's own markup, restyled in conversational.css. The components
+// below carry behavior or markup it doesn't have: letter keys and auto-advance,
+// the answer line and counter, and the success badge.
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -41,43 +41,6 @@ function isTyping(target: EventTarget | null): boolean {
   }
   return (
     target.tagName === 'INPUT' && !['radio', 'checkbox'].includes((target as HTMLInputElement).type)
-  );
-}
-
-function Field({ field, children, as = 'div', hideLabel, hideDescription }: FieldUIProps) {
-  const Root = as;
-  const label = field.label && !hideLabel && (
-    <>
-      {field.label}
-      {field.required && (
-        <span className="cv-req" aria-hidden="true">
-          *
-        </span>
-      )}
-    </>
-  );
-  return (
-    <Root className="cv-field" data-invalid={field.invalid || undefined}>
-      {label &&
-        (as === 'fieldset' ? (
-          <legend className="cv-question">{label}</legend>
-        ) : (
-          <label className="cv-question" htmlFor={field.id}>
-            {label}
-          </label>
-        ))}
-      {field.description && !hideDescription && (
-        <p className="cv-help" id={field.descriptionId}>
-          {field.description}
-        </p>
-      )}
-      {children}
-      {field.error && (
-        <p className="cv-error" id={field.errorId}>
-          {field.error}
-        </p>
-      )}
-    </Root>
   );
 }
 
@@ -118,29 +81,6 @@ function Textarea({ field, value, onChange, maxLength, ...attrs }: TextareaUIPro
   );
 }
 
-function Select({ field, options, value, onChange, placeholder }: SelectUIProps) {
-  return (
-    <div className="cv-line cv-select">
-      <select
-        {...field.controlProps}
-        ref={field.ref}
-        className="cv-input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="" disabled={field.required}>
-          {placeholder}
-        </option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 // On a one-question step, picking a single answer moves on, like Typeform.
 function useAutoAdvance() {
   const ref = useRef<HTMLDivElement>(null);
@@ -149,7 +89,7 @@ function useAutoAdvance() {
   latest.current = nav;
   const advance = () => {
     const step = ref.current?.closest('.of-step');
-    if (step?.querySelectorAll('.cv-field').length !== 1) return;
+    if (step?.querySelectorAll('.of-field').length !== 1) return;
     setTimeout(() => {
       if (!latest.current.isLast) void latest.current.next();
     }, 380);
@@ -211,36 +151,6 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
   );
 }
 
-function Checkbox({ field, checked, onChange, children, markRequired }: CheckboxUIProps) {
-  return (
-    <label className="cv-choice cv-single">
-      <input
-        {...field.controlProps}
-        ref={field.ref}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span className="cv-box" aria-hidden="true">
-        <CheckIcon size={14} />
-      </span>
-      <span className="cv-choice-label">
-        {children}
-        {markRequired && (
-          <span className="cv-req" aria-hidden="true">
-            *
-          </span>
-        )}
-        {field.description && (
-          <span className="cv-help" id={field.descriptionId}>
-            {field.description}
-          </span>
-        )}
-      </span>
-    </label>
-  );
-}
-
 function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingUIProps) {
   const { ref, advance } = useAutoAdvance();
   return (
@@ -277,27 +187,6 @@ function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingU
         </div>
       )}
     </div>
-  );
-}
-
-function Button({ variant, className, type = 'button', children, ...props }: ButtonUIProps) {
-  return (
-    <button type={type} className={`cv-btn cv-btn-${variant} ${className ?? ''}`} {...props}>
-      {children}
-      {variant === 'primary' && !props.disabled && (
-        <span className="cv-btn-mark" aria-hidden="true">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">
-            <path
-              d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      )}
-    </button>
   );
 }
 
@@ -361,14 +250,10 @@ export default defineTheme({
   },
   components: {
     Layout: FocusLayout,
-    Button,
     Success,
-    Field,
     TextInput,
     Textarea,
-    Select,
     ChoiceGroup,
-    Checkbox,
     Rating,
   },
 });

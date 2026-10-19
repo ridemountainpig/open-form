@@ -1,9 +1,5 @@
 import {
-  type ButtonUIProps,
-  type CheckboxUIProps,
-  type ChoiceGroupUIProps,
   defineTheme,
-  type FieldUIProps,
   type HeaderUIProps,
   type LayoutUIProps,
   type NoticeUIProps,
@@ -18,6 +14,11 @@ import './terminal.css';
 
 // Terminal: the form as a CLI session — a window frame, `? question` prompts,
 // `❯` input lines, [x] / (•) choices and an ASCII progress bar. See THEME.md.
+// Prompts, help, errors, choices, the checkbox, the matrix and the buttons are the
+// runtime's own markup, their glyphs drawn in terminal.css. The components below
+// exist for markup or text it doesn't have: the window, the command line, the
+// ASCII bar, the result screens, the `❯` before each input and the rating's
+// scale line.
 
 function Layout({
   state,
@@ -96,16 +97,6 @@ function Progress({ nav, label }: ProgressUIProps) {
   );
 }
 
-function Button({ variant, className, type = 'button', children, ...props }: ButtonUIProps) {
-  return (
-    <button type={type} className={`tm-btn tm-btn-${variant} ${className ?? ''}`} {...props}>
-      <span aria-hidden="true">{variant === 'primary' ? '' : '← '}</span>
-      {children}
-      <span aria-hidden="true">{variant === 'primary' ? ' ↵' : ''}</span>
-    </button>
-  );
-}
-
 function Success({ title, children }: SuccessUIProps) {
   return (
     <div className="tm-result">
@@ -131,48 +122,6 @@ function Notice({ eyebrow, title, message }: NoticeUIProps) {
       </p>
       <p className="tm-desc">{message}</p>
     </div>
-  );
-}
-
-function Field({ field, children, as = 'div', hideLabel, hideDescription }: FieldUIProps) {
-  const Root = as;
-  const label = field.label && !hideLabel && (
-    <>
-      <span className="tm-q" aria-hidden="true">
-        ?{' '}
-      </span>
-      {field.label}
-      {field.required && (
-        <span className="tm-dim" aria-hidden="true">
-          {' '}
-          *
-        </span>
-      )}
-    </>
-  );
-  return (
-    <Root className="tm-field" data-invalid={field.invalid || undefined}>
-      {label &&
-        (as === 'fieldset' ? (
-          <legend className="tm-label">{label}</legend>
-        ) : (
-          <label className="tm-label" htmlFor={field.id}>
-            {label}
-          </label>
-        ))}
-      {field.description && !hideDescription && (
-        <p className="tm-help" id={field.descriptionId}>
-          {field.description}
-        </p>
-      )}
-      {children}
-      {field.error && (
-        <p className="tm-error" id={field.errorId}>
-          <span aria-hidden="true">✖ </span>
-          {field.error}
-        </p>
-      )}
-    </Root>
   );
 }
 
@@ -248,66 +197,6 @@ function Select({ field, options, value, onChange, placeholder }: SelectUIProps)
   );
 }
 
-function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGroupUIProps) {
-  return (
-    <div className="tm-choices">
-      {options.map((option, index) => {
-        const on = selected.includes(option.value);
-        return (
-          <label key={option.value} className="tm-choice">
-            <input
-              ref={index === 0 ? field.ref : undefined}
-              type={multiple ? 'checkbox' : 'radio'}
-              name={field.name}
-              value={option.value}
-              checked={on}
-              aria-invalid={field.controlProps['aria-invalid']}
-              aria-describedby={field.controlProps['aria-describedby']}
-              onBlur={field.onBlur}
-              onChange={(e) => onToggle(option.value, e.target.checked)}
-            />
-            <span className="tm-mark" aria-hidden="true">
-              {multiple ? (on ? '[x]' : '[ ]') : on ? '(•)' : '( )'}
-            </span>
-            <span>{option.label}</span>
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
-function Checkbox({ field, checked, onChange, children, markRequired }: CheckboxUIProps) {
-  return (
-    <label className="tm-choice tm-single">
-      <input
-        {...field.controlProps}
-        ref={field.ref}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span className="tm-mark" aria-hidden="true">
-        {checked ? '[x]' : '[ ]'}
-      </span>
-      <span>
-        {children}
-        {markRequired && (
-          <span className="tm-dim" aria-hidden="true">
-            {' '}
-            *
-          </span>
-        )}
-        {field.description && (
-          <span className="tm-help" id={field.descriptionId}>
-            {field.description}
-          </span>
-        )}
-      </span>
-    </label>
-  );
-}
-
 function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingUIProps) {
   return (
     <div>
@@ -365,15 +254,11 @@ export default defineTheme({
     Layout,
     Header,
     Progress,
-    Button,
     Success,
     Notice,
-    Field,
     TextInput,
     Textarea,
     Select,
-    ChoiceGroup,
-    Checkbox,
     Rating,
   },
 });

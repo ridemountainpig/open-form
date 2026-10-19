@@ -1,5 +1,6 @@
-/* Editorial theme. Component classes are prefixed `ed-`; chrome overrides are
-   scoped to [data-of-theme="editorial"] so other forms are untouched. */
+/* Editorial theme. Most of it restyles the runtime's own markup, scoped to
+   [data-of-theme="editorial"] so other forms are untouched; the `ed-` classes are
+   the components' own markup (input lines). */
 
 [data-of-theme="editorial"] .of-form {
   border: 0;
@@ -45,49 +46,66 @@
   transform: translateX(3px);
 }
 
-.ed-field {
+/* Fields: small-caps labels, italic serif help, errors after a dash. */
+
+[data-of-theme="editorial"] .of-field {
   display: grid;
   gap: 10px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.ed-field > legend {
-  padding: 0;
-  margin-bottom: 10px;
+[data-of-theme="editorial"] .of-field > * + *,
+[data-of-theme="editorial"] .of-field > legend,
+[data-of-theme="editorial"] .of-field > legend:has(+ .of-help) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.ed-label {
+[data-of-theme="editorial"] .of-label {
   font-size: 11px;
   font-weight: 650;
+  line-height: inherit;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--of-muted);
 }
 
-.ed-field:focus-within .ed-label {
+[data-of-theme="editorial"] .of-field:focus-within .of-label {
   color: var(--of-fg);
 }
 
-.ed-help {
+[data-of-theme="editorial"] .of-required {
+  margin-left: 0;
+  color: inherit;
+}
+
+[data-of-theme="editorial"] .of-required::before {
+  content: " ";
+}
+
+[data-of-theme="editorial"] .of-help,
+[data-of-theme="editorial"] .of-field > .of-help {
   margin: -4px 0 0;
   font-family: var(--of-heading-font);
   font-size: 15px;
   font-style: italic;
+  line-height: inherit;
   color: var(--of-muted);
 }
 
-.ed-error {
+[data-of-theme="editorial"] .of-error,
+[data-of-theme="editorial"] .of-field > .of-error {
   margin: 0;
   font-size: 13px;
+  line-height: inherit;
   color: var(--of-error);
+  animation: none;
 }
 
-.ed-error::before {
+[data-of-theme="editorial"] .of-error::before {
   content: "— ";
 }
+
+/* Inputs: an underline that draws itself in on focus. */
 
 .ed-line {
   position: relative;
@@ -115,7 +133,7 @@
   transform: scaleX(1);
 }
 
-.ed-field[data-invalid] .ed-line {
+[data-of-theme="editorial"] .of-field[data-invalid] .ed-line {
   border-bottom-color: var(--of-error);
 }
 
@@ -157,11 +175,38 @@
   padding-bottom: 10px;
 }
 
-.ed-select {
+/* Select: the runtime's wrapper takes the underline and an arrow. */
+
+[data-of-theme="editorial"] .of-select-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid var(--of-control);
+  transition: border-color 0.2s ease;
   cursor: pointer;
 }
 
-.ed-select::before {
+[data-of-theme="editorial"] .of-select-wrap::after {
+  content: "";
+  top: auto;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  width: auto;
+  height: 2px;
+  translate: none;
+  background: var(--of-fg);
+  mask: none;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-of-theme="editorial"] .of-select-wrap:focus-within::after {
+  transform: scaleX(1);
+}
+
+[data-of-theme="editorial"] .of-select-wrap::before {
   content: "↓";
   position: absolute;
   right: 0;
@@ -170,29 +215,139 @@
   pointer-events: none;
 }
 
-.ed-select select {
-  padding-right: 24px;
+[data-of-theme="editorial"] .of-field[data-invalid] .of-select-wrap {
+  border-bottom-color: var(--of-error);
+}
+
+[data-of-theme="editorial"] .of-select-wrap > .of-select,
+[data-of-theme="editorial"] .of-select-wrap > .of-select[data-placeholder] {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px 24px 10px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--of-fg);
+  font-family: var(--of-heading-font);
+  font-size: 22px;
+  line-height: normal;
+  outline: none;
   cursor: pointer;
 }
 
-.ed-chips {
+/* Rating: large old-style numerals, underlined when chosen. */
+
+[data-of-theme="editorial"] .of-rating {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px 18px;
 }
 
-.ed-chip {
-  position: relative;
+[data-of-theme="editorial"] .of-rating-item {
   cursor: pointer;
 }
 
-.ed-chip input {
+[data-of-theme="editorial"] .of-rating-item input {
+  inset: auto;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+
+[data-of-theme="editorial"] .of-rating-item span,
+[data-of-theme="editorial"] .of-rating-item:hover span,
+[data-of-theme="editorial"] .of-rating-item input[aria-invalid="true"] + span {
+  display: inline-block;
+  min-width: 1.2em;
+  min-height: 0;
+  padding: 0 0 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--of-muted);
+  font-family: var(--of-heading-font);
+  font-size: 30px;
+  font-weight: inherit;
+  text-align: center;
+  font-variant-numeric: oldstyle-nums;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+[data-of-theme="editorial"] .of-rating-item:hover span {
+  color: var(--of-fg);
+}
+
+[data-of-theme="editorial"] .of-rating-item input:checked + span {
+  background: none;
+  color: var(--of-fg);
+  border-bottom-color: var(--of-fg);
+}
+
+[data-of-theme="editorial"] .of-rating-item input:focus-visible + span {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 4px;
+}
+
+[data-of-theme="editorial"] .of-field > .of-rating-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 0;
+  margin-top: -2px;
+  font-family: var(--of-heading-font);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--of-muted);
+}
+
+[data-of-theme="editorial"] .of-matrix-cell > input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.ed-chip span {
+/* Choices: pills that fill with ink; the radio itself is hidden. */
+
+[data-of-theme="editorial"] .of-choices,
+[data-of-theme="editorial"] .of-choices[data-variant] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+[data-of-theme="editorial"] .of-choices > .of-choice,
+[data-of-theme="editorial"] .of-choices > .of-choice:hover,
+[data-of-theme="editorial"] .of-choices > .of-choice:has(input:checked) {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  line-height: inherit;
+}
+
+[data-of-theme="editorial"] .of-choices > .of-choice:has(input:focus-visible) {
+  outline: none;
+}
+
+[data-of-theme="editorial"] .of-choices > .of-choice,
+[data-of-theme="editorial"] .of-matrix-cell {
+  position: relative;
+  cursor: pointer;
+}
+
+[data-of-theme="editorial"] .of-choices > .of-choice > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-of-theme="editorial"] .of-choices > .of-choice > span,
+[data-of-theme="editorial"] .of-matrix-option {
   display: inline-flex;
   align-items: center;
   min-height: 40px;
@@ -206,67 +361,78 @@
     border-color 0.15s ease;
 }
 
-.ed-chip:hover span {
+[data-of-theme="editorial"] .of-choices > .of-choice:hover > span,
+[data-of-theme="editorial"] .of-matrix-cell:hover > .of-matrix-option {
   border-color: var(--of-fg);
 }
 
-.ed-chip input:checked + span {
+[data-of-theme="editorial"] .of-choices > .of-choice > input:checked + span,
+[data-of-theme="editorial"] .of-matrix-cell > input:checked + .of-matrix-option {
   background: var(--of-fg);
   border-color: var(--of-fg);
   color: var(--of-surface);
 }
 
-.ed-chip input:focus-visible + span {
+[data-of-theme="editorial"] .of-choices > .of-choice > input:focus-visible + span,
+[data-of-theme="editorial"] .of-matrix-cell > input:focus-visible + .of-matrix-option {
   outline: 2px solid var(--of-fg);
   outline-offset: 3px;
 }
 
-.ed-field[data-invalid] .ed-chip span {
+[data-of-theme="editorial"] .of-field[data-invalid] .of-choices > .of-choice > span,
+[data-of-theme="editorial"] .of-matrix-row[data-invalid] .of-matrix-option {
   border-color: var(--of-error);
 }
 
-.ed-check {
+/* Checkbox: a square outline with a solid square mark. */
+
+[data-of-theme="editorial"] .of-choice-single,
+[data-of-theme="editorial"] .of-choice-single:hover,
+[data-of-theme="editorial"] .of-choice-single:has(input:checked) {
   position: relative;
   display: flex;
   align-items: flex-start;
   gap: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: inherit;
   cursor: pointer;
 }
 
-.ed-check input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ed-check-box {
-  position: relative;
-  flex: none;
+[data-of-theme="editorial"] .of-choice-single > .of-checkbox {
   width: 22px;
   height: 22px;
-  margin-top: 2px;
+  margin: 2px 0 0;
   border: 1.5px solid var(--of-fg);
+  border-radius: 0;
+  background: transparent;
+  transition: none;
 }
 
-.ed-check-box::after {
-  content: "";
-  position: absolute;
-  inset: 4px;
+[data-of-theme="editorial"] .of-choice-single > .of-checkbox::before {
+  width: 11px;
+  height: 11px;
   background: var(--of-fg);
-  transform: scale(0);
+  mask: none;
   transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.ed-check input:checked + .ed-check-box::after {
-  transform: scale(1);
+[data-of-theme="editorial"] .of-choice-single > .of-checkbox:checked {
+  border-color: var(--of-fg);
+  background: transparent;
 }
 
-.ed-check input:focus-visible + .ed-check-box {
+[data-of-theme="editorial"] .of-choice-single > .of-checkbox:focus-visible {
   outline: 2px solid var(--of-fg);
   outline-offset: 3px;
 }
 
-.ed-check-text {
+[data-of-theme="editorial"] .of-field[data-invalid] .of-choice-single > .of-checkbox {
+  border-color: var(--of-error);
+}
+
+[data-of-theme="editorial"] .of-choice-text {
   display: grid;
   gap: 2px;
   font-family: var(--of-heading-font);
@@ -274,62 +440,99 @@
   line-height: 1.4;
 }
 
-.ed-field[data-invalid] .ed-check-box {
-  border-color: var(--of-error);
+/* Matrix: a hairline per row. Narrow, each row spells its answers out as pills;
+   once the form is wide, empty pills sit under small-caps column headings. The
+   pill is the runtime's `.of-matrix-option`. */
+
+[data-of-theme="editorial"] .of-matrix-grid {
+  gap: 0;
 }
 
-.ed-rating-row {
+[data-of-theme="editorial"] .of-matrix-row,
+[data-of-theme="editorial"] .of-matrix-row[data-invalid] {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
+  gap: 8px;
+  padding: 16px 0 18px;
+  border: 0;
+  border-top: 1px solid var(--of-border);
+  border-radius: 0;
+  background: none;
 }
 
-.ed-rating-item {
-  position: relative;
-  cursor: pointer;
+[data-of-theme="editorial"] .of-matrix-row:last-child {
+  border-bottom: 1px solid var(--of-border);
 }
 
-.ed-rating-item input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ed-rating-item span {
-  display: inline-block;
-  min-width: 1.2em;
-  padding-bottom: 4px;
-  border-bottom: 2px solid transparent;
-  color: var(--of-muted);
+[data-of-theme="editorial"] .of-matrix-label {
+  display: grid;
+  flex-basis: 100%;
+  gap: 4px;
+  margin-bottom: 4px;
   font-family: var(--of-heading-font);
-  font-size: 30px;
-  text-align: center;
-  font-variant-numeric: oldstyle-nums;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease;
+  font-size: 18px;
+  font-weight: inherit;
+  line-height: 1.35;
 }
 
-.ed-rating-item:hover span {
-  color: var(--of-fg);
+[data-of-theme="editorial"] .of-matrix-label .of-error {
+  font-family: var(--of-font);
 }
 
-.ed-rating-item input:checked + span {
-  color: var(--of-fg);
-  border-bottom-color: var(--of-fg);
+[data-of-theme="editorial"] .of-matrix-cell {
+  display: block;
+  padding: 0;
+  line-height: inherit;
 }
 
-.ed-rating-item input:focus-visible + span {
-  outline: 2px solid var(--of-fg);
-  outline-offset: 4px;
-}
+@container (min-width: 32rem) {
+  [data-of-theme="editorial"] .of-matrix-head,
+  [data-of-theme="editorial"] .of-matrix-row,
+  [data-of-theme="editorial"] .of-matrix-row[data-invalid] {
+    display: grid;
+    grid-template-columns: minmax(8rem, 1.6fr) repeat(var(--of-matrix-columns), minmax(0, 1fr));
+    align-items: center;
+    gap: 0;
+  }
 
-.ed-rating-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-  font-family: var(--of-heading-font);
-  font-size: 14px;
-  font-style: italic;
-  color: var(--of-muted);
+  [data-of-theme="editorial"] .of-matrix-head span {
+    padding: 0 4px 10px;
+    color: var(--of-muted);
+    font-size: 10.5px;
+    font-weight: 650;
+    line-height: 1.4;
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  [data-of-theme="editorial"] .of-matrix-row,
+  [data-of-theme="editorial"] .of-matrix-row[data-invalid] {
+    padding: 0;
+  }
+
+  [data-of-theme="editorial"] .of-matrix-label {
+    margin: 0;
+    padding: 14px 12px 14px 0;
+  }
+
+  [data-of-theme="editorial"] .of-matrix-cell {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* An empty pill: the answer stays in the label for screen readers. */
+  [data-of-theme="editorial"] .of-matrix-option {
+    position: static;
+    width: 40px;
+    min-height: 0;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: none;
+    font-size: 0;
+  }
 }

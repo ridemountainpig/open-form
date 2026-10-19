@@ -1,5 +1,5 @@
-/* Brutalist theme. Component classes are prefixed `br-`; overrides of built-in
-   elements are scoped to [data-of-theme="brutalist"]. */
+/* Brutalist theme. The runtime's own markup is restyled under
+   [data-of-theme="brutalist"]; the `br-` classes are the components' own markup. */
 
 [data-of-theme="brutalist"] {
   --br-ink: #000;
@@ -95,41 +95,45 @@
   text-transform: uppercase;
 }
 
-.br-field {
+/* Fields: heavy uppercase labels, errors as black tags. */
+
+[data-of-theme="brutalist"] .of-field {
   display: grid;
   gap: 8px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.br-field > legend {
-  padding: 0;
-  margin-bottom: 8px;
+[data-of-theme="brutalist"] .of-field > * + *,
+[data-of-theme="brutalist"] .of-field > legend,
+[data-of-theme="brutalist"] .of-field > legend:has(+ .of-help) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.br-label {
+[data-of-theme="brutalist"] .of-label {
   font-size: 13px;
   font-weight: 800;
+  line-height: inherit;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.br-req {
+[data-of-theme="brutalist"] .of-required {
   margin-left: 4px;
   color: var(--of-primary);
   -webkit-text-stroke: 0.6px var(--br-ink);
 }
 
-.br-help {
+[data-of-theme="brutalist"] .of-help,
+[data-of-theme="brutalist"] .of-field > .of-help {
   margin: -2px 0 0;
   font-size: 14px;
   font-weight: 500;
+  line-height: inherit;
   color: var(--of-muted);
 }
 
-.br-error {
+[data-of-theme="brutalist"] .of-error,
+[data-of-theme="brutalist"] .of-field > .of-error {
   justify-self: start;
   margin: 0;
   padding: 3px 9px;
@@ -137,6 +141,8 @@
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+  line-height: inherit;
+  animation: none;
 }
 
 .br-input-wrap {
@@ -168,7 +174,7 @@
   transform: translate(-3px, -3px);
 }
 
-.br-field[data-invalid] .br-input {
+[data-of-theme="brutalist"] .of-field[data-invalid] .br-input {
   background: #ffe3e6;
 }
 
@@ -197,28 +203,73 @@
   font-weight: 800;
 }
 
-.br-select::after {
+/* Select: the runtime's wrapper and select, drawn like the inputs. */
+
+[data-of-theme="brutalist"] .of-select-wrap {
+  display: flex;
+  align-items: center;
+}
+
+[data-of-theme="brutalist"] .of-select-wrap::after {
   content: "↓";
-  position: absolute;
+  top: auto;
   right: 16px;
+  width: auto;
+  height: auto;
+  translate: none;
+  background: none;
+  mask: none;
   font-weight: 900;
-  pointer-events: none;
 }
 
-.br-select select {
+[data-of-theme="brutalist"] .of-select-wrap > .of-select,
+[data-of-theme="brutalist"] .of-select-wrap > .of-select[data-placeholder],
+[data-of-theme="brutalist"] .of-select-wrap > .of-select:hover,
+[data-of-theme="brutalist"] .of-select-wrap > .of-select[aria-invalid="true"] {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  background: var(--of-input);
+  color: var(--of-fg);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  outline: none;
   cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
-.br-choices {
+[data-of-theme="brutalist"] .of-select-wrap > .of-select:focus {
+  border-color: var(--br-ink);
+  box-shadow: var(--br-shadow);
+  transform: translate(-3px, -3px);
+}
+
+[data-of-theme="brutalist"] .of-field[data-invalid] .of-select-wrap > .of-select {
+  background: #ffe3e6;
+}
+
+/* Choices: chunky tiles; the input itself is the box. */
+
+[data-of-theme="brutalist"] .of-choices {
   display: grid;
   gap: 10px;
 }
 
-.br-choices[data-variant="cards"] {
+[data-of-theme="brutalist"] .of-choices[data-variant="cards"] {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
 }
 
-.br-choice {
+[data-of-theme="brutalist"] .of-choice,
+[data-of-theme="brutalist"] .of-choice:hover,
+[data-of-theme="brutalist"] .of-choice:has(input:checked),
+[data-of-theme="brutalist"] .of-choice-single,
+[data-of-theme="brutalist"] .of-choice-single:hover,
+[data-of-theme="brutalist"] .of-choice-single:has(input:checked) {
   position: relative;
   display: flex;
   align-items: center;
@@ -226,8 +277,10 @@
   min-height: 52px;
   padding: 10px 14px;
   border: 3px solid var(--br-ink);
+  border-radius: 0;
   background: var(--of-input);
   font-weight: 700;
+  line-height: inherit;
   cursor: pointer;
   transition:
     transform 0.12s ease,
@@ -235,118 +288,281 @@
     background-color 0.12s ease;
 }
 
-.br-choice input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.br-choice:hover {
+[data-of-theme="brutalist"] .of-choice:hover {
   box-shadow: 4px 4px 0 var(--br-ink);
   transform: translate(-2px, -2px);
 }
 
-.br-choice:has(input:checked) {
+[data-of-theme="brutalist"] .of-choice:has(input:checked) {
   background: var(--br-pop);
   box-shadow: var(--br-shadow);
   transform: translate(-3px, -3px);
 }
 
-.br-choice:has(input:focus-visible) {
+[data-of-theme="brutalist"] .of-choice:has(input:focus-visible) {
   outline: 3px solid var(--of-primary);
   outline-offset: 3px;
 }
 
-.br-choice-box {
+[data-of-theme="brutalist"] .of-choice > .of-radio,
+[data-of-theme="brutalist"] .of-choice > .of-checkbox,
+[data-of-theme="brutalist"] .of-choice > .of-checkbox:checked,
+[data-of-theme="brutalist"] .of-choice > .of-radio:checked {
   position: relative;
-  flex: none;
   width: 22px;
   height: 22px;
+  margin: 0;
   border: 3px solid var(--br-ink);
   border-radius: 50%;
   background: #fff;
+  transition: none;
 }
 
-.br-choice-box[data-multiple] {
+[data-of-theme="brutalist"] .of-choice > .of-checkbox,
+[data-of-theme="brutalist"] .of-choice > .of-checkbox:checked {
   border-radius: 0;
 }
 
-.br-choice input:checked + .br-choice-box::after {
-  content: "";
-  position: absolute;
-  inset: 3px;
+[data-of-theme="brutalist"] .of-choice > .of-radio::before,
+[data-of-theme="brutalist"] .of-choice > .of-checkbox::before {
+  width: 10px;
+  height: 10px;
   border-radius: inherit;
   background: var(--br-ink);
+  mask: none;
+  transition: none;
 }
 
-.br-field[data-invalid] .br-choice {
+[data-of-theme="brutalist"] .of-choice > input:focus-visible {
+  outline: none;
+}
+
+[data-of-theme="brutalist"] .of-field[data-invalid] .of-choice {
   border-style: dashed;
 }
 
-.br-single {
+[data-of-theme="brutalist"] .of-choice-single {
   align-items: flex-start;
 }
 
-.br-single:has(input:checked) {
+[data-of-theme="brutalist"] .of-choice-single:has(input:checked) {
   background: var(--of-input);
 }
 
-.br-single-text {
+[data-of-theme="brutalist"] .of-choice-text {
   display: grid;
   gap: 2px;
 }
 
-.br-rating {
+/* Rating: a connected strip of blocks. */
+
+[data-of-theme="brutalist"] .of-rating {
   display: grid;
-  grid-template-columns: repeat(var(--br-count, 5), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--of-rating-count, 5), minmax(0, 1fr));
+  gap: 0;
   border: 3px solid var(--br-ink);
 }
 
-.br-rating-item {
-  position: relative;
+[data-of-theme="brutalist"] .of-rating-item {
   cursor: pointer;
 }
 
-.br-rating-item + .br-rating-item {
+[data-of-theme="brutalist"] .of-rating-item + .of-rating-item {
   border-left: 3px solid var(--br-ink);
 }
 
-.br-rating-item input {
-  position: absolute;
-  opacity: 0;
+[data-of-theme="brutalist"] .of-rating-item input {
   pointer-events: none;
 }
 
-.br-rating-item span {
+[data-of-theme="brutalist"] .of-rating-item span,
+[data-of-theme="brutalist"] .of-rating-item:hover span,
+[data-of-theme="brutalist"] .of-rating-item input[aria-invalid="true"] + span {
   display: grid;
   place-items: center;
   min-height: 50px;
+  border: 0;
+  border-radius: 0;
   background: var(--of-input);
   font-family: var(--of-heading-font);
   font-size: 18px;
+  font-weight: inherit;
+  font-variant-numeric: normal;
   transition: background-color 0.12s ease;
 }
 
-.br-rating-item:hover span {
+[data-of-theme="brutalist"] .of-rating-item:hover span {
   background: color-mix(in srgb, var(--of-primary) 30%, #fff);
 }
 
-.br-rating-item input:checked + span {
+[data-of-theme="brutalist"] .of-rating-item input:checked + span {
   background: var(--of-primary);
+  color: inherit;
 }
 
-.br-rating-item input:focus-visible + span {
+[data-of-theme="brutalist"] .of-rating-item input:focus-visible + span {
   outline: 3px solid var(--br-ink);
   outline-offset: -6px;
 }
 
-.br-rating-labels {
+[data-of-theme="brutalist"] .of-field > .of-rating-labels {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
+  gap: 0;
+  margin-top: 0;
+  color: inherit;
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+/* Matrix: the runtime's grid as a block per row when narrow, one ink-ruled table
+   once the form is wide. */
+
+[data-of-theme="brutalist"] .of-matrix-grid {
+  gap: 14px;
+}
+
+[data-of-theme="brutalist"] .of-matrix-row,
+[data-of-theme="brutalist"] .of-matrix-row[data-invalid] {
+  gap: 0;
+  padding: 0;
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  background: var(--of-input);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+[data-of-theme="brutalist"] .of-matrix-row:focus-within {
+  box-shadow: var(--br-shadow);
+  transform: translate(-3px, -3px);
+}
+
+[data-of-theme="brutalist"] .of-matrix-label {
+  align-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border-bottom: 3px solid var(--br-ink);
+  font-size: inherit;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+[data-of-theme="brutalist"] .of-matrix-row[data-invalid] .of-matrix-label {
+  background: #ffe3e6;
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell {
+  position: relative;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 14px;
+  font-weight: 700;
+  line-height: inherit;
+  transition: background-color 0.12s ease;
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell:hover {
+  background: color-mix(in srgb, var(--of-primary) 30%, #fff);
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell:has(input:checked) {
+  background: var(--br-pop);
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell:has(input:focus-visible) {
+  outline: 3px solid var(--br-ink);
+  outline-offset: -6px;
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell > .of-radio,
+[data-of-theme="brutalist"] .of-matrix-cell > .of-radio:checked,
+[data-of-theme="brutalist"] .of-matrix-row[data-invalid] .of-radio:not(:checked) {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 3px solid var(--br-ink);
+  background: #fff;
+  transition: none;
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell > .of-radio::before {
+  width: 10px;
+  height: 10px;
+  background: var(--br-ink);
+  transition: none;
+}
+
+[data-of-theme="brutalist"] .of-matrix-cell > .of-radio:focus-visible {
+  outline: none;
+}
+
+@container (min-width: 30rem) {
+  [data-of-theme="brutalist"] .of-matrix-grid {
+    gap: 0;
+    border: 3px solid var(--br-ink);
+    background: var(--of-input);
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-head,
+  [data-of-theme="brutalist"] .of-matrix-row {
+    display: grid;
+    grid-template-columns: minmax(8rem, 2fr) repeat(var(--of-matrix-columns), minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-head {
+    background: var(--br-ink);
+    color: var(--of-surface);
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-head span {
+    align-self: center;
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    color: inherit;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-row,
+  [data-of-theme="brutalist"] .of-matrix-row[data-invalid],
+  [data-of-theme="brutalist"] .of-matrix-row:last-child {
+    border: 0;
+    border-top: 3px solid var(--br-ink);
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-row:focus-within {
+    box-shadow: none;
+    transform: none;
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-label {
+    border-bottom: 0;
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-cell {
+    justify-content: center;
+    min-height: 52px;
+    padding: 0;
+    border-left: 3px solid var(--br-ink);
+  }
+
+  [data-of-theme="brutalist"] .of-matrix-option {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 [data-of-theme="brutalist"] .of-alert {
@@ -361,7 +577,10 @@
   border: 0;
 }
 
-.br-btn {
+[data-of-theme="brutalist"] .of-button {
+  display: inline-block;
+  flex: none;
+  min-width: 0;
   min-height: 54px;
   padding: 0 26px;
   border: 3px solid var(--br-ink);
@@ -370,6 +589,8 @@
   color: var(--br-ink);
   font-family: var(--of-heading-font);
   font-size: 15px;
+  font-weight: 400;
+  line-height: normal;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
@@ -379,30 +600,40 @@
     box-shadow 0.08s ease;
 }
 
-.br-btn:hover {
+/* Stronger than the runtime's phone rule that stretches nav buttons. */
+[data-of-theme="brutalist"] .of-nav .of-button {
+  flex: none;
+  min-width: 0;
+}
+
+[data-of-theme="brutalist"] .of-button:hover,
+[data-of-theme="brutalist"] .of-button-secondary:hover {
+  background: var(--of-surface);
   box-shadow: 7px 7px 0 var(--br-ink);
   transform: translate(-2px, -2px);
 }
 
-.br-btn:active {
+[data-of-theme="brutalist"] .of-button:active {
   box-shadow: 0 0 0 var(--br-ink);
   transform: translate(5px, 5px);
 }
 
-.br-btn:focus-visible {
+[data-of-theme="brutalist"] .of-button:focus-visible {
   outline: 3px solid var(--of-primary);
   outline-offset: 4px;
 }
 
-.br-btn-primary {
+[data-of-theme="brutalist"] .of-button-primary,
+[data-of-theme="brutalist"] .of-button-primary:hover:not(:disabled) {
   background: var(--of-primary);
+  color: var(--br-ink);
 }
 
-.br-btn-secondary {
+[data-of-theme="brutalist"] .of-button-secondary {
   margin-right: auto;
 }
 
-.br-btn:disabled {
+[data-of-theme="brutalist"] .of-button:disabled {
   opacity: 0.7;
   cursor: progress;
 }

@@ -45,10 +45,10 @@ open-form/                         ← 本 repo（pnpm + Turborepo monorepo）
 │   │   │   ├── vite/              Vite plugin：forms 探索、virtual modules、dev API middleware
 │   │   │   ├── editing/           dev 寫回原始碼（Babel AST）：收件設定、主題 token、文字、翻譯、留言、資料夾、loc 標記
 │   │   │   ├── cli/               `open-form` CLI：init / dev / build / start / create / check / comments / list /
-│   │   │   │                      responses export / theme list|check|add|copy|font / sync:skills
+│   │   │   │                      responses export / theme list|check|add|font / sync:skills
 │   │   │   ├── app/               隱藏的 Vite app（原始碼形式出貨）：公開表單頁 + Studio
 │   │   │   └── index.ts           給 forms import 的公開 DSL 入口
-│   │   ├── themes/                範本主題（classic、editorial、terminal、brutalist、conversational），`theme add`／`theme copy` 的來源
+│   │   ├── themes/                範本主題（classic、editorial、terminal、brutalist、conversational），`theme add` 與 `create --theme` 的參考
 │   │   ├── skills/                內建 agent skills（create-form、create-theme、form-authoring、current-form、apply-comments）
 │   │   ├── template/              `open-form init` 用的 workspace 模板
 │   │   └── e2e/                   smoke test：scaffold → build → start → submit → export
@@ -70,7 +70,7 @@ my-forms/
 ├── forms/
 │   └── event-registration/
 │       ├── index.tsx              ← agent 寫的地方
-│       └── theme/                 ← 這張表單自己的主題副本（theme copy），只有它在用
+│       └── theme/                 ← 這張表單自己的外觀（token ＋ 它用到的 CSS 與元件），只有它在用
 ├── themes/
 │   └── <id>/index.tsx + THEME.md  ← 建立新表單時的參考（從範本 theme add，或 create-theme 產生）
 ├── open-form.config.ts
@@ -217,7 +217,7 @@ components.Field      ← label / 說明 / 錯誤
 | `TextInput` | `Text`、`Email`、`Url`、`Tel`、`NumberInput`、`DateInput` |
 | `Textarea`、`Select`、`ChoiceGroup`、`Checkbox`、`Rating` | 同名欄位；`ChoiceGroup` 同時負責 `RadioGroup` 與 `CheckboxGroup` |
 
-覆蓋順序：`defaultComponents` ← 主題的 `components` ← `<Form components>`。主題來自 `<Form theme>`（表單自己的副本），否則來自宿主（`FormHost`、官網 landing、Studio 的主題預覽）的 `runtime.theme`。表單自己的主題以表單為範圍：根元素帶 `data-of-theme="<form-id>"`。它由表單模組 import，所以跟表單一起載入（不需第二個請求），也會進到 server bundle（CSS 會被丟掉）。render-to-collect 不套主題元件，所以伺服器讀到的欄位清單不受外觀影響；欄位註冊發生在行為層。
+覆蓋順序：`defaultComponents` ← 主題的 `components` ← `<Form components>`。主題來自 `<Form theme>`（表單自己的外觀），否則來自宿主（`FormHost`、官網 landing、Studio 的主題預覽）的 `runtime.theme`。表單自己的主題以表單為範圍：根元素帶 `data-of-theme="<form-id>"`。它由表單模組 import，所以跟表單一起載入（不需第二個請求），也會進到 server bundle（CSS 會被丟掉）。render-to-collect 不套主題元件，所以伺服器讀到的欄位清單不受外觀影響；欄位註冊發生在行為層。
 
 ### 版面與外框（v0.2 Step 2）
 
@@ -237,7 +237,7 @@ components.Field      ← label / 說明 / 錯誤
 
 `useFormNav()` 提供目前步驟、可見步驟清單、`next()`／`back()`／`goTo()`。內建三種版面：`StepperLayout`（側邊步驟）、`SplitLayout`（品牌面板）、`FocusLayout`（一次一題；表單的 title／description 先以歡迎頁呈現，`cover={false}` 可關閉）。因為目前步驟仍由 framework 決定與渲染，任何版面都不會影響驗證、focus 管理和伺服器端的欄位探索。
 
-### 主題範本、theme add 與 theme copy（v0.2 Step 3，v0.4 改為範本與表單副本）
+### 主題範本、theme add 與表單自己的外觀（v0.2 Step 3，v0.4 改為範本與表單自己的外觀）
 
 ```text
 packages/core/themes/<id>/
@@ -254,9 +254,11 @@ packages/core/themes/<id>/
 | `brutalist` | 卡片 | 新粗獷主義 |
 | `conversational` | `FocusLayout` | 一次一題、字母快捷鍵、自動前進 |
 
-跟 open-slide 一樣，**主題是參考，外觀屬於每張表單**。專案 `themes/` 裡的主題是 agent 建立表單時閱讀、複製的素材，不會直接拿來渲染。`open-form theme copy <theme> <form>`（或 `open-form create <id> --theme <theme>`）把專案主題（沒有時用同名範本）複製進 `forms/<form>/theme/`（THEME.md 留在參考那邊），並把 `[data-of-theme="<theme>"]` selector 改寫成表單 id；表單在自己的 CSS 之前 import 它，傳給 `<Form theme={theme}>`。之後修改或刪除 `themes/` 裡的主題都不會改變這張表單，改表單自己的副本也只影響這張表單。沒有自帶主題的表單只套 runtime 的基本樣式；沒有專案預設主題，也沒有「主題不存在就退回」要處理。
+跟 open-slide 一樣，**主題是參考，外觀屬於每張表單**。專案 `themes/` 裡的主題是 agent 寫表單外觀時閱讀的參考，不會直接拿來渲染，也沒有表單 import 或複製它。`open-form create <id>` 一律寫出 `forms/<id>/theme/index.ts` 並接進表單（在表單 CSS 之前 `import theme from './theme/index.ts'`，`<Form theme={theme}>`）；加 `--theme <theme>` 時，這個檔案從參考主題的 token 開始（對載入的模組做 `pickTokens()`，由 `formThemeSource()` 寫出），token 指名的網頁字型也一起帶過來（`src/editing/theme-files.ts` 的 `writeFormTheme()`）。參考主題的 CSS 與元件永遠不會整份搬進來：agent 只拿表單用得到的部分，順序是 token → 寫在 runtime 自己 class 上的 CSS → 只有 CSS 做不到的結構或行為才寫元件（視窗外框、輸入框外層、鍵盤快捷鍵）。所以表單不會帶著用不到的元件，範本之後的改進也不必複製進既有表單。修改或刪除 `themes/` 裡的主題都不會改變任何表單；改表單自己的外觀也只影響這張表單。沒有 `theme/` 資料夾的表單只套 runtime 的基本樣式；沒有專案預設主題，也沒有「主題不存在就退回」要處理。
 
-上面 5 個是**範本**：`open-form theme add <starter> [--as name]`（或 Studio「新增主題」）把範本複製進 `themes/`（改名時一併改寫 `data-of-theme` selector 與 THEME.md 標題），當成可調整的參考——同 shadcn 的模式。`init` 出來的 `themes/` 是空的。production build 不包含 `themes/`，`/theme-preview/:themeId` 也只在 dev 存在。表單從 `themes/` 或別張表單的資料夾 import 時，`open-form check` 會警告（repo 的 Biome 設定在 `apps/demo` 直接禁止），因為那會把外觀綁回一個可能變動的檔案。主題自己的元件 class（`.tm-*` 等）仍是全域的；只有同一頁上兩份由同一範本分歧的副本才可能互相影響。
+範本與參考主題的 `index.tsx` 和 CSS 保持完整，因為 Studio 的主題庫與 `/theme-preview`、官網的 theme wall 都靠它們渲染；每份 `THEME.md` 列出所有 token，以及哪些部分是寫在 runtime class 上的 CSS、哪些需要元件，可以當作配方使用。
+
+上面 5 個是**範本**：`open-form theme add <starter> [--as name]`（或 Studio「新增主題」）把範本複製進 `themes/`（改名時一併改寫 `data-of-theme` selector 與 THEME.md 標題），當成可調整的參考——同 shadcn 的模式。`init` 出來的 `themes/` 是空的。production build 不包含 `themes/`，`/theme-preview/:themeId` 也只在 dev 存在。表單從 `themes/` 或別張表單的資料夾 import 時，`open-form check` 會警告（repo 的 Biome 設定在 `apps/demo` 直接禁止），因為那會把外觀綁回一個可能變動的檔案。表單從參考主題帶來的 class 前綴（`.tm-*` 等）仍是全域的；只有同一頁上兩張表單對同一個前綴寫了不同樣式才會互相影響。
 
 ### 多語系（v0.3 Step 1）
 
@@ -376,8 +378,8 @@ meta             (key, value)                                                -- 
 | `open-form build --server-only [--watch]` | 只產生 `dist/server/entry.js`（單一檔案），給 `@open-form-build/core/next` 使用。 |
 | `open-form start` | Node http server：靜態檔 + SPA fallback + `/api/*`。讀 `PORT`、`OPEN_FORM_DB`、`OPEN_FORM_ADMIN_PASSWORD`、`OPEN_FORM_SECRET`、`OPEN_FORM_TRUST_PROXY`（`true`、`false` 或 proxy 層數；其他值會讓啟動失敗）、`OPEN_FORM_SECURE_COOKIES`（有 trust proxy 時 cookie 預設標 `Secure`，`0` 關閉）、`OPEN_FORM_WEBHOOK_SECRET`。 |
 | `open-form check [id]` | 像 server 一樣載入表單，印出 schema 或錯誤；同時檢查翻譯缺漏與時區，表單從 `themes/` 或別張表單 import 時會警告。 |
-| `open-form create <id> [--theme]` / `list` / `responses export <id>` | 從 starter 建表單（可帶主題副本）／列出表單與回覆數／匯出 CSV、Excel、JSON。 |
-| `open-form theme list` / `check <id> [--form]` / `add <starter> [--as]` / `copy <theme> <form>` / `font <id> <family> [--form]` | 列出專案主題與範本／檢查對比度／從範本複製進 `themes/`／把主題複製進 `forms/<form>/theme/`／把 Google Fonts 字體下載進主題（`--form`：表單自己的副本）。 |
+| `open-form create <id> [--theme]` / `list` / `responses export <id>` | 從 starter 建表單，並附自己的 `theme/index.ts`（`--theme` 時從主題的 token 開始）／列出表單與回覆數／匯出 CSV、Excel、JSON。 |
+| `open-form theme list` / `check <id> [--form]` / `add <starter> [--as]` / `font <id> <family> [--form]` | 列出專案主題與範本／檢查對比度／從範本複製進 `themes/`／把 Google Fonts 字體下載進主題（`--form`：表單自己的外觀）。 |
 | `open-form comments [id]` | 列出 Studio 留下的 `@form-comment` 標記（見 §11）。 |
 
 App 路由：
@@ -425,23 +427,27 @@ Studio 透過 postMessage 對預覽 iframe 下指令（`open-form:preview-comman
 ### Studio 設計面板（v0.2 Step 5）
 
 ```text
-Studio 設計面板 ──postMessage(open-form:theme-draft)──▶ 預覽 iframe（/theme-preview/:themeId）
+Studio 設計面板 ──postMessage(open-form:theme-draft)──▶ 預覽 iframe（/theme-preview/:themeId，或 /f/:id?preview=1）
       │                                                  └─ 以草稿 token 取代主題 token，元件與 CSS 不變
-      └─ Save ─▶ PUT /api/studio/themes/:id { patch } ─▶ src/editing/theme-tokens.ts（Babel AST）
-                                                          └─ 寫檔 → Vite watcher → open-form:theme-changed → 預覽重新載入主題
+      └─ Save ─▶ PUT /api/studio/themes/:id { patch }       ─▶ src/editing/theme-tokens.ts（Babel AST）
+             或 PUT /api/studio/forms/:id/theme { patch }        └─ 寫檔 → Vite watcher → 預覽重新載入主題
 ```
+
+面板（`DesignPanel`）接收一個 target：`{ kind: 'theme' | 'form', id }`。伺服器端是 `src/vite/theme-design.ts` 裡一組以主題檔路徑為單位的 helper（`themeDesign`、`saveThemeTokens`、`addThemeFont`），參考主題掛在 `studio-themes.ts`，表單掛在 `studio-forms.ts`：
+
+- **表單自己的外觀**：表單的 Preview 分頁在「預覽」「編輯」旁多了第三個模式「調整」（`app/studio/form-design.tsx` 的 `FormDesign`）。`GET /api/studio/forms/:id/theme` 回傳 `forms/<id>/theme/index.ts(x)` 的 token、字型與對比，沒有時回 `{ missing: true, file }`；`PUT` 存 patch；`POST …/theme/fonts` 把 Google 字型下載進 `theme/fonts/`；`POST …/theme` 寫出空的 `theme/index.ts` 並接進 `index.tsx`（`src/editing/form-theme.ts` 的 `wireFormTheme()`：import 放在表單 CSS 之前，並在唯一的 `<Form>` 加上 `theme={theme}`）。草稿走 `form:<id>` 頻道（`formDraftKey`）送進表單的預覽 iframe；公開頁把它當成 `runtime.themeDraft`，`<Form>` 只在預覽時用它取代自己主題的 token，元件保留。Studio 送出的草稿會強制成正在編輯的色盤（`forceScheme`），所以在淺色系統上也看得到深色色盤。
 
 - **只有 token 可編輯**（`schema/theme-patch.ts` 定義 key、`diffTokens()` 算出 patch，前後端共用）。元件、CSS、`THEME.md` 仍由人或 agent 手寫。
 - **寫回策略**：每個 edit 都重新 parse，只替換值的字元範圍；新增屬性沿用既有縮排與引號；`null` 移除屬性；`dark: false` ↔ 物件可互轉。遇到計算出來的值（`colors: palette`）直接拒絕並請使用者手改，不去猜。
 - **安全性**：`/api/studio/themes` 是 dev server middleware（不在 production handler 裡），沿用 Studio 的 loopback／管理密碼授權，寫入需 same-origin + JSON body；patch 白名單驗證（已知 key、單行字串、無反引號）。
-- **每個參考主題都可編輯**：主題都在專案的 `themes/` 裡，沒有唯讀的內建主題，也不需要先另存。存檔只改參考本身——表單已經帶著自己的副本，只有之後複製的表單會拿到變更。（之後若做表單外觀編輯器，就是把同一個寫回器指向 `forms/<id>/theme/index.tsx`。）
-- **主題字型（Google Fonts）**：字體下拉多了「從 Google Fonts 加入…」，CLI 對應 `open-form theme font <id> <family>`（`--form` 加到表單自己的副本），兩者共用 `src/editing/google-fonts.ts` + `theme-fonts.ts`。做法跟 open-slide 一樣是**下載進專案**，但不照它抓單一 TTF：
+- **每個參考主題都可編輯**：主題都在專案的 `themes/` 裡，沒有唯讀的內建主題，也不需要先另存。存檔只改參考本身——沒有表單 import 它，只有之後從它建立的表單會看到變更。
+- **主題字型（Google Fonts）**：字體下拉多了「從 Google Fonts 加入…」，CLI 對應 `open-form theme font <id> <family>`（`--form` 加到表單自己的外觀），兩者共用 `src/editing/google-fonts.ts` + `theme-fonts.ts`。做法跟 open-slide 一樣是**下載進專案**，但不照它抓單一 TTF：
   - 目錄來自 `fonts.google.com/metadata/fonts`（免 API key，dev server 快取一小時）；`GET /api/studio/themes/_fonts?q=&category=&cjk=1` 搜尋，`POST /api/studio/themes/:id/fonts { family }` 下載。
   - 用瀏覽器 UA 向 `css2` 要 woff2：可變字體要整條 `wght` 軸（檔案一樣大），靜態字體只要 400–700；保留 Google 的 `unicode-range` 分片，只接受 `fonts.gstatic.com` 的網址。
   - 寫到主題入口旁的 `fonts/<slug>/`，產生 `fonts/<slug>.css`（標頭記下 family 與 `font` 堆疊，Studio 靠它列出主題的字體），在主題檔加 `import './fonts/<slug>.css'`。build 時由 Vite 打包成資產，**填答者完全不會連到 Google**（直接連 Google Fonts 會把填答者 IP 送給 Google，德國法院 2022 年判過違反 GDPR）。
   - 中日韓字體約 100 個分片、數 MB（例：Noto Sans TC 400–700 約 4 MB），但瀏覽器只下載頁面用到的字；介面上標示「數 MB」並在加入後顯示實際大小。
   - Studio 自己的搜尋預覽直接載入 Google 的 `css2?text=`（作者的瀏覽器，不是填答者）；主題頁以 `/@fs/` 載入主題的字體 CSS，讓規格卡顯示真正的字體。
-- **主題頁**（v0.2.1，v0.4 對齊 open-slide）：先看懂再決定要不要改。列表放專案的參考主題：縮圖、名稱、一行描述，沒有 THEME.md 時標出來，上方註明每張表單都保有自己的副本；沒有主題時是空狀態，引導從範本加入或請 agent 執行 `/create-theme`；詳細頁是大預覽 + `THEME.md`（原樣呈現）+ 從 token 算出的規格卡（`effectivePalettes()` 色票、對比報告、字體樣本、形狀）+「用在表單上」卡片（`open-form theme copy <id> <form>` 與複製給 agent 的指令）。沒有「被哪些表單使用」：沒有表單依賴參考主題。編輯是預設收起的「調整」抽屜（`lg` 以上停靠在右側、預覽仍可見）。「新增主題」可以一鍵從範本加入（`POST /api/studio/themes { starter, as? }`，範本清單 `GET /api/studio/themes/_starters` 附主要色票），或描述需求後複製給 agent 的指令；補寫 THEME.md 也是複製給 agent 的指令。
+- **主題頁**（v0.2.1，v0.4 對齊 open-slide）：先看懂再決定要不要改。列表放專案的參考主題：縮圖、名稱、一行描述，沒有 THEME.md 時標出來，上方註明每張表單的外觀都是自己的；沒有主題時是空狀態，引導從範本加入或請 agent 執行 `/create-theme`；詳細頁是大預覽 + `THEME.md`（原樣呈現）+ 從 token 算出的規格卡（`effectivePalettes()` 色票、對比報告、字體樣本、形狀）+「用在表單上」卡片（`open-form create <form> --theme <id>` 與複製給 agent 的指令）。沒有「被哪些表單使用」：沒有表單依賴參考主題。編輯是預設收起的「調整」抽屜（`lg` 以上停靠在右側、預覽仍可見）。「新增主題」可以一鍵從範本加入（`POST /api/studio/themes { starter, as? }`，範本清單 `GET /api/studio/themes/_starters` 附主要色票），或描述需求後複製給 agent 的指令；補寫 THEME.md 也是複製給 agent 的指令。
 
 ---
 
@@ -450,7 +456,7 @@ Studio 設計面板 ──postMessage(open-form:theme-draft)──▶ 預覽 ifr
 延續 open-slide 的做法：
 
 - **Skills** 放在套件的 `skills/`，`init` 時複製到 workspace 的 `.agents/skills/`，`.claude/skills/*` 是 symlink；`dev` 啟動時自動同步（內建 skill 一律覆寫，所以不要原地修改），執行期間也會監看套件的 `skills/`（從原始碼連結 open-form 時改了就即時同步）；`open-form sync:skills` 是不啟動 dev 的手動同步。兩者在 workspace 之外都拒絕執行，因為那裡的 `.claude/skills/` 可能是整個使用者共用的資料夾。`OPEN_FORM_SKIP_SKILLS_SYNC=1` 關閉。
-  - `create-form`：從需求到完整表單的 workflow（釐清問題 → **先決定美感方向**：讀各主題的 `THEME.md`，依表單與對象提出 3 個方向 → 選 id → 把選定的主題複製進表單（`create --theme`／`theme copy`）→ 依方向規劃結構與文案 → 寫檔 → 自我檢查）。
+  - `create-form`：從需求到完整表單的 workflow（釐清問題 → **先決定美感方向**：讀各主題的 `THEME.md`，依表單與對象提出 3 個方向 → 選 id → 從選定主題的 token 建立表單（`create --theme`）→ 依方向規劃結構與文案 → 寫檔，並只從參考主題拿表單用得到的部分寫出它自己的外觀 → 自我檢查）。
   - `create-theme`：從 repo 既有設計系統（Tailwind、CSS 變數、shadcn、字體）、圖片或描述產生參考主題 `themes/<id>/`（token、元件、CSS、`THEME.md`），從最接近的範本 `theme add --as` 起步，並檢查對比度。
   - `form-authoring`：技術參考（file contract、元件、條件、驗證、policy、主題、外觀元件、版面、反模式）。
   - `current-form`：讀 `node_modules/.open-form/current.json`（Studio 經 `POST /api/studio/current` 回報，走 Studio 的 gate；內容會進 agent 的 context，所以不開放未授權寫入），知道使用者「現在在看哪張表單、哪一步」、在 Studio 選取了哪個元素（`selection`）、表單自己的主題（`formThemePath`），或正在看哪個參考主題（`themeId`／`themePath`）。

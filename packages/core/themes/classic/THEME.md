@@ -23,6 +23,32 @@ layout: default card
 | `muted` | `#6b6b76` | `#a0a0ab` | Help text, captions |
 | `border` | `#e2e2e7` | `#2a2a31` | Inputs, dividers |
 
+## Tokens
+
+What `open-form create <form> --theme classic` writes into the form's `theme/index.ts`.
+
+| Token | Light | Dark |
+| --- | --- | --- |
+| `primary` | `#4f46e5` | `#8b8cf8` |
+| `primaryForeground` | `#ffffff` | `#0b0b12` |
+| `background` | `#f4f4f6` | `#0b0b0e` |
+| `surface` | `#ffffff` | `#141418` |
+| `foreground` | `#18181b` | `#f4f4f5` |
+| `muted` | `#6b6b76` | `#a0a0ab` |
+| `border` | `#e2e2e7` | `#2a2a31` |
+| `control` | `#93939b` | `#64646f` |
+| `input` | `#ffffff` | `#0f0f13` |
+| `error` | `#d92d20` | `#f97066` |
+| `success` | `#16a34a` | `#4ade80` |
+
+- `font`: `'ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif'`
+- `headingFont`: same as `font`
+- `radius`: `'10px'`
+- `spacing`: `'comfortable'`
+- `width`: `'640px'`
+- `layout`: `'card'`
+- Layout: the default card — nothing to add.
+
 ## Typography
 
 System sans (`ui-sans-serif` / SF / Segoe, then `var(--of-cjk)` for Chinese and Japanese) for everything. Titles 650 weight with slight negative tracking; labels 560.
@@ -30,6 +56,10 @@ System sans (`ui-sans-serif` / SF / Segoe, then `var(--of-cjk)` for Chinese and 
 ## Layout & components
 
 Centered card, labels above controls, bordered 46px inputs, list or card choices, a thin progress bar for multi-step forms, Back on the left and the primary action on the right.
+
+### Building a form's look from it
+
+Everything here is tokens: a form started from `classic` needs nothing else. Change the tokens to brand it; reach for CSS on the runtime's classes (`form-authoring` → *Custom styling*) before writing a component.
 
 ## Signature ideas
 

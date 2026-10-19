@@ -23,6 +23,32 @@ layout: default card (works with StepperLayout)
 | ink (`--br-ink`) | `#000` | Every border, shadow and outline |
 | `error` | `#e5001c` | Error text sits on a black tag |
 
+## Tokens
+
+What `open-form create <form> --theme brutalist` writes into the form's `theme/index.ts`. One palette only.
+
+| Token | Value |
+| --- | --- |
+| `primary` | `#ff4f9a` |
+| `primaryForeground` | `#000000` |
+| `background` | `#ffd84d` |
+| `surface` | `#fffdf3` |
+| `foreground` | `#000000` |
+| `muted` | `#3b3b3b` |
+| `border` | `#000000` |
+| `control` | `#000000` |
+| `input` | `#ffffff` |
+| `error` | `#e5001c` |
+| `success` | `#00a86b` |
+
+- `colorScheme`: `'light'`
+- `font`: `'"Helvetica Neue", Helvetica, Arial, var(--of-cjk), sans-serif'`
+- `headingFont`: `'"Arial Black", "Helvetica Neue", Helvetica, Impact, var(--of-cjk), sans-serif'`
+- `radius`: `'0px'`
+- `spacing`: `'comfortable'`
+- `width`: `'600px'`
+- Layout: the default card — nothing to add.
+
 ## Typography
 
 - Titles: `Arial Black` / Impact, uppercase, huge, with a pink marker highlight behind the text.
@@ -37,9 +63,17 @@ layout: default card (works with StepperLayout)
 - Inputs: 3px borders; on focus they lift up-left and cast a hard shadow.
 - Choices: chunky tiles that lift on hover and turn mint when chosen.
 - Rating: a connected strip of blocks.
+- Matrix: one ink-ruled table with an inverted header row; the chosen cell turns mint. On a narrow form each row is its own block that lifts while you answer it.
 - Buttons: lift on hover, slam flat on press.
 - Errors: black tags with white text.
 - Success: a rotated mint sticker that slams in.
+
+### Building a form's look from it
+
+`index.tsx` and `brutalist.css` are built this way, so take from them as they are:
+
+- **CSS on the runtime's markup** (scoped to the form): uppercase heavy labels and the outlined `*` (`.of-label`, `.of-required`), errors as black tags (`.of-error`), the choice tiles with the input itself as the box (`.of-choice`, `.of-choice > .of-radio`), the checkbox (`.of-choice-single`), the connected rating strip (`.of-rating`), the select (`.of-select-wrap`), buttons that lift on hover and slam flat on press (`.of-button`), the card's border and hard shadow (`.of-form`), inverted page titles (`.of-page-title`), the matrix's ink-ruled table and blocks with the radio itself as the box (`.of-matrix-*`).
+- **Components**: `Header` (the marker highlight behind each line of the title), `Progress` (a block per step), `Success` (the rotated sticker) and `TextInput` / `Textarea` (the wrapper that lifts and casts the shadow, the unit and counter).
 
 ## Signature ideas
 

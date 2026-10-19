@@ -1,5 +1,5 @@
-/* Terminal theme. Component classes are prefixed `tm-`; overrides of built-in
-   elements are scoped to [data-of-theme="terminal"]. */
+/* Terminal theme. The runtime's own markup is restyled under
+   [data-of-theme="terminal"]; the `tm-` classes are the components' own markup. */
 
 [data-of-theme="terminal"].of-root {
   background:
@@ -136,28 +136,68 @@
   gap: 22px 28px;
 }
 
-.tm-field {
+/* Fields: `? question` prompts, `#` help, `✖` errors. Glyphs are drawn, not read. */
+
+[data-of-theme="terminal"] .of-field {
   display: grid;
   gap: 6px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.tm-field > legend {
-  padding: 0;
-  margin-bottom: 6px;
+[data-of-theme="terminal"] .of-field > * + *,
+[data-of-theme="terminal"] .of-field > legend,
+[data-of-theme="terminal"] .of-field > legend:has(+ .of-help) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.tm-label {
+[data-of-theme="terminal"] .of-label {
   color: var(--of-fg);
+  font-size: inherit;
   font-weight: 700;
+  line-height: inherit;
 }
 
-.tm-q {
+[data-of-theme="terminal"] .of-label::before {
+  content: "? " / "";
   color: var(--of-primary);
 }
+
+[data-of-theme="terminal"] .of-required {
+  margin-left: 0;
+  color: var(--of-muted);
+}
+
+[data-of-theme="terminal"] .of-required::before {
+  content: " ";
+}
+
+[data-of-theme="terminal"] .of-help,
+[data-of-theme="terminal"] .of-field > .of-help {
+  display: block;
+  margin: 0;
+  color: var(--of-muted);
+  font-size: 13px;
+  line-height: inherit;
+}
+
+[data-of-theme="terminal"] .of-help::before {
+  content: "# " / "";
+}
+
+[data-of-theme="terminal"] .of-error,
+[data-of-theme="terminal"] .of-field > .of-error {
+  margin: 0;
+  color: var(--of-error);
+  font-size: 13px;
+  line-height: inherit;
+  animation: none;
+}
+
+[data-of-theme="terminal"] .of-error::before {
+  content: "✖ " / "";
+}
+
+/* The rating's scale line is the Rating component's own. */
 
 .tm-help {
   display: block;
@@ -168,12 +208,6 @@
 
 .tm-help::before {
   content: "# ";
-}
-
-.tm-error {
-  margin: 0;
-  color: var(--of-error);
-  font-size: 13px;
 }
 
 .tm-line {
@@ -193,7 +227,7 @@
   color: var(--of-primary);
 }
 
-.tm-field[data-invalid] .tm-caret {
+[data-of-theme="terminal"] .of-field[data-invalid] .tm-caret {
   color: var(--of-error);
 }
 
@@ -245,65 +279,90 @@
   color: var(--of-fg);
 }
 
-.tm-choices {
+/* Choices: `( )` / `(•)` and `[ ]` / `[x]` marks, a `❯` on the one under the pointer. */
+
+[data-of-theme="terminal"] .of-choices,
+[data-of-theme="terminal"] .of-choices[data-variant] {
   display: grid;
+  grid-template-columns: none;
   gap: 2px;
 }
 
-.tm-choice {
+[data-of-theme="terminal"] .of-choice,
+[data-of-theme="terminal"] .of-choice:hover,
+[data-of-theme="terminal"] .of-choice:has(input:checked) {
   position: relative;
   display: flex;
   align-items: baseline;
   gap: 10px;
   padding: 2px 0 2px 18px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  line-height: inherit;
   cursor: pointer;
 }
 
-.tm-choice input {
+[data-of-theme="terminal"] .of-choice:has(input:focus-visible) {
+  outline: none;
+}
+
+[data-of-theme="terminal"] .of-choice > input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.tm-choice::before {
+[data-of-theme="terminal"] .of-choice::before {
   content: "";
   position: absolute;
   left: 0;
   color: var(--of-primary);
 }
 
-.tm-choice:hover::before,
-.tm-choice:has(input:focus-visible)::before {
-  content: "❯";
+[data-of-theme="terminal"] .of-choice:hover::before,
+[data-of-theme="terminal"] .of-choice:has(input:focus-visible)::before {
+  content: "❯" / "";
 }
 
-.tm-mark {
+[data-of-theme="terminal"] .of-choice::after {
+  content: "( )" / "";
+  order: -1;
   flex: none;
   color: var(--of-muted);
   white-space: pre;
 }
 
-.tm-choice:has(input:checked) {
+[data-of-theme="terminal"] .of-choice:has(input:checked)::after {
+  content: "(•)" / "";
+}
+
+[data-of-theme="terminal"] .of-choice:has(.of-checkbox)::after {
+  content: "[ ]" / "";
+}
+
+[data-of-theme="terminal"] .of-choice:has(.of-checkbox:checked)::after {
+  content: "[x]" / "";
+}
+
+[data-of-theme="terminal"] .of-choice:has(input:checked),
+[data-of-theme="terminal"] .of-choice:has(input:checked)::after {
   color: var(--of-primary);
 }
 
-.tm-choice:has(input:checked) .tm-mark {
-  color: var(--of-primary);
-}
-
-.tm-field[data-invalid] .tm-mark {
+[data-of-theme="terminal"] .of-field[data-invalid] .of-choice::after {
   color: var(--of-error);
 }
 
-.tm-single {
+[data-of-theme="terminal"] .of-choice-single {
   padding-left: 0;
 }
 
-.tm-single::before {
+[data-of-theme="terminal"] .of-choice-single::before {
   display: none;
 }
 
-.tm-single > span:last-child {
+[data-of-theme="terminal"] .of-choice-text {
   display: grid;
   gap: 2px;
 }
@@ -319,7 +378,7 @@
   cursor: pointer;
 }
 
-.tm-rating-item input {
+[data-of-theme="terminal"] .tm-rating-item input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
@@ -344,6 +403,146 @@
   outline-offset: 2px;
 }
 
+/* Matrix: rows listed like prompts when narrow, a table once the form is wide.
+   The runtime's cells, with the choices' `( )` / `(•)` marks. */
+
+[data-of-theme="terminal"] .of-matrix-grid {
+  gap: 14px;
+}
+
+[data-of-theme="terminal"] .of-matrix-row,
+[data-of-theme="terminal"] .of-matrix-row[data-invalid] {
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+[data-of-theme="terminal"] .of-matrix-label {
+  gap: 2px;
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+[data-of-theme="terminal"] .of-matrix-cell {
+  position: relative;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 0 2px 18px;
+  line-height: inherit;
+}
+
+[data-of-theme="terminal"] .of-matrix-cell > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-of-theme="terminal"] .of-matrix-cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  color: var(--of-primary);
+}
+
+[data-of-theme="terminal"] .of-matrix-cell:hover::before,
+[data-of-theme="terminal"] .of-matrix-cell:has(input:focus-visible)::before {
+  content: "❯" / "";
+}
+
+[data-of-theme="terminal"] .of-matrix-cell::after {
+  content: "( )" / "";
+  order: -1;
+  flex: none;
+  color: var(--of-muted);
+  white-space: pre;
+}
+
+[data-of-theme="terminal"] .of-matrix-cell:has(input:checked)::after {
+  content: "(•)" / "";
+}
+
+[data-of-theme="terminal"] .of-matrix-cell:has(input:checked),
+[data-of-theme="terminal"] .of-matrix-cell:has(input:checked)::after {
+  color: var(--of-primary);
+}
+
+[data-of-theme="terminal"] .of-matrix-row[data-invalid] .of-matrix-cell::after {
+  color: var(--of-error);
+}
+
+@container (min-width: 32rem) {
+  [data-of-theme="terminal"] .of-matrix-grid {
+    gap: 0;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-head,
+  [data-of-theme="terminal"] .of-matrix-row {
+    grid-template-columns: minmax(10rem, 2fr) repeat(var(--of-matrix-columns), minmax(0, 1fr));
+    align-items: start;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-head {
+    margin-bottom: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--of-border);
+  }
+
+  [data-of-theme="terminal"] .of-matrix-head span {
+    padding: 0 4px;
+    color: var(--of-muted);
+    font-size: 13px;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-row,
+  [data-of-theme="terminal"] .of-matrix-row[data-invalid],
+  [data-of-theme="terminal"] .of-matrix-row:last-child {
+    gap: 0;
+    border: 0;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-label {
+    position: relative;
+    padding: 3px 12px 3px 18px;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-label::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    color: var(--of-primary);
+  }
+
+  [data-of-theme="terminal"] .of-matrix-row:hover .of-matrix-label::before,
+  [data-of-theme="terminal"] .of-matrix-row:focus-within .of-matrix-label::before {
+    content: "❯" / "";
+  }
+
+  [data-of-theme="terminal"] .of-matrix-cell {
+    align-self: stretch;
+    justify-content: center;
+    padding: 3px 0;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-cell::before {
+    display: none;
+  }
+
+  [data-of-theme="terminal"] .of-matrix-cell:hover::after {
+    color: var(--of-fg);
+  }
+
+  [data-of-theme="terminal"] .of-matrix-cell:has(input:focus-visible)::after {
+    outline: 1px solid var(--of-primary);
+    outline-offset: 2px;
+  }
+}
+
 [data-of-theme="terminal"] .of-alert {
   border-color: var(--of-error);
   border-radius: 0;
@@ -360,8 +559,12 @@
   margin-top: 30px;
 }
 
-.tm-btn {
+[data-of-theme="terminal"] .of-button {
+  display: inline-block;
+  flex: none;
+  min-width: 0;
   min-height: 40px;
+  margin: 0;
   padding: 0 14px;
   border: 1px solid var(--of-border);
   border-radius: 0;
@@ -376,16 +579,32 @@
     border-color 0.12s ease;
 }
 
-.tm-btn:hover {
-  border-color: var(--of-muted);
+/* Stronger than the runtime's phone rule that stretches nav buttons. */
+[data-of-theme="terminal"] .of-nav .of-button {
+  flex: none;
+  min-width: 0;
 }
 
-.tm-btn:focus-visible {
+[data-of-theme="terminal"] .of-button:hover,
+[data-of-theme="terminal"] .of-button-secondary:hover {
+  border-color: var(--of-muted);
+  background: transparent;
+}
+
+[data-of-theme="terminal"] .of-button:active {
+  transform: none;
+}
+
+[data-of-theme="terminal"] .of-button:focus-visible {
   outline: 1px solid var(--of-primary);
   outline-offset: 3px;
 }
 
-.tm-btn-primary {
+[data-of-theme="terminal"] .of-button-secondary::before {
+  content: "← " / "";
+}
+
+[data-of-theme="terminal"] .of-button-primary {
   order: -1;
   border-color: var(--of-primary);
   background: var(--of-primary);
@@ -393,11 +612,15 @@
   font-weight: 700;
 }
 
-.tm-btn-primary:hover {
+[data-of-theme="terminal"] .of-button-primary::after {
+  content: " ↵" / "";
+}
+
+[data-of-theme="terminal"] .of-button-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--of-primary) 85%, #fff);
 }
 
-.tm-btn:disabled {
+[data-of-theme="terminal"] .of-button:disabled {
   opacity: 0.6;
   cursor: progress;
 }
@@ -444,4 +667,9 @@
   .tm-titlebar-text {
     transform: none;
   }
+}
+
+/* Room above the window for the language picker in the corner, at every width. */
+[data-of-theme="terminal"].of-root:has(> .of-lang) {
+  padding-top: clamp(56px, 6vw, 64px);
 }
