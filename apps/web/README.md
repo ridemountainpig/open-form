@@ -12,5 +12,5 @@ pnpm dev:web    # from the repo root → http://localhost:3030
 | `content/docs` | Docs as MDX; `meta.json` files order the sidebar. |
 | `app/docs`, `app/api/search` | Docs layout, pages and search. |
 | `app/llms.txt`, `app/llms-full.txt`, `app/llms.mdx`, `proxy.ts` | Markdown for agents: `/llms.txt`, `/docs/<page>.mdx`, or any docs URL with `Accept: text/markdown`. |
-| `app/og`, `app/opengraph-image.tsx`, `lib/og.tsx` | Open Graph images, rendered with the Geist fonts from `node_modules`. |
-| `lib/shared.ts` | Site URL, GitHub repo and other constants. |
+| `app/og`, `app/opengraph-image.tsx`, `lib/og.tsx` | Open Graph images in the landing's look: Newsreader titles from `assets/fonts` (static TTFs, since Satori can't read variable fonts), Geist from `node_modules`. |
+| `lib/shared.ts` | Site URL, GitHub repo, the landing headline and other constants. |

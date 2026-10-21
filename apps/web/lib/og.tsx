@@ -4,35 +4,43 @@ import { ImageResponse } from 'next/og';
 import { appName, siteUrl } from './shared';
 
 // Mirrors the landing page: a neutral paper surface and ink, no brand hue.
-const PAPER = '#FCFCFC';
+const PAPER = '#FFFFFF';
 const INK = '#0A0A0A';
-const INK_SOFT = '#3A3A3A';
-const MUTED = '#636363';
-const RULE = '#E4E4E4';
+const INK_SOFT = '#424242';
+const MUTED = '#696969';
+const DIM = '#A4A4A4';
+const RULE = '#E1E1E1';
 
 export const ogSize = { width: 1200, height: 630 };
 
-const fontsDir = path.join(process.cwd(), 'node_modules/geist/dist/fonts');
+const geistDir = path.join(process.cwd(), 'node_modules/geist/dist/fonts');
+// Satori needs static TTFs, so Newsreader (the landing's display face) is vendored
+// as its opsz-72 instances; next/font only ships it as a variable woff2.
+const newsreaderDir = path.join(process.cwd(), 'assets/fonts');
 
 async function loadAssets() {
-  const [regular, medium, mono, logo] = await Promise.all([
-    readFile(path.join(fontsDir, 'geist-sans/Geist-Regular.ttf')),
-    readFile(path.join(fontsDir, 'geist-sans/Geist-Medium.ttf')),
-    readFile(path.join(fontsDir, 'geist-mono/GeistMono-Medium.ttf')),
+  const [regular, mono, display, displayItalic, logo] = await Promise.all([
+    readFile(path.join(geistDir, 'geist-sans/Geist-Regular.ttf')),
+    readFile(path.join(geistDir, 'geist-mono/GeistMono-Medium.ttf')),
+    readFile(path.join(newsreaderDir, 'Newsreader-Regular.ttf')),
+    readFile(path.join(newsreaderDir, 'Newsreader-Italic.ttf')),
     readFile(path.join(process.cwd(), 'public/open-form.svg')),
   ]);
   return {
     logoSrc: `data:image/svg+xml;base64,${logo.toString('base64')}`,
     fonts: [
       { name: 'Geist', data: regular, weight: 400 as const, style: 'normal' as const },
-      { name: 'Geist', data: medium, weight: 500 as const, style: 'normal' as const },
       { name: 'Geist Mono', data: mono, weight: 500 as const, style: 'normal' as const },
+      { name: 'Newsreader', data: display, weight: 400 as const, style: 'normal' as const },
+      { name: 'Newsreader', data: displayItalic, weight: 400 as const, style: 'italic' as const },
     ],
   };
 }
 
 type OgContent = {
   title: string;
+  /** A second title line in italic, like the landing headline. */
+  emphasis?: string;
   description?: string;
   /** Beside the logo, e.g. `Docs`. */
   eyebrow: string;
@@ -45,7 +53,15 @@ export async function renderOgImage(content: OgContent) {
   return new ImageResponse(<Frame {...content} logoSrc={logoSrc} />, { ...ogSize, fonts });
 }
 
-function Frame({ title, description, eyebrow, footer, logoSrc }: OgContent & { logoSrc: string }) {
+function Frame({
+  title,
+  emphasis,
+  description,
+  eyebrow,
+  footer,
+  logoSrc,
+}: OgContent & { logoSrc: string }) {
+  const titleSize = Math.max(title.length, emphasis?.length ?? 0) > 30 ? 80 : 96;
   return (
     <div
       style={{
@@ -56,21 +72,9 @@ function Frame({ title, description, eyebrow, footer, logoSrc }: OgContent & { l
         backgroundColor: PAPER,
         fontFamily: 'Geist',
         color: INK,
-        padding: '72px 80px',
-        position: 'relative',
+        padding: '64px 80px',
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: 6,
-          backgroundColor: INK,
-        }}
-      />
-
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <img src={logoSrc} width={48} height={48} alt="" />
         <div
@@ -86,39 +90,44 @@ function Frame({ title, description, eyebrow, footer, logoSrc }: OgContent & { l
           }}
         >
           <span style={{ color: INK }}>{appName}</span>
-          <span style={{ color: RULE }}>·</span>
+          <span style={{ color: DIM }}>·</span>
           <span>{eyebrow}</span>
         </div>
       </div>
 
       <div style={{ height: 1, width: '100%', backgroundColor: RULE, marginTop: 32 }} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', marginTop: 48, flex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: 40, flex: 1 }}>
         <div
           style={{
             display: 'flex',
-            fontSize: title.length > 36 ? 76 : 92,
-            fontWeight: 500,
-            lineHeight: 1.04,
-            letterSpacing: '-0.03em',
+            flexDirection: 'column',
+            fontFamily: 'Newsreader',
+            fontSize: titleSize,
+            lineHeight: 1,
+            letterSpacing: '-0.022em',
             color: INK,
-            maxHeight: 320,
+            maxHeight: titleSize * 2,
             overflow: 'hidden',
           }}
         >
-          {title}
+          <div style={{ display: 'flex' }}>{title}</div>
+          {emphasis ? (
+            <div style={{ display: 'flex', fontStyle: 'italic', letterSpacing: '-0.03em' }}>
+              {emphasis}
+            </div>
+          ) : null}
         </div>
 
         {description ? (
           <div
             style={{
-              display: 'flex',
+              display: 'block',
+              lineClamp: 2,
               marginTop: 28,
               fontSize: 30,
               lineHeight: 1.4,
               color: INK_SOFT,
-              maxHeight: 180,
-              overflow: 'hidden',
               maxWidth: 980,
             }}
           >

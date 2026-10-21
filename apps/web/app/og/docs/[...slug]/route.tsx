@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { renderOgImage } from '@/lib/og';
+import { headline } from '@/lib/shared';
 import { getPageImage, source } from '@/lib/source';
 
 export const revalidate = false;
@@ -11,7 +12,7 @@ export async function GET(_req: Request, { params }: RouteContext<'/og/docs/[...
 
   return renderOgImage({
     title: page.data.title,
-    description: page.data.description ?? 'The form framework built for agents.',
+    description: page.data.description ?? headline.join(' '),
     eyebrow: 'Docs',
     footer: ['docs', ...page.slugs].join(' / '),
   });

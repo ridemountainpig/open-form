@@ -1,12 +1,10 @@
 import { type CSSProperties, Fragment } from 'react';
+import { headline } from '@/lib/shared';
 import { Container } from './frame';
 import { HeroActions } from './hero-actions';
 import { HeroForm } from './hero-form';
 
-const headline = [
-  { words: ['Forms', 'your', 'agent', 'writes.'], em: false },
-  { words: ['Responses', 'you', 'own.'], em: true },
-];
+const lines = headline.map((line, i) => ({ words: line.split(' '), em: i > 0 }));
 const WORD_START_MS = 80;
 const WORD_STAGGER_MS = 45;
 
@@ -30,11 +28,11 @@ export function Hero() {
           id="hero-heading"
           className="display mt-10 text-[46px] leading-[0.98] sm:mt-14 sm:text-[72px] lg:text-[92px]"
         >
-          {headline.map((line, li) => (
+          {lines.map((line, li) => (
             <span key={line.words.join(' ')} className="block">
               {line.words.map((word, wi) => {
                 const order =
-                  headline
+                  lines
                     .slice(0, li)
                     .map((l) => l.words.length)
                     .reduce((a, b) => a + b, 0) + wi;
