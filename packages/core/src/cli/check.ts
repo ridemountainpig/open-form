@@ -276,7 +276,7 @@ function languagesOf(definition: FormDefinition) {
 const SHOW_MISSING = 8;
 
 /** Missing translations are listed in full in --json; here, enough to act on. */
-function languageLines(definition: FormDefinition): string[] {
+export function languageLines(definition: FormDefinition): string[] {
   const { available, coverage } = languagesOf(definition);
   if (available.length < 2) return [];
   const lines = [
@@ -298,8 +298,11 @@ function languageLines(definition: FormDefinition): string[] {
     }
     // Text shown only for some answers, or returned by `validate`, isn't rendered
     // while checking — so "not seen" is a hint to look, not an error.
-    for (const text of c.unused.slice(0, 3)) {
+    for (const text of c.unused.slice(0, SHOW_MISSING)) {
       lines.push(`        ${chalk.dim('not seen')} ${chalk.dim(JSON.stringify(text))}`);
+    }
+    if (c.unused.length > SHOW_MISSING) {
+      lines.push(chalk.dim(`        … ${c.unused.length - SHOW_MISSING} more (see --json)`));
     }
   }
   return lines;
