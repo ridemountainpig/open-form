@@ -511,7 +511,11 @@ export default defineTheme({ /* tokens */ components: { Layout: Poster } });
   grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
   min-height: 100dvh;
 }
-[data-of-theme="<id>"] .gig-poster-form { padding: clamp(32px, 5vw, 72px); max-width: var(--of-width); }
+[data-of-theme="<id>"] .gig-poster-form {
+  padding: clamp(32px, 5vw, 72px);
+  padding-top: clamp(56px, 6vw, 72px); /* clears the language picker at every width */
+  max-width: var(--of-width);
+}
 @media (max-width: 860px) {
   [data-of-theme="<id>"] .gig-poster { grid-template-columns: minmax(0, 1fr); min-height: 0; }
   [data-of-theme="<id>"] .gig-poster-art { padding: 56px 20px 24px; } /* a short band, so the first question stays on screen */
