@@ -275,7 +275,12 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
         const formId = formIdForFile(paths.formsRoot, file);
         if (!formId) return;
         const dir = path.join(paths.formsRoot, formId) + path.sep;
-        for (const modFile of server.environments.client.moduleGraph.fileToModulesMap.keys()) {
+        const files = new Set(
+          Object.values(server.environments).flatMap((env) => [
+            ...env.moduleGraph.fileToModulesMap.keys(),
+          ]),
+        );
+        for (const modFile of files) {
           if (modFile !== normalizePath(file) && path.resolve(modFile).startsWith(dir)) {
             server.watcher.emit('change', modFile);
           }
