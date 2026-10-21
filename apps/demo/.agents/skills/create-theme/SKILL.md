@@ -59,6 +59,8 @@ Name dominant colors, the type personality (serif / grotesk / mono / rounded, we
 
 Give the theme **one distinctive move** — a display heading font, a textured brand panel, an unusual control shape (underlines, pills, chunky blocks), a composition that isn't a centered card (a full-page poster, a document sheet, a hero beside the questions: `form-authoring` → *Design guidelines → Composition*) — and keep everything else quiet. A theme that's only "clean and modern" ends up as `classic` with a new primary color, and a theme that is only a new card style ends up looking like every other form: decide the composition along with the colors and type.
 
+Take the move from the audience's world (the objects, documents and places they know from this moment), not from what generated pages default to: cream with a serif and terracotta, black with one neon accent, newspaper hairlines, `#` and `→` as decoration (`form-authoring` → *Design guidelines → Look* lists them). Use one of those only when the brand is that.
+
 When sources disagree, ask which wins.
 
 ## Step 3 — Pick an id, a starting point and a depth

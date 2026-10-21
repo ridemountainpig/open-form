@@ -41,18 +41,28 @@ code in a shop, gets a higher `protection.rateLimit`.
 
 ### Propose three visual directions
 
-It runs `open-form theme list`, reads the candidates' `THEME.md` (the project's
-references in `themes/` and the starters), and offers three directions tailored
-to the form and audience. Each is a theme plus a composition and concrete cues —
+It first lists a handful of things respondents know from this moment (for a
+café's feedback card: the stamp card, the receipt, the chalkboard menu), drops
+the most literal one, and builds each direction from a different item. It runs
+`open-form theme list`, reads the candidates' `THEME.md` (the project's
+references in `themes/` and the starters) as bases to adapt, and offers three
+directions tailored to the form and audience, steering clear of the looks
+generated pages fall into by default (cream with a serif and terracotta, black
+with one neon accent, `#` and `→` as decoration). Each is a theme plus a composition and concrete cues —
 *terminal: CLI prompts, green on black, the agenda printed beside the
 questions*, or *brutalist + StepperLayout: loud yellow, thick borders, a step
 rail* — never a bare "modern". When the form has one, a direction also names its
-**signature element**: the one piece of UI that belongs to this form, such as a
-pass that fills in as people answer, an event's facts or agenda, or plan tiles
-with a running total. The three differ in composition too, meaning how the
-page is arranged around the questions: a full-page poster, a hero beside the
-form, a wide document sheet, a form with a sticky summary, a step rail, or one
-question per screen. At most one is the plain centered card. A brand theme in
+**signature element**: the one piece of UI that belongs to this form, best on
+the control for its key question (an RSVP answered by circling 出席, a rating
+stamped onto a loyalty card), otherwise a pass that fills in as people answer,
+an event's facts or agenda, or plan tiles with a running total. The ambition
+follows the moment. A quick form, such as a QR feedback card or an internal
+sign-up, keeps a plain column in all three directions. Invitations,
+registrations and applications differ in composition too, meaning how the page
+is arranged around the questions: a full-page poster, a hero beside the form, a
+wide document sheet, a form with a sticky summary, a step rail, or one question
+per screen, which it suggests for an NPS survey or a quiz. At most one is the
+plain centered card. A brand theme in
 `themes/` is the recommended option. If you already named the look, it skips
 the question.
 
@@ -78,9 +88,14 @@ is the public URL `/f/<id>`, so the agent avoids internal names and checks
 Shaped by the direction: one question per page for conversational themes and
 `FocusLayout`, a single page for up to about seven fields, 3–7 fields per
 `<Page>` for longer forms. Easy questions first, free text near the end,
-follow-ups right after the question they depend on. It also plans the look:
-where each header fact goes (once), where the signature element lives, what a
-phone shows on the first screen, and the success copy. Copy follows the theme's
+follow-ups right after the question they depend on, and name, email and phone
+together on one page. A form with several pages says how many steps and about
+how long in its description, and long ones keep drafts. It also plans the look:
+where each header fact goes (once), where the signature element lives and how
+the success screen echoes it, what a phone shows on the first screen, and
+success copy that uses the person's answers. Then it reviews the plan, asking
+of each choice whether it would have made the same one for a different
+audience, and replaces the parts that are defaults. Copy follows the theme's
 tone, `locale` matches the language, and the closed screen gets messages in the
 form's voice. A form tied to a date, with limited spots or one response per
 person, or with a strong look also gets its own `Notice`: the closed screen in
@@ -155,7 +170,7 @@ browser tool it says it hasn't seen the form, and asks you to open it.
 ### Hand off
 
 You get the public link and the Studio link, the theme, layout and signature
-element it built, whether it looked at the form on desktop and phone, the policy
+element it built, what its plan review changed, whether it looked at the form on desktop and phone, the policy
 it applied, what respondents see once the form closes, and any assumptions it
 made, including option lists it wrote itself and limits it worked around. For a multilingual form: the languages, how respondents
 get theirs (automatically, the picker or `?lang=`), and that editing text means
