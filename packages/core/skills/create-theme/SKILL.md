@@ -92,7 +92,7 @@ When sources disagree, ask which wins.
 - **Fonts** — the product's `next/font` / `geist` package isn't available to forms (they're a different app). Options, in order:
   1. A system stack with the brand font first: `'"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif'` — the brand font shows only where installed.
   Always end with `var(--of-cjk)` (or `var(--of-cjk-serif)` for serif stacks) before the generic family, never a specific CJK font: the runtime fills it with Traditional Chinese, Simplified Chinese or Japanese fonts to match the form's `locale`, since the same characters are drawn differently in each.
-  2. A Google Fonts family: `open-form theme font <id> <Family>` (e.g. `theme font acme Inter`) downloads every face into `themes/<id>/fonts/`, writes `fonts/<slug>.css` (woff2 split by `unicode-range`) and imports it from the theme, then prints the `font` value to use. CJK families take a few MB on disk (respondents only download the slices a page uses) — tell the user. `create --theme` brings the fonts the tokens name into the new form.
+  2. A Google Fonts family: `open-form theme font <id> <Family>` (e.g. `theme font acme Inter`) downloads every face into `themes/<id>/fonts/`, writes `fonts/<slug>.css` (woff2 split by `unicode-range`) and imports it from the theme, then prints the `font` value to use. CJK families take 10–20 MB on disk, and each form started from the theme gets its own copy (respondents only download the slices a page uses) — tell the user. `create --theme` brings the fonts the tokens name into the new form.
   3. Any other licensed font: copy the `.woff2` into `themes/<id>/fonts/` and declare `@font-face` in the theme CSS.
   Never link `fonts.googleapis.com` from a theme: every respondent's browser would then contact Google, a privacy problem under the GDPR. Use 2 instead.
   Use 2 or 3 only when the font is central to the brand (display headings, a distinctive wordmark-like face) or the user asks.
@@ -110,7 +110,7 @@ When sources disagree, ask which wins.
     done
     { printf '/*\n * %s from Google Fonts, served from this folder.\n * open-form font: "%s", ui-serif, Georgia, var(--of-cjk-serif), serif\n */\n' "$family" "$family"
       sed -E "s#url\(https://fonts.gstatic.com/[^)]*/([^/)]+)\)#url(./$slug/\1)#g" "$dir/$slug.src.css"; } > "$dir/$slug.css"
-    rm "$dir/$slug.src.css"
+    rm -- "${dir:?}/${slug:?}.src.css"
     ```
 
     Then `import './fonts/<slug>.css';` in the theme and use the stack from the header as `font` or `headingFont`. Use a sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif`) or a monospace one (`ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace`) to match the family. A CJK family's CSS lists a hundred or more slices; download them all, since browsers fetch only the ones a page uses.

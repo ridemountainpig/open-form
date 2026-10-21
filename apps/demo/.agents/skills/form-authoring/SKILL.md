@@ -97,6 +97,8 @@ Shared props: `name` (required), `label`, `description` (help text under the lab
 | `<Rating>` | number | `min` (default 1), `max` (default 5), `lowLabel`, `highLabel`. Use `min={0} max={10}` for NPS. |
 | `<Matrix>` | one string per row | `columns` (shared answers, like `options`), `rows={[{ name, label, required? }]}`, `label`, `required`. Each row is its own single-choice field: own `name`, export column, `<When field>`. |
 
+Labels, descriptions and option labels are plain strings. A question that needs code, a formula or an image between its label and its options (a programming quiz) is a custom field: `useField` + `FieldShell` (*Custom fields*), rendering the snippet in a `<pre><code>` styled with a monospace stack, with the choices below it.
+
 Use `<Matrix>` when three or more questions share the same answers (rate each part of a course); it's a grid on wide forms and a card per row on phones. Write row labels that read on their own — they're the export column headings.
 
 `variant` on choices is a hint: built-in themes may render choices their own way (e.g. `terminal` always lists them).
@@ -192,7 +194,7 @@ Forms are React, so UI can react to answers. Read them with hooks from `@open-fo
 - `useFieldValue(name)` — one answer, re-renders only when it changes.
 - `useFormValues()` — all answers so far.
 
-Put display-only UI in `<Form aside={…}>`: a side column on wide screens, stacked below the questions on narrow ones. Ideal for a live preview, an order summary or a running total. `FocusLayout` doesn't show `aside`. `<Success>` children can use the same hooks to show a personalised confirmation.
+Put display-only UI in `<Form aside={…}>`: a side column on wide screens, stacked below the questions on narrow ones, shown only while the form is being filled in (not on the success or closed screens; reuse the component in `<Success>`). Ideal for a live preview, an order summary or a running total. `FocusLayout` doesn't show `aside`. `<Success>` children can use the same hooks to show a personalised confirmation.
 
 ```tsx
 function Summary() {
@@ -332,6 +334,8 @@ import './meetup.css';
 3. **Components** only for markup or behavior CSS can't give: a window frame or branded layout, a wrapper an input needs (an animated underline, a `❯` before the `<input>`, a counter inside the line), keyboard shortcuts, auto-advance. Each is a small function in `theme/index.tsx`, passed in `components`.
 
 A component the form never renders — a `Select` in a form without one — doesn't belong in its theme.
+
+Once the form's theme has components it becomes `theme/index.tsx`. Switch in this order: write `theme/index.tsx`, change the form's import to it, run `open-form check <id>`, and only then delete `theme/index.ts`. Deleting it first leaves `check` and the dev server failing with "Failed to load url ./theme/index.ts" until the import is fixed.
 
 When CSS restyles the runtime's markup, out-rank its rules instead of relying on which stylesheet loads last: put `[data-of-theme="<form-id>"]` in front of the runtime's own selector, so `[data-of-theme="meetup"] .of-nav .of-button` beats its phone rule `.of-nav .of-button` and `[data-of-theme="meetup"] .of-field > legend:has(+ .of-help)` beats its legend spacing. If you zero the runtime's field spacing (`.of-field > * + *`), restate the top margin your own wrappers inside a field need.
 
@@ -478,7 +482,10 @@ function Poster({ state, banner, header, progress, intro, content, alert, action
         {state === 'form' && header}
         {aside}
       </section>
-      <section className="gig-poster-form" role={state === 'form' ? undefined : 'status'}>
+      <section
+        className={state === 'success' ? 'gig-poster-form of-success' : 'gig-poster-form'}
+        role={state === 'form' ? undefined : 'status'}
+      >
         {banner}
         {progress}
         {intro}
@@ -506,7 +513,7 @@ function Poster({ state, banner, header, progress, intro, content, alert, action
 }
 ```
 
-`header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`, so render `header` only while `state === 'form'` (or give your `Success` / `Notice` an `<h2>`): one `<h1>` per screen. The art side still carries its background and motifs on the end screens. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
+Put `of-success` on the element around `content` on the success screen, as the built-in layouts do: the runtime's success styling hangs on it. `aside` is passed only while the form is being filled in (it is `null` on the success and closed screens), so a signature element that should stay on the end screens goes in `<Success>` or in the layout itself. A `position: sticky` panel stops sticking inside an ancestor with `overflow: hidden`; clip decorations with `overflow: clip` or on the decoration itself. `header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`, so render `header` only while `state === 'form'` (or give your `Success` / `Notice` an `<h2>`): one `<h1>` per screen. The art side still carries its background and motifs on the end screens. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
 
 On a form with translations the language picker (`.of-lang`) sits 12px inside the top-right corner of `.of-root`, 32px tall, over whatever the layout puts there. The built-in layouts start below it; a custom `Layout` (or form CSS that changes `.of-root`'s padding or pulls content to the top) must keep that corner clear at every width, phones included — no title, description, title bar or card edge under it. Reserve the room (`.of-root[data-of-theme="<id>"]:has(> .of-lang) { padding-top: clamp(56px, 6vw, 64px); }`) or move the picker into free space (`[data-of-theme="<id>"] .of-lang { top: …; right: …; }`).
 

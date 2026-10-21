@@ -95,13 +95,13 @@ Scaffold it from the reference's tokens, then replace the body:
 open-form create <id> --theme <theme>   # forms/<id>/index.tsx + theme/index.ts with <theme>'s tokens, wired up
 ```
 
-`<theme>` is the project's theme when `themes/<theme>` exists, otherwise the starter of that name. Only its tokens (colors, fonts, radius, width, spacing) and the web fonts they name come in — no CSS, no components. Without `--theme` the form starts with an empty `theme/index.ts`: the runtime's default look.
+`<theme>` is the project's theme when `themes/<theme>` exists, otherwise the starter of that name. Only its tokens (colors, fonts, radius, width, spacing) and the web fonts they name come in — no CSS, no components. A font the reference uses only in its CSS (a monospace for code, a Japanese face under `:lang(ja)`) isn't named by a token, so copy its `fonts/<slug>/` folder and `fonts/<slug>.css` into `forms/<id>/theme/fonts/` and import it yourself. Without `--theme` the form starts with an empty `theme/index.ts`: the runtime's default look.
 
 - `export const config = defineForm({ title, description, … })` with only the policy the user asked for. The look isn't config.
 - `import theme from './theme/index.ts';` (`index.tsx` once it has components) and `<Form theme={theme}>`. Put that import **above** the form's own CSS import, so the form's CSS wins. Never import from `themes/`.
 - `export default function <Name>Form() { return <Form theme={theme}>…</Form>; }` (e.g. `MeetupForm`). Never name it after an `@open-form-build/core` export (`Form`, `Email`): it would render itself, and `open-form check` refuses it. Avoid globals too (`Date`, `Number`): the name shadows them.
 - **Write the rest of the look for this form** in `forms/<id>/theme/`, reading the reference's `THEME.md` and its `index.tsx` and CSS (`themes/<theme>/`, or `node_modules/@open-form-build/core/themes/<theme>/` for a starter). Bring over only what this form uses, in this order (`form-authoring` → *Themes*): tokens; then CSS on the runtime's own classes, scoped to `[data-of-theme="<id>"]`; then a component only where the look needs markup or behavior CSS can't give — a window frame, a custom `Layout` for the planned composition, keyboard shortcuts, auto-advance, a glyph in front of an `<input>`. Rename the classes you borrow to a prefix of this form's own (`.tm-…` → `.mt-…`), because another form may already use the reference's and prefixed classes are global. After color changes run `open-form theme check <id> --form`.
-- Layout via the form's theme (`components: { Layout: SplitLayout }`, or the custom `Layout` the composition needs) or `<Form components={{ Layout: … }}>`. A theme with components is `theme/index.tsx`: write `index.tsx` first, then point the form's import at it, then delete `index.ts`. Changing the import before the file exists can leave the dev server stuck on "Failed to load url" until it restarts.
+- Layout via the form's theme (`components: { Layout: SplitLayout }`, or the custom `Layout` the composition needs) or `<Form components={{ Layout: … }}>`. A theme with components is `theme/index.tsx`: write `index.tsx`, point the form's import at it, run `check`, and delete `index.ts` last (`form-authoring` → *Themes*).
 - The closed screen you planned: a `Notice` component in the form's file (or beside it), passed as `<Form components={{ Notice: … }}>`.
 - Import from `@open-form-build/core` and the form's own folder only. No state, fetch, API routes or CSS frameworks.
 - Custom UI the DSL can't express → a local component with `useField` + `FieldShell` in `forms/<id>/` (see `form-authoring`), styled with the theme's `--of-*` tokens.
@@ -117,7 +117,7 @@ open-form check <id>   # loads the form like the server does: steps, fields, con
 pnpm typecheck         # tsc --noEmit, via the workspace's package manager
 ```
 
-For a multilingual form, `check` lists each language as `N/N translated`; fix every `missing` line before handing off. "Not seen" entries are fine when they're text shown only for certain answers or `validate` messages; otherwise they're keys left behind by edited text — re-key or remove them.
+For a multilingual form, `check` lists each language as `N/N translated`; fix every `missing` line before handing off. "Not seen" entries are fine when they're text shown only for certain answers, `validate` messages, or text in a custom `Layout`, `Notice` or `Success` (`check` may not render those); otherwise they're keys left behind by edited text — re-key or remove them. Before removing one, search the form's folder for the text.
 
 ### Look at it
 
