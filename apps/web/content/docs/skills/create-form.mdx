@@ -25,7 +25,15 @@ Purpose and audience, must-have questions, follow-ups that depend on earlier
 answers, policy (limits, dates, one response per email or device), languages,
 what happens after submit, and the header facts. If the purpose or the core
 questions are unclear, it asks first; otherwise it restates its reading in one
-line and moves on. It never invents dates, venues or prices.
+line and moves on. It never invents dates, venues or prices, and asks when the
+facts disagree, such as a date and a weekday that don't match.
+
+It also checks the brief against what Open Form can't do yet (file uploads, a
+quiz that scores itself, a repeating group per guest, emails to respondents)
+and tells you before building, with the workaround it would use: a link field
+instead of an upload, answers scored after export, one set of fields per guest
+up to a count you confirm. A form filled in on one shared network, like a QR
+code in a shop, gets a higher rate limit.
 
 </Step>
 <Step>
@@ -34,14 +42,18 @@ line and moves on. It never invents dates, venues or prices.
 
 It runs `open-form theme list`, reads the candidates' `THEME.md` (the project's
 references in `themes/` and the starters), and offers three directions tailored
-to the form and audience. Each is a theme plus a layout and concrete cues —
+to the form and audience. Each is a theme plus a composition and concrete cues —
 *terminal: CLI prompts, green on black, the agenda printed beside the
 questions*, or *brutalist + StepperLayout: loud yellow, thick borders, a step
 rail* — never a bare "modern". When the form has one, a direction also names its
 **signature element**: the one piece of UI that belongs to this form, such as a
 pass that fills in as people answer, an event's facts or agenda, or plan tiles
-with a running total. A brand theme in `themes/` is the recommended option. If
-you already named the look, it skips the question.
+with a running total. The three differ in composition too, meaning how the
+page is arranged around the questions: a full-page poster, a hero beside the
+form, a wide document sheet, a form with a sticky summary, a step rail, or one
+question per screen. At most one is the plain centered card. A brand theme in
+`themes/` is the recommended option. If you already named the look, it skips
+the question.
 
 A project theme or a starter can be followed closely, or adapted for this form —
 recolored, with other fonts or another layout — since the form's look is written
@@ -98,7 +110,10 @@ global name such as `Date` would shadow the global. The agent then writes the
 rest of the look in `forms/<id>/theme/`, reading the reference's `THEME.md` and
 code and taking only what this form renders: tokens first, then CSS on the
 runtime's own classes, then a component only for markup or behavior CSS can't
-give, such as a window frame or keyboard shortcuts. After color changes it runs
+give, such as a window frame, a custom `Layout` for the composition, or
+keyboard shortcuts. Borrowed classes get the form's own prefix, and a look
+written for English (uppercase labels, italic help) is adapted for Chinese or
+Japanese text. After color changes it runs
 `open-form theme check <id> --form`. Multilingual forms get a
 `forms/<id>/locales/<lang>.json` per extra language.
 
@@ -123,7 +138,8 @@ certain answers or a `validate` message.
 `check` proves the form works, not that it looks right, so the agent then looks
 at it with whatever browser tool it has, starting the dev server in the
 background if it isn't running. It takes screenshots of `/f/<id>` at desktop
-and phone width and compares them with the direction: the title shows, the
+and phone width and compares them with the direction: the composition reads
+as planned at desktop width, the title shows, the
 form's own CSS applies, nothing is low-contrast, clipped or overlapping (on a
 translated form, nothing sits under the language picker in the top-right
 corner), and on a phone the first question is on the first screen. It opens the **Schema** tab in Studio
@@ -140,7 +156,7 @@ browser tool it says it hasn't seen the form, and asks you to open it.
 You get the public link and the Studio link, the theme, layout and signature
 element it built, whether it looked at the form on desktop and phone, the policy
 it applied, what respondents see once the form closes, and any assumptions it
-made. For a multilingual form: the languages, how respondents
+made, including option lists it wrote itself and limits it worked around. For a multilingual form: the languages, how respondents
 get theirs (automatically, the picker or `?lang=`), and that editing text means
 updating each `locales/*.json`. The look is the form's own, in
 `forms/<id>/theme/`, for you or the agent to change, or with **Adjust** in
@@ -155,8 +171,10 @@ it won't touch this one.
 It asks before writing code, and only about what it can't decide well itself:
 
 - **The form itself**, when the purpose or core questions are unclear.
-- **The look** — three directions, the best fit marked *Recommended*, plus room
-  for your own answer.
+- **Limits**, when the brief needs something Open Form can't do, with the
+  workaround it suggests.
+- **The look** — three directions with different compositions, the best fit
+  marked *Recommended*, plus room for your own answer.
 - In the same question, anything else that changes the build: the flow (one
   page, sections, or one question per screen) when it's a real choice; policy
   gaps such as "one registration per email?" when there's a response limit;

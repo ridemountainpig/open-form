@@ -29,8 +29,10 @@ Any mix of:
 
 If the source isn't clear, it asks once. When sources disagree, it asks which
 one wins. From images or a description, it gives the theme one distinctive move
-— a display heading font, a textured brand panel, an unusual control shape —
-and keeps everything else quiet.
+— a display heading font, a textured brand panel, an unusual control shape, or
+a composition that isn't a centered card, such as a full-page poster or a
+document sheet — and keeps everything else quiet. `width` follows that
+composition instead of staying at the default by habit.
 
 ## Token mapping
 
@@ -116,6 +118,15 @@ into the theme with [`open-form theme font`](/docs/cli/theme#theme-font):
 ```npm
 npx open-form theme font acme Inter   # → themes/acme/fonts/
 ```
+
+When `theme font` can't reach Google (`fetch failed`), the agent checks which
+font hosts answer. If the CSS and font files are reachable and only the catalog
+isn't, it installs the family by hand into the same files; otherwise it uses a
+system stack with the same feel and gives you the exact command to run later.
+
+For Chinese and Japanese forms it picks the CJK type as deliberately as the
+Latin type, one family per language scoped with `:lang()`, and keeps Latin-only
+styling (uppercase labels, italic help, wide letter-spacing) off CJK text.
 
 It never links `fonts.googleapis.com`: that would send every respondent's IP
 address to Google, a problem under the GDPR. See

@@ -57,7 +57,7 @@ Colors may be pasted as-is: every token is a CSS color, so `oklch(…)`, `hsl(�
 
 Name dominant colors, the type personality (serif / grotesk / mono / rounded, weight), density, corner style, borders vs. shadows, decorative motifs. Resolve vague words into decisions before writing.
 
-Give the theme **one distinctive move** — a display heading font, a textured brand panel, an unusual control shape (underlines, pills, chunky blocks) — and keep everything else quiet. A theme that's only "clean and modern" ends up as `classic` with a new primary color.
+Give the theme **one distinctive move** — a display heading font, a textured brand panel, an unusual control shape (underlines, pills, chunky blocks), a composition that isn't a centered card (a full-page poster, a document sheet, a hero beside the questions: `form-authoring` → *Design guidelines → Composition*) — and keep everything else quiet. A theme that's only "clean and modern" ends up as `classic` with a new primary color, and a theme that is only a new card style ends up looking like every other form: decide the composition along with the colors and type.
 
 When sources disagree, ask which wins.
 
@@ -81,9 +81,9 @@ When sources disagree, ask which wins.
   | Survey, one question per screen, soft | `conversational` |
 
 - **Depth** — use the lightest level that reaches the look:
-  1. **Tokens** — colors, fonts, `radius`, `buttonRadius`, `spacing`, `width`, `layout`, `components.Layout`. Covers most product themes (pill buttons are just `buttonRadius`).
+  1. **Tokens** — colors, fonts, `radius`, `buttonRadius`, `spacing`, `width`, `layout`, `components.Layout` (a built-in one). Covers most product themes (pill buttons are just `buttonRadius`).
   2. **Tokens + CSS** — `import './<id>.css';` at the top of `index.ts` (or the starter's CSS file, if it came with one), for chrome details tokens can't express: button weight / shadow, header treatment, card border, pill choices, glyphs drawn with `::before`. Scope every rule to `[data-of-theme="<id>"]`; a form writing its look from it scopes the same rules to its own id.
-  3. **Full** — custom components (`themes/<id>/index.tsx`) only where the look needs markup or behavior the runtime's doesn't have: a branded window or layout, a wrapper for an animated underline, keyboard shortcuts. A form takes such a piece only when it uses it, so keep each one small and self-contained.
+  3. **Full** — custom components (`themes/<id>/index.tsx`) only where the look needs markup or behavior the runtime's doesn't have: a branded window, a custom `Layout` for a composition the built-in ones don't give (a poster, a document sheet, a hero with the form beside it; see the example in `form-authoring` → *Layouts and chrome*), a wrapper for an animated underline, keyboard shortcuts. A form takes such a piece only when it uses it, so keep each one small and self-contained.
 
 ## Step 4 — Write tokens
 
@@ -96,7 +96,27 @@ When sources disagree, ask which wins.
   3. Any other licensed font: copy the `.woff2` into `themes/<id>/fonts/` and declare `@font-face` in the theme CSS.
   Never link `fonts.googleapis.com` from a theme: every respondent's browser would then contact Google, a privacy problem under the GDPR. Use 2 instead.
   Use 2 or 3 only when the font is central to the brand (display headings, a distinctive wordmark-like face) or the user asks.
-- Sizes: keep controls and buttons **≥ 44px tall** even if the product's are 40px (touch targets); keep `spacing` / `width` defaults unless the product is clearly denser or airier.
+- **If `theme font` fails** with `fetch failed`, a timeout or an HTTP error, the network is blocking it: it needs `fonts.google.com` (the catalog), `fonts.googleapis.com` (the CSS) and `fonts.gstatic.com` (the files). Don't retry the same command. Check which hosts answer (`curl -sI https://fonts.googleapis.com/css2?family=Inter`, and the same for `https://fonts.google.com/metadata/fonts`):
+  - **The CSS and files answer, only the catalog doesn't** (common behind a sandbox proxy): install the family by hand as option 3. This writes the same files `theme font` would, header included, so `create --theme` still brings the font into new forms:
+
+    ```bash
+    dir=themes/<id>/fonts; slug=fraunces; family='Fraunces'   # a form's own look: forms/<form>/theme/fonts
+    mkdir -p "$dir/$slug"
+    curl -fsS -A 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' \
+      "https://fonts.googleapis.com/css2?family=Fraunces:wght@400;700&display=swap" -o "$dir/$slug.src.css"
+    grep -o 'https://fonts.gstatic.com/[^)]*' "$dir/$slug.src.css" | sort -u | while read -r url; do
+      curl -fsS "$url" -o "$dir/$slug/$(basename "$url")"
+    done
+    { printf '/*\n * %s from Google Fonts, served from this folder.\n * open-form font: "%s", ui-serif, Georgia, var(--of-cjk-serif), serif\n */\n' "$family" "$family"
+      sed -E "s#url\(https://fonts.gstatic.com/[^)]*/([^/)]+)\)#url(./$slug/\1)#g" "$dir/$slug.src.css"; } > "$dir/$slug.css"
+    rm "$dir/$slug.src.css"
+    ```
+
+    Then `import './fonts/<slug>.css';` in the theme and use the stack from the header as `font` or `headingFont`. Use a sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif`) or a monospace one (`ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace`) to match the family. A CJK family's CSS lists a hundred or more slices; download them all, since browsers fetch only the ones a page uses.
+  - **Nothing answers:** use option 1, a system stack with the same personality (`ui-serif, Georgia, var(--of-cjk-serif), serif` for a serif look), finish the theme, and tell the user which font you meant and the exact `open-form theme font <id> <Family>` to run where they have internet.
+  Either way, say what happened. Never link `fonts.googleapis.com` instead.
+- **Chinese and Japanese forms**: when the theme will serve `zh-TW`, `zh-CN` or `ja` forms, choose the CJK side of the type as deliberately as the Latin side. `var(--of-cjk)` / `var(--of-cjk-serif)` give the system's sans or serif in the right regional style; a distinctive CJK face (a Kai brush style such as `LXGW WenKai TC`, a Mincho such as `Shippori Mincho`, a rounded face such as `M PLUS Rounded 1c`) is a font of its own, one family per language, scoped with `:lang()` (`.of-root[data-of-theme="<id>"]:lang(ja) { --of-heading-font: …; }`). And don't carry Latin-only styling onto CJK text: no `text-transform: uppercase`, small-caps or wide `letter-spacing` on labels, and no `font-style: italic` on help text (`form-authoring` → *Design guidelines → Look*). Keep those under `:lang(en)` if the English version should have them.
+- Sizes: keep controls and buttons **≥ 44px tall** even if the product's are 40px (touch targets). Set `width` from the composition, not by habit: the default 640px suits a centered card or a form column; a document-style sheet wants 760–960px; a poster or hero layout sets the form column's width in its own CSS. Keep `spacing` at the default unless the product is clearly denser or airier.
 
 ## Step 5 — CSS and components (depth 2–3)
 
@@ -148,7 +168,9 @@ Every color token gets a row — `primary`, `primaryForeground`, `background`, `
 ## Do / Don't
 ````
 
-*Layout & components*: say what each part is — tokens, CSS on which runtime classes, or a component in `index.tsx` and why CSS can't do it — so an agent writing a form's look knows what to take.
+*Layout & components*: start with the composition (how the page is arranged around the questions, on desktop and on a phone), then say what each part is — tokens, CSS on which runtime classes, or a component in `index.tsx` and why CSS can't do it — so an agent writing a form's look knows what to take.
+
+*Typography*: name the CJK fonts too, and say which Latin-only treatments (uppercase, italic, letter-spacing) are kept to `:lang(en)`.
 
 *Signature ideas*: two or three form-specific elements that fit the theme (*Design guidelines → Look* in `form-authoring`), each with where it lives in this theme's layout (`aside` beside the card, in a split panel, at the bottom of a custom layout, or the success screen when the layout has no `aside`) and how to style it. The starters' THEME.md files show the shape.
 
@@ -163,7 +185,7 @@ pnpm typecheck               # tsc --noEmit, via the workspace's package manager
 
 **Brand vs. contrast**: accessibility wins for text and controls. When a brand color fails (e.g. white on a light emerald button is ~3.5:1, needs 4.5:1), keep the hue and lower the lightness (in `oklch`, reduce L by 0.03–0.08) until it passes, then tell the user the exact adjustment and the original value. Don't silently keep a failing color, and don't fix it per component — fix the token. `border` is decorative and exempt; `control` is not.
 
-Then look at it — contrast numbers don't show whether it looks right. With a browser tool (a browser MCP, Playwright, Claude in Chrome, your editor's preview), open `/studio/themes/<id>` on the URL `open-form dev` printed (default `http://localhost:3000`; if nothing answers, start the `dev` script in the background and stop it afterwards): the theme on a sample form with every component — jump to any step or the success screen, in light and dark, in Studio's language — next to THEME.md and the same contrast report. Screenshot light and dark, compare them with the source (the product, the images, the description) and fix what's off. The sample form there has no language picker, so the corner gets checked on a real form in Step 8. Without a browser tool, say you haven't seen it.
+Then look at it — contrast numbers don't show whether it looks right. With a browser tool (a browser MCP, Playwright, Claude in Chrome, your editor's preview), open `/studio/themes/<id>` on the URL `open-form dev` printed (default `http://localhost:3000`; if nothing answers, start the `dev` script in the background and stop it afterwards): the theme on a sample form with every component — jump to any step or the success screen, in light and dark, in Studio's language — next to THEME.md and the same contrast report. Screenshot light and dark, compare them with the source (the product, the images, the description) and fix what's off. Studio's preview frame is narrower than a desktop window, so check a wide composition (a poster, a hero, a document sheet) on a real form at ~1440px in Step 8. The sample form there has no language picker, so the corner gets checked on a real form in Step 8. Without a browser tool, say you haven't seen it.
 
 Studio's Themes pages are read-only (in production builds too): changes to a reference come from you. The theme's page hands the user prompts to paste to you — *Change this theme* ("Update the Open Form theme “<id>” (<file>): …"), the gallery's *New theme* ("Create a new Open Form theme: …"), and for a theme without THEME.md "Write THEME.md for …" — treat each like any theme request: read THEME.md, edit tokens / CSS / components, run `theme check`, update THEME.md. Editing the reference affects only forms created from it afterwards.
 
