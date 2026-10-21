@@ -23,7 +23,7 @@ You don't usually invoke it directly. Other skills and the rules do.
 | Validation | Built-in rules, `validate` functions or a Standard Schema, run on client and server alike |
 | Custom fields | `useField` and `FieldShell` |
 | Live answers | `useFieldValue`, `useFormValues` and `<Form aside>` for previews and totals; the hooks are called at a component's top level only |
-| What Open Form can't do | File uploads, self-scoring quizzes, repeating groups, emails to respondents, sign-in and payments: why each doesn't work, the workaround to offer, and that the user hears about it before the build |
+| What Open Form can't do | File uploads, self-scoring quizzes, repeating groups, emails to respondents, sign-in, payments and editing a response after submitting: why each doesn't work, the workaround to offer, and that the user hears about it before the build |
 | Custom styling | A local stylesheet scoped with `<Form className>`, prefixed classes on `--of-*` tokens, `--of-aside-width`, and the `.of-*` classes to target when restyling what the runtime renders |
 | Config | Submission policy, protection, success screen, drafts, time zones, `published: false` to take a form offline, and the keys Studio can override; webhooks and embeds in `open-form.config.ts` |
 | Themes | The form's own look in `forms/<id>/theme/` and `<Form theme>`, written with only what the form uses — tokens, then CSS on the runtime's markup, then components for what CSS can't do; references in `themes/` and the starters, `create --theme`, replaceable components, layouts and a custom `Layout` example (keeping the language picker's corner clear), closed screens (`Notice`), `useFormNav` and `useFormMessages` |

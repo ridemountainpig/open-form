@@ -217,7 +217,7 @@ Some requests sound like ordinary form features but have no built-in support. Wh
 | The brief asks for | Why it doesn't work | What to offer |
 | --- | --- | --- |
 | **File upload** (CV, photo, receipt) | There is no file field yet (planned), and a submission body is capped at 256 KB. | A `<Url>` field for a shared link (Google Drive, Dropbox, a portfolio), with a `description` saying the link must be viewable. Never base64 a file into a custom field. |
-| **A quiz that scores itself**, shows correct answers or stores a score | Everything in the form's code ships to the browser: correct answers written in the form can be read from the page source. Responses store the raw answers only, never a computed score. | For practice or fun quizzes, scoring in `<Success>` is fine; say the answers are visible to anyone who looks. For anything that counts, collect the answers only, score them after exporting the responses, and use `uniqueBy` (`'email'`, or `'device'`, which is only a cookie) to limit retakes. |
+| **A quiz that scores itself**, shows correct answers or stores a score | Everything in the form's code ships to the browser: correct answers written in the form can be read from the page source. Responses store the raw answers only, never a computed score. | For practice or fun quizzes, scoring in `<Success>` is fine; say the answers are visible to anyone who looks. For anything that counts, collect the answers only, score them after exporting the responses, and limit retakes with `uniqueBy`: `'email'` needs a required `<Email name="email">` on a step everyone sees (blank or hidden answers aren't limited); `'device'` needs no field but is only a cookie. |
 | **Repeating groups** ("name and diet for each guest", "add another item") | There is no repeater; every field is declared up front. | Ask for a count with a `RadioGroup` of `'0'`…`'N'` (a sensible maximum the user confirms), then one set of fields per position, each in its own `<When>` gated on the counts that include it: with up to 3 guests, `guest1Name` inside `<When field="guests" in={['1', '2', '3']}>`, `guest2Name` inside `in={['2', '3']}`, `guest3Name` inside `in={['3']}`. Lowering the count drops the hidden answers on the server. |
 | **Email to the respondent** (confirmation, receipt) | The form doesn't send email. | A `webhooks` entry in `open-form.config.ts` to their email tool or Zapier, plus success copy that says what to expect. |
 | **Sign-in, payments, editing a response after submitting** | Not part of Open Form. | Say so, and suggest collecting what's needed (an email, an order number) and handling the rest outside the form. |
@@ -475,6 +475,9 @@ A custom `Layout` is how a form gets a composition the built-ins don't have (see
 
 ```tsx
 // forms/<id>/theme/index.tsx
+import { defineTheme, type LayoutUIProps } from '@open-form-build/core';
+import './gig.css';
+
 function Poster({ state, banner, header, progress, intro, content, alert, actions, aside }: LayoutUIProps) {
   return (
     <div className="gig-poster" data-state={state}>
@@ -496,6 +499,8 @@ function Poster({ state, banner, header, progress, intro, content, alert, action
     </div>
   );
 }
+
+export default defineTheme({ /* tokens */ components: { Layout: Poster } });
 ```
 
 ```css
