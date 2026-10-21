@@ -249,6 +249,7 @@ export function Preview() {
   // Another language reloads the preview: once it reports in, take it back to the step it was on.
   const resume = useRef<number | null>(null);
   const switchLanguage = (next: Locale | '') => {
+    if (next === language) return;
     resume.current = shown.done || shown.notice || shown.step === 0 ? null : shown.step;
     setLanguage(next);
   };

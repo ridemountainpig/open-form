@@ -7,6 +7,7 @@ describe('table', () => {
     expect(displayWidth('ab')).toBe(2);
     expect(displayWidth('問卷')).toBe(4);
     expect(displayWidth('Ｆｕｌｌ')).toBe(8);
+    expect(displayWidth('Launch 🚀')).toBe(9);
   });
 
   it('lines up columns after wide titles', () => {

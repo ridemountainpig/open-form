@@ -147,7 +147,7 @@ function unreachable(host: string, err: unknown): string {
   return [
     `Couldn't reach ${host}${cause ? ` (${cause})` : ''}.`,
     proxied
-      ? 'HTTPS_PROXY is set: run again with NODE_USE_ENV_PROXY=1 so Node uses it.'
+      ? 'HTTPS_PROXY is set: run again with NODE_USE_ENV_PROXY=1 (Node 22.21 or later) so Node uses it.'
       : 'Check the network connection and try again.',
   ].join(' ');
 }

@@ -197,11 +197,15 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
       if (id === `\0${SERVER_ENTRY_VMOD}`) return serverEntryModule(paths);
       return null;
     },
-    hotUpdate({ type, modules }) {
+    hotUpdate({ type, file, modules }) {
       // When a file appears, Vite retries every module that failed to resolve an import,
-      // and reloads every open page doing so. Forms retry in place instead (retryForm).
-      if (type !== 'create') return;
-      return modules.filter((mod) => !mod.file || !formIdForFile(paths.formsRoot, mod.file));
+      // and reloads every open page doing so. The form the file belongs to retries in
+      // place instead (retryForm); anything else keeps Vite's retry.
+      const formId = type === 'create' && formIdForFile(paths.formsRoot, file);
+      if (!formId) return;
+      return modules.filter(
+        (mod) => !mod.file || formIdForFile(paths.formsRoot, mod.file) !== formId,
+      );
     },
     async handleHotUpdate(ctx) {
       if (isManifest(ctx.file)) {

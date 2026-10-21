@@ -430,7 +430,10 @@ function InteractiveForm({
     const values = resolve(s.values).values;
     const awaited = (name: string) =>
       !isFilled(ownValue(values, name)) &&
-      (collected?.schema.fields.some((f) => f.name === name && f.required) ?? false);
+      (collected?.schema.fields.some(
+        (f) => f.name === name && f.required && evaluateAll(f.when, values),
+      ) ??
+        false);
     return steps
       .map((step, i) =>
         !evaluateAll(step.when, values) &&
