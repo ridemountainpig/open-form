@@ -45,12 +45,15 @@ const WIDE =
   /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\ua960-\ua97f\uac00-\ud7a3\uf900-\ufaff\ufe10-\ufe19\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6\u{1f300}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{1f900}-\u{1faff}\u{20000}-\u{3fffd}]/u;
 
 // Combining marks and zero-width characters take none.
-const ZERO = /[\p{Mn}\p{Me}\u200b-\u200f\u2060\ufeff]/u;
+const ZERO = /[\p{Mn}\p{Me}\u200b-\u200f\u2060\ufeff]/gu;
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
+// One glyph per grapheme, so "é" and joined emoji like 👩‍💻 are measured as drawn.
 export function displayWidth(text: string): number {
   let width = 0;
-  for (const char of stripVTControlCharacters(text)) {
-    width += ZERO.test(char) ? 0 : WIDE.test(char) ? 2 : 1;
+  for (const { segment } of graphemes.segment(stripVTControlCharacters(text))) {
+    const [base] = segment.replace(ZERO, '');
+    if (base) width += WIDE.test(base) ? 2 : 1;
   }
   return width;
 }

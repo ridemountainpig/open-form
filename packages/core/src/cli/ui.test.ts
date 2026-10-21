@@ -9,6 +9,7 @@ describe('table', () => {
     expect(displayWidth('Ｆｕｌｌ')).toBe(8);
     expect(displayWidth('Launch 🚀')).toBe(9);
     expect(displayWidth('Cafe\u0301')).toBe(4);
+    expect(displayWidth('Dev 👩\u200d💻')).toBe(6);
   });
 
   it('lines up columns after wide titles', () => {
