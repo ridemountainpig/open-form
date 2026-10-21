@@ -53,6 +53,7 @@ describe('themes', () => {
     expect(css).not.toContain('data-of-theme="editorial"');
     const doc = readFileSync(path.join(root, 'themes/brand/THEME.md'), 'utf8');
     expect(doc).toMatch(/^name: Brand$/m);
+    expect(doc).toMatch(/^description: Started from the editorial starter\. \S/m);
     expect(doc).toContain('# Brand\n\n> Started from the `editorial` starter theme');
 
     const rows = await themeCatalog(root);

@@ -128,6 +128,7 @@ export async function addStarterTheme(
       if (path.basename(file) === 'THEME.md') {
         renamed = renamed
           .replace(/^name: .*$/m, `name: ${title}`)
+          .replace(/^description: (.*)$/m, `description: Started from the ${id} starter. $1`)
           .replace(
             /^# .*$/m,
             `# ${title}\n\n> Started from the \`${id}\` starter theme — update this document as the theme diverges.`,

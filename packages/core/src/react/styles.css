@@ -476,11 +476,22 @@
 
 /* Phone: country picker beside the number */
 
+/* Too narrow for both, the picker takes its own line rather than clipping "+886". */
 .of-phone {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  align-items: start;
+  align-items: flex-start;
+}
+
+.of-phone > :first-child {
+  flex: 2 1 11rem;
+  min-width: 0;
+}
+
+.of-phone > :last-child {
+  flex: 3 1 11rem;
+  min-width: 0;
 }
 
 /* Choices: radio, checkbox */
