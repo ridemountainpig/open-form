@@ -8,7 +8,18 @@ declare module 'virtual:open-form/forms' {
 declare module 'virtual:open-form/themes' {
   import type { FormTheme } from '../react/index.ts';
 
-  export const themeIds: string[];
+  /** A reference theme in themes/, as its THEME.md describes it. */
+  export type ThemeInfo = {
+    id: string;
+    name: string;
+    description: string;
+    layout?: string;
+    doc: string | null;
+    /** The theme's entry file, relative to the project. */
+    file: string;
+  };
+
+  export const themes: ThemeInfo[];
   export function loadTheme(id: string): Promise<{ default?: FormTheme } | undefined>;
 }
 

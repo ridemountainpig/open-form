@@ -321,7 +321,7 @@ When CSS restyles the runtime's markup, out-rank its rules instead of relying on
 
 ### Themes in `themes/` are references
 
-The project's `themes/` and the **starters** Open Form ships are references, like open-slide's themes: read them to choose a direction, then write the form's look from one — never import or copy one wholesale. Each has a `THEME.md` (the recipe: palette and tokens, typography, which parts are CSS and which are components, signature ideas, copy tone, do/don'ts) and a working `index.tsx` and CSS that Studio previews and you borrow pieces from. Editing or deleting a theme in `themes/` never changes a form. Studio → Themes (dev only) is a gallery of these references; its *Adjust* drawer edits the reference, so it only affects forms created from it later.
+The project's `themes/` and the **starters** Open Form ships are references, like open-slide's themes: read them to choose a direction, then write the form's look from one — never import or copy one wholesale. Each has a `THEME.md` (the recipe: palette and tokens, typography, which parts are CSS and which are components, signature ideas, copy tone, do/don'ts) and a working `index.tsx` and CSS that Studio previews and you borrow pieces from. Editing or deleting a theme in `themes/` never changes a form. Studio → Themes is a read-only gallery of these references, in production builds too; a reference changes only when its files do, and that affects only forms created from it later.
 
 | Theme | Feel | Layout | Good for |
 | --- | --- | --- | --- |

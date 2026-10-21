@@ -11,10 +11,10 @@ it in the browser:
 npm run dev    # Studio at http://localhost:3000/studio
 ```
 
-The sidebar lists **Forms** and, under `open-form dev`, **Themes** with their
-counts, then your folders. Its **Search** button, or `Cmd` / `Ctrl` + `K`, opens
-the command palette: jump to any form, a folder or (under dev) a theme, or
-switch the appearance or Studio's language. Type to also find each form's
+The sidebar lists **Forms** and **Themes** with their counts, then your
+folders. Its **Search** button, or `Cmd` / `Ctrl` + `K`, opens the command
+palette: jump to any form, a folder or a theme, or switch the appearance or
+Studio's language. Type to also find each form's
 responses (*Responses — Developer Meetup*). Each form opens fresh: a search,
 ticked responses or an Edit mode selection stay with the form they were made on.
 
@@ -157,15 +157,20 @@ languages and translation coverage, webhooks, and the embed snippet. See
 
 ## Themes
 
-`/studio/themes` is a gallery of the reference themes in `themes/`: what you and
-your agent start new forms from. Each theme's page previews it on a sample form,
-shows its `THEME.md` and spec, and gives the `open-form create <form> --theme`
-command and an agent prompt for using it in a form. **New theme** adds a
-starter, and **Adjust** fine-tunes a reference's tokens, which affects only
-forms started from it later. A form's own look lives in `forms/<id>/theme/`;
-change it with **Adjust** in its preview, by hand or with your agent. The Themes
-pages are available under `open-form dev` only.
-See [Themes](/docs/core-feature/themes).
+`/studio/themes` is a read-only gallery of the reference themes in `themes/`:
+what you and your agent start new forms from. Each theme's page previews it on a
+sample form (light or dark, desktop or phone, any step), lays out the tokens a
+new form copies (colors with their contrast checks, type and shape), and shows
+its `THEME.md` with an outline of its sections. Beside it are the
+`open-form create <form> --theme` command and an agent prompt for using the
+theme, and a box to describe a change and copy it as a prompt for your agent.
+
+Studio never writes a reference theme. Your agent changes one (the
+[`create-theme`](/docs/skills/create-theme) skill), and **New theme** copies a
+prompt for a new one or points to `open-form theme add <starter>`. A form's own
+look lives in `forms/<id>/theme/`; change it with **Adjust** in its preview, by
+hand or with your agent. The Themes pages are part of the production build too,
+so a deployed Studio shows them. See [Themes](/docs/core-feature/themes).
 
 ## Routes
 
@@ -176,8 +181,8 @@ See [Themes](/docs/core-feature/themes).
 | `/studio/:formId/responses` | Responses table; `/responses/:responseId` opens one response |
 | `/studio/:formId/schema` | Fields by step: data keys, types, validation, conditions |
 | `/studio/:formId/settings` | Schedule and settings in code |
-| `/studio/themes` | Reference theme gallery (dev only) |
-| `/studio/themes/:themeId` | Theme page and **Adjust** drawer (dev only) |
+| `/studio/themes` | Reference theme gallery |
+| `/studio/themes/:themeId` | Theme page: preview, tokens and `THEME.md` |
 | `/f/:formId` | The public form; an unknown id shows *Form not found* |
 
 ## Who can open Studio

@@ -16,7 +16,9 @@ npm start      # open-form start
 
 - `dist/client/`: the browser app (public form pages, Studio), each form's own
   theme with its CSS and fonts, and `embed.js`. The reference themes in
-  `themes/` are for development and aren't included.
+  `themes/` are included only for Studio's read-only Themes pages; each loads on
+  demand, and no form page loads them. A reference that fails to load is left
+  out, with a warning.
 - `dist/server/entry.js`: every form, `open-form.config.ts`, React and the schema
   collector, bundled into one file. `open-form.config.ts` runs when the server
   starts, so values it reads from `process.env` come from the server's environment
@@ -141,11 +143,12 @@ Behind a proxy, that IP is each visitor's own only while the server trusts the
 proxy (`trustProxy` or `OPEN_FORM_TRUST_PROXY`, above); otherwise all visitors
 share the proxy's attempts.
 
-Production Studio has Preview, Responses, Schema and Settings. Schedule changes
-made there are stored in the database as overrides and apply without a
-redeploy; see [Submissions & protection](/docs/core-feature/submissions).
-Edit mode, comments, folder editing, deleting forms and the Themes pages are
-development-only: make those changes in code and deploy again.
+Production Studio has Preview, Responses, Schema and Settings, and the
+read-only Themes pages. Schedule changes made there are stored in the database
+as overrides and apply without a redeploy; see
+[Submissions & protection](/docs/core-feature/submissions). Edit mode, Adjust,
+comments, folder editing and deleting forms are development-only: make those
+changes in code and deploy again.
 
 Studio's pages can't be framed by other sites, and their `Content-Security-Policy`
 lets only the build's own scripts run there. Public forms can be framed only by

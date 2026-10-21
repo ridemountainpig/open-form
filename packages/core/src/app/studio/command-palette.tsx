@@ -1,4 +1,3 @@
-import appConfig from 'virtual:open-form/config';
 import {
   CornerDownLeft,
   FileText,
@@ -10,6 +9,7 @@ import {
 } from 'lucide-react';
 import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useThemeCatalog } from '../lib/themes.ts';
 import { useStudioData } from './data.tsx';
 import { FolderIconChip, UnfiledIcon } from './folders.tsx';
 import { STUDIO_LANGUAGES, useSetLocale, useT } from './i18n.tsx';
@@ -78,7 +78,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose(): vo
   const navigate = useNavigate();
   const setLocale = useSetLocale();
   const scheme = useStudioScheme();
-  const { forms, themes, folders } = useStudioData();
+  const { forms, folders } = useStudioData();
+  const themes = useThemeCatalog();
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
   const input = useRef<HTMLInputElement>(null);
@@ -160,32 +161,28 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose(): vo
           })),
         ],
       },
-      ...(appConfig.dev
-        ? [
-            {
-              id: 'themes',
-              heading: t('palette.themes'),
-              items: [
-                {
-                  id: 'themes',
-                  label: t('nav.themes'),
-                  icon: <Palette />,
-                  keywords: ['themes', 'design', 'gallery'],
-                  run: go('/studio/themes'),
-                },
-                ...(themes.data?.themes ?? []).map((theme) => ({
-                  id: `theme:${theme.id}`,
-                  label: theme.name,
-                  detail: theme.id,
-                  icon: <Palette />,
-                  keywords: ['theme'],
-                  run: go(`/studio/themes/${theme.id}`),
-                })),
-              ],
-              searchOnly: false,
-            },
-          ]
-        : []),
+      {
+        id: 'themes',
+        heading: t('palette.themes'),
+        items: [
+          {
+            id: 'themes',
+            label: t('nav.themes'),
+            icon: <Palette />,
+            keywords: ['themes', 'design', 'gallery'],
+            run: go('/studio/themes'),
+          },
+          ...themes.map((theme) => ({
+            id: `theme:${theme.id}`,
+            label: theme.name,
+            detail: theme.id,
+            icon: <Palette />,
+            keywords: ['theme'],
+            run: go(`/studio/themes/${theme.id}`),
+          })),
+        ],
+        searchOnly: false,
+      },
       {
         id: 'appearance',
         heading: t('appearance.label'),
@@ -211,7 +208,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose(): vo
         })),
       },
     ];
-  }, [forms.data, themes.data, folders.manifest, scheme, t, navigate, setLocale]);
+  }, [forms.data, themes, folders.manifest, scheme, t, navigate, setLocale]);
 
   const visible = useMemo(() => {
     const q = query.trim();

@@ -9,9 +9,8 @@ import { contrastReport } from '../schema/index.ts';
 import type { ProjectPaths } from './project.ts';
 import { StudioError } from './studio-http.ts';
 
-// What Studio's design panel reads and writes in one theme file: a reference in
-// themes/, or a form's own look in forms/<id>/theme/. Tokens only; components
-// and CSS stay hand-written.
+// What a form's Adjust panel in Studio reads and writes in its own look,
+// forms/<id>/theme/. Tokens only; components and CSS stay hand-written.
 
 type DesignContext = { server: ViteDevServer; paths: ProjectPaths };
 

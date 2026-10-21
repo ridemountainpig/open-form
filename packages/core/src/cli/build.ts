@@ -1,12 +1,21 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 import chalk from 'chalk';
 import { mergeConfig, type Plugin, build as viteBuild } from 'vite';
+import type { OpenFormConfig } from '../schema/index.ts';
 import { createViteConfig } from '../vite/config.ts';
 import { SERVER_ENTRY_VMOD } from '../vite/forms-plugin.ts';
-import { APP_ROOT, findForms, loadUserConfig, projectPaths } from '../vite/project.ts';
-import { printHeader, printRows } from './ui.ts';
+import {
+  APP_ROOT,
+  findForms,
+  loadUserConfig,
+  projectPaths,
+  resolveThemes,
+} from '../vite/project.ts';
+import { withSsrServer } from './check.ts';
+import { glyph, printHeader, printRows } from './ui.ts';
 
 export type BuildFlags = {
   outDir?: string;
@@ -38,6 +47,41 @@ export function assertReplaceable(userCwd: string, outDir: string): void {
   }
 }
 
+/**
+ * References are built only for Studio's Themes pages, so one that doesn't load
+ * (an agent halfway through it, an import that isn't there) is left out of the
+ * build with a warning instead of failing the deploy.
+ */
+export async function unloadableThemes(
+  userCwd: string,
+  config: OpenFormConfig,
+): Promise<Array<{ id: string; error: string }>> {
+  const themes = resolveThemes(projectPaths(userCwd, config).themesRoot);
+  if (themes.length === 0) return [];
+  return withSsrServer(userCwd, async (server) => {
+    const broken: Array<{ id: string; error: string }> = [];
+    for (const theme of themes) {
+      try {
+        const mod = (await server.ssrLoadModule(theme.file)) as { default?: unknown };
+        if (!mod.default) throw new Error('It has no default export (defineTheme(...)).');
+      } catch (err) {
+        const message = stripVTControlCharacters(err instanceof Error ? err.message : String(err));
+        const lines = message
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean);
+        // "Transform failed with 1 error:" says nothing until the line after it.
+        const [first = message, second] = lines;
+        broken.push({
+          id: theme.id,
+          error: first.endsWith(':') && second ? `${first} ${second}` : first,
+        });
+      }
+    }
+    return broken;
+  });
+}
+
 /** Client bundle → dist/client, server entry (forms + collector) → dist/server/entry.js. */
 export async function build(flags: BuildFlags = {}): Promise<void> {
   if (flags.watch && !flags.serverOnly) {
@@ -53,7 +97,12 @@ export async function build(flags: BuildFlags = {}): Promise<void> {
     path.join(outDir, BUILD_MARKER),
     'Written by `open-form build`, which replaces client/ and server/ in this folder.\n',
   );
-  const base = await createViteConfig({ userCwd, config });
+  const leftOut = flags.serverOnly ? [] : await unloadableThemes(userCwd, config);
+  const base = await createViteConfig({
+    userCwd,
+    config,
+    skipThemes: leftOut.map((theme) => theme.id),
+  });
 
   if (!flags.serverOnly) {
     await viteBuild(
@@ -112,6 +161,11 @@ export async function build(flags: BuildFlags = {}): Promise<void> {
     ['Forms', String(forms.length)],
     ['Output', chalk.cyan(path.relative(userCwd, outDir) || '.')],
   ]);
+  for (const theme of leftOut) {
+    process.stdout.write(
+      `\n  ${chalk.yellow(glyph.warn)} ${chalk.bold(`themes/${theme.id}`)} ${chalk.dim("didn't load, so Studio's Themes pages leave it out:")}\n    ${theme.error}\n`,
+    );
+  }
   if (flags.watch) {
     process.stdout.write(
       `\n  ${chalk.dim('Watching forms and open-form.config.ts; restart to pick up new form folders.')}\n\n`,

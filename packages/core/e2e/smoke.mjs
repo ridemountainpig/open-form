@@ -79,6 +79,12 @@ try {
   assert.match(list, /waitlist/);
   assert.match(list, /Beta waitlist/);
 
+  step('theme add');
+  // With a reference in themes/, `build` loads it in Vite SSR first; the production
+  // build after that must still compile for production.
+  cli(['theme', 'add', 'editorial']);
+  assert.ok(existsSync(path.join(WS, 'themes/editorial/THEME.md')));
+
   step('build');
   cli(['build'], { stdio: 'inherit' });
   assert.ok(existsSync(path.join(WS, 'dist/client/index.html')));
@@ -106,6 +112,9 @@ try {
   const studio = await fetch(`${BASE}/studio`);
   assert.equal(studio.status, 200, 'Studio shell; it signs in inside the page');
   assert.match(studio.headers.get('content-security-policy') ?? '', /frame-ancestors 'self'/);
+  const themePreview = await fetch(`${BASE}/theme-preview/editorial`);
+  assert.equal(themePreview.status, 200, "Studio's Themes pages frame it in production too");
+  assert.match(themePreview.headers.get('content-security-policy') ?? '', /frame-ancestors 'self'/);
   assert.equal((await fetch(`${BASE}/api/forms`)).status, 401);
 
   step('studio sign-in');

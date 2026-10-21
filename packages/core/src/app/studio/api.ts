@@ -9,13 +9,11 @@ import type {
   PaletteReport,
   ResolvedProtection,
   Schedule,
-  ThemeColorKey,
   ThemePatch,
   ThemeTokens,
   TranslationCoverage,
 } from '../../schema/index.ts';
 import { onFormChanged } from '../lib/forms.ts';
-import { onThemeChanged } from '../lib/themes.ts';
 
 export type FormStatus = 'open' | 'closed' | 'not-open' | 'full' | 'unpublished';
 
@@ -168,12 +166,7 @@ export function useResource<T>(
 
   useEffect(() => {
     if (!live) return;
-    const offForm = onFormChanged(reload);
-    const offTheme = onThemeChanged(reload);
-    return () => {
-      offForm();
-      offTheme();
-    };
+    return onFormChanged(reload);
   }, [live, reload]);
 
   return { data: current?.data, error: current?.error, loading, reload };
@@ -266,28 +259,7 @@ export function clearOverrides(formId: string) {
   return request<unknown>(`${formPath(formId)}/overrides`, { method: 'DELETE' });
 }
 
-/** One of the project's themes: a reference in themes/ that forms copy. */
-export type ThemeSummary = {
-  id: string;
-  name: string;
-  description: string;
-  layout?: string;
-  hasDoc: boolean;
-};
-
-export type ThemeGallery = {
-  themes: ThemeSummary[];
-};
-
-export type StarterTheme = {
-  id: string;
-  name: string;
-  description: string;
-  colors: Partial<Record<ThemeColorKey, string>>;
-  colorScheme?: 'light' | 'dark';
-};
-
-/** A web font the theme serves from its own `fonts/` folder. */
+/** A web font a form's look serves from its own `theme/fonts/` folder. */
 export type ThemeFont = {
   family: string;
   /** The `font` / `headingFont` value that uses it. */
@@ -299,8 +271,9 @@ export type ThemeFont = {
   href?: string;
 };
 
-export type ThemeDetail = Omit<ThemeSummary, 'hasDoc'> & {
-  doc: string | null;
+/** A form's own look, as its Adjust panel works with it. */
+export type DesignDetail = {
+  id: string;
   file: string;
   tokens: ThemeTokens;
   fonts: ThemeFont[];
@@ -324,44 +297,29 @@ export function searchFonts(filter: FontFilter, signal?: AbortSignal) {
   const params = new URLSearchParams({ q: filter.q });
   if (filter.category) params.set('category', filter.category);
   if (filter.cjk) params.set('cjk', '1');
-  return request<{ fonts: GoogleFont[] }>(`/api/studio/themes/_fonts?${params}`, { signal });
+  return request<{ fonts: GoogleFont[] }>(`/api/studio/fonts?${params}`, { signal });
 }
-
-/** What the design panel edits: a reference in `themes/`, or a form's own look. */
-export type DesignTarget = { kind: 'theme' | 'form'; id: string };
-
-/** The part of a theme the design panel works with. */
-export type DesignDetail = Pick<ThemeDetail, 'file' | 'tokens' | 'fonts' | 'contrast'> & {
-  id: string;
-};
 
 /** A form's own look, or `missing` with the file it would be when the form has none yet. */
 export type FormThemeDetail = DesignDetail | { id: string; missing: true; file: string };
 
-const themePath = (id: string) => `/api/studio/themes/${encodeURIComponent(id)}`;
 const formThemePath = (id: string) => `/api/studio/forms/${encodeURIComponent(id)}/theme`;
-const designPath = (target: DesignTarget) =>
-  target.kind === 'theme' ? themePath(target.id) : formThemePath(target.id);
 
-/** Download a Google font into the theme's `fonts/` folder. */
-export function addThemeFont(target: DesignTarget, family: string) {
-  return request<{ font: ThemeFont }>(`${designPath(target)}/fonts`, {
+/** Download a Google font into the form's `theme/fonts/` folder. */
+export function addThemeFont(formId: string, family: string) {
+  return request<{ font: ThemeFont }>(`${formThemePath(formId)}/fonts`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ family }),
   });
 }
 
-export function themeUrl(id: string) {
-  return themePath(id);
-}
-
 export function formThemeUrl(id: string) {
   return formThemePath(id);
 }
 
-export function saveThemeTokens(target: DesignTarget, patch: ThemePatch) {
-  return request<Pick<ThemeDetail, 'tokens' | 'contrast'>>(designPath(target), {
+export function saveThemeTokens(formId: string, patch: ThemePatch) {
+  return request<Pick<DesignDetail, 'tokens' | 'contrast'>>(formThemePath(formId), {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ patch }),
@@ -374,14 +332,5 @@ export function createFormTheme(id: string) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: '{}',
-  });
-}
-
-/** Copy a starter into `themes/<as>/`. */
-export function addStarterRequest(starter: string, as?: string) {
-  return request<{ id: string; files: string[] }>('/api/studio/themes', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ starter, ...(as ? { as } : {}) }),
   });
 }

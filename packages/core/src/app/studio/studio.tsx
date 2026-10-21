@@ -1,4 +1,3 @@
-import appConfig from 'virtual:open-form/config';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { reportCurrent } from '../lib/forms.ts';
@@ -41,9 +40,8 @@ function StudioRoutes() {
     <Routes>
       <Route element={<Shell />}>
         <Route index element={<FormsList />} />
-        {/* Theme editing writes to the project, so it only exists under `open-form dev`. */}
-        {appConfig.dev && <Route path="themes" element={<ThemeGallery />} />}
-        {appConfig.dev && <Route path="themes/:themeId" element={<ThemeDetailPage />} />}
+        <Route path="themes" element={<ThemeGallery />} />
+        <Route path="themes/:themeId" element={<ThemeDetailPage />} />
         <Route path=":formId" element={<FormDetail />}>
           <Route index element={<Preview />} />
           <Route path="responses" element={<Responses />} />
@@ -60,7 +58,7 @@ function Shell() {
   const t = useT();
   const location = useLocation();
   const [first, section] = location.pathname.replace(/^\/studio\/?/, '').split('/');
-  const inThemes = appConfig.dev && first === 'themes';
+  const inThemes = first === 'themes';
   const formId = inThemes ? undefined : first;
   const themeId = inThemes ? section : undefined;
 

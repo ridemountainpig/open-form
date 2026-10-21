@@ -5,7 +5,6 @@ import { DRAFT_MESSAGE, forceScheme, formDraftKey, READY_MESSAGE } from '../lib/
 import {
   ApiError,
   createFormTheme,
-  type DesignTarget,
   type FormThemeDetail,
   formThemeUrl,
   useResource,
@@ -79,8 +78,6 @@ export function FormDesign({
     }
   };
 
-  const target: DesignTarget = { kind: 'form', id: formId };
-
   return (
     <>
       <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
@@ -101,7 +98,7 @@ export function FormDesign({
           <Skeleton className="h-72 w-full" />
         ) : own ? (
           <DesignPanel
-            target={target}
+            formId={formId}
             detail={own}
             draft={draft}
             onDraft={setDraft}

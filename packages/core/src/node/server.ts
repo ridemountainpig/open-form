@@ -273,7 +273,13 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
         return;
       }
 
-      if (pathname === '/' || pathname === '/studio' || pathname.startsWith('/studio/')) {
+      // Studio, and the theme previews its Themes pages frame.
+      if (
+        pathname === '/' ||
+        pathname === '/studio' ||
+        pathname.startsWith('/studio/') ||
+        pathname.startsWith('/theme-preview/')
+      ) {
         if (!adminEnabled && !publicStudio) {
           sendIndex(req, res, 'form', 404);
           return;

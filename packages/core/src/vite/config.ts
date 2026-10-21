@@ -50,6 +50,8 @@ export function devServerDeny(databaseFile: string): string[] {
 export type CreateViteConfigOptions = {
   userCwd: string;
   config?: OpenFormConfig;
+  /** Reference themes to leave out of a build. */
+  skipThemes?: readonly string[];
 };
 
 /**
@@ -72,7 +74,7 @@ export async function createViteConfig(opts: CreateViteConfigOptions): Promise<I
       react(),
       tailwindcss(),
       locPlugin(paths),
-      formsPlugin({ paths, config, version }),
+      formsPlugin({ paths, config, version, skipThemes: opts.skipThemes }),
       apiPlugin({ paths, config }),
     ],
     resolve: {

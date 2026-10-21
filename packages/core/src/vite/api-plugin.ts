@@ -26,9 +26,9 @@ import { DEFINITION_MODULE, findForms, formUpdatedAt, type ProjectPaths } from '
 import { studioCommentsMiddleware } from './studio-comments.ts';
 import { studioCurrentMiddleware } from './studio-current.ts';
 import { studioFoldersMiddleware } from './studio-folders.ts';
+import { studioFontsMiddleware } from './studio-fonts.ts';
 import { studioFormsMiddleware } from './studio-forms.ts';
 import { studioSourceMiddleware } from './studio-source.ts';
-import { studioThemesMiddleware } from './studio-themes.ts';
 
 export type ApiPluginOptions = {
   paths: ProjectPaths;
@@ -142,7 +142,7 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
         void storage?.then((s) => s.close());
       });
 
-      server.middlewares.use(studioThemesMiddleware({ server, paths, config, authorize }));
+      server.middlewares.use(studioFontsMiddleware({ authorize }));
       server.middlewares.use(studioFoldersMiddleware({ paths, authorize }));
       server.middlewares.use(
         studioFormsMiddleware({ server, paths, config, getStorage, authorize }),

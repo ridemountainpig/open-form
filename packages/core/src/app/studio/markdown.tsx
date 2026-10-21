@@ -1,7 +1,45 @@
 import { Fragment, type ReactNode } from 'react';
+import { cx } from './ui.tsx';
 
 // Enough Markdown for THEME.md files: headings, paragraphs, lists, tables,
 // fenced code, **bold**, *italic* and `code`. No HTML passthrough.
+
+const HEX_RE = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+function stripFrontmatter(source: string): string {
+  return source.replace(/^---\n[\s\S]*?\n---\n?/, '');
+}
+
+const plain = (text: string) => text.replace(/[`*]/g, '').trim();
+
+/** Gives each `##` heading a stable, unique anchor id, in document order. */
+function slugger() {
+  const seen = new Map<string, number>();
+  return (text: string) => {
+    const base = `doc-${
+      plain(text)
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, '-')
+        .replace(/^-|-$/g, '') || 'section'
+    }`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return n ? `${base}-${n + 1}` : base;
+  };
+}
+
+/** The `##` sections of a document, for an "on this page" list. */
+export function markdownOutline(source: string): Array<{ id: string; title: string }> {
+  const slug = slugger();
+  const out: Array<{ id: string; title: string }> = [];
+  let fenced = false;
+  for (const line of stripFrontmatter(source).split('\n')) {
+    if (line.startsWith('```')) fenced = !fenced;
+    const heading = !fenced && /^##\s+(.*)$/.exec(line);
+    if (heading) out.push({ id: slug(heading[1] ?? ''), title: plain(heading[1] ?? '') });
+  }
+  return out;
+}
 
 function inline(text: string): ReactNode[] {
   const out: ReactNode[] = [];
@@ -12,12 +50,24 @@ function inline(text: string): ReactNode[] {
     if (index > last) out.push(text.slice(last, index));
     const token = match[0];
     if (token.startsWith('`')) {
+      const code = token.slice(1, -1);
+      const hex = HEX_RE.test(code);
       out.push(
         <code
           key={index}
-          className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.85em] dark:bg-zinc-800"
+          className={cx(
+            'rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.85em] dark:bg-zinc-800',
+            hex && 'whitespace-nowrap',
+          )}
         >
-          {token.slice(1, -1)}
+          {hex && (
+            <span
+              aria-hidden
+              className="mr-1 inline-block size-[0.9em] -translate-y-px rounded-[3px] align-middle ring-1 ring-zinc-900/15 dark:ring-white/20"
+              style={{ background: code }}
+            />
+          )}
+          {code}
         </code>,
       );
     } else if (token.startsWith('**')) {
@@ -39,7 +89,8 @@ const cells = (line: string) =>
     .map((c) => c.trim());
 
 export function Markdown({ source, skipTitle }: { source: string; skipTitle?: boolean }) {
-  let body = source.replace(/^---\n[\s\S]*?\n---\n?/, '');
+  const slug = slugger();
+  let body = stripFrontmatter(source);
   // The page already shows the title.
   if (skipTitle) body = body.replace(/^\s*#\s+.*\n?/, '');
   const lines = body.split('\n');
@@ -63,7 +114,11 @@ export function Markdown({ source, skipTitle }: { source: string; skipTitle?: bo
       // Nested under the page's own h1.
       const Tag = `h${level + 1}` as 'h2';
       blocks.push(
-        <Tag key={i} className={cls}>
+        <Tag
+          key={i}
+          id={level === 2 ? slug(heading[2] ?? '') : undefined}
+          className={cx(cls, 'scroll-mt-6')}
+        >
           {inline(heading[2] ?? '')}
         </Tag>,
       );

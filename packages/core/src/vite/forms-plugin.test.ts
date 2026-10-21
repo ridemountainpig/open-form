@@ -46,14 +46,24 @@ describe('serverEntryModule', () => {
 });
 
 describe('themes are references', () => {
-  it('builds no theme into production; dev lists them for Studio', () => {
-    mkdirSync(path.join(root, 'themes', 'brand'), { recursive: true });
-    writeFileSync(path.join(root, 'themes', 'brand', 'index.ts'), 'export default {};\n');
+  it('builds each theme and its THEME.md for Studio, in dev and production', async () => {
+    const dir = path.join(root, 'themes', 'brand');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, 'index.ts'), 'export default {};\n');
+    writeFileSync(
+      path.join(dir, 'THEME.md'),
+      '---\nname: Brand\ndescription: Ours.\n---\n\n# Brand\n',
+    );
     const paths = projectPaths(root, {});
-    const prod = themesModule(paths, false);
-    expect(prod).toContain('export const themeIds = [];');
-    expect(prod).not.toContain('brand');
-    expect(themesModule(paths, true)).toContain('export const themeIds = ["brand"];');
+    const prod = await themesModule(paths, false);
+    expect(prod).toContain('"name":"Brand","description":"Ours."');
+    expect(prod).toContain('"file":"themes/brand/index.ts"');
+    expect(prod).toContain(`import(${JSON.stringify(path.join(dir, 'index.ts'))})`);
+    expect(prod).not.toContain('import.meta.hot');
+    expect(await themesModule(paths, true)).toContain('"name":"Brand"');
+    const skipped = await themesModule(paths, false, ['brand']);
+    expect(skipped).toContain('export const themes = [];');
+    expect(skipped).not.toContain('import(');
   });
 
   it("doesn't tag a form's own theme for Edit mode", () => {

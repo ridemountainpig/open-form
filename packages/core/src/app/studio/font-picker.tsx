@@ -3,7 +3,6 @@ import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import {
   ApiError,
   addThemeFont,
-  type DesignTarget,
   type FontFilter,
   type GoogleFont,
   searchFonts,
@@ -78,14 +77,14 @@ function usePreviewFonts(fonts: GoogleFont[] | null, text: string) {
 
 /** Search Google Fonts and download one into the theme's `fonts/` folder. */
 export function FontPicker({
-  target,
+  formId,
   folder,
   installed,
   onPicked,
   onClose,
 }: {
-  target: DesignTarget;
-  /** Where the files go, e.g. `themes/brand/fonts/`. */
+  formId: string;
+  /** Where the files go, e.g. `forms/meetup/theme/fonts/`. */
   folder: string;
   installed: ThemeFont[];
   /** A font the theme now serves; `added` is false when it was already there. */
@@ -147,7 +146,7 @@ export function FontPicker({
     setBusy(font.family);
     setFailure(null);
     try {
-      const res = await addThemeFont(target, font.family);
+      const res = await addThemeFont(formId, font.family);
       onPicked(res.font, true);
     } catch (err) {
       setFailure(t('fonts.failed', { family: font.family, error: message(err) }));

@@ -9,14 +9,7 @@ import {
   useState,
 } from 'react';
 import type { Folder, FolderIcon, FoldersManifest } from '../../editing/folders.ts';
-import {
-  ApiError,
-  checkSignedIn,
-  type FormSummary,
-  type Resource,
-  type ThemeSummary,
-  useResource,
-} from './api.ts';
+import { ApiError, checkSignedIn, type FormSummary, type Resource, useResource } from './api.ts';
 
 export type { Folder, FolderIcon, FoldersManifest };
 
@@ -123,7 +116,6 @@ function useFoldersState(): FoldersApi {
 
 type StudioData = {
   forms: Resource<{ forms: FormSummary[] }>;
-  themes: Resource<{ themes: ThemeSummary[] }>;
   folders: FoldersApi;
 };
 
@@ -131,11 +123,8 @@ const StudioDataContext = createContext<StudioData | null>(null);
 
 export function StudioDataProvider({ children }: { children: ReactNode }) {
   const forms = useResource<{ forms: FormSummary[] }>('/api/forms');
-  const themes = useResource<{ themes: ThemeSummary[] }>(
-    appConfig.dev ? '/api/studio/themes' : null,
-  );
   const folders = useFoldersState();
-  const value = useMemo(() => ({ forms, themes, folders }), [forms, themes, folders]);
+  const value = useMemo(() => ({ forms, folders }), [forms, folders]);
   return <StudioDataContext.Provider value={value}>{children}</StudioDataContext.Provider>;
 }
 

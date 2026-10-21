@@ -1,8 +1,15 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { FormRuntimeContext } from '../../react/index.ts';
+import { pickTokens } from '../../schema/index.ts';
 import { previewChannel, reportPreviewNav } from '../lib/preview-channel.ts';
-import { forceScheme, previewScheme, useThemeDraft, withTokens } from '../lib/theme-preview.ts';
+import {
+  fontFacesFor,
+  forceScheme,
+  previewScheme,
+  THEME_LOADED_MESSAGE,
+  type ThemeLoaded,
+} from '../lib/theme-preview.ts';
 import { useTheme } from '../lib/themes.ts';
 import { SAMPLE_CONFIG, SampleForm } from './sample-form.tsx';
 import '../../react/styles.css';
@@ -16,8 +23,20 @@ export function ThemePreviewPage() {
   const lang = params.get('lang') ?? undefined;
   // `thumb`: a gallery thumbnail, which nothing steers.
   const embedded = !params.has('thumb') && window.parent !== window;
-  const { theme, ready } = useTheme(themeId);
-  const draft = useThemeDraft(themeId);
+  const { theme, ready, error } = useTheme(themeId);
+
+  useEffect(() => {
+    if (!embedded || !ready) return;
+    const message: ThemeLoaded = theme
+      ? {
+          type: THEME_LOADED_MESSAGE,
+          themeId,
+          tokens: pickTokens(theme),
+          fonts: fontFacesFor([theme.font, theme.headingFont]),
+        }
+      : { type: THEME_LOADED_MESSAGE, themeId, error: error ?? `No theme "${themeId}".` };
+    window.parent.postMessage(message, window.location.origin);
+  }, [embedded, ready, theme, error, themeId]);
 
   const runtime = useMemo(
     () => ({
@@ -26,15 +45,23 @@ export function ThemePreviewPage() {
       config: SAMPLE_CONFIG,
       requestedLocale: lang,
       themeId,
-      theme: forceScheme(draft ? withTokens(theme, draft) : theme, scheme),
+      theme: forceScheme(theme, scheme),
       preview: true,
       onNavigate: embedded ? reportPreviewNav : undefined,
       previewControl: embedded ? previewChannel() : undefined,
     }),
-    [themeId, theme, draft, scheme, lang, embedded],
+    [themeId, theme, scheme, lang, embedded],
   );
 
   if (!ready) return <div className="of-host" aria-busy="true" />;
+  // A reference that didn't load says so, rather than passing for the built-in look.
+  if (error) {
+    return (
+      <div className="of-host" role="alert">
+        <pre className="of-theme-error">{error}</pre>
+      </div>
+    );
+  }
   return (
     <div className="of-host">
       <FormRuntimeContext.Provider value={runtime}>

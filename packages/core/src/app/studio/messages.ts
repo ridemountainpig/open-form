@@ -275,14 +275,8 @@ const en = {
 
   'themes.emptyTitle': 'No themes yet',
   'themes.emptyBefore':
-    'Themes are references for new forms: an agent reads one and writes each form its own look. Start from a starter, or run ',
-  'themes.emptyAfter': ' with your agent to make your own.',
-  'themes.starters': 'Start from a starter',
-  'themes.startersHint': 'Copied into themes/ as a reference to adapt.',
-  'themes.addStarter': 'Add',
-  'themes.inProject': 'Added',
-  'themes.added': 'Added themes/{id}/',
-  'themes.orDescribe': 'Or describe a new one',
+    'Themes are references for new forms: an agent reads one and writes each form its own look. Run ',
+  'themes.emptyAfter': ' with your agent to make one, or copy in a starter:',
   'themes.referenceNote':
     'References for new forms. A form takes only what it needs into its own look, so changing or deleting a theme here never changes an existing form.',
   'themes.noDocBadge': 'No THEME.md',
@@ -297,8 +291,6 @@ const en = {
   'themes.newPlaceholder': 'e.g. calm and clean for a dental clinic, our teal #0f766e, larger type',
   'themes.newPrompt':
     'Create a new Open Form theme: {request}\nFollow the create-theme skill: scaffold it in themes/<id>/, write its THEME.md, and keep `open-form theme check <id>` passing.',
-  'themes.adjust': 'Adjust',
-  'themes.adjustTitle': 'Adjust {name}',
   'themes.pages': 'Pages',
   'themes.done': 'Done',
   'themes.spec.headings': 'Headings',
@@ -316,6 +308,28 @@ const en = {
   'themes.askForDoc': 'Copy prompt to write it',
   'themes.docPrompt':
     "Write THEME.md for the Open Form theme “{id}” ({file}): its mood, what it suits and when to avoid it, palette, typography, layout and components, copy tone, and do/don't. Follow the create-theme skill.",
+  'themes.fromStarter': 'Or start from a starter',
+  'themes.fromStarterHint':
+    'Copies one into themes/ for you or your agent to adapt; open-form theme list shows them all.',
+  'themes.copyCommand': 'Copy command',
+  'themes.copied': 'Copied',
+  'themes.notFound': 'There’s no theme “{id}” in themes/.',
+  'themes.loadFailed': 'Couldn’t load {file}: {error}',
+  'themes.schemes.light': 'Light only',
+  'themes.schemes.dark': 'Dark only',
+  'themes.schemes.both': 'Light and dark',
+  'themes.useCta': 'Use in a new form',
+  'themes.useCtaHint': 'Copies a prompt for your agent',
+  'themes.preview': 'Preview',
+  'themes.tokens': 'Tokens',
+  'themes.tokensBefore': 'What a new form started with ',
+  'themes.tokensAfter':
+    ' copies into its own look. The theme’s CSS and components stay here, for your agent to borrow from.',
+  'themes.guide': 'Guide',
+  'themes.onThisPage': 'On this page',
+  'themes.changeTitle': 'Change this theme',
+  'themes.changeHint':
+    'Describe the change and hand it to your agent: it edits the tokens, CSS, components and THEME.md, and keeps contrast passing. Forms made from it keep their own look.',
 
   'design.quick': 'Quick tweaks',
   'design.themeDefault': 'Theme default',
@@ -441,6 +455,11 @@ const en = {
 
   'contrast.title': 'Contrast · {scheme}',
   'contrast.allPass': 'All pass',
+  'contrast.label': 'Contrast',
+  'contrast.details': 'Details',
+  'contrast.dialogTitle': 'Contrast · {name}',
+  'contrast.dialogHint':
+    'Each pair the runtime draws, checked against WCAG AA: text needs 4.5:1, control outlines and focus rings 3:1.',
   'contrast.failing.one': '{n} below target',
   'contrast.failing.other': '{n} below target',
   'contrast.textSurface': 'Text on surface',
@@ -861,14 +880,8 @@ const zhTW: Dictionary = {
 
   'themes.emptyTitle': '還沒有主題',
   'themes.emptyBefore':
-    '主題是建立新表單時的參考：agent 讀了主題之後，為每張表單寫出它自己的外觀。可以從範本開始，或請 agent 執行 ',
-  'themes.emptyAfter': ' 建立自己的主題。',
-  'themes.starters': '從範本開始',
-  'themes.startersHint': '會複製到 themes/ 當作參考，可以自由調整。',
-  'themes.addStarter': '加入',
-  'themes.inProject': '已加入',
-  'themes.added': '已加入 themes/{id}/',
-  'themes.orDescribe': '或描述一個新主題',
+    '主題是建立新表單時的參考：agent 讀了主題之後，為每張表單寫出它自己的外觀。請 agent 執行 ',
+  'themes.emptyAfter': ' 建立主題，或複製一個範本進來：',
   'themes.referenceNote':
     '建立新表單時的參考。表單只把需要的部分寫進自己的外觀，在這裡修改或刪除主題，都不會改變既有表單。',
   'themes.noDocBadge': '沒有 THEME.md',
@@ -882,8 +895,6 @@ const zhTW: Dictionary = {
   'themes.newPlaceholder': '例如：牙醫診所用，沉穩乾淨，品牌青綠 #0f766e，字大一點',
   'themes.newPrompt':
     '建立一個新的 Open Form 主題：{request}\n請依照 create-theme skill：在 themes/<id>/ 建立主題、寫好 THEME.md，並確保 `open-form theme check <id>` 通過。',
-  'themes.adjust': '調整',
-  'themes.adjustTitle': '調整 {name}',
   'themes.pages': '頁面',
   'themes.done': '完成頁',
   'themes.spec.headings': '標題',
@@ -900,6 +911,28 @@ const zhTW: Dictionary = {
   'themes.askForDoc': '複製請 agent 撰寫的指令',
   'themes.docPrompt':
     "幫 Open Form 主題「{id}」（{file}）寫 THEME.md：氛圍、適合與不適合的情境、配色、字體、版面與元件、文案語氣，以及 Do / Don't。請依照 create-theme skill。",
+  'themes.fromStarter': '或從範本開始',
+  'themes.fromStarterHint':
+    '把範本複製到 themes/，由你或 agent 調整；open-form theme list 會列出所有範本。',
+  'themes.copyCommand': '複製指令',
+  'themes.copied': '已複製',
+  'themes.notFound': 'themes/ 裡沒有「{id}」這個主題。',
+  'themes.loadFailed': '無法載入 {file}：{error}',
+  'themes.schemes.light': '只有淺色',
+  'themes.schemes.dark': '只有深色',
+  'themes.schemes.both': '淺色與深色',
+  'themes.useCta': '用在新表單',
+  'themes.useCtaHint': '複製給 agent 的指令',
+  'themes.preview': '預覽',
+  'themes.tokens': 'Token',
+  'themes.tokensBefore': '用 ',
+  'themes.tokensAfter':
+    ' 建立的新表單，會把這些 token 複製進自己的外觀。主題的 CSS 和元件留在這裡，讓 agent 參考取用。',
+  'themes.guide': '指南',
+  'themes.onThisPage': '本頁內容',
+  'themes.changeTitle': '修改這個主題',
+  'themes.changeHint':
+    '描述想改的地方，交給你的 agent：它會修改 token、CSS、元件和 THEME.md，並維持對比度通過。已經用它建立的表單會保留自己的外觀。',
 
   'design.quick': '快速調整',
   'design.themeDefault': '主題預設',
@@ -1022,6 +1055,11 @@ const zhTW: Dictionary = {
 
   'contrast.title': '對比 · {scheme}',
   'contrast.allPass': '全部通過',
+  'contrast.label': '對比',
+  'contrast.details': '明細',
+  'contrast.dialogTitle': '對比檢查 · {name}',
+  'contrast.dialogHint':
+    '執行時會用到的每組前景與背景，依 WCAG AA 檢查：文字至少 4.5:1，控制項外框與焦點框至少 3:1。',
   'contrast.failing.one': '{n} 項未達標',
   'contrast.failing.other': '{n} 項未達標',
   'contrast.textSurface': '表面上的文字',
@@ -1431,14 +1469,8 @@ const zhCN: Dictionary = {
 
   'themes.emptyTitle': '还没有主题',
   'themes.emptyBefore':
-    '主题是创建新表单时的参考：agent 读了主题之后，为每个表单写出它自己的外观。可以从模板开始，或请 agent 运行 ',
-  'themes.emptyAfter': ' 创建自己的主题。',
-  'themes.starters': '从模板开始',
-  'themes.startersHint': '会复制到 themes/ 作为参考，可以自由调整。',
-  'themes.addStarter': '添加',
-  'themes.inProject': '已添加',
-  'themes.added': '已添加 themes/{id}/',
-  'themes.orDescribe': '或描述一个新主题',
+    '主题是创建新表单时的参考：agent 读了主题之后，为每个表单写出它自己的外观。请 agent 运行 ',
+  'themes.emptyAfter': ' 创建主题，或复制一个模板进来：',
   'themes.referenceNote':
     '创建新表单时的参考。表单只把需要的部分写进自己的外观，在这里修改或删除主题，都不会改变已有表单。',
   'themes.noDocBadge': '没有 THEME.md',
@@ -1452,8 +1484,6 @@ const zhCN: Dictionary = {
   'themes.newPlaceholder': '例如：牙科诊所用，沉稳干净，品牌青绿 #0f766e，字大一点',
   'themes.newPrompt':
     '创建一个新的 Open Form 主题：{request}\n请按照 create-theme skill：在 themes/<id>/ 创建主题、写好 THEME.md，并确保 `open-form theme check <id>` 通过。',
-  'themes.adjust': '调整',
-  'themes.adjustTitle': '调整 {name}',
   'themes.pages': '页面',
   'themes.done': '完成页',
   'themes.spec.headings': '标题',
@@ -1470,6 +1500,28 @@ const zhCN: Dictionary = {
   'themes.askForDoc': '复制让 agent 撰写的指令',
   'themes.docPrompt':
     "为 Open Form 主题“{id}”（{file}）编写 THEME.md：氛围、适合与不适合的场景、配色、字体、版式与组件、文案语气，以及 Do / Don't。请按照 create-theme skill。",
+  'themes.fromStarter': '或从模板开始',
+  'themes.fromStarterHint':
+    '把模板复制到 themes/，由你或 agent 调整；open-form theme list 会列出所有模板。',
+  'themes.copyCommand': '复制命令',
+  'themes.copied': '已复制',
+  'themes.notFound': 'themes/ 里没有“{id}”这个主题。',
+  'themes.loadFailed': '无法加载 {file}：{error}',
+  'themes.schemes.light': '仅浅色',
+  'themes.schemes.dark': '仅深色',
+  'themes.schemes.both': '浅色与深色',
+  'themes.useCta': '用在新表单',
+  'themes.useCtaHint': '复制给 agent 的指令',
+  'themes.preview': '预览',
+  'themes.tokens': 'Token',
+  'themes.tokensBefore': '用 ',
+  'themes.tokensAfter':
+    ' 创建的新表单，会把这些 token 复制进自己的外观。主题的 CSS 和组件留在这里，供 agent 参考取用。',
+  'themes.guide': '指南',
+  'themes.onThisPage': '本页内容',
+  'themes.changeTitle': '修改这个主题',
+  'themes.changeHint':
+    '描述想改的地方，交给你的 agent：它会修改 token、CSS、组件和 THEME.md，并保持对比度通过。已经用它创建的表单会保留自己的外观。',
 
   'design.quick': '快速调整',
   'design.themeDefault': '主题默认',
@@ -1593,6 +1645,11 @@ const zhCN: Dictionary = {
 
   'contrast.title': '对比度 · {scheme}',
   'contrast.allPass': '全部通过',
+  'contrast.label': '对比度',
+  'contrast.details': '明细',
+  'contrast.dialogTitle': '对比度检查 · {name}',
+  'contrast.dialogHint':
+    '运行时用到的每组前景与背景，按 WCAG AA 检查：文字至少 4.5:1，控件外框与焦点框至少 3:1。',
   'contrast.failing.one': '{n} 项未达标',
   'contrast.failing.other': '{n} 项未达标',
   'contrast.textSurface': '表面上的文字',
@@ -2011,14 +2068,8 @@ const ja: Dictionary = {
 
   'themes.emptyTitle': 'テーマはまだありません',
   'themes.emptyBefore':
-    'テーマは新しいフォームを作るときの参考です。エージェントがテーマを読み、フォームごとにその見た目を書きます。スターターから始めるか、エージェントに ',
-  'themes.emptyAfter': ' を実行してもらって自分のテーマを作りましょう。',
-  'themes.starters': 'スターターから始める',
-  'themes.startersHint': 'themes/ に参考としてコピーされ、自由に調整できます。',
-  'themes.addStarter': '追加',
-  'themes.inProject': '追加済み',
-  'themes.added': 'themes/{id}/ を追加しました',
-  'themes.orDescribe': 'または新しいテーマを説明する',
+    'テーマは新しいフォームを作るときの参考です。エージェントがテーマを読み、フォームごとにその見た目を書きます。エージェントに ',
+  'themes.emptyAfter': ' を実行してもらってテーマを作るか、スターターをコピーしましょう：',
   'themes.referenceNote':
     '新しいフォームを作るときの参考です。フォームは必要な部分だけを自分の見た目に書くので、ここでテーマを変更・削除しても既存のフォームは変わりません。',
   'themes.noDocBadge': 'THEME.md なし',
@@ -2035,8 +2086,6 @@ const ja: Dictionary = {
     '例：歯科医院向け、落ち着いた清潔感、ブランドのティール #0f766e、大きめの文字',
   'themes.newPrompt':
     '新しい Open Form テーマを作成してください：{request}\ncreate-theme スキルに従って themes/<id>/ に作成し、THEME.md を書き、`open-form theme check <id>` が通るようにしてください。',
-  'themes.adjust': '調整',
-  'themes.adjustTitle': '{name} を調整',
   'themes.pages': 'ページ',
   'themes.done': '完了画面',
   'themes.spec.headings': '見出し',
@@ -2054,6 +2103,28 @@ const ja: Dictionary = {
   'themes.askForDoc': '作成を頼むプロンプトをコピー',
   'themes.docPrompt':
     "Open Form テーマ「{id}」（{file}）の THEME.md を書いてください：雰囲気、向いている用途と避けるべき場面、配色、タイポグラフィ、レイアウトとコンポーネント、文章のトーン、Do / Don't。create-theme スキルに従ってください。",
+  'themes.fromStarter': 'またはスターターから始める',
+  'themes.fromStarterHint':
+    'スターターを themes/ にコピーし、あなたやエージェントが調整します。open-form theme list で一覧を表示できます。',
+  'themes.copyCommand': 'コマンドをコピー',
+  'themes.copied': 'コピーしました',
+  'themes.notFound': 'themes/ に「{id}」というテーマはありません。',
+  'themes.loadFailed': '{file} を読み込めませんでした：{error}',
+  'themes.schemes.light': 'ライトのみ',
+  'themes.schemes.dark': 'ダークのみ',
+  'themes.schemes.both': 'ライトとダーク',
+  'themes.useCta': '新しいフォームで使う',
+  'themes.useCtaHint': 'エージェント向けの指示をコピーします',
+  'themes.preview': 'プレビュー',
+  'themes.tokens': 'トークン',
+  'themes.tokensBefore': '',
+  'themes.tokensAfter':
+    ' で作った新しいフォームは、これらのトークンを自分の見た目にコピーします。テーマの CSS とコンポーネントはここに残り、エージェントが参考にします。',
+  'themes.guide': 'ガイド',
+  'themes.onThisPage': 'このページの内容',
+  'themes.changeTitle': 'このテーマを変更',
+  'themes.changeHint':
+    '変更したい内容を書いてエージェントに渡します。エージェントがトークン、CSS、コンポーネント、THEME.md を編集し、コントラストを保ちます。このテーマから作ったフォームは自分の見た目のままです。',
 
   'design.quick': 'クイック調整',
   'design.themeDefault': 'テーマの既定',
@@ -2181,6 +2252,11 @@ const ja: Dictionary = {
 
   'contrast.title': 'コントラスト・{scheme}',
   'contrast.allPass': 'すべて合格',
+  'contrast.label': 'コントラスト',
+  'contrast.details': '詳細',
+  'contrast.dialogTitle': 'コントラスト・{name}',
+  'contrast.dialogHint':
+    'ランタイムが描く前景と背景の組み合わせを WCAG AA で確認します。テキストは 4.5:1 以上、コントロールの枠線とフォーカスリングは 3:1 以上が必要です。',
   'contrast.failing.one': '{n}件が基準未満',
   'contrast.failing.other': '{n}件が基準未満',
   'contrast.textSurface': 'サーフェス上の文字',

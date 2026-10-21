@@ -18,6 +18,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { toast } from 'sonner';
 import { FOLDER_COLORS } from '../../editing/folder-colors.ts';
 import type { Locale } from '../../schema/index.ts';
+import { useThemeCatalog } from '../lib/themes.ts';
 import { useStudioData } from './data.tsx';
 import {
   Count,
@@ -180,7 +181,8 @@ function SidebarContent({ onSearch }: { onSearch(): void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const { forms, themes, folders } = useStudioData();
+  const { forms, folders } = useStudioData();
+  const themes = useThemeCatalog();
   const moveForm = useMoveForm();
   const dragHint = useFormDragActive();
   const readOnly = useReadOnly();
@@ -225,17 +227,15 @@ function SidebarContent({ onSearch }: { onSearch(): void }) {
           {t('nav.forms')}
           <Count value={forms.data && list.length} />
         </Link>
-        {appConfig.dev && (
-          <Link
-            to="/studio/themes"
-            aria-current={inThemes ? 'page' : undefined}
-            className={rowClass(inThemes)}
-          >
-            <Palette className="size-4 shrink-0 opacity-80" aria-hidden />
-            {t('nav.themes')}
-            <Count value={themes.data?.themes.length} />
-          </Link>
-        )}
+        <Link
+          to="/studio/themes"
+          aria-current={inThemes ? 'page' : undefined}
+          className={rowClass(inThemes)}
+        >
+          <Palette className="size-4 shrink-0 opacity-80" aria-hidden />
+          {t('nav.themes')}
+          <Count value={themes.length} />
+        </Link>
       </nav>
 
       <div className="group/side mt-6 flex min-h-0 flex-1 flex-col">

@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { normalizePath, type Plugin, type ViteDevServer } from 'vite';
 import { foldersPath, readManifest } from '../editing/folders.ts';
+import { readThemeDoc } from '../editing/theme-files.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
+import { displayPath } from './form-files.ts';
 import {
   CONFIG_FILE,
   DEFINITION_MODULE,
@@ -11,6 +13,7 @@ import {
   formUpdatedAt,
   type ProjectPaths,
   resolveThemes,
+  type ThemeEntry,
   themeIdForFile,
 } from './project.ts';
 
@@ -24,6 +27,8 @@ export type FormsPluginOptions = {
   paths: ProjectPaths;
   config: OpenFormConfig;
   version: string;
+  /** Reference themes to leave out of a build: ones that fail to load. */
+  skipThemes?: readonly string[];
 };
 
 /** Client view of the project config: only what the browser needs. */
@@ -77,28 +82,52 @@ ${cases}
 `;
 }
 
-// The project's themes are references for new forms, previewed only in Studio
-// (dev), so production builds none of them. Forms bring their own copy.
+/** What Studio's Themes pages show about a reference besides running it: its THEME.md. */
+export async function themeInfo(paths: ProjectPaths, entry: ThemeEntry) {
+  const doc = await readThemeDoc(entry.file);
+  return {
+    id: entry.id,
+    name: doc.name ?? entry.id,
+    description: doc.description,
+    layout: doc.layout,
+    doc: doc.doc,
+    file: displayPath(paths, entry.file),
+  };
+}
+
+// The project's themes are references for new forms, shown read-only in Studio's
+// Themes pages under dev and in production. Each loads on demand, and no form
+// page imports this module: forms bring their own copy of a look.
 // In dev, a changed theme is re-imported through a cache-busting query (like forms).
-export function themesModule(paths: ProjectPaths, dev: boolean): string {
+export async function themesModule(
+  paths: ProjectPaths,
+  dev: boolean,
+  skip: readonly string[] = [],
+): Promise<string> {
+  const entries = resolveThemes(paths.themesRoot).filter((t) => !skip.includes(t.id));
+  const catalog = `export const themes = ${JSON.stringify(
+    await Promise.all(entries.map((entry) => themeInfo(paths, entry))),
+  )};\n`;
   if (!dev) {
-    return `export const themeIds = [];
-export function loadTheme() {
-  return Promise.resolve(undefined);
+    const cases = entries
+      .map((t) => `    case ${JSON.stringify(t.id)}: return import(${JSON.stringify(t.file)});`)
+      .join('\n');
+    return `${catalog}export function loadTheme(id) {
+  switch (id) {
+${cases}
+    default: return Promise.resolve(undefined);
+  }
 }
 `;
   }
-  const themes = resolveThemes(paths.themesRoot);
-  const ids = JSON.stringify(themes.map((t) => t.id));
-  const tokens = JSON.stringify(Object.fromEntries(themes.map((t) => [t.id, 0])));
-  const cases = themes
+  const tokens = JSON.stringify(Object.fromEntries(entries.map((t) => [t.id, 0])));
+  const cases = entries
     .map((t) => {
       const url = `@fs/${normalizePath(t.file).replace(/^\/+/, '')}`;
       return `    case ${JSON.stringify(t.id)}: return import(/* @vite-ignore */ import.meta.env.BASE_URL + ${JSON.stringify(`${url}?t=`)} + tokens[${JSON.stringify(t.id)}]);`;
     })
     .join('\n');
-  return `export const themeIds = ${ids};
-const tokens = ${tokens};
+  return `${catalog}const tokens = ${tokens};
 if (import.meta.hot) {
   import.meta.hot.on('open-form:theme-changed', (data) => {
     if (data && data.themeId in tokens) tokens[data.themeId] = data.timestamp;
@@ -145,7 +174,7 @@ export async function loadFormDefinition(id) {
 }
 
 export function formsPlugin(opts: FormsPluginOptions): Plugin {
-  const { paths, config, version } = opts;
+  const { paths, config, version, skipThemes } = opts;
   let dev = false;
   // Vite hands hot updates over with forward slashes, the watcher with the OS's separators.
   const manifestFile = normalizePath(foldersPath(paths.formsRoot));
@@ -161,14 +190,14 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
     },
     load(id) {
       if (id === `\0${FORMS_VMOD}`) return formsModule(paths, dev);
-      if (id === `\0${THEMES_VMOD}`) return themesModule(paths, dev);
+      if (id === `\0${THEMES_VMOD}`) return themesModule(paths, dev, skipThemes);
       if (id === `\0${CONFIG_VMOD}`) {
         return `export default ${JSON.stringify(clientConfig(config, version, dev))};\n`;
       }
       if (id === `\0${SERVER_ENTRY_VMOD}`) return serverEntryModule(paths);
       return null;
     },
-    handleHotUpdate(ctx) {
+    async handleHotUpdate(ctx) {
       if (isManifest(ctx.file)) {
         ctx.server.ws.send({ type: 'custom', event: 'open-form:folders-changed', data: {} });
         return [];
@@ -179,10 +208,18 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
         for (const mod of ctx.modules) {
           ctx.server.moduleGraph.invalidateModule(mod, new Set(), ctx.timestamp, true);
         }
+        // A changed THEME.md travels with the event; a later page load rebuilds the catalog.
+        const catalog = ctx.server.moduleGraph.getModuleById(`\0${THEMES_VMOD}`);
+        if (catalog) ctx.server.moduleGraph.invalidateModule(catalog);
+        const entry = resolveThemes(paths.themesRoot).find((t) => t.id === themeId);
+        const info =
+          entry && path.basename(ctx.file) === 'THEME.md'
+            ? await themeInfo(paths, entry)
+            : undefined;
         ctx.server.ws.send({
           type: 'custom',
           event: 'open-form:theme-changed',
-          data: { themeId, timestamp: ctx.timestamp },
+          data: { themeId, timestamp: ctx.timestamp, info },
         });
         return [];
       }

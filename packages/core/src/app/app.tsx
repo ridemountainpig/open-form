@@ -1,11 +1,10 @@
-import appConfig from 'virtual:open-form/config';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { PublicFormPage } from './public/form-page.tsx';
 import { NotFound } from './public/not-found.tsx';
 
 const Studio = lazy(() => import('./studio/studio.tsx'));
-// Themes are references shown in Studio's dev-only Themes pages.
+// Themes are references shown in Studio's read-only Themes pages.
 const ThemePreviewPage = lazy(() =>
   import('./public/theme-preview-page.tsx').then((m) => ({ default: m.ThemePreviewPage })),
 );
@@ -32,16 +31,14 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/f/:formId" element={<PublicFormPage />} />
-        {appConfig.dev && (
-          <Route
-            path="/theme-preview/:themeId"
-            element={
-              <Suspense fallback={null}>
-                <ThemePreviewPage />
-              </Suspense>
-            }
-          />
-        )}
+        <Route
+          path="/theme-preview/:themeId"
+          element={
+            <Suspense fallback={null}>
+              <ThemePreviewPage />
+            </Suspense>
+          }
+        />
         <Route
           path="/studio/*"
           element={

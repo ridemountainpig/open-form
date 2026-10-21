@@ -14,7 +14,9 @@ Builds two things into `dist/`:
 - **Client** — the form pages and Studio in `dist/client/`, each form with its
   own theme (CSS and fonts included), plus an unhashed `embed.js` for
   [embedding forms](/docs/deploy/embed) on other sites. The reference themes in
-  `themes/` aren't built: they're only for development.
+  `themes/` are built only for Studio's read-only Themes pages, and no form page
+  loads them. A reference that fails to load is left out with a warning instead
+  of failing the build.
 - **Server entry** — `dist/server/entry.js`, a single file that bundles every
   form, `open-form.config.ts` and the schema collector, along with React and the
   runtime, so `open-form start` doesn't depend on how `node_modules` is laid

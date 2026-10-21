@@ -123,7 +123,8 @@ Editing or deleting a theme in `themes/` never changes a form.
 `themes/` holds the references your agent reads when it creates a form: the
 project's brand theme, a starter you've adapted, a look made with
 [`/create-theme`](/docs/skills/create-theme). A new workspace starts with an
-empty `themes/`, and nothing renders from it in production.
+empty `themes/`. No form renders from it: a production build carries the
+references only for Studio's read-only Themes pages.
 
 Open Form ships five starters. Start a form from one, or add one to `themes/`
 to adapt it first, the same way shadcn/ui components work.
@@ -177,25 +178,30 @@ page.
 
 ## In Studio
 
-`/studio/themes` is a gallery of the project's references: a live thumbnail of a
-sample form in each theme, its name and one-line description, and a badge on
-themes without a `THEME.md`. **New theme** adds a starter to `themes/` in one
-click, or turns a description into a prompt to copy to your agent.
+`/studio/themes` is a read-only gallery of the project's references: a live
+thumbnail of a sample form in each theme, its name and one-line description, and
+a badge on themes without a `THEME.md`. It's part of the production build too,
+so a deployed Studio shows the same gallery. **New theme** turns a description
+into a prompt to copy to your agent, and shows the `open-form theme add <starter>`
+command for starting from a starter.
 
-A theme's page shows a large preview of the sample form next to its `THEME.md`
-and a spec drawn from its tokens: palette, contrast report, type samples and
-shape. Switch the color scheme and the device, and jump to any page or the done
-screen. The **Use it in a form** card shows the `open-form create <form> --theme`
-command and a prompt to copy to your agent for a new form in this theme.
+A theme's page opens with a large preview of the sample form: switch the color
+scheme and the device, and jump to any page or the done screen. Below it,
+**Tokens** lays out what a form started with `--theme <id>` copies: the palette
+in each scheme with a contrast verdict (**Details** opens every pair and its
+ratio), type samples, and shape (radius, width,
+spacing and frame) drawn in the theme's own colors. Then comes its `THEME.md`,
+with an outline of its sections to jump between, beside two cards:
 
-**Adjust** opens a drawer. **Quick tweaks** cover the primary and background
-colors, body and heading fonts, radius and color scheme, with a contrast check.
-**All tokens** has every color in the light and dark palettes, dark mode, fonts,
-radius, button radius, width, spacing and frame. **Save to source** writes the
-tokens straight into the file the reference lives in (`index.ts`, `index.tsx`
-or a single-file `themes/<id>.ts`), so only forms started from it later get the
-change. For anything bigger, describe the change and copy the prompt to your
-agent.
+- **Use it in a form**: the `open-form create <form> --theme` command and a
+  prompt for your agent to start a new form in this theme.
+- **Change this theme**: describe the change and copy it as a prompt. Your agent
+  edits the tokens, CSS, components and `THEME.md` and keeps contrast passing.
+
+Studio never writes a reference theme, so changing one is always your agent's
+or your own edit, and forms already made from it keep their own look. A
+reference that fails to load says why on its page instead of showing the
+default look.
 
 ### Adjust a form's look
 
@@ -211,17 +217,17 @@ into the form's own `theme/` first. A look file the form doesn't import is
 reported by `open-form check`.
 
 <Callout type="info">
-  The Themes pages and **Adjust** are available under `open-form dev` only. Keep
-  tokens as plain literals inside `defineTheme()` so Studio can edit them; a value
-  computed from a variable is left for you to change by hand.
+  **Adjust** is available under `open-form dev` only. Keep tokens as plain
+  literals inside `defineTheme()` so Studio can edit them; a value computed from
+  a variable is left for you to change by hand.
 </Callout>
 
 ## Web fonts
 
 In **Adjust**, the body and heading font menus have **Add from Google Fonts…**.
 Search by name, filter by category (including Chinese, Japanese and Korean), and
-preview your own text. Picking a family downloads it into the theme and selects
-it. `open-form theme font` does the same from the command line, for a reference
+preview your own text. Picking a family downloads it into the form's
+`theme/fonts/` and selects it. `open-form theme font` does the same from the command line, for a reference
 or, with `--form`, for a form's own look:
 
 ```npm

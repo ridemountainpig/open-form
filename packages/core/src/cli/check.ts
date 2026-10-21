@@ -46,6 +46,9 @@ export async function withSsrServer<T>(
 ): Promise<T> {
   const config = await loadUserConfig(userCwd);
   const base = await createViteConfig({ userCwd, config });
+  // Vite sets NODE_ENV=development when it's unset; left that way, an `open-form
+  // build` later in this process (it checks themes this way) compiles JSX for development.
+  const nodeEnv = process.env.NODE_ENV;
   const merged = mergeConfig(base, {
     logLevel: 'silent',
     appType: 'custom',
@@ -64,6 +67,8 @@ export async function withSsrServer<T>(
     return await fn(server, config);
   } finally {
     await server.close();
+    if (nodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = nodeEnv;
   }
 }
 

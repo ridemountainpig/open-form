@@ -37,6 +37,18 @@ html:has(.of-host)::-webkit-scrollbar-thumb {
   flex: 1;
 }
 
+.of-theme-error {
+  margin: 0;
+  padding: 24px;
+  font:
+    13px / 1.6 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  white-space: pre-wrap;
+  color: #b91c1c;
+}
+
 /* Embedded: the frame takes the form's height, so nothing may stretch to the
    frame's (a 100dvh layout would only ever grow). */
 html[data-of-embed] .of-host,

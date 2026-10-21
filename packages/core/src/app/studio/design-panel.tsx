@@ -14,6 +14,7 @@ import {
   DEFAULT_COLORS,
   diffTokens,
   isEmptyPatch,
+  type PaletteReport,
   parseColor,
   THEME_COLOR_KEYS,
   type Theme,
@@ -22,13 +23,7 @@ import {
   type ThemeTokens,
   toHex,
 } from '../../schema/index.ts';
-import {
-  ApiError,
-  type DesignDetail,
-  type DesignTarget,
-  saveThemeTokens,
-  type ThemeFont,
-} from './api.ts';
+import { ApiError, type DesignDetail, saveThemeTokens, type ThemeFont } from './api.ts';
 import { FontPicker } from './font-picker.tsx';
 import { formatBytes } from './format.ts';
 import { type Translate, useT } from './i18n.tsx';
@@ -349,6 +344,51 @@ function ColorToken({
   );
 }
 
+export function contrastWarning(t: Translate, warning: string): string {
+  return warning.startsWith('Sets `colors` but no `dark`') ? t('contrast.noDarkWarning') : warning;
+}
+
+/** One palette's pairs: a sample, what it is, its ratio and the target. */
+export function ContrastRows({
+  rows,
+  className,
+}: {
+  rows: PaletteReport['rows'];
+  className?: string;
+}) {
+  const t = useT();
+  return (
+    <ul className={cx('space-y-1', className)}>
+      {rows.map((row) => (
+        <li key={row.label} className="flex items-center gap-2 text-[11.5px]">
+          <span
+            className="grid h-5 w-7 shrink-0 place-items-center rounded text-[10px] font-semibold"
+            style={{ background: row.bg, color: row.fg }}
+            aria-hidden
+          >
+            Aa
+          </span>
+          <span
+            className="min-w-0 flex-1 truncate text-zinc-600 dark:text-zinc-400"
+            title={row.label}
+          >
+            {contrastLabel(t, row.label)}
+          </span>
+          <span
+            className={cx(
+              'font-mono tabular-nums',
+              row.ok ? 'text-zinc-500' : 'font-semibold text-red-600 dark:text-red-400',
+            )}
+          >
+            {row.ratio === null ? '—' : `${row.ratio.toFixed(2)}:1`}
+          </span>
+          <span className="w-9 text-right font-mono text-[10.5px] text-zinc-400">≥{row.min}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ContrastList({ tokens, scheme }: { tokens: Theme; scheme: Palette }) {
   const t = useT();
   const report = useMemo(() => contrastReport(tokens), [tokens]);
@@ -372,40 +412,16 @@ export function ContrastList({ tokens, scheme }: { tokens: Theme; scheme: Palett
           {failing ? t.n('contrast.failing', failing) : t('contrast.allPass')}
         </span>
       </summary>
-      <ul className="space-y-1 border-t border-zinc-200 px-3 py-2 dark:border-zinc-800">
-        {palette.rows.map((row) => (
-          <li key={row.label} className="flex items-center gap-2 text-[11.5px]">
-            <span
-              className="grid h-5 w-7 shrink-0 place-items-center rounded text-[10px] font-semibold"
-              style={{ background: row.bg, color: row.fg }}
-              aria-hidden
-            >
-              Aa
-            </span>
-            <span
-              className="min-w-0 flex-1 truncate text-zinc-600 dark:text-zinc-400"
-              title={row.label}
-            >
-              {contrastLabel(t, row.label)}
-            </span>
-            <span
-              className={cx(
-                'font-mono tabular-nums',
-                row.ok ? 'text-zinc-500' : 'font-semibold text-red-600 dark:text-red-400',
-              )}
-            >
-              {row.ratio === null ? '—' : `${row.ratio.toFixed(2)}:1`}
-            </span>
-            <span className="w-9 text-right font-mono text-[10.5px] text-zinc-400">≥{row.min}</span>
-          </li>
-        ))}
-      </ul>
+      <ContrastRows
+        rows={palette.rows}
+        className="border-t border-zinc-200 px-3 py-2 dark:border-zinc-800"
+      />
       {report.warnings.map((w) => (
         <p
           key={w}
           className="border-t border-zinc-200 px-3 py-2 text-[11.5px] leading-relaxed text-amber-700 dark:border-zinc-800 dark:text-amber-400"
         >
-          {w.startsWith('Sets `colors` but no `dark`') ? t('contrast.noDarkWarning') : w}
+          {contrastWarning(t, w)}
         </p>
       ))}
     </details>
@@ -413,14 +429,14 @@ export function ContrastList({ tokens, scheme }: { tokens: Theme; scheme: Palett
 }
 
 export function DesignPanel({
-  target,
+  formId,
   detail,
   draft,
   onDraft,
   onFontsChanged,
   onPalette,
 }: {
-  target: DesignTarget;
+  formId: string;
   detail: DesignDetail;
   draft: ThemeTokens | null;
   onDraft(draft: ThemeTokens | null): void;
@@ -489,7 +505,7 @@ export function DesignPanel({
     setSaving(true);
     setMessage(undefined);
     try {
-      await saveThemeTokens(target, patch);
+      await saveThemeTokens(formId, patch);
       setMessage({ tone: 'ok', text: t('design.saved', { file: detail.file }) });
     } catch (err) {
       setMessage({
@@ -503,7 +519,7 @@ export function DesignPanel({
 
   return (
     <div>
-      <AskAgent target={target} detail={detail} />
+      <AskAgent detail={detail} />
 
       <Section title={t('design.quick')}>
         <ColorToken
@@ -705,7 +721,7 @@ export function DesignPanel({
 
       {picking !== undefined && (
         <FontPicker
-          target={target}
+          formId={formId}
           folder={`${detail.file.replace(/[^/]*$/, '')}fonts/`}
           installed={detail.fonts}
           onPicked={fontPicked}
@@ -766,15 +782,15 @@ function countChanges(patch: ReturnType<typeof diffTokens>): number {
   return n;
 }
 
-/** The main way to change a theme: say what you want and hand it to your agent. */
-function AskAgent({ target, detail }: { target: DesignTarget; detail: DesignDetail }) {
+/** The main way to change a form's look: say what you want and hand it to your agent. */
+function AskAgent({ detail }: { detail: DesignDetail }) {
   const t = useT();
   const [request, setRequest] = useState('');
   const [copied, setCopied] = useState(false);
   const id = useId();
 
   const copy = async () => {
-    const prompt = t(target.kind === 'form' ? 'design.formAgentPrompt' : 'design.agentPrompt', {
+    const prompt = t('design.formAgentPrompt', {
       id: detail.id,
       file: detail.file,
       request: request.trim(),
