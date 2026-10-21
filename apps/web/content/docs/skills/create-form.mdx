@@ -158,7 +158,9 @@ and phone width and compares them with the direction: the composition reads
 as planned at desktop width, the title shows, the
 form's own CSS applies, nothing is low-contrast, clipped or overlapping (on a
 translated form, nothing sits under the language picker in the top-right
-corner), and on a phone the first question is on the first screen. It opens the **Schema** tab in Studio
+corner), and on a phone the first question is on the first screen. It also
+sends one test response to see the success screen, which Studio can't preview,
+and checks that it echoes the form's signature element. It opens the **Schema** tab in Studio
 (`/studio/<id>/schema`) to compare the derived steps, fields, required flags
 and conditions with its plan, and Preview for every step and every closed
 screen under *When closed*. It fixes what it sees and looks again. Without a
