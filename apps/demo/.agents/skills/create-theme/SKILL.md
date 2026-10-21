@@ -96,10 +96,11 @@ When sources disagree, ask which wins.
   3. Any other licensed font: copy the `.woff2` into `themes/<id>/fonts/` and declare `@font-face` in the theme CSS.
   Never link `fonts.googleapis.com` from a theme: every respondent's browser would then contact Google, a privacy problem under the GDPR. Use 2 instead.
   Use 2 or 3 only when the font is central to the brand (display headings, a distinctive wordmark-like face) or the user asks.
-- **If `theme font` fails** with `fetch failed`, a timeout or an HTTP error, the network is blocking it: it needs `fonts.google.com` (the catalog), `fonts.googleapis.com` (the CSS) and `fonts.gstatic.com` (the files). Don't retry the same command. Check which hosts answer (`curl -sI https://fonts.googleapis.com/css2?family=Inter`, and the same for `https://fonts.google.com/metadata/fonts`):
+- **If `theme font` fails** with an HTTP status or a "not found", the request itself is the problem: check the family's exact name on Google Fonts and the weights you asked for. If it fails with `fetch failed` or a timeout, the network is blocking it: it needs `fonts.google.com` (the catalog), `fonts.googleapis.com` (the CSS) and `fonts.gstatic.com` (the files). Don't retry the same command. Check which hosts answer (`curl -sI https://fonts.googleapis.com/css2?family=Inter`, and the same for `https://fonts.google.com/metadata/fonts`):
   - **The CSS and files answer, only the catalog doesn't** (common behind a sandbox proxy): install the family by hand as option 3. This writes the same files `theme font` would, header included, so `create --theme` still brings the font into new forms:
 
     ```bash
+    set -euo pipefail   # run as a script (bash font.sh): it stops at the first failed download, before writing the CSS
     dir=themes/<id>/fonts; slug=fraunces; family='Fraunces'   # a form's own look: forms/<form>/theme/fonts
     mkdir -p "$dir/$slug"
     curl -fsS -A 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' \
