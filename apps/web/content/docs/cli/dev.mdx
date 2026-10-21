@@ -47,7 +47,10 @@ variables can live there; variables already set in your shell win. It reads
   re-derives its schema, so validation and Responses follow the code without a
   restart. Saving `open-form.config.ts` restarts the server with the new config
   and reloads open pages; if the file has an error, the server keeps running
-  with the previous config. Press `r` + Enter to restart by hand.
+  with the previous config. Adding or removing a form reloads Studio, but a
+  form page whose form is still there keeps its answers. A form that imports a
+  file before it exists loads as soon as the file is written. Press `r` +
+  Enter to restart by hand.
 - **Writes to your source** — Studio's changes land in your files: text edits
   and notes from [Edit mode](/docs/core-feature/edit-mode) and schedule changes
   in a form's Settings in the form's file, translated text in its

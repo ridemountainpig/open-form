@@ -245,6 +245,19 @@ export function Preview() {
   };
 
   const jump = (step: number) => sendPreviewCommand(frame.current, { type: 'goto', step, labels });
+
+  // Another language reloads the preview: once it reports in, take it back to the step it was on.
+  const resume = useRef<number | null>(null);
+  const switchLanguage = (next: Locale | '') => {
+    resume.current = shown.done || shown.notice || shown.step === 0 ? null : shown.step;
+    setLanguage(next);
+  };
+  useEffect(() => {
+    const step = resume.current;
+    if (step === null || shown.step === step) return;
+    resume.current = null;
+    sendPreviewCommand(frame.current, { type: 'goto', step, labels });
+  }, [shown.step, labels]);
   const restart = () => frame.current?.contentWindow?.location.reload();
 
   const src = `/f/${encodeURIComponent(formId)}?preview=1${language ? `&lang=${language}` : ''}`;
@@ -510,7 +523,7 @@ export function Preview() {
                 label={t('preview.language')}
                 className="w-44"
                 value={language}
-                onChange={setLanguage}
+                onChange={switchLanguage}
                 options={[
                   { value: '', label: t('preview.languageAuto'), icon: <Languages /> },
                   ...languages.map((code) => ({

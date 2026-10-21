@@ -34,4 +34,9 @@ describe('componentName', () => {
     expect(source).toContain("import theme from './theme/index.ts';");
     expect(source).toContain('<Form theme={theme}>');
   });
+
+  it('quotes the title like the rest of the file', () => {
+    expect(starterForm('cafe', 'Cafe')).toContain("  title: 'Cafe',");
+    expect(starterForm('cafe', `Amy's "cafe"`)).toContain(`  title: 'Amy\\'s "cafe"',`);
+  });
 });

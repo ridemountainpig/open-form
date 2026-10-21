@@ -164,6 +164,14 @@ describe('built-in layouts', () => {
     expect(html).toContain('Step 1 of 2');
   });
 
+  it('SplitLayout keeps one <h1> on the closed screen', () => {
+    const closed = { availability: { state: 'closed', message: 'See you next year.' } } as const;
+    const split = render(<Trip layout={SplitLayout} />, closed);
+    expect(split.match(/<h1/g)).toHaveLength(1);
+    expect(split).toMatch(/<h2 class="of-title">/);
+    expect(render(<Trip />, closed)).toMatch(/<h1 class="of-title">/);
+  });
+
   it('StepperLayout lists steps with the current one marked', () => {
     const html = render(<Trip layout={StepperLayout} />);
     expect(html).toContain(

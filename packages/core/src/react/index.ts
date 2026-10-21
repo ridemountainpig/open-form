@@ -19,7 +19,12 @@ export type {
   TextareaUIProps,
   TextInputUIProps,
 } from './components.tsx';
-export { defaultComponents, RequiredMark, useFormComponents } from './components.tsx';
+export {
+  defaultComponents,
+  RequiredMark,
+  ScreenHeadingContext,
+  useFormComponents,
+} from './components.tsx';
 export type {
   FormAvailability,
   FormRuntime,

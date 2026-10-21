@@ -80,7 +80,7 @@ in a new tab. An unpublished form has neither, but its Preview still works.
 The toolbar switches the device frame (**Desktop**, **Tablet**, **Mobile**) and,
 on a translated form, the **Preview language**: any language the form is
 translated into, or **Respondent’s language** to pick one as the respondent's
-browser would. Under `open-form dev` it also switches between **Preview**,
+browser would; switching keeps the preview on the step it shows. Under `open-form dev` it also switches between **Preview**,
 **Edit** (see [Edit mode](/docs/core-feature/edit-mode)), which shows how many
 notes the form has, and **Adjust**. **Reload preview** starts the form again
 from the top.
@@ -127,7 +127,8 @@ view, copy, delete and Excel / CSV / JSON export. See
 ## Schema
 
 The **Schema** tab is a table of every field the form collects, grouped by
-step: its label, data key, type, validation (**required**, **custom**) and the
+step: its label, data key, type, validation (**required**, value and length
+ranges, how many choices, whole numbers, steps, a pattern, **custom**) and the
 condition that shows it. A step's own condition sits on its heading row. Answers
 are stored under the data key, and JSON exports and webhooks use it too.
 

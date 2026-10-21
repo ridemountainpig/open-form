@@ -1,6 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app.tsx';
+import { reloadOnProjectChange } from './lib/forms.ts';
+
+reloadOnProjectChange();
 
 // biome-ignore lint/style/noNonNullAssertion: #root is guaranteed by index.html
 createRoot(document.getElementById('root')!).render(

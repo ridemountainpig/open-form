@@ -40,12 +40,22 @@ export function startupDuration(): string {
   return `ready in ${Math.round(process.uptime() * 1000)} ms`;
 }
 
+// East Asian wide and fullwidth characters, and emoji, take two terminal columns.
+const WIDE =
+  /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\ua960-\ua97f\uac00-\ud7a3\uf900-\ufaff\ufe10-\ufe19\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6\u{1f300}-\u{1f64f}\u{1f900}-\u{1f9ff}\u{20000}-\u{3fffd}]/u;
+
+export function displayWidth(text: string): number {
+  let width = 0;
+  for (const char of stripVTControlCharacters(text)) width += WIDE.test(char) ? 2 : 1;
+  return width;
+}
+
 export function table(headers: string[], rows: string[][]): string {
   const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => stripVTControlCharacters(r[i] ?? '').length)),
+    Math.max(displayWidth(h), ...rows.map((r) => displayWidth(r[i] ?? ''))),
   );
   const pad = (cell: string, i: number) =>
-    cell + ' '.repeat(Math.max(0, (widths[i] ?? 0) - stripVTControlCharacters(cell).length));
+    cell + ' '.repeat(Math.max(0, (widths[i] ?? 0) - displayWidth(cell)));
   const lines = [
     headers.map((h, i) => chalk.dim(pad(h, i))).join('   '),
     ...rows.map((r) => r.map((c, i) => pad(c, i)).join('   ')),

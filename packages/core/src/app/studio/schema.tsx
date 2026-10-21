@@ -7,7 +7,7 @@ import {
   schemaNames,
 } from '../../schema/index.ts';
 import { useFormDetail } from './form-detail.tsx';
-import { useT } from './i18n.tsx';
+import { type Translate, useT } from './i18n.tsx';
 import { Badge, Card, Skeleton } from './ui.tsx';
 
 const COLUMNS = 5;
@@ -111,6 +111,7 @@ function FieldRow({
   const t = useT();
   // The step's own conditions are on its heading row; show only what the field adds.
   const own = field.when.slice(pageWhen);
+  const limits = constraints(field, t);
   return (
     <tr className="border-t border-zinc-100 align-top dark:border-zinc-800/70 [&>td]:py-2.5 [&>td]:pr-4">
       <td className="min-w-40 pl-5 text-zinc-800 dark:text-zinc-200">{field.label ?? NONE}</td>
@@ -121,9 +122,12 @@ function FieldRow({
         {field.type}
       </td>
       <td className="whitespace-nowrap">
-        {field.required || field.hasCustomValidator ? (
-          <span className="flex gap-1.5">
+        {field.required || field.hasCustomValidator || limits.length > 0 ? (
+          <span className="flex flex-wrap items-center gap-1.5">
             {field.required && <Badge tone="amber">{t('schema.required')}</Badge>}
+            {limits.map((limit) => (
+              <Badge key={limit}>{limit}</Badge>
+            ))}
             {field.hasCustomValidator && <Badge>{t('schema.custom')}</Badge>}
           </span>
         ) : (
@@ -135,4 +139,25 @@ function FieldRow({
       </td>
     </tr>
   );
+}
+
+function range(min: number | string | undefined, max: number | string | undefined) {
+  if (min !== undefined && max !== undefined) return min === max ? `${min}` : `${min}–${max}`;
+  if (min !== undefined) return `≥ ${min}`;
+  if (max !== undefined) return `≤ ${max}`;
+  return undefined;
+}
+
+function constraints(field: FieldSchema, t: Translate): string[] {
+  const value = range(field.min, field.max);
+  const length = range(field.minLength, field.maxLength);
+  const selected = range(field.minSelected, field.maxSelected);
+  return [
+    value,
+    field.integer && t('schema.integer'),
+    field.step !== undefined && t('schema.stepSize', { n: field.step }),
+    length && t('schema.chars', { range: length }),
+    selected && t('schema.choices', { range: selected }),
+    field.pattern && t('schema.pattern'),
+  ].filter((limit): limit is string => typeof limit === 'string' && limit !== '');
 }
