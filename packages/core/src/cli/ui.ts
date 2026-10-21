@@ -40,10 +40,10 @@ export function startupDuration(): string {
   return `ready in ${Math.round(process.uptime() * 1000)} ms`;
 }
 
-// East Asian wide and fullwidth characters, emoji and flags take two terminal columns,
+// East Asian wide and fullwidth characters and emoji take two terminal columns,
 // as does any character drawn as emoji by U+FE0F.
 const WIDE =
-  /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\ua960-\ua97f\uac00-\ud7a3\uf900-\ufaff\ufe10-\ufe19\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6\u{1f1e6}-\u{1f1ff}\u{1f300}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{1f900}-\u{1faff}\u{20000}-\u{3fffd}]/u;
+  /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\ua960-\ua97f\uac00-\ud7a3\uf900-\ufaff\ufe10-\ufe19\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6\u{20000}-\u{3fffd}\p{Emoji_Presentation}]/u;
 
 // Combining marks and zero-width characters take none.
 const ZERO = /[\p{Mn}\p{Me}\u200b-\u200f\u2060\ufeff]/gu;

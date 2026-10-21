@@ -13,6 +13,8 @@ describe('table', () => {
     expect(displayWidth('US 🇺🇸')).toBe(5);
     expect(displayWidth('I \u2764\ufe0f')).toBe(4);
     expect(displayWidth('\u2764')).toBe(1);
+    expect(displayWidth('\u26a1')).toBe(2);
+    expect(displayWidth('\u00a9 2026')).toBe(6);
   });
 
   it('lines up columns after wide titles', () => {
