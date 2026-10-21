@@ -47,7 +47,8 @@ const CONTRAST_KEYS = {
 } as const;
 
 function contrastLabel(t: Translate, label: string): string {
-  const base = label.replace(/ \(.*\)$/, '') as keyof typeof CONTRAST_KEYS;
+  // `help text (muted) (muted / surface)`: only the trailing pair goes.
+  const base = label.replace(/ \([^()]*\)$/, '') as keyof typeof CONTRAST_KEYS;
   return CONTRAST_KEYS[base] ? t(CONTRAST_KEYS[base]) : base;
 }
 
