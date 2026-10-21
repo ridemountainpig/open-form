@@ -486,7 +486,13 @@ function Poster({ state, banner, header, progress, intro, content, alert, action
         {aside}
       </section>
       <section
-        className={state === 'success' ? 'gig-poster-form of-success' : 'gig-poster-form'}
+        className={
+          state === 'success'
+            ? 'gig-poster-form of-success'
+            : state === 'unavailable'
+              ? 'gig-poster-form of-notice'
+              : 'gig-poster-form'
+        }
         role={state === 'form' ? undefined : 'status'}
       >
         {banner}

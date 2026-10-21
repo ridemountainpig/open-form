@@ -104,7 +104,7 @@ When sources disagree, ask which wins.
     dir=themes/<id>/fonts; slug=fraunces; family='Fraunces'   # a form's own look: forms/<form>/theme/fonts
     mkdir -p "$dir/$slug"
     curl -fsS -A 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' \
-      "https://fonts.googleapis.com/css2?family=Fraunces:wght@400;700&display=swap" -o "$dir/$slug.src.css"
+      "https://fonts.googleapis.com/css2?family=Fraunces:wght@100..900&display=swap" -o "$dir/$slug.src.css"
     grep -o 'https://fonts.gstatic.com/[^)]*' "$dir/$slug.src.css" | sort -u | while read -r url; do
       curl -fsS "$url" -o "$dir/$slug/$(basename "$url")"
     done
