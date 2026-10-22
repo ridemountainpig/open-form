@@ -135,7 +135,8 @@ export async function themeCheckCommand(
     if (!mod.default) throw new Error(`${file} has no default export (defineTheme(...)).`);
     const report = contrastReport(mod.default);
     // A custom Layout decides what sits on the page background; often no text does.
-    const hint = (r: { pair: string; ok: boolean }) => !r.ok && r.pair === 'foreground/background';
+    const hint = (r: { pair: string; ok: boolean; ratio: number | null }) =>
+      r.ratio !== null && !r.ok && r.pair === 'foreground/background';
     if (!mod.default.components?.Layout || !report.palettes.some((p) => p.rows.some(hint))) {
       return report;
     }

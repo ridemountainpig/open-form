@@ -453,11 +453,13 @@ function InteractiveForm({
   });
   // The most steps the respondent may see, trying the answers each awaited question
   // could get (and the questions those reveal), so "1 / 3" doesn't later become "1 / 4".
+  // A budget keeps a form with many branching questions fast; past it, it's an estimate.
   const mostSteps = useStoreSelector(store, (s) => {
     const fields = collected?.schema.fields ?? [];
-    const most = (values: FormValues, depth: number): number => {
+    let budget = 2000;
+    const most = (values: FormValues): number => {
       const shown = steps.filter((step) => evaluateAll(step.when, values)).length;
-      if (depth === 0) return shown;
+      if (--budget < 0) return shown;
       const awaited = new Set<string>();
       for (const step of steps) {
         if (evaluateAll(step.when, values)) continue;
@@ -474,12 +476,12 @@ function InteractiveForm({
       for (const name of awaited) {
         const field = fields.find((f) => f.name === name);
         for (const value of field ? sampleAnswers(field) : []) {
-          best = Math.max(best, most({ ...values, [name]: value }, depth - 1));
+          best = Math.max(best, most({ ...values, [name]: value }));
         }
       }
       return best;
     };
-    return most(resolve(s.values).values, 3);
+    return most(resolve(s.values).values);
   });
   const [inspecting, setInspecting] = useState(false);
   const [quiet, setQuiet] = useState(false);

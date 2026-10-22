@@ -21,24 +21,25 @@ let watching = false;
 
 // A blur caused by pressing another control would show its error mid-press, push
 // that control down and make the click miss, so the check waits until release.
+function watchPresses() {
+  if (typeof document === 'undefined' || watching) return;
+  watching = true;
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      pressing = true;
+    },
+    true,
+  );
+  const release = () => {
+    pressing = false;
+  };
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+}
+
 function afterPress(run: () => void) {
-  if (typeof document === 'undefined') return run();
-  if (!watching) {
-    watching = true;
-    document.addEventListener(
-      'pointerdown',
-      () => {
-        pressing = true;
-      },
-      true,
-    );
-    const release = () => {
-      pressing = false;
-    };
-    document.addEventListener('pointerup', release, true);
-    document.addEventListener('pointercancel', release, true);
-  }
-  if (!pressing) return run();
+  if (typeof document === 'undefined' || !pressing) return run();
   const done = () => {
     document.removeEventListener('pointerup', done, true);
     document.removeEventListener('pointercancel', done, true);
@@ -140,6 +141,8 @@ export function useField(opts: UseFieldOptions): FieldApi {
   const tr = useTranslate();
   const reactId = useId();
   const id = domId(opts.name, reactId);
+  // Before any field can blur: the press that moves focus must already be seen.
+  useEffect(watchPresses, []);
   const { name } = opts;
 
   if (runtime.mode === 'collect' && collector) {

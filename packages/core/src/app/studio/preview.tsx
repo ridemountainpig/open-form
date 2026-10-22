@@ -687,7 +687,7 @@ export function Preview() {
                     : 'rounded-lg',
                 )}
                 ref={setViewport}
-                style={{ maxWidth: current.width ?? '100%' }}
+                style={{ maxWidth: current.width ?? DESKTOP_WIDTH }}
               >
                 <iframe
                   ref={frame}

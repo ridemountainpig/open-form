@@ -117,7 +117,8 @@ export function sampleAnswers(field: FieldSchema): unknown[] {
   }
   const { min, max } = field;
   if (typeof min === 'number' && typeof max === 'number' && max - min <= 10) {
-    return Array.from({ length: Math.floor(max - min) + 1 }, (_, i) => min + i);
+    const steps = Array.from({ length: Math.floor(max - min) + 1 }, (_, i) => min + i);
+    return steps.at(-1) === max ? steps : [...steps, max];
   }
   if (typeof min === 'number' || typeof max === 'number') {
     return [min, max].filter((n) => typeof n === 'number');

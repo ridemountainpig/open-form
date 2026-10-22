@@ -16,6 +16,7 @@ import {
   policyInstant,
   resolveProtection,
   resolveVisibleFields,
+  sampleAnswers,
   scheduleChanges,
   schemaVersion,
   studioProblem,
@@ -102,6 +103,29 @@ describe('evaluateCondition', () => {
         values,
       ),
     ).toBe(true);
+  });
+});
+
+describe('sampleAnswers', () => {
+  const field = (extra: Partial<FieldSchema>): FieldSchema => ({
+    name: 'x',
+    type: 'number',
+    page: 0,
+    when: [],
+    ...extra,
+  });
+
+  it('tries each option, each step of a short scale and its upper bound', () => {
+    const options = [
+      { value: 'a', label: 'A' },
+      { value: 'b', label: 'B' },
+    ];
+    expect(sampleAnswers(field({ type: 'radio', options }))).toEqual(['a', 'b']);
+    expect(sampleAnswers(field({ type: 'checkbox-group', options }))).toEqual([['a'], ['b']]);
+    expect(sampleAnswers(field({ min: 0, max: 3 }))).toEqual([0, 1, 2, 3]);
+    expect(sampleAnswers(field({ min: 0.5, max: 1 }))).toEqual([0.5, 1]);
+    expect(sampleAnswers(field({ min: 0, max: 100 }))).toEqual([0, 100]);
+    expect(sampleAnswers(field({ type: 'text' }))).toEqual(['answer']);
   });
 });
 
