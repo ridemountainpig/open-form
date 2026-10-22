@@ -97,6 +97,8 @@ Shared props: `name` (required), `label`, `description` (help text under the lab
 | `<Rating>` | number | `min` (default 1), `max` (default 5), `lowLabel`, `highLabel`. Use `min={0} max={10}` for NPS. |
 | `<Matrix>` | one string per row | `columns` (shared answers, like `options`), `rows={[{ name, label, required? }]}`, `label`, `required`. Each row is its own single-choice field: own `name`, export column, `<When field>`. |
 
+Labels, descriptions and option labels are plain strings. A question that needs code, a formula or an image between its label and its options (a programming quiz) is a custom field: `useField` + `FieldShell` (*Custom fields*), rendering the snippet in a `<pre><code>` styled with a monospace stack, with the choices below it.
+
 Use `<Matrix>` when three or more questions share the same answers (rate each part of a course); it's a grid on wide forms and a card per row on phones. Write row labels that read on their own — they're the export column headings.
 
 `variant` on choices is a hint: built-in themes may render choices their own way (e.g. `terminal` always lists them).
@@ -192,7 +194,7 @@ Forms are React, so UI can react to answers. Read them with hooks from `@open-fo
 - `useFieldValue(name)` — one answer, re-renders only when it changes.
 - `useFormValues()` — all answers so far.
 
-Put display-only UI in `<Form aside={…}>`: a side column on wide screens, stacked below the questions on narrow ones. Ideal for a live preview, an order summary or a running total. `FocusLayout` doesn't show `aside`. `<Success>` children can use the same hooks to show a personalised confirmation.
+Put display-only UI in `<Form aside={…}>`: a side column on wide screens, stacked below the questions on narrow ones, shown only while the form is being filled in (not on the success or closed screens; reuse the component in `<Success>`). Ideal for a live preview, an order summary or a running total. `FocusLayout` doesn't show `aside`. `<Success>` children can use the same hooks to show a personalised confirmation.
 
 ```tsx
 function Summary() {
@@ -205,6 +207,22 @@ function Summary() {
 ```
 
 Rules: values are raw input (a number field may hold a string while typing), and answers to fields hidden by `<When>` stay in memory until submit — gate on the same condition if a summary depends on it. Use `<When>` (not these hooks) to show or hide **fields**. Never put fields inside `aside`. Prices shown here are display-only; the server stores the answers.
+
+`useFieldValue` and `useFormValues` are hooks: call them at the top of a component, never inside `.map()`, `.find()`, a condition or a callback. Doing so crashes the form at runtime and clears the answers, and neither `check` nor `typecheck` catches it. To read several fields, call `useFormValues()` once and pick from the result.
+
+## What Open Form can't do
+
+Some requests sound like ordinary form features but have no built-in support. When the brief needs one, **tell the user in Step 1 of `create-form`, before building**: name the limit, say what you'll do instead, and let them choose. Don't quietly build a workaround and mention it only at hand-off.
+
+| The brief asks for | Why it doesn't work | What to offer |
+| --- | --- | --- |
+| **File upload** (CV, photo, receipt) | There is no file field yet (planned), and a submission body is capped at 256 KB. | A `<Url>` field for a shared link (Google Drive, Dropbox, a portfolio), with a `description` saying the link must be viewable. Never base64 a file into a custom field. |
+| **A quiz that scores itself**, shows correct answers or stores a score | Everything in the form's code ships to the browser: correct answers written in the form can be read from the page source. Responses store the raw answers only, never a computed score. | For practice or fun quizzes, scoring in `<Success>` is fine; say the answers are visible to anyone who looks. For anything that counts, collect the answers only, score them after exporting the responses, and limit retakes with `uniqueBy`: `'email'` needs a required `<Email name="email">` on a step everyone sees (blank or hidden answers aren't limited); `'device'` needs no field but is only a cookie. |
+| **Repeating groups** ("name and diet for each guest", "add another item") | There is no repeater; every field is declared up front. | Ask for a count with a `RadioGroup` of `'0'`…`'N'` (a sensible maximum the user confirms), then one set of fields per position, each in its own `<When>` gated on the counts that include it: with up to 3 guests, `guest1Name` inside `<When field="guests" in={['1', '2', '3']}>`, `guest2Name` inside `in={['2', '3']}`, `guest3Name` inside `in={['3']}`. Lowering the count drops the hidden answers on the server. |
+| **Email to the respondent** (confirmation, receipt) | The form doesn't send email. | A `webhooks` entry in `open-form.config.ts` to their email tool or Zapier, plus success copy that says what to expect. |
+| **Sign-in, payments, editing a response after submitting** | Not part of Open Form. | Say so, and suggest collecting what's needed (an email, an order number) and handling the rest outside the form. |
+
+Write these down at hand-off too, under the assumptions.
 
 ## Custom styling
 
@@ -317,6 +335,8 @@ import './meetup.css';
 
 A component the form never renders — a `Select` in a form without one — doesn't belong in its theme.
 
+Once the form's theme has components it becomes `theme/index.tsx`. Switch in this order: write `theme/index.tsx`, change the form's import to it, run `open-form check <id>`, and only then delete `theme/index.ts`. Deleting it first leaves `check` and the dev server failing with "Failed to load url ./theme/index.ts" until the import is fixed.
+
 When CSS restyles the runtime's markup, out-rank its rules instead of relying on which stylesheet loads last: put `[data-of-theme="<form-id>"]` in front of the runtime's own selector, so `[data-of-theme="meetup"] .of-nav .of-button` beats its phone rule `.of-nav .of-button` and `[data-of-theme="meetup"] .of-field > legend:has(+ .of-help)` beats its legend spacing. If you zero the runtime's field spacing (`.of-field > * + *`), restate the top margin your own wrappers inside a field need.
 
 ### Themes in `themes/` are references
@@ -425,6 +445,14 @@ Rules for theme components:
 - **Visible outlines and focus.** Draw control outlines with `var(--of-control)` (not `--of-border`, which is decorative), and show focus as a solid 2px `var(--of-primary)` outline — a faint tint isn't enough.
 - **Style with tokens** (`var(--of-fg)`, `--of-primary`, `--of-border`, `--of-muted`, `--of-error`, `--of-radius`, `--of-heading-font`, …) so `dark` palettes keep working. Prefix theme classes (`.ed-…`) and scope overrides of built-in chrome (`.of-form`, `.of-title`, `.of-button`) to `[data-of-theme="<id>"]` — the form id in a form's own look.
 - Extend instead of rewriting when only a wrapper changes: `import { defaultComponents } from '@open-form-build/core'` and render `<defaultComponents.TextInput {...props} />` inside your own markup.
+- Restyle one question only: branch on `field.name` and hand every other question to the default.
+
+  ```tsx
+  function ChoiceGroup(props: ChoiceGroupUIProps) {
+    if (props.field.name !== 'symptoms') return <defaultComponents.ChoiceGroup {...props} />;
+    return <div className="kc-stickers">{/* native checkboxes from props.options, checked={props.selected.includes(o.value)}, onChange → props.onToggle(o.value, e.target.checked) */}</div>;
+  }
+  ```
 - Per-form tweaks: change the form's own theme, or `<Form components={{ ChoiceGroup: Chips }}>` to override the theme's component from the form.
 - Prefixed classes are global: two forms that took the same `.tm-…` classes from one reference, embedded on one page with different rules, collide. If that happens, rename the prefix in one of them.
 - Custom fields built with `FieldShell` automatically use the theme's `Field`.
@@ -440,7 +468,7 @@ import { SplitLayout } from '@open-form-build/core';
 defineTheme({ components: { Layout: SplitLayout } })        // in the form's own theme, or a reference
 ```
 
-Built-in layouts — pick one that fits the form, or copy one as a starting point:
+Built-in layouts — pick one that fits the form, copy one as a starting point, or write your own for a composition they don't cover (*Design guidelines → Composition*):
 
 | Layout | Use it for |
 | --- | --- |
@@ -451,19 +479,64 @@ Built-in layouts — pick one that fits the form, or copy one as a starting poin
 
 Regions a `Layout` receives (`LayoutUIProps`): `state` (`'form' | 'success' | 'unavailable'`), `nav`, `header` (plus the raw `title` / `description`), `progress`, `intro`, `content` (the current step, or the Success / Notice screen), `alert` (live error region — always render it), `actions` (Back / Next / Submit), `aside`, `banner`. Render what you need, in any arrangement.
 
+A custom `Layout` is how a form gets a composition the built-ins don't have (see *Design guidelines → Composition*). For example, a poster that fills the page, with the questions in a column to one side:
+
 ```tsx
-function Centered({ state, header, progress, content, alert, actions }: LayoutUIProps) {
+// forms/<id>/theme/index.tsx
+import { defineTheme, type LayoutUIProps } from '@open-form-build/core';
+import './gig.css';
+
+function Poster({ state, banner, header, title, progress, intro, content, alert, actions, aside }: LayoutUIProps) {
   return (
-    <div className="my-shell" data-state={state}>
-      {state === 'form' && header}
-      {progress}
-      {content}
-      {alert}
-      {actions}
+    <div className="gig-poster" data-state={state}>
+      <section className="gig-poster-art">
+        {state === 'form' ? header : <p className="gig-poster-name">{title}</p>}
+        {aside}
+      </section>
+      <section
+        className={
+          state === 'success'
+            ? 'gig-poster-form of-success'
+            : state === 'unavailable'
+              ? 'gig-poster-form of-notice'
+              : 'gig-poster-form'
+        }
+        role={state === 'form' ? undefined : 'status'}
+      >
+        {banner}
+        {progress}
+        {intro}
+        {content}
+        {alert}
+        {actions}
+      </section>
     </div>
   );
 }
+
+export default defineTheme({ /* tokens */ components: { Layout: Poster } });
 ```
+
+```css
+/* forms/<id>/theme/gig.css: the poster fills the page, so drop the root's padding. */
+.of-root[data-of-theme="<id>"] { padding: 0; }
+[data-of-theme="<id>"] .gig-poster {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
+  min-height: 100dvh;
+}
+[data-of-theme="<id>"] .gig-poster-form {
+  padding: clamp(32px, 5vw, 72px);
+  padding-top: clamp(56px, 6vw, 72px); /* clears the language picker at every width */
+  max-width: var(--of-width);
+}
+@media (max-width: 860px) {
+  [data-of-theme="<id>"] .gig-poster { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  [data-of-theme="<id>"] .gig-poster-art { padding: 56px 20px 24px; } /* a short band, so the first question stays on screen */
+}
+```
+
+Put `of-success` on the element around `content` on the success screen, as the built-in layouts do: the runtime's success styling hangs on it. `aside` is passed only while the form is being filled in (it is `null` on the success and closed screens), so a signature element that should stay on the end screens goes in `<Success>` or in the layout itself. A `position: sticky` panel stops sticking inside an ancestor with `overflow: hidden`; clip decorations with `overflow: clip` or on the decoration itself. `header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`, so render `header` only while `state === 'form'` (or give your `Success` / `Notice` an `<h2>`): one `<h1>` per screen. Keep the art side full on the end screens: the form's name as plain text (as in the example), its motifs, or the success screen's echo of the signature element. Half a page of empty background on the success screen reads as broken. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
 
 On a form with translations the language picker (`.of-lang`) sits 12px inside the top-right corner of `.of-root`, 32px tall, over whatever the layout puts there. The built-in layouts start below it; a custom `Layout` (or form CSS that changes `.of-root`'s padding or pulls content to the top) must keep that corner clear at every width, phones included — no title, description, title bar or card edge under it. Reserve the room (`.of-root[data-of-theme="<id>"]:has(> .of-lang) { padding-top: clamp(56px, 6vw, 64px); }`) or move the picker into free space (`[data-of-theme="<id>"] .of-lang { top: …; right: …; }`).
 
@@ -555,6 +628,8 @@ The runtime handles spacing, focus, states and responsiveness. You own the quest
 - Order: easy → personal → hard. Group related questions on a page; 3–7 fields per page.
 - Labels are questions or nouns ("Company", "What best describes you?"). Put hints in `description`, not `placeholder`.
 - Mark only truly necessary fields `required`.
+- **Say how long it is.** With 2+ pages, the description gives the number of steps and an honest time ("Five short steps, about 5 minutes" / 「五個步驟，約 5 分鐘」): people abandon a form whose end they can't see. When steps depend on answers, give a range or the time only ("4–5 quick questions", "under a minute"). Set `drafts: true` on forms that take more than a few minutes or have long free-text answers, so a closed tab doesn't lose them — not on a one-minute survey. Leave it off on a shared device (a kiosk, a front-desk tablet), and with ID numbers or health data use a short expiry (`{ expires: '1d' }`).
+- **Data entry together, thinking apart.** Name, email, phone and address belong on one page, however the rest is paced; a question gets a screen of its own only when it needs a moment's thought.
 - Prefer `RadioGroup` for ≤ 5 options (visible at a glance), `Select` for longer lists, `variant="cards"` for 2–6 short options — on a `CheckboxGroup` too, where 5+ short options as a list make a tall column of rows.
 - Use `<Row>` only for short, related fields.
 - Write copy in the form's language and set `locale` to match.
@@ -562,17 +637,39 @@ The runtime handles spacing, focus, states and responsiveness. You own the quest
 ### Look
 
 - **Header**: a title of a few words and a description of one or two sentences. Each fact — date, venue, price, deadline — appears **once**: in the description or in a facts block, never both.
-- **One signature element.** A form feels designed, not generated, when one piece of UI belongs to *this* form's purpose — usually in `aside` (see *Live answers*) or a custom field, built on `var(--of-*)` tokens:
+- **One signature element, best on the key question.** A form feels designed, not generated, when one piece of UI belongs to *this* form's purpose. Start from the form's **key question** — the answer it exists to collect — and make the control people answer it with the signature, on `var(--of-*)` tokens: a custom field (*Custom fields*), or — when it is a `RadioGroup`, `CheckboxGroup` or `Rating` — the form theme's `ChoiceGroup` or `Rating`, branching on `field.name` (*Components*), so the runtime keeps the value, toggling and validation. For example: an RSVP answered by circling 出席 or striking out 欠席 like a paper reply card, a café rating stamped onto a loyalty card, a satisfaction score as a sun rising over a hill, years of experience as stations on a metro line. Keep native inputs underneath (*Components*). When the key question is plain text, the signature goes beside the questions instead — in `aside` (see *Live answers*) or the layout:
   - a live preview that fills in as people answer — a pass, badge, ticket or profile card;
   - an event's facts (date · venue · price · seats) or its agenda;
   - plan tiles with prices, and a running total;
   - a summary of the answers so far in `SplitLayout`'s panel.
 
-  One is enough; two compete. Use only facts the user gave. A short internal form may need none — then the effort goes into copy and spacing. The theme's THEME.md lists *Signature ideas* that fit it, and where its layout puts `aside` — `FocusLayout` has none, so there it goes in the flow or `<Success>`.
+  Echo it once on the success screen, filled with the person's answers (the stamped card, the circled 出席 with the number of guests), and keep everything else quiet. One is enough; two compete. Use only facts the user gave. A short internal form may need none — then the effort goes into copy and spacing. The theme's THEME.md lists *Signature ideas* that fit it, and where its layout puts `aside` — `FocusLayout` has none, so there it goes in the flow or `<Success>`.
+- **Avoid the AI-default look.** These are what generated pages fall into when nobody chose: a cream or beige page with a serif headline and a terracotta accent; a black page with one neon accent; newspaper hairlines with all-caps monospace kickers; a white rounded card with a soft shadow on light gray as the only idea; a small eyebrow label above every heading (one that carries information, like the form's name above a closed screen's title, is fine); template decoration — `#` or `01 / 02` before headings that aren't a real sequence, `→` in every button, design-tool labels ("Fill × Hug", "Frame 1"), dot grids, decorative emoji. Use one only when the brand or the user asks for it, or when it really is the audience's own material — washi and a Mincho face for a ryokan, a broadsheet for a newspaper — and then make it specific (this inn's colors, this paper's masthead), not the generic version. Take the palette, type and motif from the audience's world instead (a café's own cups and chalkboard, the venue's signage, the company's product), and test the result by asking whether you'd have made the same choices for a different café, couple or company: wherever the answer is yes, that part is still a default.
 - **Color**: the theme's palette only. `primary` marks the main action, the selection and focus; the form's CSS adds no new hues (tints come from `color-mix()` on tokens). Gradients, glows and textures go on the page background or the brand panel, never behind text or controls.
-- **Type**: at most the theme's two families (`font`, `headingFont`). Build hierarchy with size and weight, not more colors, and don't shrink labels or help text below the theme's sizes.
+- **Type**: at most the theme's two families (`font`, `headingFont`), plus a monospace for code when the form shows code. Build hierarchy with size and weight, not more colors, and don't shrink labels or help text below the theme's sizes.
+- **Chinese and Japanese**: Latin typographic tricks don't carry over. When the form's `locale` is `zh-TW`, `zh-CN` or `ja`, don't copy a reference's `text-transform: uppercase`, small-caps, wide `letter-spacing` or `font-style: italic` (CJK fonts have no italic, so browsers slant the glyphs) onto CJK text. Labels and eyebrows are 13–14px or larger, with letter-spacing of 0.06em at most; help text is upright and muted; emphasis comes from weight, size or color. Pick a CJK face that matches the Latin one: serif Latin with `var(--of-cjk-serif)`, sans with `var(--of-cjk)`. In a multilingual form, scope the Latin-only styling with `:lang(en)`, e.g. `.of-root[data-of-theme="<id>"]:lang(en) .of-label { text-transform: uppercase; }`. `.of-root` carries the respondent's current language in `lang`.
 - **Phones**: at about 390px wide, the title and the first question (or `FocusLayout`'s Start button) fit on the first screen. `SplitLayout` stacks its panel above the questions under 860px and the default `aside` drops below them under 960px — hide secondary panel or aside content there (`@media (max-width: 860px)`) instead of pushing the questions down.
-- **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. `<Success>` can reuse the signature element, filled with the person's answers. Closed screens: see *Closed screens*.
+
+### Composition
+
+The answer fields stay in **one column**: people read and fill a single column fastest, so use `<Row>` only for short pairs. Everything around that column is open, though. A centered card on a gray page is only the default, and a form where every direction is that card looks generated. Decide the composition (the page layout around the questions) as deliberately as the colors:
+
+| Composition | Feels like | How |
+| --- | --- | --- |
+| **Centered card** | Neutral, embeddable, quick | Default layout. Short internal forms, embeds (`layout: 'plain'`). |
+| **Hero + form** | An event or product page | `SplitLayout`, or a custom `Layout` with a big visual side (title in display type, facts, a CSS-drawn motif) beside a form column. Not always 50/50: try 60/40, or the form on the left. |
+| **Full-page poster** | A flyer, a gig poster, an invitation | A custom `Layout` with the whole page as the composition: oversized type, a pattern or illustration built from CSS on `--of-*` tokens, and the questions in a column on one side or a sheet laid over the poster. `.of-root` padding to 0. |
+| **Document** | An official application, an exam paper, a contract | Wider `width` (760–960px) with a sheet look: a header band, numbered sections (numbering a document's real sections is information, not decoration), labels in a left margin column on wide screens, rules between sections. The answer column itself stays at a readable width. |
+| **Form + sticky summary** | Checkout, booking, configuration | `aside` (sticky beside the card) or a custom `Layout` with a receipt, pass or running total that follows the answers. |
+| **Step rail** | A long application, onboarding | `StepperLayout`, or a custom rail styled as the form's own artifact (tabs of a binder, layers of a design tool). |
+| **One question per screen** | A conversation, a quick survey | `FocusLayout`, which works best full-bleed with big type. |
+
+**Match the ambition to the moment.** Quick operational forms — a QR feedback card on a café table, an internal sign-up, a bug report — are filled in within a minute by people who want to be done: keep a plain column (the centered card, or a full-bleed column on the form's own background), put the one signature on the key question, and spend the rest on copy. Invitations, event registrations, applications and campaigns are moments people remember and share, and they earn a full composition.
+
+**One question per screen is a choice about the questions**, not the theme or the field count: a five-question NPS is one per screen even though five fields would fit on one page. It fits forms where each answer needs a moment's thought — an NPS survey, a quiz, a short reflective survey — and people know it from Typeform: `FocusLayout` gives Enter to continue and big type, and a custom `ChoiceGroup` can add letter keys (the `conversational` starter has one). Data entry stays together (*Questions*): splitting name, email and phone into three screens is the thing people dislike most about one-question forms.
+
+Pick the composition from the form's subject and the moment: a concert sign-up can be a poster, a scholarship application a document, a workshop booking a form with a sticky summary. `width`, `.of-root`'s padding and background, and the `Layout` are all part of the form's own theme. On phones, every composition collapses to the single column with a compact visual band above it.
+- **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. Use the person's answers (`useFormValues()` in a component inside `<Success>`; `title` is a plain string, so the personal line goes in the children): "3 seats are held for you — see you on Nov 15" beats a generic thank-you. Add what they need next from facts the user gave: an add-to-calendar link for an event (a Google Calendar `render?action=TEMPLATE` URL needs no code), the venue's map link, what to prepare. `<Success>` echoes the signature element (*Look*). Closed screens: see *Closed screens*.
 - **Motion**: the runtime already animates steps and errors, and turns all motion in the form off for `prefers-reduced-motion`. Add at most a hover or a transition on the signature element.
 
 ## Anti-patterns
@@ -588,7 +685,12 @@ The runtime handles spacing, focus, states and responsiveness. You own the quest
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
 | `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (`open-form create <id> --theme terminal`) + `<Form theme={theme}>`, with the CSS and components it needs written there |
 | Copying a reference theme's whole folder into the form | Only what the form renders: tokens, then CSS on the runtime's classes, then components that need their own markup or behavior |
-| CSS grid / flex to arrange fields | `<Row>`, `<Page>` |
+| CSS grid / flex to arrange fields | `<Row>`, `<Page>`; grid and flex belong in the `Layout`, around the field column |
+| Every form a centered card at the default width | A composition chosen for the form (*Composition*) |
+| A full-page poster for a 30-second feedback card | A plain column with one signature on the key question (*Composition*) |
+| Cream + serif + terracotta, black + neon, `#` and `→` on everything | Palette, type and motif from the audience's world (*Look*) |
+| Name, email and phone on three separate screens | Data entry on one page; one question per screen only where each answer needs thought |
+| English uppercase / italic styling on Chinese or Japanese text | Upright CJK text, weight and size for emphasis, Latin styling under `:lang(en)` |
 | Styling tags (`button[type="submit"]`, `h1`) or unscoped `.of-*` rules | The `.of-*` classes under `[data-of-theme="<id>"]` (*Custom styling*) |
 | Hex colors in the form's CSS | `var(--of-*)` tokens; tints via `color-mix()` |
 | The date and venue in the description *and* in an aside | Each fact once |
@@ -600,10 +702,10 @@ The runtime handles spacing, focus, states and responsiveness. You own the quest
 ## Self-review before handing off
 
 1. Ids: folder is kebab-case; every `name` is unique, camelCase, meaningful.
-2. Required fields are minimal and correct; conditional fields use `<When>`, not ternaries.
+2. Required fields are minimal and correct; conditional fields use `<When>`, not ternaries. Anything the brief asked for that Open Form can't do (*What Open Form can't do*) was raised with the user, and the workaround is listed at hand-off.
 3. Policy matches the request (limits, dates, uniqueness, language).
 4. No hand-rolled state, fetch, validation or styling outside the theme / form CSS.
-5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the reference's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element, no new hues, success copy written for this form.
+5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the reference's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, and no uppercase, small-caps or italic styling on Chinese or Japanese text.
 6. Custom components spread `field.controlProps`, attach `field.ref`, keep native inputs and a visible focus style.
 7. `open-form check <id>` passes and its output (steps, fields, conditions, required flags, policy) matches your plan; the `typecheck` script passes.
 8. Closed screens: `closedMessage` (plus `fullMessage` / `duplicateMessage` where they apply) is in the form's voice, and a custom `Notice` handles every `state` the form can reach and invents no facts.

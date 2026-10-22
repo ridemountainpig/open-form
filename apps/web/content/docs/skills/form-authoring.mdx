@@ -22,12 +22,13 @@ You don't usually invoke it directly. Other skills and the rules do.
 | Conditions | `<When>` operators (and what they mean on a `CheckboxGroup`), `all` / `any` / `not` / `condition`, conditional steps, hidden answers dropped on the server |
 | Validation | Built-in rules, `validate` functions or a Standard Schema, run on client and server alike |
 | Custom fields | `useField` and `FieldShell` |
-| Live answers | `useFieldValue`, `useFormValues` and `<Form aside>` for previews and totals |
+| Live answers | `useFieldValue`, `useFormValues` and `<Form aside>` for previews and totals; the hooks are called at a component's top level only |
+| What Open Form can't do | File uploads, self-scoring quizzes, repeating groups, emails to respondents, sign-in, payments and editing a response after submitting: why each doesn't work, the workaround to offer (retake limits with `uniqueBy: 'email'` need a required email on a step everyone sees; repeating groups get one cumulative `<When>` range per position), and that the user hears about it before the build |
 | Custom styling | A local stylesheet scoped with `<Form className>`, prefixed classes on `--of-*` tokens, `--of-aside-width`, and the `.of-*` classes to target when restyling what the runtime renders |
 | Config | Submission policy, protection, success screen, drafts, time zones, `published: false` to take a form offline, and the keys Studio can override; webhooks and embeds in `open-form.config.ts` |
-| Themes | The form's own look in `forms/<id>/theme/` and `<Form theme>`, written with only what the form uses — tokens, then CSS on the runtime's markup, then components for what CSS can't do; references in `themes/` and the starters, `create --theme`, replaceable components, layouts (keeping the language picker's corner clear), closed screens (`Notice`), `useFormNav` and `useFormMessages` |
+| Themes | The form's own look in `forms/<id>/theme/` and `<Form theme>`, written with only what the form uses — tokens, then CSS on the runtime's markup, then components for what CSS can't do; references in `themes/` and the starters, `create --theme`, replaceable components, layouts and a custom `Layout` example (keeping the language picker's corner clear), closed screens (`Notice`), `useFormNav` and `useFormMessages` |
 | Languages | `locale`, `translations`, `<T>`, language-neutral option values |
-| Design guidelines | Questions: ask less, order easy to hard, 3–7 fields per page, `RadioGroup` vs. `Select` vs. cards. Look: each header fact once, one signature element tied to the form's purpose, the theme's palette only, the first question on a phone's first screen, success copy written for the form |
+| Design guidelines | Questions: ask less, order easy to hard, 3–7 fields per page, the step count and time up front, data entry on one page, `RadioGroup` vs. `Select` vs. cards. Look: each header fact once, one signature element tied to the form's purpose (best on the key question's control, echoed on the success screen), no AI-default looks (cream + serif + terracotta, black + neon, `#` and `→` as decoration), the theme's palette only, Chinese and Japanese type without Latin uppercase or italics, the first question on a phone's first screen, success copy that uses the person's answers. Composition: ambition sized to the moment (a plain column for a quick QR card, a full composition for an invitation), one question per screen for NPS and quizzes, answers in one column, but the page around them chosen for the form — centered card, hero, full-page poster, document, sticky summary, step rail or one question per screen |
 
 The [Components](/docs/components/form) and
 [Reference](/docs/reference/define-form) sections document the same API for
@@ -49,7 +50,9 @@ instead:
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
 | `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (`open-form create <id> --theme terminal`) + `<Form theme={theme}>` |
 | Copying a reference theme's whole folder into the form | Only what the form renders: tokens, then CSS on the runtime's classes, then components that need their own markup or behavior |
-| CSS grid or flex to arrange fields | `<Row>`, `<Page>` |
+| CSS grid or flex to arrange fields | `<Row>`, `<Page>`; grid and flex belong in the `Layout`, around the field column |
+| Every form a centered card at the default width | A composition chosen for the form |
+| English uppercase or italic styling on Chinese or Japanese text | Upright CJK text, weight and size for emphasis, Latin styling under `:lang(en)` |
 | Styling tags (`button[type="submit"]`, `h1`) or unscoped `.of-*` rules | The `.of-*` classes under `[data-of-theme="<id>"]` |
 | Hex colors in the form's CSS | `var(--of-*)` tokens; tints via `color-mix()` |
 | The date and venue in the description *and* in an aside | Each fact once |
@@ -65,7 +68,9 @@ Before handing off, the agent checks:
 1. **Ids** — the folder is kebab-case; every `name` is unique, camelCase and
    meaningful.
 2. **Required and conditional** — only truly necessary fields are `required`;
-   conditional fields use `<When>`, not ternaries.
+   conditional fields use `<When>`, not ternaries. Anything the brief asked for
+   that Open Form can't do was raised with you, and the workaround is listed at
+   hand-off.
 3. **Policy** — limits, dates, uniqueness and language match the request, and
    nothing more was added.
 4. **Nothing hand-rolled** — no state, fetch, validation or styling outside the
@@ -76,7 +81,9 @@ Before handing off, the agent checks:
    passed to `<Form theme>`; nothing imports from `themes/`;
    copy follows the reference's `THEME.md`; conversational forms have one question per page. Each header
    fact appears once, there's at most one signature element, the form's CSS
-   adds no new hues, and the success copy is written for this form.
+   adds no new hues, the success copy is written for this form, the composition
+   was chosen for the form, and Chinese or Japanese text has no uppercase,
+   small-caps or italic styling.
 6. **Custom components** spread `field.controlProps`, attach `field.ref`, keep
    native inputs and a visible focus style.
 7. **`open-form check <id>`** passes and its steps, fields, conditions,
