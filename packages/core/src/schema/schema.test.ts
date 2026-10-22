@@ -144,10 +144,20 @@ describe('sampleAnswers', () => {
       },
       { field: 'other', equals: 7 },
     ];
-    expect(sampleAnswers(field({ min: 0, max: 100 }), when)).toEqual([0, 100, 50, 81]);
+    expect(sampleAnswers(field({ min: 0, max: 100 }), when)).toEqual([0, 100, 50, 81, 65.5]);
     expect(sampleAnswers(field({ min: 0, max: 100 }), [{ field: 'x', gt: 50, lt: 51 }])).toContain(
       50.5,
     );
+    expect(
+      sampleAnswers(field({ min: 0, max: 100 }), [
+        {
+          all: [
+            { field: 'x', gt: 50 },
+            { field: 'x', lt: 51 },
+          ],
+        },
+      ]),
+    ).toContain(50.5);
     expect(sampleAnswers(field({ type: 'text' }), [{ field: 'x', equals: 'yes' }])).toEqual([
       'answer',
       'yes',

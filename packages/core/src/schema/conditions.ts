@@ -118,9 +118,6 @@ function operands(name: string, cond: Condition, out: Primitive[]): Primitive[] 
     out.push(...[cond.gte, cond.lte].filter((v): v is number => v !== undefined));
     if (cond.gt !== undefined) out.push(cond.gt + 1);
     if (cond.lt !== undefined) out.push(cond.lt - 1);
-    const low = cond.gt ?? cond.gte;
-    const high = cond.lt ?? cond.lte;
-    if (low !== undefined && high !== undefined) out.push((low + high) / 2);
   }
   return out;
 }
@@ -165,6 +162,12 @@ export function sampleAnswers(
     samples = [min, max].filter((n) => typeof n === 'number');
   } else {
     samples = [numeric ? 0 : 'answer'];
+  }
+  // A range can be split across conditions (`gt: 50` in one, `lt: 51` in another), so
+  // also try between each pair of neighbouring values.
+  if (numeric) {
+    const sorted = [...new Set(compared as number[])].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i++) compared.push((sorted[i - 1] + sorted[i]) / 2);
   }
   return [...new Set([...samples, ...compared])];
 }
