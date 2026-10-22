@@ -74,6 +74,7 @@ import { type FormNav, NavContext } from './nav.ts';
 import { type FormParts, partitionForm, type StepEntry } from './steps.ts';
 import { createFormStore, type FormStore, useStoreSelector } from './store.ts';
 import type { FormTheme } from './theme.ts';
+import { type TurnstileHandle, TurnstileWidget } from './turnstile.tsx';
 import { visitorId } from './visitor.ts';
 
 export type FormProps = {
@@ -503,6 +504,8 @@ function InteractiveForm({
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
+  const turnstileKey = runtime.endpoint && !props.onSubmit ? runtime.turnstile?.siteKey : undefined;
   const focusAfterRender = useRef<'step' | string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const requestFocus = useCallback((target: 'step' | string) => {
@@ -729,6 +732,12 @@ function InteractiveForm({
         store.setState({ status: 'success' });
         return;
       }
+      const turnstile = turnstileKey ? turnstileRef.current?.token() : undefined;
+      if (turnstileKey && !turnstile) {
+        store.setState({ status: 'error' });
+        showError(messages.humanCheck);
+        return;
+      }
       const res = await fetch(runtime.endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -739,9 +748,11 @@ function InteractiveForm({
           token: runtime.token,
           hp: honeypotRef.current?.value ?? '',
           visitor: visitorId(),
+          ...(turnstile ? { turnstile } : {}),
         }),
       });
       const body = (await res.json().catch(() => ({}))) as SubmitResponse;
+      if (!res.ok && turnstile) turnstileRef.current?.reset();
       if (res.ok) {
         store.setState({ status: 'success', submissionId: body.id });
         runtime.onSubmitted?.({ id: body.id });
@@ -786,6 +797,7 @@ function InteractiveForm({
     stepOf,
     store,
     tr,
+    turnstileKey,
   ]);
 
   const next = useCallback(async () => {
@@ -1071,15 +1083,20 @@ function InteractiveForm({
       }
       actions={
         inForm ? (
-          <Nav
-            nav={nav}
-            submitLabel={
-              typeof parts.submit?.props.children === 'string'
-                ? tr(parts.submit.props.children)
-                : (parts.submit?.props.children ?? messages.submit)
-            }
-            labels={{ back: messages.back, next: messages.next, submitting: messages.submitting }}
-          />
+          <>
+            {turnstileKey && isLast && (
+              <TurnstileWidget ref={turnstileRef} siteKey={turnstileKey} locale={language.locale} />
+            )}
+            <Nav
+              nav={nav}
+              submitLabel={
+                typeof parts.submit?.props.children === 'string'
+                  ? tr(parts.submit.props.children)
+                  : (parts.submit?.props.children ?? messages.submit)
+              }
+              labels={{ back: messages.back, next: messages.next, submitting: messages.submitting }}
+            />
+          </>
         ) : null
       }
       aside={inForm ? (props.aside ?? null) : null}

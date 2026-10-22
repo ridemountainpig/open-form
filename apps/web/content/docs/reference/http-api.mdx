@@ -76,19 +76,21 @@ Content-Type: application/json
 | `locale` | The language shown. Used for error messages and stored with the response if the form offers it; otherwise the form's own language is stored. |
 | `token` | The timing token from the status route. Required unless `minimumCompletionTime` is `false`. |
 | `hp` | The honeypot input. Must be empty. |
+| `turnstile` | The Cloudflare Turnstile token, when the form uses `protection.turnstile`. |
 | `visitor` | Optional browser id for `uniqueBy: 'device'` when cookies are blocked, as in embeds. The `x-open-form-visitor` header works too. |
 
 The handler checks the request's origin, the form's schedule and the timing
 token. It then drops unknown fields and fields hidden by `<When>`, coerces the
 rest, and runs the same validation as the browser plus custom validators. Only a
 valid submission counts against the rate limit, so fixing mistakes doesn't use
-it up. The response is stored with `maxResponses` and `uniqueBy` checked in one
+it up; every attempt counts against a cap of five times the limit. With
+`protection.turnstile`, the token is then verified with Cloudflare. The response is stored with `maxResponses` and `uniqueBy` checked in one
 transaction, and webhooks go out after the response.
 
 | Status | `error` | When |
 | --- | --- | --- |
 | `201` | — | Stored. Body: `{ id, number }`. |
-| `400` | `too_fast`, `invalid_token`, `expired_token`, `bad_request` | Sent too quickly, bad token, a token over 7 days old (reloading the page gets a new one), or a body that isn't a JSON object |
+| `400` | `too_fast`, `invalid_token`, `expired_token`, `human_check`, `bad_request` | Sent too quickly, bad token, a token over 7 days old (reloading the page gets a new one), a missing or rejected Turnstile token, or a body that isn't a JSON object |
 | `403` | `forbidden` | Cross-site request from an origin not in `embed.origins` |
 | `404` | `not_found` | No such form, or it's unpublished |
 | `409` | `duplicate` | `uniqueBy` already has a response for this value or device |
@@ -96,7 +98,8 @@ transaction, and webhooks go out after the response.
 | `413` | `too_large` | Body over the limit (256 KB by default) |
 | `415` | `unsupported_media_type` | Not `application/json` |
 | `422` | `invalid` | Validation failed; `errors` maps field names to messages |
-| `429` | `rate_limited` | Over the form's rate limit |
+| `429` | `rate_limited` | Over the form's rate limit or attempt cap |
+| `503` | `unavailable` | `protection.turnstile` is on but tokens can't be verified: no Turnstile secret, or Cloudflare unreachable |
 
 A filled-in honeypot goes through the same checks and gets the answer a new
 submission would — `201` with `{ id, number }`, or `410` — but nothing is
@@ -238,8 +241,9 @@ export const handler = createOpenFormHandler({
     clientAddress: { type: '(request: Request) => string | undefined', description: 'The client IP, for rate limits and sign-in attempts. IPv6 addresses count per /64. Without it, every visitor counts as one: all of them share each form’s rate limit and the sign-in limit.' },
     secureCookies: { type: 'boolean', description: 'Always mark cookies Secure. Without it they are Secure when the request URL or the page’s Origin is https.' },
     webhookSecret: { type: 'string', description: 'Signs webhook deliveries. Usually OPEN_FORM_WEBHOOK_SECRET.' },
+    turnstileSecret: { type: 'string', description: 'Verifies Cloudflare Turnstile tokens for forms with protection.turnstile. Usually OPEN_FORM_TURNSTILE_SECRET. Without it those forms refuse responses.' },
     waitUntil: { type: '(promise: Promise<unknown>) => void', description: 'Keeps webhook deliveries alive after the response on serverless platforms.' },
-    fetch: { type: 'typeof fetch', default: 'global fetch', description: 'Used for webhook deliveries.' },
+    fetch: { type: 'typeof fetch', default: 'global fetch', description: 'Used for webhook deliveries and Turnstile checks.' },
     exposeErrors: { type: 'boolean', default: 'false', description: 'Include error details in 500 responses. Dev only.' },
     maxBodyBytes: { type: 'number', default: '262144', description: 'Largest request body accepted.' },
     now: { type: '() => number', default: 'Date.now', description: 'The clock, in epoch milliseconds. For tests.' },

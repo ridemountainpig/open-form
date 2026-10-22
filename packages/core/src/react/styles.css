@@ -1147,6 +1147,20 @@
   }
 }
 
+.of-turnstile {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(var(--of-gap) * 1.25);
+}
+
+.of-turnstile:empty {
+  display: none;
+}
+
+.of-turnstile + .of-nav {
+  margin-top: var(--of-gap);
+}
+
 .of-hp {
   position: absolute;
   left: -10000px;

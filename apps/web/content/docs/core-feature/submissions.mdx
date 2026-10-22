@@ -77,7 +77,8 @@ project-wide defaults in `open-form.config.ts` (each form's own keys win).
 | --- | --- | --- |
 | `honeypot` | `true` | A hidden field bots fill in. Those submissions get the answer a new one would and nothing is stored. |
 | `minimumCompletionTime` | `'2s'` | The page gets a signed timing token on load; submissions sent faster are rejected. `false` disables it. |
-| `rateLimit` | `{ max: 10, window: '10m' }` | Valid submissions per IP per form; an IPv6 address counts as its /64. `false` disables it. |
+| `rateLimit` | `{ max: 10, window: '10m' }` | Valid submissions per IP per form; an IPv6 address counts as its /64. Attempts, valid or not, are capped at five times `max` in the same window. `false` disables both. |
+| `turnstile` | `false` | `{ siteKey }` adds a [Cloudflare Turnstile](#cloudflare-turnstile) check above the submit button. |
 
 Durations accept `'2s'`, `'10m'`, `'1h'`, `'1d'` or milliseconds. Behind a reverse
 proxy, set [`trustProxy`](/docs/reference/config#behind-a-reverse-proxy) in
@@ -85,6 +86,44 @@ proxy, set [`trustProxy`](/docs/reference/config#behind-a-reverse-proxy) in
 everyone shares the proxy's count, and one person can use it up. `open-form start`
 also reads `OPEN_FORM_TRUST_PROXY`, and the Next.js route assumes one proxy; see
 [Production](/docs/deploy/production).
+
+### Cloudflare Turnstile
+
+The built-in checks stop simple bots. For bots that switch IPs, turn on
+[Turnstile](https://developers.cloudflare.com/turnstile/), Cloudflare's
+CAPTCHA alternative. Most people never see a puzzle.
+
+1. In the Cloudflare dashboard, add a Turnstile widget for your form's
+   hostname. It gives you a **site key** (public) and a **secret key**.
+2. Put the site key in `protection`, for every form or only some:
+
+   ```ts title="open-form.config.ts"
+   export default defineConfig({
+     protection: { turnstile: { siteKey: '0x4AAAAAAA…' } },
+   });
+   ```
+
+3. Set the secret key where the server runs:
+
+   ```bash
+   OPEN_FORM_TURNSTILE_SECRET=0x4AAAAAAA…
+   ```
+
+The check appears above the buttons on the form's last step, in the form's
+language. The server verifies its token with Cloudflare after the answers pass
+validation, so fixing a mistake doesn't need a new check. A missing or rejected
+token gets `400 human_check` and nothing is stored.
+
+The server fails closed: with `turnstile` set but no `OPEN_FORM_TURNSTILE_SECRET`,
+or when Cloudflare can't be reached, responses are refused with `503` and the
+server logs why. `open-form check` warns when the secret isn't set. Under
+`open-form dev` without a secret, the server uses Cloudflare's
+[test secret](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
+that accepts any token, so you can try forms locally; use the test site key
+`1x00000000000000000000AA` too if your widget doesn't list `localhost`.
+
+The widget loads from `challenges.cloudflare.com`. If your site sends a
+Content-Security-Policy, allow that origin in `script-src` and `frame-src`.
 
 ## After submit
 
@@ -120,10 +159,12 @@ POST /api/forms/:id/submissions
   ├─ form             unknown or unpublished → 404
   ├─ policy           config.submissions + Studio overrides
   ├─ window           closed / opensAt / closesAt, in the form's time zone
+  ├─ attempts         per IP per form, valid or not: five times rateLimit.max
   ├─ timing token     signed; checks minimumCompletionTime
   ├─ sanitize         drop hidden (<When>) and unknown fields, coerce types
   ├─ validate         the same rules the browser ran, custom validate included
   ├─ rate limit       per IP (IPv6: per /64) per form; only valid submissions count
+  ├─ turnstile        protection.turnstile → token verified with Cloudflare
   ├─ honeypot         filled → the answer a real submission gets, nothing stored
   ├─ store            maxResponses + uniqueBy checked in one transaction
   └─ webhooks         sent in the background; the respondent doesn't wait
@@ -132,12 +173,13 @@ POST /api/forms/:id/submissions
 | Status | When |
 | --- | --- |
 | `201` | Stored. Body: `{ id, number }`. |
-| `400` | `too_fast` (sent before `minimumCompletionTime`), `invalid_token`, `expired_token` (the page was open over 7 days; reloading it gets a new token), or a malformed body. |
+| `400` | `too_fast` (sent before `minimumCompletionTime`), `invalid_token`, `expired_token` (the page was open over 7 days; reloading it gets a new token), `human_check` (Turnstile token missing or rejected), or a malformed body. |
 | `404` | `not_found`: no form with that id, or the form is [unpublished](/docs/reference/define-form#published). |
 | `409` | `duplicate`: the `uniqueBy` value or device already responded. |
 | `410` | `closed`, `not_open` or `full`. |
 | `422` | Validation failed. Body: `{ errors }`, mapped back to each field's step. |
-| `429` | Rate limit reached. |
+| `429` | Rate limit or attempt cap reached. |
+| `503` | `turnstile` is on but the server can't verify tokens: no `OPEN_FORM_TURNSTILE_SECRET`, or Cloudflare unreachable. |
 
 Requests from another site that isn't in `embed.origins` get `403`, oversized
 bodies `413`, and non-JSON bodies `415`. See the

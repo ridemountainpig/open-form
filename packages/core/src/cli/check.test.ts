@@ -9,6 +9,7 @@ import { createViteConfig } from '../vite/config.ts';
 import {
   checkForms,
   languageLines,
+  turnstileWarnings,
   uniqueWarnings,
   unusedComponentWarnings,
   withSsrServer,
@@ -24,6 +25,17 @@ const email = (extra: Partial<FieldSchema> = {}): FieldSchema => ({
 const form = (field: FieldSchema, uniqueBy = 'email') => ({
   schema: { id: 'f', pages: [{ index: 0, when: [] }], fields: [field] } as FormSchema,
   config: { submissions: { uniqueBy } },
+});
+
+describe('turnstileWarnings', () => {
+  const on = { protection: { turnstile: { siteKey: '0x4AAA' } } };
+  it('asks for the secret only when a form uses Turnstile', () => {
+    expect(turnstileWarnings({}, on, {})).toHaveLength(1);
+    expect(turnstileWarnings(on, {}, {})).toHaveLength(1);
+    expect(turnstileWarnings({ protection: { turnstile: false } }, on, {})).toEqual([]);
+    expect(turnstileWarnings({}, on, { OPEN_FORM_TURNSTILE_SECRET: 'x' })).toEqual([]);
+    expect(turnstileWarnings({}, {}, {})).toEqual([]);
+  });
 });
 
 describe('uniqueWarnings', () => {

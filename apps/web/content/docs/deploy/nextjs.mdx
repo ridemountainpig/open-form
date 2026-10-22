@@ -176,7 +176,9 @@ If you mount the route somewhere else, set `basePath` to match and pass the same
 path to `<FormHost api>`.
 
 Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
-`OPEN_FORM_SECRET`, `OPEN_FORM_DB` and `OPEN_FORM_WEBHOOK_SECRET`. It ignores
+`OPEN_FORM_SECRET`, `OPEN_FORM_DB`, `OPEN_FORM_WEBHOOK_SECRET` and
+`OPEN_FORM_TURNSTILE_SECRET`; `<FormHost>` shows the Turnstile check when the
+form uses it. It ignores
 `OPEN_FORM_TRUST_PROXY`; pass `trustProxy` instead. It also ignores
 `OPEN_FORM_SECURE_COOKIES` and has no option in its place: cookies are marked
 `Secure` when the request URL or the page's `Origin` is `https://`.

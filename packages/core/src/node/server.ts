@@ -216,6 +216,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     adminAuth: adminPassword ? { password: adminPassword } : undefined,
     publicStudio: publicStudio ? 'read-only' : undefined,
     webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
+    turnstileSecret: process.env.OPEN_FORM_TURNSTILE_SECRET || undefined,
     clientAddress: (request) => {
       const req = sockets.get(request);
       return req ? clientAddress(req, { trustProxy }) : undefined;

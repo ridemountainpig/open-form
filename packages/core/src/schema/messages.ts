@@ -55,6 +55,7 @@ export type Messages = {
   duplicateMessage: string;
   rateLimited: string;
   tooFast: string;
+  humanCheck: string;
   fixErrors: string;
   genericError: string;
   expiredToken: string;
@@ -119,6 +120,8 @@ const en: Messages = {
   duplicateMessage: 'You have already submitted this form.',
   rateLimited: 'Too many submissions. Please try again in a few minutes.',
   tooFast: 'That was quick! Please wait a moment and submit again.',
+  humanCheck:
+    "We couldn't confirm you're not a bot. Complete the check above Submit and try again.",
   fixErrors: 'Please fix the highlighted fields.',
   genericError: 'Something went wrong. Please try again.',
   expiredToken: 'This page has been open too long. Reload it and submit again.',
@@ -181,6 +184,7 @@ const zhTW: Messages = {
   duplicateMessage: '你已經填寫過此表單。',
   rateLimited: '送出次數過多，請稍後再試。',
   tooFast: '填寫速度太快了，請稍候再送出一次。',
+  humanCheck: '無法確認你不是機器人，請完成送出按鈕上方的驗證後再試一次。',
   fixErrors: '請修正標示的欄位。',
   genericError: '發生錯誤，請再試一次。',
   expiredToken: '此頁面開啟太久了，請重新整理後再送出。',
@@ -244,6 +248,7 @@ const zhCN: Messages = {
   duplicateMessage: '您已经填写过此表单。',
   rateLimited: '提交次数过多，请稍后再试。',
   tooFast: '填写速度太快了，请稍等片刻后再提交。',
+  humanCheck: '无法确认你不是机器人，请完成提交按钮上方的验证后再试一次。',
   fixErrors: '请修正标出的字段。',
   genericError: '出错了，请重试。',
   expiredToken: '此页面打开时间过长，请刷新后重新提交。',
@@ -309,6 +314,8 @@ const ja: Messages = {
   duplicateMessage: 'このフォームにはすでに回答済みです。',
   rateLimited: '送信回数が多すぎます。しばらくしてからもう一度お試しください。',
   tooFast: '入力が速すぎるようです。少し待ってからもう一度送信してください。',
+  humanCheck:
+    'ボットではないことを確認できませんでした。送信ボタンの上の確認を完了して、もう一度お試しください。',
   fixErrors: '表示された項目を修正してください。',
   genericError: 'エラーが発生しました。もう一度お試しください。',
   expiredToken:

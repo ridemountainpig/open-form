@@ -597,12 +597,24 @@ describe('config helpers', () => {
       honeypot: true,
       minimumCompletionTimeMs: 2000,
       rateLimit: { max: 10, windowMs: 600_000 },
+      turnstile: null,
     });
     expect(resolveProtection({ rateLimit: false }, { minimumCompletionTime: '5s' })).toEqual({
       honeypot: true,
       minimumCompletionTimeMs: 5000,
       rateLimit: null,
+      turnstile: null,
     });
+  });
+
+  it('turns Turnstile on per layer and needs a site key', () => {
+    const on = { turnstile: { siteKey: ' 0x4AAA ' } };
+    expect(resolveProtection(on).turnstile).toEqual({ siteKey: '0x4AAA' });
+    expect(resolveProtection(on, { turnstile: false }).turnstile).toBeNull();
+    expect(() => resolveProtection({ turnstile: { siteKey: '' } })).toThrow(/siteKey/);
+    expect(() => resolveProtection({ turnstile: true as unknown as { siteKey: string } })).toThrow(
+      /siteKey/,
+    );
   });
 
   it('treats date-only bounds as whole days in the form’s time zone', () => {

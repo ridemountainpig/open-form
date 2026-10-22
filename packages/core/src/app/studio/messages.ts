@@ -266,6 +266,7 @@ const en = {
   'settings.honeypot': 'Honeypot',
   'settings.minTime': 'Minimum completion time',
   'settings.rateLimit': 'Rate limit',
+  'settings.turnstile': 'Cloudflare Turnstile',
   'settings.perWindow': '{max} per {window}',
   'schema.intro':
     'Each answer is saved under its field’s key, which JSON exports and webhooks use too.',
@@ -890,6 +891,7 @@ const zhTW: Dictionary = {
   'settings.honeypot': 'Honeypot 陷阱欄位',
   'settings.minTime': '最短填寫時間',
   'settings.rateLimit': '頻率限制',
+  'settings.turnstile': 'Cloudflare Turnstile',
   'settings.perWindow': '每 {window} {max} 次',
   'schema.intro': '每個回答都存在欄位的 key 底下，JSON 匯出和 webhook 也用這個 key。',
   'schema.col.field': '欄位',
@@ -1497,6 +1499,7 @@ const zhCN: Dictionary = {
   'settings.honeypot': 'Honeypot 陷阱字段',
   'settings.minTime': '最短填写时间',
   'settings.rateLimit': '频率限制',
+  'settings.turnstile': 'Cloudflare Turnstile',
   'settings.perWindow': '每 {window} {max} 次',
   'schema.intro': '每个回答都保存在字段的 key 下，JSON 导出和 webhook 也使用这个 key。',
   'schema.col.field': '字段',
@@ -2113,6 +2116,7 @@ const ja: Dictionary = {
   'settings.honeypot': 'ハニーポット',
   'settings.minTime': '最短回答時間',
   'settings.rateLimit': '送信回数の制限',
+  'settings.turnstile': 'Cloudflare Turnstile',
   'settings.perWindow': '{window}あたり{max}回',
   'schema.intro':
     '回答は各フィールドのキーで保存され、JSON エクスポートと Webhook も同じキーを使います。',

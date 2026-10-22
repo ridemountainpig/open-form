@@ -151,7 +151,12 @@ Submit button. `uniqueBy` must name a field in the form.
     rateLimit: {
       type: '{ max: number; window: Duration } | false',
       default: "{ max: 10, window: '10m' }",
-      description: 'Valid submissions per IP address per form within each window. An IPv6 address counts as its /64.',
+      description: 'Valid submissions per IP address per form within each window. An IPv6 address counts as its /64. Attempts, valid or not, are capped at five times max.',
+    },
+    turnstile: {
+      type: '{ siteKey: string } | false',
+      default: 'false',
+      description: 'A Cloudflare Turnstile check above the submit button. The server needs OPEN_FORM_TURNSTILE_SECRET. See Submissions & protection.',
     },
   }}
 />

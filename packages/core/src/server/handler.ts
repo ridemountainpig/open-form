@@ -30,6 +30,7 @@ import { type AdminAuth, createAdminGate, sentOverHttps } from './admin.ts';
 import { checkTimingToken, createSigner, issueTimingToken, type Signer } from './crypto.ts';
 import { responseColumns } from './export.ts';
 import { EXPORT_CONTENT_TYPES, exportFormResponses, schemaHistory } from './form-export.ts';
+import { verifyTurnstile } from './turnstile.ts';
 import { createWebhookSender } from './webhooks.ts';
 
 export type FormDefinition = {
@@ -79,7 +80,9 @@ export type OpenFormHandlerOptions = {
    * work once it's sent (Vercel's `waitUntil`, Next.js `after`, Workers' `ctx.waitUntil`).
    */
   waitUntil?: (promise: Promise<unknown>) => void;
-  /** Used for webhook deliveries. Default: the global `fetch`. */
+  /** Checks Turnstile tokens (`protection.turnstile`). Usually `OPEN_FORM_TURNSTILE_SECRET`. */
+  turnstileSecret?: string;
+  /** Used for webhook deliveries and Turnstile checks. Default: the global `fetch`. */
   fetch?: typeof fetch;
   /** Include error details in 500 responses (dev). */
   exposeErrors?: boolean;
@@ -95,6 +98,9 @@ const DEFAULT_MAX_BODY = 256 * 1024;
 const SIGN_IN_MAX = 10;
 const SIGN_IN_WINDOW_MS = 10 * 60_000;
 const MAX_BULK_DELETE = 500;
+// Invalid submissions aren't counted by `rateLimit`, so fixing mistakes doesn't
+// use it up; this looser cap still stops them, and the validators they run, at some point.
+const ATTEMPTS_PER_SUBMISSION = 5;
 
 class HttpError extends Error {
   constructor(
@@ -297,6 +303,17 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       '[open-form] Webhooks are sent unsigned. Set OPEN_FORM_WEBHOOK_SECRET so receivers can verify them.',
     );
   }
+  if (resolveProtection(opts.config?.protection).turnstile && !opts.turnstileSecret) {
+    console.warn(
+      '[open-form] protection.turnstile is set but OPEN_FORM_TURNSTILE_SECRET is not, so forms that use it refuse every response.',
+    );
+  }
+  const turnstileWarned = new Set<string>();
+  const turnstileProblem = (kind: string, message: string) => {
+    if (turnstileWarned.has(kind)) return;
+    turnstileWarned.add(kind);
+    console.error(`[open-form] ${message}`);
+  };
   const embedOrigins = opts.config?.embed?.origins ?? [];
   const embedProblems = embedOriginProblems(embedOrigins);
   if (embedProblems.length) throw new Error(embedProblems.join('\n'));
@@ -440,7 +457,14 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     const { def, overrides } = await loadPublicForm(id as string);
     const status = await availability(def, overrides, request, now);
     const token = status.state === 'open' ? await issueTimingToken(signer, def.id, now) : undefined;
-    return json({ id: def.id, title: def.schema.title, availability: status, token });
+    const { turnstile } = resolveProtection(opts.config?.protection, def.config.protection);
+    return json({
+      id: def.id,
+      title: def.schema.title,
+      availability: status,
+      token,
+      ...(turnstile ? { turnstile: { siteKey: turnstile.siteKey } } : {}),
+    });
   }
 
   async function submit({ request, now }: RouteContext, [id]: string[]) {
@@ -460,6 +484,21 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     }
 
     const protection = resolveProtection(opts.config?.protection, def.config.protection);
+    const address = rateLimitSubject(opts.clientAddress?.(request) ?? 'unknown');
+    const overLimit = async (scope: string, max: number, windowMs: number) => {
+      const key = (await signer.sign(`${scope}:${def.id}:${address}`)).slice(0, 32);
+      return (await storage.hitRateLimit(key, windowMs, now)) > max;
+    };
+    if (
+      protection.rateLimit &&
+      (await overLimit(
+        'attempt',
+        protection.rateLimit.max * ATTEMPTS_PER_SUBMISSION,
+        protection.rateLimit.windowMs,
+      ))
+    ) {
+      throw new HttpError(429, 'rate_limited', messages.rateLimited);
+    }
     if (protection.minimumCompletionTimeMs > 0) {
       const check = await checkTimingToken(
         signer,
@@ -488,13 +527,42 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
 
     // Counted once the answers are valid, so fixing mistakes doesn't use it up.
     // Duplicates still count: otherwise uniqueBy could be probed without limit.
-    if (protection.rateLimit) {
-      const address = rateLimitSubject(opts.clientAddress?.(request) ?? 'unknown');
-      const key = (await signer.sign(`rate:${def.id}:${address}`)).slice(0, 32);
-      const count = await storage.hitRateLimit(key, protection.rateLimit.windowMs, now);
-      if (count > protection.rateLimit.max) {
-        throw new HttpError(429, 'rate_limited', messages.rateLimited);
+    if (
+      protection.rateLimit &&
+      (await overLimit('rate', protection.rateLimit.max, protection.rateLimit.windowMs))
+    ) {
+      throw new HttpError(429, 'rate_limited', messages.rateLimited);
+    }
+
+    // After the answers are valid: a token is single-use, and fixing a mistake shouldn't need a new one.
+    if (protection.turnstile) {
+      if (!opts.turnstileSecret) {
+        turnstileProblem(
+          'secret',
+          `Form "${def.id}" uses protection.turnstile but OPEN_FORM_TURNSTILE_SECRET is not set, so its responses are refused.`,
+        );
+        throw new HttpError(503, 'unavailable', messages.genericError);
       }
+      const check = await verifyTurnstile({
+        secret: opts.turnstileSecret,
+        token: body.turnstile,
+        remoteIp: opts.clientAddress?.(request),
+        fetch: opts.fetch,
+      });
+      if (check === 'unavailable') {
+        turnstileProblem(
+          'unavailable',
+          'Could not reach Cloudflare to verify a Turnstile token, so the response was refused. Check that the server can reach challenges.cloudflare.com.',
+        );
+      }
+      if (check === 'misconfigured') {
+        turnstileProblem(
+          'misconfigured',
+          'Cloudflare rejected OPEN_FORM_TURNSTILE_SECRET (invalid-input-secret), so Turnstile responses are refused. Copy the secret key of the widget whose site key the forms use.',
+        );
+      }
+      if (check === 'invalid') throw new HttpError(400, 'human_check', messages.humanCheck);
+      if (check !== 'ok') throw new HttpError(503, 'unavailable', messages.genericError);
     }
 
     const visitor = await visitorFor(request, body.visitor);

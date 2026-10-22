@@ -65,6 +65,8 @@ export type FormRuntime = {
   availability?: FormAvailability;
   /** Signed timing token from the server, echoed back on submit. */
   token?: string;
+  /** Cloudflare Turnstile's site key, when the server asks for the check. */
+  turnstile?: { siteKey: string };
   preview?: boolean;
   onNavigate?: (info: NavigationInfo) => void;
   /** A language asked for by the URL (`?lang=`) or the host; used when the form has it. */

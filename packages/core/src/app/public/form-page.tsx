@@ -35,6 +35,7 @@ import './public.css';
 type FormInfo = {
   availability: FormAvailability;
   token?: string;
+  turnstile?: { siteKey: string };
 };
 
 // Embedded on another site (`?embed`, see embed.js): only non-personal facts go
@@ -257,6 +258,7 @@ export function PublicFormPage() {
       endpoint: `/api/forms/${encodeURIComponent(formId)}/submissions`,
       availability: info?.availability,
       token: info?.token,
+      turnstile: info?.turnstile,
       preview,
       onNavigate,
       // Studio shows forms in the language they're written in, like their titles.

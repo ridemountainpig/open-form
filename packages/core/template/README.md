@@ -26,6 +26,7 @@ pnpm start      # serve forms + API + SQLite
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`) |
 | `OPEN_FORM_SECRET` | Signs form tokens and Studio sessions; at least 16 characters (default: generated into a `secret` file next to the database) |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs `webhooks` deliveries ([Standard Webhooks](https://www.standardwebhooks.com)); base64, optionally prefixed `whsec_` |
+| `OPEN_FORM_TURNSTILE_SECRET` | Verifies Cloudflare Turnstile tokens for forms with `protection.turnstile`; without it those forms refuse responses |
 | `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` for one, so rate limits and sign-in attempts count each visitor. `trustProxy` in `open-form.config.ts` wins over it |
 | `OPEN_FORM_SECURE_COOKIES` | With a trusted proxy, cookies are always marked `Secure`; `0` marks them `Secure` only for requests made over HTTPS |
 

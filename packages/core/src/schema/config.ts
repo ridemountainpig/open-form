@@ -47,8 +47,21 @@ export type ProtectionConfig = {
   honeypot?: boolean;
   /** Reject submissions sent faster than this after the form loads. Default `'2s'`. */
   minimumCompletionTime?: Duration | false;
-  /** Per-IP limit per form. Default `{ max: 10, window: '10m' }`. */
+  /**
+   * Per-IP limit per form. Default `{ max: 10, window: '10m' }`. Attempts,
+   * valid or not, are capped at five times `max` in the same window.
+   */
   rateLimit?: RateLimitConfig | false;
+  /**
+   * Cloudflare Turnstile before submit. The secret key comes from
+   * `OPEN_FORM_TURNSTILE_SECRET`. Off by default.
+   */
+  turnstile?: TurnstileConfig | false;
+};
+
+export type TurnstileConfig = {
+  /** The widget's site key from the Cloudflare dashboard. Public. */
+  siteKey: string;
 };
 
 export type SuccessConfig = {
@@ -168,12 +181,14 @@ export const DEFAULT_PROTECTION = {
   honeypot: true,
   minimumCompletionTime: '2s',
   rateLimit: { max: 10, window: '10m' },
+  turnstile: false,
 } as const satisfies Required<ProtectionConfig>;
 
 export type ResolvedProtection = {
   honeypot: boolean;
   minimumCompletionTimeMs: number;
   rateLimit: { max: number; windowMs: number } | null;
+  turnstile: { siteKey: string } | null;
 };
 
 export function resolveProtection(
@@ -187,6 +202,15 @@ export function resolveProtection(
     }
   }
   const rate = merged.rateLimit;
+  const turnstile = merged.turnstile;
+  if (
+    turnstile &&
+    (typeof turnstile !== 'object' ||
+      typeof turnstile.siteKey !== 'string' ||
+      !turnstile.siteKey.trim())
+  ) {
+    throw new Error('turnstile needs a siteKey from the Cloudflare dashboard, or `false`.');
+  }
   return {
     honeypot: merged.honeypot !== false,
     minimumCompletionTimeMs:
@@ -194,6 +218,7 @@ export function resolveProtection(
         ? 0
         : parseDuration(merged.minimumCompletionTime),
     rateLimit: rate ? { max: rate.max, windowMs: parseDuration(rate.window) } : null,
+    turnstile: turnstile ? { siteKey: turnstile.siteKey.trim() } : null,
   };
 }
 

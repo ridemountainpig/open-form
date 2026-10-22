@@ -74,6 +74,7 @@ environment win, so your platform's settings override the file.
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`). |
 | `OPEN_FORM_SECRET` | Signs timing tokens and Studio sessions, and hashes visitor ids (default: generated into a `secret` file next to the database). At least 16 characters. Keep it stable and private. |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally prefixed `whsec_` as the Standard Webhooks libraries expect. |
+| `OPEN_FORM_TURNSTILE_SECRET` | Verifies [Cloudflare Turnstile](/docs/core-feature/submissions#cloudflare-turnstile) tokens for forms with `protection.turnstile`. Without it those forms refuse responses. |
 | `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` for one. Lets rate limits and sign-in attempts count each visitor instead of the proxy. |
 | `OPEN_FORM_SECURE_COOKIES` | With a trusted proxy, cookies are always marked `Secure`. `0` marks them `Secure` only for requests made over HTTPS. |
 
@@ -154,6 +155,18 @@ Studio's pages can't be framed by other sites, and their `Content-Security-Polic
 lets only the build's own scripts run there. Public forms can be framed only by
 your own origin unless you allow others with [`embed.origins`](/docs/deploy/embed);
 their scripts are left to your forms, which may load what they like.
+
+<Callout type="warn">
+  Forms and Studio share one origin. A third-party script a form loads (analytics,
+  chat widgets) runs on that origin too, so while you're signed in to Studio it
+  could call the admin API as you: read, export or delete responses. Load only
+  scripts you trust in forms, or sign out of Studio before opening forms that
+  load others.
+
+  Every form's code also ships to the browser, unpublished forms and `validate`
+  functions included. Keep secrets, like API keys or the list of valid invite
+  codes, out of `forms/`.
+</Callout>
 
 ## What's next
 

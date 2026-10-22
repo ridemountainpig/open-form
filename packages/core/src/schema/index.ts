@@ -27,6 +27,7 @@ export type {
   ResolvedProtection,
   SubmissionPolicy,
   SuccessConfig,
+  TurnstileConfig,
   WebhookConfig,
   WindowStatus,
 } from './config.ts';

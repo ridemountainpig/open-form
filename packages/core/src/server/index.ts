@@ -50,6 +50,8 @@ export type {
   OpenFormHandlerOptions,
 } from './handler.ts';
 export { createOpenFormHandler, embedOriginProblems, FORM_ID_RE } from './handler.ts';
+export type { TurnstileCheck } from './turnstile.ts';
+export { TURNSTILE_TEST_SECRET, TURNSTILE_VERIFY_URL, verifyTurnstile } from './turnstile.ts';
 export type { WebhookEvent, WebhookSender } from './webhooks.ts';
 export {
   createWebhookSender,

@@ -34,6 +34,7 @@ of a respondent. It shuts down cleanly on `SIGINT` and `SIGTERM`.
 | `OPEN_FORM_DB` | SQLite file path. Default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`. |
 | `OPEN_FORM_SECRET` | Signing secret, at least 16 characters; a shorter one stops `start`. Default: generated once into a `secret` file next to the database. |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally after a `whsec_` prefix; a value that isn't stops `start`. |
+| `OPEN_FORM_TURNSTILE_SECRET` | Verifies [Cloudflare Turnstile](/docs/core-feature/submissions#cloudflare-turnstile) tokens for forms with `protection.turnstile`. Without it those forms refuse responses. |
 | `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` / `false`. Reads the client IP from `X-Forwarded-For` and the protocol and host from `X-Forwarded-Proto` / `X-Forwarded-Host`. Any other value is an error. `trustProxy` in `open-form.config.ts` takes precedence. |
 | `OPEN_FORM_SECURE_COOKIES` | Behind a trusted proxy cookies are always marked `Secure`; `0` marks them `Secure` only for HTTPS requests. |
 
