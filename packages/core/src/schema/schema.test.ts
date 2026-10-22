@@ -122,7 +122,11 @@ describe('sampleAnswers', () => {
       { value: 'b', label: 'B' },
     ];
     expect(sampleAnswers(field({ type: 'radio', options }))).toEqual(['a', 'b']);
-    expect(sampleAnswers(field({ type: 'checkbox-group', options }))).toEqual([['a'], ['b']]);
+    expect(sampleAnswers(field({ type: 'checkbox-group', options }))).toEqual([
+      ['a'],
+      ['b'],
+      ['a', 'b'],
+    ]);
     expect(sampleAnswers(field({ min: 0, max: 3 }))).toEqual([0, 1, 2, 3]);
     expect(sampleAnswers(field({ min: 0.5, max: 1 }))).toEqual([0.5, 1]);
     expect(sampleAnswers(field({ min: 0, max: 100 }))).toEqual([0, 100]);
@@ -141,6 +145,9 @@ describe('sampleAnswers', () => {
       { field: 'other', equals: 7 },
     ];
     expect(sampleAnswers(field({ min: 0, max: 100 }), when)).toEqual([0, 100, 50, 81]);
+    expect(sampleAnswers(field({ min: 0, max: 100 }), [{ field: 'x', gt: 50, lt: 51 }])).toContain(
+      50.5,
+    );
     expect(sampleAnswers(field({ type: 'text' }), [{ field: 'x', equals: 'yes' }])).toEqual([
       'answer',
       'yes',
@@ -181,6 +188,12 @@ describe('mostVisibleSteps', () => {
     expect(mostVisibleSteps(steps, fields, {})).toBe(3);
     expect(mostVisibleSteps(steps, fields, { age: 20 })).toBe(1);
     expect(mostVisibleSteps(steps, fields, { age: 50, a: 'x' })).toBe(2);
+  });
+
+  it('answers the question that reveals a deciding question first', () => {
+    const fields = [required('a'), required('b', { when: [{ field: 'a', equals: 'y' }] })];
+    const steps = [{ when: [] }, { when: [{ field: 'b', equals: 'y' }] }];
+    expect(mostVisibleSteps(steps, fields, {})).toBe(2);
   });
 
   it('tries each combination once, so many branching questions stay within budget', () => {

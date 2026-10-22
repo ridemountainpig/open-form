@@ -118,13 +118,16 @@ function operands(name: string, cond: Condition, out: Primitive[]): Primitive[] 
     out.push(...[cond.gte, cond.lte].filter((v): v is number => v !== undefined));
     if (cond.gt !== undefined) out.push(cond.gt + 1);
     if (cond.lt !== undefined) out.push(cond.lt - 1);
+    const low = cond.gt ?? cond.gte;
+    const high = cond.lt ?? cond.lte;
+    if (low !== undefined && high !== undefined) out.push((low + high) / 2);
   }
   return out;
 }
 
 /**
  * Answers worth trying when asking what a question can change: each option, a ticked
- * box, each score on a short scale, and the values `conditions` compare it with.
+ * box, each option and all of them in a group, each score on a short scale, and the values `conditions` compare it with.
  * Other fields get one stand-in answer.
  */
 export function sampleAnswers(
@@ -132,7 +135,10 @@ export function sampleAnswers(
   conditions: readonly Condition[] = [],
 ): unknown[] {
   if (field.type === 'checkbox') return [true];
-  if (field.type === 'checkbox-group') return (field.options ?? []).map((o) => [o.value]);
+  if (field.type === 'checkbox-group') {
+    const values = (field.options ?? []).map((o) => o.value);
+    return [...values.map((v) => [v]), ...(values.length > 1 ? [values] : [])];
+  }
   if (field.type === 'select' || field.type === 'radio') {
     return (field.options ?? []).map((o) => o.value);
   }
@@ -180,15 +186,30 @@ export function mostVisibleSteps(
     if (--budget < 0) return shown;
     // Every awaited question gets answered eventually, so trying them in one order
     // covers each combination once.
+    // A question that's hidden until another is answered waits on that one first.
+    const awaited = (names: Iterable<string>, seen: Set<string>): FieldSchema | undefined => {
+      for (const name of names) {
+        if (seen.has(name) || isFilled(ownValue(values, name))) continue;
+        seen.add(name);
+        for (const f of fields) {
+          if (f.name !== name || !f.required) continue;
+          if (evaluateAll(f.when, values)) return f;
+          const before = awaited(
+            f.when.flatMap((cond) => [...conditionFields(cond)]),
+            seen,
+          );
+          if (before) return before;
+        }
+      }
+    };
     let next: FieldSchema | undefined;
     for (const step of steps) {
       if (next) break;
       if (evaluateAll(step.when, values)) continue;
-      for (const name of step.when.flatMap((cond) => [...conditionFields(cond)])) {
-        if (isFilled(ownValue(values, name))) continue;
-        next = fields.find((f) => f.name === name && f.required && evaluateAll(f.when, values));
-        if (next) break;
-      }
+      next = awaited(
+        step.when.flatMap((cond) => [...conditionFields(cond)]),
+        new Set(),
+      );
     }
     if (!next) return shown;
     const { name } = next;
