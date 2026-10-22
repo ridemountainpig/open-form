@@ -35,6 +35,14 @@ export const config = defineForm({
     closedMessage: 'We’re not taking sign-ups for this one anymore.',
     fullMessage: 'All the seats are spoken for.',
   },
+  success: {
+    calendar: {
+      start: '2026-10-30T19:00',
+      end: '2026-10-30T21:30',
+      timeZone: 'Asia/Taipei',
+      location: 'Songshan Cultural and Creative Park',
+    },
+  },
   drafts: true,
 });
 

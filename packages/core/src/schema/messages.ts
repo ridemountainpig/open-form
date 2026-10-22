@@ -45,6 +45,9 @@ export type Messages = {
   countryCode: string;
   successTitle: string;
   successMessage: string;
+  addToCalendar: string;
+  googleCalendar: string;
+  icsDownload: string;
   closedTitle: string;
   closedMessage: string;
   notOpenMessage: string;
@@ -106,6 +109,9 @@ const en: Messages = {
   countryCode: 'Country code',
   successTitle: 'Thank you!',
   successMessage: 'Your response has been recorded.',
+  addToCalendar: 'Add to calendar',
+  googleCalendar: 'Google Calendar',
+  icsDownload: 'Apple / Outlook (.ics)',
   closedTitle: 'This form is closed',
   closedMessage: 'This form is no longer accepting responses.',
   notOpenMessage: 'This form opens on {date}.',
@@ -165,6 +171,9 @@ const zhTW: Messages = {
   countryCode: '國碼',
   successTitle: '感謝你的填寫！',
   successMessage: '我們已收到你的回覆。',
+  addToCalendar: '加入行事曆',
+  googleCalendar: 'Google 日曆',
+  icsDownload: 'Apple / Outlook（.ics）',
   closedTitle: '表單已關閉',
   closedMessage: '此表單已停止收件。',
   notOpenMessage: '此表單將於 {date} 開放填寫。',
@@ -225,6 +234,9 @@ const zhCN: Messages = {
   countryCode: '国家代码',
   successTitle: '感谢您的填写！',
   successMessage: '我们已收到您的回复。',
+  addToCalendar: '添加到日历',
+  googleCalendar: 'Google 日历',
+  icsDownload: 'Apple / Outlook（.ics）',
   closedTitle: '表单已关闭',
   closedMessage: '此表单已停止收集。',
   notOpenMessage: '此表单将于 {date} 开放填写。',
@@ -287,6 +299,9 @@ const ja: Messages = {
   countryCode: '国番号',
   successTitle: 'ありがとうございました！',
   successMessage: '回答を受け付けました。',
+  addToCalendar: 'カレンダーに追加',
+  googleCalendar: 'Google カレンダー',
+  icsDownload: 'Apple / Outlook（.ics）',
   closedTitle: 'このフォームは締め切りました',
   closedMessage: 'このフォームは現在、回答を受け付けていません。',
   notOpenMessage: 'このフォームは{date}から回答を受け付けます。',

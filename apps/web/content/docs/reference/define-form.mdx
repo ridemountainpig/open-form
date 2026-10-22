@@ -169,8 +169,48 @@ the proxy.
     title: { type: 'string', description: 'Thank-you heading. A Success element wins over it.' },
     message: { type: 'string', description: 'Thank-you body text.' },
     redirect: { type: 'string', description: 'Send the respondent to this URL after a successful submission.' },
+    calendar: { type: 'CalendarEvent', description: 'An event to offer on the thank-you screen: Add to Google Calendar and an .ics download.' },
   }}
 />
+
+### `success.calendar`
+
+For a form that signs people up for something on a known date, the thank-you
+screen can offer to save it: a **Google Calendar** link and an **Apple /
+Outlook (.ics)** download, below the message or the `<Success>` children.
+
+```ts
+export const config = defineForm({
+  title: 'Taipei Developer Meetup',
+  timeZone: 'Asia/Taipei',
+  success: {
+    calendar: {
+      start: '2026-10-30T19:00',
+      end: '2026-10-30T21:30',
+      location: 'Songshan Cultural and Creative Park',
+    },
+  },
+});
+```
+
+<TypeTable
+  type={{
+    start: { type: 'string', required: true, description: "'YYYY-MM-DD' for an all-day event, 'YYYY-MM-DDTHH:mm' in timeZone, or an ISO timestamp with an offset." },
+    end: { type: 'string', description: 'Same format as start. A date is the last day, inclusive.', default: 'one hour after start, or the same day' },
+    title: { type: 'string', description: 'Event name.', default: 'the form title' },
+    timeZone: { type: 'string', description: 'IANA zone for wall-clock times.', default: "the form's timeZone" },
+    location: { type: 'string', description: 'Venue or address.' },
+    description: { type: 'string', description: 'Event notes.' },
+    url: { type: 'string', description: 'A page about the event, added to the notes.' },
+  }}
+/>
+
+A wall-clock `start` needs a time zone on the event or the form; the project's
+`timeZone` is not sent to the browser, so the form fails to load without one.
+`title`, `location` and `description` are translated with the rest of the form.
+When the event depends on the answers, such as a session the respondent picked,
+render [`<AddToCalendar>`](/docs/components/form#addtocalendar) inside
+`<Success>` instead.
 
 ## `drafts`
 

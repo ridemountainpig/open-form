@@ -1,3 +1,4 @@
+import type { CalendarEvent } from './calendar.ts';
 import type { Translations } from './i18n.ts';
 import type { Locale } from './messages.ts';
 import { DEFAULT_TIME_ZONE, policyInstant } from './time.ts';
@@ -55,6 +56,8 @@ export type SuccessConfig = {
   message?: string;
   /** Send the respondent here after a successful submission. */
   redirect?: string;
+  /** An event to offer on the thank-you screen: Add to Google Calendar and an `.ics` download. */
+  calendar?: CalendarEvent;
 };
 
 /** Per-form configuration: `export const config = defineForm({...})`. */

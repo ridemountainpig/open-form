@@ -204,6 +204,36 @@ built-in sentence. The body comes from its children, else
 with `useFieldValue` to personalise the screen. Set `config.success.redirect`
 to send respondents to another page after they submit.
 
+## `<AddToCalendar>`
+
+A **Google Calendar** link and an **Apple / Outlook (.ics)** download for one
+event. For a fixed event, set
+[`config.success.calendar`](/docs/reference/define-form#successcalendar) and the
+thank-you screen shows it without any code. Render the component yourself when
+the event depends on the answers:
+
+```tsx
+function Session() {
+  const day = useFieldValue<string>('day');
+  return (
+    <AddToCalendar
+      title="Pottery workshop"
+      start={day === 'sat' ? '2026-11-14T14:00' : '2026-11-15T14:00'}
+      end={day === 'sat' ? '2026-11-14T16:00' : '2026-11-15T16:00'}
+      timeZone="Asia/Taipei"
+      location="Studio 3F"
+    />
+  );
+}
+
+<Success title="See you at the wheel">
+  <Session />
+</Success>
+```
+
+It takes the same props as `success.calendar`, and renders nothing when the
+dates can't be read.
+
 <Cards>
   <Card title="Page" href="/docs/components/page" />
   <Card title="Fields" href="/docs/components/fields" />

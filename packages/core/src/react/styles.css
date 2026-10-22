@@ -1104,6 +1104,42 @@
   animation: of-pop 0.45s var(--of-ease);
 }
 
+.of-calendar {
+  margin-top: calc(var(--of-gap) * 1.25);
+}
+
+.of-calendar-label {
+  margin: 0 0 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--of-muted);
+}
+
+.of-calendar-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.of-calendar-link {
+  align-content: center;
+  background: transparent;
+  color: var(--of-fg);
+  border-color: var(--of-control);
+  text-decoration: none;
+}
+
+.of-calendar-link:hover {
+  background: color-mix(in srgb, var(--of-fg) 5%, transparent);
+}
+
+@media (max-width: 480px) {
+  .of-calendar-links {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 @keyframes of-pop {
   from {
     opacity: 0;

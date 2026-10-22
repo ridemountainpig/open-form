@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { validateSubmission } from '../schema/index.ts';
 import { collectFormSchema } from './collect.tsx';
 import {
+  AddToCalendar,
   type ChoiceGroupUIProps,
   defaultComponents,
   defineTheme,
@@ -356,5 +357,40 @@ describe('Matrix', () => {
     }
     const html = render(<Course />, defineTheme({ components: { MatrixRow: Stars } }));
     expect(html).toContain('<p class="stars">Content<!-- -->: <!-- -->-</p>');
+  });
+});
+
+describe('AddToCalendar', () => {
+  it('links to Google Calendar and an .ics download in the form language', () => {
+    const html = renderToString(
+      <FormRuntimeContext.Provider
+        value={{
+          mode: 'interactive',
+          locale: 'zh-TW',
+          config: { title: '開發者聚會', timeZone: 'Asia/Taipei' },
+        }}
+      >
+        <Form>
+          <AddToCalendar start="2026-11-15T19:00" location="台北" />
+        </Form>
+      </FormRuntimeContext.Provider>,
+    );
+    expect(html).toContain('<p class="of-calendar-label">加入行事曆</p>');
+    expect(html).toContain('href="https://calendar.google.com/calendar/render?action=TEMPLATE');
+    expect(html).toContain('dates=20261115T110000Z%2F20261115T120000Z');
+    expect(html).toContain('>Google 日曆</a>');
+    expect(html).toMatch(/href="data:text\/calendar;charset=utf-8,BEGIN%3AVCALENDAR/);
+    expect(html).toContain('download="開發者聚會.ics"');
+  });
+
+  it('renders nothing for an event it cannot place', () => {
+    const html = renderToString(
+      <FormRuntimeContext.Provider value={{ mode: 'interactive', config: { title: 'Meetup' } }}>
+        <Form>
+          <AddToCalendar start="2026-11-15T19:00" />
+        </Form>
+      </FormRuntimeContext.Provider>,
+    );
+    expect(html).not.toContain('of-calendar');
   });
 });

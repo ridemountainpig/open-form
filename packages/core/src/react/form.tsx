@@ -44,6 +44,7 @@ import {
   type VisibleFields,
   validateField,
 } from '../schema/index.ts';
+import { AddToCalendar } from './calendar.tsx';
 import { type CollectedForm, createCollection } from './collector.ts';
 import {
   ComponentsContext,
@@ -991,6 +992,7 @@ function InteractiveForm({
                 {successMessage ? tr(successMessage) : messages.successMessage}
               </p>
             ))}
+        {config?.success?.calendar && <AddToCalendar {...config.success.calendar} />}
       </Success>
     );
   } else {

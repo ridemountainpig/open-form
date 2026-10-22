@@ -62,3 +62,33 @@ describe('toFormDefinition', () => {
     ).toThrow(/submissions: Invalid date "next friday"[\s\S]*protection: Invalid duration "soon"/);
   });
 });
+
+describe('success.calendar', () => {
+  it('refuses an event that would not open in a calendar', () => {
+    expect(() =>
+      toFormDefinition('meetup', {
+        default: Signup,
+        config: defineForm({ success: { calendar: { start: '2026-11-15T19:00' } } }),
+      }),
+    ).toThrow(/success\.calendar needs a `title`/);
+    expect(() =>
+      toFormDefinition('meetup', {
+        default: Signup,
+        config: defineForm({
+          title: 'Meetup',
+          success: { calendar: { start: '2026-11-15T19:00' } },
+        }),
+      }),
+    ).toThrow(/success\.calendar: start "2026-11-15T19:00" has no time zone/);
+    expect(() =>
+      toFormDefinition('meetup', {
+        default: Signup,
+        config: defineForm({
+          title: 'Meetup',
+          timeZone: 'Asia/Taipei',
+          success: { calendar: { start: '2026-11-15T19:00', location: 'Taipei' } },
+        }),
+      }),
+    ).not.toThrow();
+  });
+});
