@@ -80,7 +80,7 @@ in a new tab. An unpublished form has neither, but its Preview still works.
 The toolbar switches the device frame (**Desktop**, **Tablet**, **Mobile**) and,
 on a translated form, the **Preview language**: any language the form is
 translated into, or **Respondent’s language** to pick one as the respondent's
-browser would; switching keeps the preview on the step it shows. Under `open-form dev` it also switches between **Preview**,
+browser would; switching keeps the preview on the step it shows. **Desktop** renders the form 1280 pixels wide and scales it to fit, so wide layouts look as they do on a laptop. Under `open-form dev` it also switches between **Preview**,
 **Edit** (see [Edit mode](/docs/core-feature/edit-mode)), which shows how many
 notes the form has, and **Adjust**. **Reload preview** starts the form again
 from the top.
@@ -97,7 +97,9 @@ already gets another theme, it says so and changes nothing. For anything
 bigger, describe the change and copy the prompt to your agent. See
 [Themes](/docs/core-feature/themes#adjust-a-forms-look).
 
-- **Steps** lists every page with its title and question count. Pages tagged
+- **Steps** lists every page with its title, or the form's title on an
+  untitled single-page form, and its question count: a range such as *2–4
+  questions* when some only appear for certain answers. Pages tagged
   **If** only appear for certain answers. Click any step to open it directly. While
   you jump around, hidden questions are shown with their conditions, Next and Back
   don't validate, and nothing is sent. **Start over** returns to normal filling.
