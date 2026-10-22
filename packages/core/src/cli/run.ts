@@ -20,7 +20,7 @@ export async function run(argv: string[]): Promise<void> {
   const program = new Command();
   program
     .name('open-form')
-    .description('The form framework built for agents.')
+    .description('Forms your agent writes. Responses you own.')
     .version(readPackageVersion(), '-v, --version', 'print version')
     .helpOption('-h, --help', 'show help')
     .showHelpAfterError(chalk.dim('(run `open-form --help` for usage)'))

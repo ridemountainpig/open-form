@@ -1,7 +1,7 @@
 {
   "name": "@open-form-build/core",
   "version": "0.2.0",
-  "description": "The form framework built for agents. Your agent writes the questions and logic — Open Form handles the runtime, validation, submissions, storage, and responses.",
+  "description": "Forms your agent writes. Responses you own. An open-source form framework for coding agents: your agent writes the questions and logic, and Open Form handles the runtime, validation, submissions, storage and responses.",
   "type": "module",
   "exports": {
     ".": {

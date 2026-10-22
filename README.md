@@ -1,8 +1,16 @@
+<img width="1280" alt="Open Form: focus on questions and logic. A form's index.tsx beside the form it renders." src=".github/assets/cover.jpg" />
+
 # Open Form
 
-**The form framework built for agents.**
+[![npm](https://img.shields.io/npm/v/@open-form-build/core?style=flat-square&label=npm&color=0A0A0A)](https://www.npmjs.com/package/@open-form-build/core)
+[![CI](https://img.shields.io/github/actions/workflow/status/ridemountainpig/open-form/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/ridemountainpig/open-form/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/ridemountainpig/open-form?style=flat-square&color=0A0A0A)](LICENSE)
 
-Your agent writes the questions and logic. Open Form handles everything that makes them a form.
+**Forms your agent writes. Responses you own.**
+
+Open Form is an open-source form framework for coding agents. Describe the form to your agent: it writes one React file, and Open Form turns that file into a working form, checked in the browser and on the server, with a submission API, SQLite storage and a Studio for the answers.
+
+[Website](https://open-form.build) · [Docs](https://open-form.build/docs) · [Live demo](https://demo.open-form.build) · [npm](https://www.npmjs.com/package/@open-form-build/core)
 
 ```
 Questions + Logic  →  Production-ready Form  →  Responses
@@ -14,7 +22,7 @@ cd my-forms
 pnpm dev
 ```
 
-Or `npm create open-form@latest my-forms`, then `npm run dev`. Forms import from `@open-form-build/core`, and its CLI is `open-form`.
+Or `npm create open-form@latest my-forms`, then `npm run dev`. Requires Node.js 22.13+. Forms import from `@open-form-build/core`, and its CLI is `open-form`.
 
 Then ask your coding agent (Claude Code, Codex, Cursor, …):
 
@@ -33,7 +41,7 @@ import { defineForm, Email, Form, Page, Select, Submit, Text, When } from '@open
 
 export const config = defineForm({
   title: 'Taipei Developer Meetup',
-  submissions: { maxResponses: 100, uniqueBy: 'email', closesAt: '2026-10-30' },
+  submissions: { maxResponses: 100, uniqueBy: 'email' },
 });
 
 export default function Meetup() {
@@ -59,14 +67,16 @@ export default function Meetup() {
 
 ## What you get
 
-- **Reusable runtime** — state, validation, multi-step flow, conditional logic, focus management, loading / success / closed states.
+- **Reusable runtime** — state, validation, multi-step flow, conditional logic, drafts, translations, focus management, loading / success / closed states.
+- **The fields forms need** — text, email, URL, phone, number, date, choices, checkboxes, ratings, `<Matrix>` grids, and international phone numbers with a country picker.
 - **Fully customizable** — it is React: themes via `defineTheme`, custom field components via `useField`.
 - **Responsive and accessible by default** — labels, ARIA, keyboard, 16px inputs on mobile, dark mode, reduced motion.
-- **Backend included** — `POST /api/forms/:id/submissions` with server validation, honeypot, signed timing token, rate limiting, submission windows, response limits and uniqueness.
+- **Backend included** — `POST /api/forms/:id/submissions` with server validation, honeypot, signed timing token, rate limiting, submission windows, response limits, uniqueness and signed webhooks.
 - **SQLite-first, zero infrastructure** — `node:sqlite`, no Docker, no database server, no API keys.
-- **Studio** — forms list, responsive preview, responses table + detail, delete, Excel / CSV / JSON export, settings overview.
+- **Studio** — forms list with folders; a live preview with Edit mode, where you change text in place or leave comments your agent applies; a responses table with filters, sorting and Excel / CSV / JSON export; schedule, response-limit and **Published** settings that take effect on a deployed server without a redeploy; a gallery of the reference themes. Turn on a public read-only Studio for demos.
 - **Designed, not defaulted** — like open-slide, themes are references: five starters (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) and your own in `themes/` are what an agent reads to write each form its own look in `forms/<id>/theme/`, with only the tokens, CSS and components that form uses. Studio previews every theme, and **Adjust** fine-tunes a form's colors, fonts and shape.
 - **Agent-native** — built-in skills (`create-form` proposes visual directions before writing, `create-theme` turns your design system into a theme, `form-authoring`, `current-form`, `apply-comments` turns notes left in Studio into edits) and a `current.json` cursor so "this form" means what you're looking at.
+- **Deploy it your way** — `open-form start` on any Node host (guides for Docker and Railway), a route handler in your Next.js app, or a one-snippet embed on another site.
 - **Repo owns the artifact, runtime data stays yours** — questions, logic and policy live in git; responses live in `.open-form/` and never do.
 
 ## Repo layout

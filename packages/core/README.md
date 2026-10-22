@@ -1,6 +1,6 @@
 # @open-form-build/core
 
-**The form framework built for agents.** Your agent writes the questions and logic — Open Form provides the runtime, validation, responsive UI, submission API, spam protection, SQLite storage and a Responses Studio.
+**Forms your agent writes. Responses you own.** Open Form is an open-source form framework for coding agents: your agent writes the questions and logic, and Open Form provides the runtime, validation, responsive UI, submission API, spam protection, SQLite storage and a Responses Studio.
 
 ```bash
 pnpm create open-form my-forms
