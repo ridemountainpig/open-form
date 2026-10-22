@@ -37,6 +37,8 @@ describe('componentName', () => {
 
   it('quotes the title like the rest of the file', () => {
     expect(starterForm('cafe', 'Cafe')).toContain("  title: 'Cafe',");
+    expect(starterForm('cafe', 'Cafe')).not.toContain('locale');
+    expect(starterForm('cafe', '咖啡', 'zh-TW')).toContain("  locale: 'zh-TW',\n});");
     expect(starterForm('cafe', `Amy's "cafe"`)).toContain(`  title: 'Amy\\'s "cafe"',`);
   });
 });

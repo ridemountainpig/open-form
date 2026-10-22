@@ -129,9 +129,24 @@ export async function themeCheckCommand(
   const projectRoot = process.cwd();
   const report = await withSsrServer(projectRoot, async (server, config) => {
     const file = themeFileFor(projectRoot, config, id, flags.form);
-    const mod = (await server.ssrLoadModule(file)) as { default?: Theme };
+    const mod = (await server.ssrLoadModule(file)) as {
+      default?: Theme & { components?: { Layout?: unknown } };
+    };
     if (!mod.default) throw new Error(`${file} has no default export (defineTheme(...)).`);
-    return contrastReport(mod.default);
+    const report = contrastReport(mod.default);
+    // A custom Layout decides what sits on the page background; often no text does.
+    const hint = (r: { pair: string; ok: boolean }) => !r.ok && r.pair === 'foreground/background';
+    if (!mod.default.components?.Layout || !report.palettes.some((p) => p.rows.some(hint))) {
+      return report;
+    }
+    const palettes = report.palettes.map((p) => ({
+      ...p,
+      rows: p.rows.map((r) => (hint(r) ? { ...r, advisory: true } : r)),
+    }));
+    const warnings = report.warnings.concat(
+      'The theme has its own Layout, so "text on background" is only a hint: it matters if your Layout puts text straight on `background`.',
+    );
+    return { palettes, warnings };
   });
 
   if (flags.json) {
@@ -148,7 +163,11 @@ export async function themeCheckCommand(
         table(
           ['', 'PAIR', 'COLORS', 'RATIO', 'NEEDS'],
           palette.rows.map((r) => [
-            r.ok ? chalk.green(glyph.check) : chalk.red(glyph.cross),
+            r.ok
+              ? chalk.green(glyph.check)
+              : 'advisory' in r
+                ? chalk.yellow(glyph.warn)
+                : chalk.red(glyph.cross),
             r.label,
             chalk.dim(`${r.fg} on ${r.bg}`),
             r.ratio === null ? chalk.yellow('?') : r.ratio.toFixed(2),
@@ -161,5 +180,7 @@ export async function themeCheckCommand(
       `\n  ${chalk.dim('Fix a failure by adjusting that token (keep the hue, change the lightness). "?" = a value this check cannot resolve, e.g. var() or color-mix().')}\n\n`,
     );
   }
-  if (report.palettes.some((p) => p.rows.some((r) => !r.ok))) process.exitCode = 1;
+  if (report.palettes.some((p) => p.rows.some((r) => !r.ok && !('advisory' in r)))) {
+    process.exitCode = 1;
+  }
 }

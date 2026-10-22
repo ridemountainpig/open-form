@@ -114,7 +114,7 @@ describe("a form's own look", () => {
     expect(existsSync(path.join(root, 'forms/signup/theme/terminal.css'))).toBe(false);
   });
 
-  it('brings only the web fonts its tokens name, however they quote them', async () => {
+  it('imports the web fonts its tokens name and copies the rest', async () => {
     makeForm('survey');
     mkdirSync(path.join(root, 'themes/night/fonts/inter'), { recursive: true });
     const themeFile = path.join(root, 'themes/night/index.ts');
@@ -130,10 +130,11 @@ describe("a form's own look", () => {
       themeFile,
     });
     expect(result.fonts).toEqual(['Inter']);
+    expect(result.spareFonts).toEqual(['Mono']);
     const dir = path.join(root, 'forms/survey/theme');
     expect(existsSync(path.join(dir, 'fonts/inter.css'))).toBe(true);
     expect(existsSync(path.join(dir, 'fonts/inter/latin.woff2'))).toBe(true);
-    expect(existsSync(path.join(dir, 'fonts/mono.css'))).toBe(false);
+    expect(existsSync(path.join(dir, 'fonts/mono.css'))).toBe(true);
     const source = readFileSync(result.file, 'utf8');
     expect(source).toContain("import './fonts/inter.css';");
     expect(source).not.toContain('mono.css');

@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
-import type { FormConfig } from '../schema/index.ts';
+import { type FormConfig, type FormValues, sampleAnswers } from '../schema/index.ts';
 import { type CollectedForm, createCollection } from './collector.ts';
-import { CollectorContext, RuntimeContext } from './context.ts';
+import { type Collector, CollectorContext, RuntimeContext } from './context.ts';
 
 export type { CollectedForm } from './collector.ts';
 
@@ -49,5 +49,47 @@ export function collectFormSchema(
   if (problems.length > 1) {
     throw new Error(`forms/${id}: invalid fields\n  - ${problems.join('\n  - ')}`);
   }
-  return collected;
+  return { ...collected, texts: withAnswerTexts(Component, id, config, collected) };
+}
+
+// Enough to try every option of a typical form, small enough to keep loading fast.
+const MAX_ANSWER_RENDERS = 120;
+
+/**
+ * Text that shows only for some answers (`{score < 7 && <T>…</T>}`) isn't rendered
+ * with an empty form, so render again with each sample answer and keep what's new.
+ */
+function withAnswerTexts(
+  Component: ComponentType,
+  id: string,
+  config: FormConfig | undefined,
+  collected: CollectedForm,
+): string[] {
+  const texts = new Set(collected.texts);
+  const textOnly: Collector = {
+    addPage() {},
+    addField() {},
+    markForm() {},
+    addText: (text) => {
+      if (text.trim()) texts.add(text);
+    },
+  };
+  const answers: FormValues[] = [];
+  for (const field of collected.schema.fields) {
+    for (const value of sampleAnswers(field)) answers.push({ [field.name]: value });
+  }
+  for (const values of answers.slice(0, MAX_ANSWER_RENDERS)) {
+    try {
+      renderToString(
+        <RuntimeContext.Provider value={{ mode: 'collect', formId: id, config, answers: values }}>
+          <CollectorContext.Provider value={textOnly}>
+            <Component />
+          </CollectorContext.Provider>
+        </RuntimeContext.Provider>,
+      );
+    } catch {
+      // The empty render already succeeded; an answer it can't render adds no text.
+    }
+  }
+  return [...texts];
 }

@@ -366,6 +366,37 @@ describe('translations', () => {
     });
   });
 
+  it('collects text that only some answers show', () => {
+    function Followup() {
+      const role = useFieldValue<string>('role');
+      const score = useFieldValue<number>('score');
+      return (
+        <>
+          {role === 'engineer' && <T>你用哪些工具</T>}
+          {score !== undefined && score < 3 && <T>哪裡可以更好</T>}
+        </>
+      );
+    }
+    function Survey() {
+      return (
+        <Form>
+          <Select
+            name="role"
+            label="身分"
+            options={[
+              { value: 'student', label: '學生' },
+              { value: 'engineer', label: '工程師' },
+            ]}
+          />
+          <NumberInput name="score" label="分數" min={0} max={5} />
+          <Followup />
+        </Form>
+      );
+    }
+    const { texts } = collectFormSchema(Survey, { id: 'survey', config: zh });
+    expect(texts).toEqual(expect.arrayContaining(['你用哪些工具', '哪裡可以更好']));
+  });
+
   it('collects the text of a custom closed screen', () => {
     function Closed({ state, title }: NoticeUIProps) {
       return <h2>{state === 'full' ? <T>名額已滿</T> : title}</h2>;

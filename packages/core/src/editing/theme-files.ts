@@ -191,14 +191,16 @@ export type FormThemeResult = {
   file: string;
   /** Web fonts brought in with the tokens. */
   fonts: string[];
+  /** The reference's other web fonts (code, other scripts): copied, not imported yet. */
+  spareFonts: string[];
 };
 
 /**
  * Write a form's own look file, `forms/<form>/theme/index.ts`. From a reference it
- * takes the tokens and the web fonts they name, nothing else: the reference's CSS
- * and components are for the agent to read and borrow from while writing this
- * form's look, so the form never depends on the reference or carries what it
- * doesn't use.
+ * takes the tokens and imports the web fonts they name: the reference's CSS and
+ * components are for the agent to read and borrow from while writing this form's
+ * look, so the form never depends on the reference. The reference's other fonts
+ * are copied without an import, ready for the CSS borrowed from it.
  */
 export async function writeFormTheme(
   projectRoot: string,
@@ -216,6 +218,7 @@ export async function writeFormTheme(
   await mkdir(dir, { recursive: true });
   let source = formThemeSource(seed?.tokens);
   const fonts: string[] = [];
+  const spareFonts: string[] = [];
   if (seed) {
     const named = new Set([
       ...stackFamilies(seed.tokens.font),
@@ -225,7 +228,7 @@ export async function writeFormTheme(
     for (const spec of fontImports(await readFile(seed.themeFile, 'utf8'))) {
       const css = await readFile(path.join(from, spec), 'utf8').catch(() => null);
       const header = css && readFontHeader(css);
-      if (!header || !named.has(header.family.toLowerCase())) continue;
+      if (!header) continue;
       const slug = path.basename(spec, '.css');
       await mkdir(path.join(dir, 'fonts'), { recursive: true });
       await copyFile(path.join(from, spec), path.join(dir, 'fonts', `${slug}.css`));
@@ -234,11 +237,15 @@ export async function writeFormTheme(
           recursive: true,
         });
       }
-      source = addCssImport(source, `./fonts/${slug}.css`);
-      fonts.push(header.family);
+      if (named.has(header.family.toLowerCase())) {
+        source = addCssImport(source, `./fonts/${slug}.css`);
+        fonts.push(header.family);
+      } else {
+        spareFonts.push(header.family);
+      }
     }
   }
   const file = path.join(dir, 'index.ts');
   await writeFile(file, source);
-  return { file, fonts };
+  return { file, fonts, spareFonts };
 }
