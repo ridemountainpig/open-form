@@ -36,6 +36,7 @@ import {
   pickLocale,
   resolveVisibleFields,
   runCustomValidator,
+  sampleAnswers,
   sourceLocale,
   submissionValues,
   themeToCss,
@@ -154,7 +155,13 @@ export function Form(props: FormProps) {
     [available, formId, locale, source],
   );
   const i18n = useMemo(() => ({ tr, language }), [tr, language]);
-  const [store] = useState(() => createFormStore(props.defaultValues));
+  const [store] = useState(() =>
+    createFormStore(
+      collecting && runtime.answers
+        ? { ...props.defaultValues, ...runtime.answers }
+        : props.defaultValues,
+    ),
+  );
   const registry = useRef(new Set<RegisteredField>());
   const fieldSteps = useRef(new Map<string, number>());
   // undefined until the browser has collected the schema; null if it couldn't.
@@ -444,6 +451,36 @@ function InteractiveForm({
       .filter((i) => i >= 0)
       .join(',');
   });
+  // The most steps the respondent may see, trying the answers each awaited question
+  // could get (and the questions those reveal), so "1 / 3" doesn't later become "1 / 4".
+  const mostSteps = useStoreSelector(store, (s) => {
+    const fields = collected?.schema.fields ?? [];
+    const most = (values: FormValues, depth: number): number => {
+      const shown = steps.filter((step) => evaluateAll(step.when, values)).length;
+      if (depth === 0) return shown;
+      const awaited = new Set<string>();
+      for (const step of steps) {
+        if (evaluateAll(step.when, values)) continue;
+        for (const cond of step.when) {
+          for (const name of conditionFields(cond)) {
+            if (isFilled(ownValue(values, name))) continue;
+            if (fields.some((f) => f.name === name && f.required && evaluateAll(f.when, values))) {
+              awaited.add(name);
+            }
+          }
+        }
+      }
+      let best = shown;
+      for (const name of awaited) {
+        const field = fields.find((f) => f.name === name);
+        for (const value of field ? sampleAnswers(field) : []) {
+          best = Math.max(best, most({ ...values, [name]: value }, depth - 1));
+        }
+      }
+      return best;
+    };
+    return most(resolve(s.values).values, 3);
+  });
   const [inspecting, setInspecting] = useState(false);
   const [quiet, setQuiet] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<PreviewNotice | null>(null);
@@ -481,10 +518,13 @@ function InteractiveForm({
     : (visible.find((i) => i >= step) ?? visible[visible.length - 1] ?? 0);
   const position = Math.max(0, visible.indexOf(current));
   const isLast = position >= visible.length - 1;
-  const mayContinue = undecidedKey
-    .split(',')
-    .filter(Boolean)
-    .some((i) => Number(i) > current);
+  const mayContinue =
+    !inspecting &&
+    undecidedKey
+      .split(',')
+      .filter(Boolean)
+      .some((i) => Number(i) > current);
+  const total = inspecting ? visible.length : Math.max(visible.length, mostSteps);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
@@ -577,22 +617,13 @@ function InteractiveForm({
     runtime.onNavigate?.({
       step: current,
       stepNumber: position + 1,
-      totalSteps: visible.length,
+      totalSteps: total,
       stepTitle,
       inspecting,
       done: status === 'success',
       notice: previewNotice?.state,
     });
-  }, [
-    runtime.onNavigate,
-    current,
-    position,
-    visible.length,
-    stepTitle,
-    inspecting,
-    status,
-    previewNotice,
-  ]);
+  }, [runtime.onNavigate, current, position, total, stepTitle, inspecting, status, previewNotice]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs after each step change or focus request
   useEffect(() => {
@@ -883,7 +914,7 @@ function InteractiveForm({
     () => ({
       step: current,
       position,
-      total: visible.length,
+      total,
       stepTitle: stepTitle === undefined ? undefined : tr(stepTitle),
       steps: visible.map((index, i) => ({
         index,
@@ -893,7 +924,7 @@ function InteractiveForm({
         reachable: inspecting || i <= furthest,
       })),
       isFirst: position === 0,
-      isLast: isLast && (inspecting || !mayContinue),
+      isLast: isLast && !mayContinue,
       status,
       submitting: status === 'submitting',
       error: formError,
@@ -917,6 +948,7 @@ function InteractiveForm({
       status,
       stepTitle,
       steps,
+      total,
       tr,
       visible,
     ],
@@ -1044,10 +1076,7 @@ function InteractiveForm({
       description={description}
       progress={
         inForm ? (
-          <Progress
-            nav={nav}
-            label={format(messages.stepOf, { current: position + 1, total: visible.length })}
-          />
+          <Progress nav={nav} label={format(messages.stepOf, { current: position + 1, total })} />
         ) : null
       }
       intro={

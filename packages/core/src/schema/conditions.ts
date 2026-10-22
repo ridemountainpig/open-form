@@ -1,4 +1,4 @@
-import type { Condition, FieldCondition, FormValues, Primitive } from './types.ts';
+import type { Condition, FieldCondition, FieldSchema, FormValues, Primitive } from './types.ts';
 
 /** `record[key]` only when it's the record's own entry: a field named `constructor` isn't a function. */
 export function ownValue(record: FormValues, key: string): unknown {
@@ -103,4 +103,24 @@ export function conditionFields(cond: Condition, out: Set<string> = new Set()): 
   else if ('not' in cond) conditionFields(cond.not, out);
   else out.add(cond.field);
   return out;
+}
+
+/**
+ * Answers worth trying when asking what a question can change: each option, a ticked
+ * box, each score on a short scale. Other fields get one stand-in answer.
+ */
+export function sampleAnswers(field: FieldSchema): unknown[] {
+  if (field.type === 'checkbox') return [true];
+  if (field.type === 'checkbox-group') return (field.options ?? []).map((o) => [o.value]);
+  if (field.type === 'select' || field.type === 'radio') {
+    return (field.options ?? []).map((o) => o.value);
+  }
+  const { min, max } = field;
+  if (typeof min === 'number' && typeof max === 'number' && max - min <= 10) {
+    return Array.from({ length: Math.floor(max - min) + 1 }, (_, i) => min + i);
+  }
+  if (typeof min === 'number' || typeof max === 'number') {
+    return [min, max].filter((n) => typeof n === 'number');
+  }
+  return [field.type === 'number' ? 0 : 'answer'];
 }

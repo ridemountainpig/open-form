@@ -7,6 +7,7 @@ export {
   isFilled,
   ownValue,
   sameValue,
+  sampleAnswers,
 } from './conditions.ts';
 export type {
   Duration,
