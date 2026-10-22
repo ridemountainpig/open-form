@@ -122,7 +122,7 @@ type StudioData = {
 const StudioDataContext = createContext<StudioData | null>(null);
 
 export function StudioDataProvider({ children }: { children: ReactNode }) {
-  const forms = useResource<{ forms: FormSummary[] }>('/api/forms');
+  const forms = useResource<{ forms: FormSummary[] }>('/api/forms', { refresh: 15_000 });
   const folders = useFoldersState();
   const value = useMemo(() => ({ forms, folders }), [forms, folders]);
   return <StudioDataContext.Provider value={value}>{children}</StudioDataContext.Provider>;

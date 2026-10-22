@@ -81,11 +81,23 @@
   animation: studio-pop-in 0.14s ease-out;
 }
 
+/* A response that arrived while the list was open. */
+@keyframes studio-new-row {
+  from {
+    background-color: color-mix(in oklab, var(--color-emerald-400) 22%, transparent);
+  }
+}
+
+.studio-new-row {
+  animation: studio-new-row 2.4s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .studio-drawer,
   .studio-sheet,
   .studio-palette,
   .studio-actionbar,
+  .studio-new-row,
   .studio-backdrop {
     animation: none;
   }

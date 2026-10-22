@@ -82,7 +82,7 @@ describe('toXlsx', () => {
     expect(cell(sheet, 'D2')?.[2]).toBe('台大 &lt;A&amp;B&gt;');
     expect(sheet).toContain('<c r="E2"><v>30</v></c>');
     expect(sheet).toContain('<c r="F2" s="3"><v>46325</v></c>');
-    expect(cell(sheet, 'G2')?.[2]).toBe('true');
+    expect(cell(sheet, 'G2')?.[2]).toBe('Yes');
     expect(cell(sheet, 'H2')?.[2]).toBe('a; b');
     expect(cell(sheet, 'I2')).toBeNull();
     expect(sheet).toContain('<autoFilter ref="A1:I2"/>');

@@ -413,7 +413,8 @@ describe('languages', () => {
     const csv = await (
       await handler(new Request(`${ORIGIN}/api/forms/meetup/export?format=csv`))
     ).text();
-    expect(csv).toContain('#,Submitted at,Language,Name');
+    expect(csv).toContain('#,Submitted at (UTC),Language,Name');
+    expect(csv).toMatch(/\r\n1,\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},日本語,/);
   });
 });
 
@@ -468,9 +469,23 @@ describe('admin endpoints', () => {
     );
     expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
     const csv = new TextDecoder().decode(bytes);
-    expect(csv.startsWith('#,Submitted at,Name,Email,Role,School\r\n')).toBe(true);
+    expect(csv.startsWith('#,Submitted at (UTC),Name,Email,Role,School\r\n')).toBe(true);
     expect(csv).toContain(',台大\r\n');
     expect(csv).toContain(`"'=HYPERLINK(""x"")"`);
+
+    // Studio exports what its search and filters show.
+    const exported = async (query: string) =>
+      (await handle(new Request(`${ORIGIN}/api/forms/meetup/export?format=csv&${query}`))).text();
+    const searched = await exported('q=eve');
+    expect(searched).toContain('eve@example.com');
+    expect(searched).not.toContain('amy@example.com');
+    const rule = JSON.stringify({ rules: [{ field: 'role', op: 'is', value: 'engineer' }] });
+    const byRule = await exported(`filter=${encodeURIComponent(rule)}`);
+    expect(byRule).toContain('eve@example.com');
+    expect(byRule).not.toContain('amy@example.com');
+    expect((await handle(new Request(`${ORIGIN}/api/forms/meetup/export?filter={`))).status).toBe(
+      400,
+    );
 
     const xlsx = await handle(new Request(`${ORIGIN}/api/forms/meetup/export?format=xlsx`));
     expect(xlsx.headers.get('content-type')).toBe(XLSX_CONTENT_TYPE);
@@ -1158,6 +1173,28 @@ describe('toCsv', () => {
       ],
     );
     expect(csv).toContain(',"x;=HYPERLINK(""https://evil.example"")"\r\n');
+  });
+
+  it('writes times in the given time zone, booleans as Yes or No and languages by name', () => {
+    const csv = toCsv(
+      [{ key: 'agree', header: 'Agree' }],
+      [
+        {
+          id: 'a',
+          formId: 'f',
+          number: 1,
+          formVersionId: 'v',
+          visitorHash: null,
+          createdAt: '2026-10-13T00:48:08.256Z',
+          locale: 'zh-TW',
+          data: { agree: true },
+        },
+      ],
+      { language: true, timeZone: 'Asia/Taipei' },
+    );
+    expect(csv).toBe(
+      '\ufeff#,Submitted at (Asia/Taipei),Language,Agree\r\n1,2026-10-13 08:48:08,繁體中文,Yes\r\n',
+    );
   });
 });
 

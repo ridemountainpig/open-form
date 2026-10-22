@@ -46,8 +46,11 @@ erases its numbering: a new form with the same id starts again at #1 (see
 Open a form and choose **Responses**.
 
 - **The table** shows the newest responses first, 50 per page, with their number,
-  submission time and the first few answered questions. Open a response or export
-  to see every answer.
+  submission time and the first five questions every respondent sees. **Columns**
+  picks which questions the table shows; the choice is kept per form in your
+  browser, and **Reset to default** goes back. On a phone the table becomes a
+  list of cards. New responses appear on their own while the tab is open (it
+  checks every few seconds and when you come back to it), briefly highlighted.
 - **Search** matches answer values only, not field names, so searching "email"
   doesn't hit every row.
 - **Filter** narrows the table the way a Notion database does. Choose a question
@@ -67,7 +70,9 @@ Open a form and choose **Responses**.
 - **Click a row** to open the response at `/studio/:formId/responses/:responseId`.
   The detail shows every answer with its question, when it was submitted and in
   which language. **Copy** copies one answer; **Copy all** copies the whole
-  response as question and answer pairs.
+  response as question and answer pairs. The arrows in its header, or `↑` / `↓`
+  (`K` / `J`), step to the response above or below on the page. Ratings and other
+  short number scales read as `4 / 5`.
 - **Delete** removes one response after a confirmation. Select rows to delete
   several (Shift-click ticks a range), or select every response on the page,
   every response, or every response matching your search and filters. In a
@@ -93,13 +98,14 @@ Open a form and choose **Responses**.
 
 A rule without a value yet (a dashed chip) doesn't filter. **Submitted** days are
 days in your browser's time zone, like the times in the table. Filters belong to
-the page: they reset when you open another form, along with the sort, and exports
-always contain every response, oldest first.
+the page: they reset when you open another form, along with the sort.
 
 ## Export
 
 In Studio's Responses tab, **Export** offers **Excel**, **CSV** and **JSON**.
-From the terminal:
+While a search or filter narrows the table, the file holds the same responses;
+switch the menu to **All** to export every response instead. From the terminal,
+which always exports every response:
 
 ```npm
 npx open-form responses export meetup                    # CSV to stdout
@@ -126,9 +132,10 @@ Every export lists responses oldest first. Tables start with `#` and
 **Submitted at**, then one column per field, headed by its label; fields that
 share a label are headed `label (name)`. When the form has translations and at
 least one response recorded its language, Excel and CSV add a **Language**
-column after **Submitted at**. CSV gives **Submitted at** as a UTC ISO timestamp
-(`2026-10-30T09:00:00.000Z`). Excel shows it in the form's time zone, including
-one changed in Studio's Settings.
+column after **Submitted at**, naming each language (`English`, `繁體中文`).
+Both show **Submitted at** in the form's time zone, including one changed in
+Studio's Settings, and name it in the header (`Submitted at (Asia/Taipei)`); CSV
+writes it as `2026-10-30 17:00:00`. Checkboxes read **Yes** or **No**.
 
 ## Schema versions
 

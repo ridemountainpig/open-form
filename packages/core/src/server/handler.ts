@@ -731,6 +731,9 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       format,
       definition: format === 'json' ? null : await loadForm(id as string).catch(() => null),
       projectTimeZone: opts.config?.timeZone,
+      search: url.searchParams.get('q') || undefined,
+      filter: filterParam(url),
+      now,
     });
     return new Response(body, {
       headers: {

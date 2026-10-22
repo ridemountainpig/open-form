@@ -19,7 +19,7 @@ For CSV and Excel it also loads the form the way the server does (like
 time zone. If the form doesn't load, it warns and exports with the columns
 stored alongside the responses; a form whose folder is gone exports that way
 too, without the warning. Either way the file has no **Language** column, and
-Excel uses the project's time zone, not one set in Studio.
+Excel and CSV use the project's time zone, not one set in Studio.
 
 ## Flags
 
@@ -36,8 +36,9 @@ gives Excel, anything else — or no `-o` — gives CSV.
 - **CSV** and **Excel** have one column per field, headed by its label. Columns
   cover every version of the form, so a field you've since removed keeps its
   column for older responses. Translated forms get a **Language** column after
-  **Submitted at**. Excel shows **Submitted at** in the form's time zone: the
-  one set in Studio's Settings, else the form's `timeZone`, else the project's.
+  **Submitted at**, naming each language. Both show **Submitted at** in the
+  form's time zone: the one set in Studio's Settings, else the form's
+  `timeZone`, else the project's. Checkboxes read **Yes** or **No**.
   Both need the form to load; see above.
 - **JSON** is an array of submissions, each with `id`, `number`, `submittedAt`,
   `locale` (when one was recorded) and `data`, the raw answers keyed by field

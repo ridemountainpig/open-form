@@ -1,6 +1,6 @@
 import { DEFAULT_TIME_ZONE, wallClock } from '../schema/index.ts';
 import type { StoredSubmission } from '../storage/index.ts';
-import { type ExportColumn, formatCell } from './export.ts';
+import { type ExportColumn, formatCell, localeName } from './export.ts';
 
 export const XLSX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -40,7 +40,7 @@ export async function toXlsx(
     table.push([
       { value: row.number },
       submittedAt(row.createdAt, timeZone),
-      ...(opts.language ? [row.locale ? { value: row.locale } : null] : []),
+      ...(opts.language ? [row.locale ? { value: localeName(row.locale) } : null] : []),
       ...columns.map((c) => valueCell(row.data[c.key], c)),
     ]);
   }
