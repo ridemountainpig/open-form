@@ -5,6 +5,7 @@ export {
   evaluateAll,
   evaluateCondition,
   isFilled,
+  mostVisibleSteps,
   ownValue,
   sameValue,
   sampleAnswers,

@@ -32,11 +32,11 @@ import {
   LOCALE_NAMES,
   type Locale,
   type Messages,
+  mostVisibleSteps,
   ownValue,
   pickLocale,
   resolveVisibleFields,
   runCustomValidator,
-  sampleAnswers,
   sourceLocale,
   submissionValues,
   themeToCss,
@@ -451,38 +451,9 @@ function InteractiveForm({
       .filter((i) => i >= 0)
       .join(',');
   });
-  // The most steps the respondent may see, trying the answers each awaited question
-  // could get (and the questions those reveal), so "1 / 3" doesn't later become "1 / 4".
-  // A budget keeps a form with many branching questions fast; past it, it's an estimate.
-  const mostSteps = useStoreSelector(store, (s) => {
-    const fields = collected?.schema.fields ?? [];
-    let budget = 2000;
-    const most = (values: FormValues): number => {
-      const shown = steps.filter((step) => evaluateAll(step.when, values)).length;
-      if (--budget < 0) return shown;
-      const awaited = new Set<string>();
-      for (const step of steps) {
-        if (evaluateAll(step.when, values)) continue;
-        for (const cond of step.when) {
-          for (const name of conditionFields(cond)) {
-            if (isFilled(ownValue(values, name))) continue;
-            if (fields.some((f) => f.name === name && f.required && evaluateAll(f.when, values))) {
-              awaited.add(name);
-            }
-          }
-        }
-      }
-      let best = shown;
-      for (const name of awaited) {
-        const field = fields.find((f) => f.name === name);
-        for (const value of field ? sampleAnswers(field) : []) {
-          best = Math.max(best, most({ ...values, [name]: value }));
-        }
-      }
-      return best;
-    };
-    return most(resolve(s.values).values);
-  });
+  const mostSteps = useStoreSelector(store, (s) =>
+    mostVisibleSteps(steps, collected?.schema.fields ?? [], resolve(s.values).values),
+  );
   const [inspecting, setInspecting] = useState(false);
   const [quiet, setQuiet] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<PreviewNotice | null>(null);

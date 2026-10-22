@@ -74,10 +74,21 @@ function withAnswerTexts(
       if (text.trim()) texts.add(text);
     },
   };
-  const answers: FormValues[] = [];
-  for (const field of collected.schema.fields) {
-    for (const value of sampleAnswers(field)) answers.push({ [field.name]: value });
-  }
+  const { fields, pages } = collected.schema;
+  const conditions = [...pages.flatMap((p) => p.when), ...fields.flatMap((f) => f.when)];
+  const samples = fields.map((f) => ({ name: f.name, values: sampleAnswers(f, conditions) }));
+  const combinations = samples.reduce((n, { values }) => n * Math.max(values.length, 1), 1);
+  // Text can need two answers at once; past the cap, try each answer on its own.
+  const answers: FormValues[] =
+    combinations <= MAX_ANSWER_RENDERS
+      ? samples.reduce<FormValues[]>(
+          (sets, { name, values }) =>
+            values.length
+              ? sets.flatMap((set) => values.map((v) => ({ ...set, [name]: v })))
+              : sets,
+          [{}],
+        )
+      : samples.flatMap(({ name, values }) => values.map((v) => ({ [name]: v })));
   for (const values of answers.slice(0, MAX_ANSWER_RENDERS)) {
     try {
       renderToString(

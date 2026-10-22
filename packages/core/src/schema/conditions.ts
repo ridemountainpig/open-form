@@ -105,23 +105,97 @@ export function conditionFields(cond: Condition, out: Set<string> = new Set()): 
   return out;
 }
 
+function operands(name: string, cond: Condition, out: Primitive[]): Primitive[] {
+  if ('all' in cond) for (const c of cond.all) operands(name, c, out);
+  else if ('any' in cond) for (const c of cond.any) operands(name, c, out);
+  else if ('not' in cond) operands(name, cond.not, out);
+  else if (cond.field === name) {
+    out.push(
+      ...[cond.equals, cond.notEquals, cond.contains, ...(cond.in ?? [])].filter(
+        (v): v is Primitive => v !== undefined && v !== null,
+      ),
+    );
+    out.push(...[cond.gte, cond.lte].filter((v): v is number => v !== undefined));
+    if (cond.gt !== undefined) out.push(cond.gt + 1);
+    if (cond.lt !== undefined) out.push(cond.lt - 1);
+  }
+  return out;
+}
+
 /**
  * Answers worth trying when asking what a question can change: each option, a ticked
- * box, each score on a short scale. Other fields get one stand-in answer.
+ * box, each score on a short scale, and the values `conditions` compare it with.
+ * Other fields get one stand-in answer.
  */
-export function sampleAnswers(field: FieldSchema): unknown[] {
+export function sampleAnswers(
+  field: FieldSchema,
+  conditions: readonly Condition[] = [],
+): unknown[] {
   if (field.type === 'checkbox') return [true];
   if (field.type === 'checkbox-group') return (field.options ?? []).map((o) => [o.value]);
   if (field.type === 'select' || field.type === 'radio') {
     return (field.options ?? []).map((o) => o.value);
   }
   const { min, max } = field;
+  const numeric = field.type === 'number' || typeof min === 'number' || typeof max === 'number';
+  const compared: unknown[] = [];
+  for (const cond of conditions) {
+    for (const v of operands(field.name, cond, [])) {
+      if (!numeric) {
+        compared.push(String(v));
+        continue;
+      }
+      const n = Number(v);
+      const below = typeof min === 'number' && n < min;
+      const above = typeof max === 'number' && n > max;
+      if (!Number.isNaN(n) && !below && !above) compared.push(n);
+    }
+  }
+  let samples: unknown[];
   if (typeof min === 'number' && typeof max === 'number' && max - min <= 10) {
     const steps = Array.from({ length: Math.floor(max - min) + 1 }, (_, i) => min + i);
-    return steps.at(-1) === max ? steps : [...steps, max];
+    samples = steps.at(-1) === max ? steps : [...steps, max];
+  } else if (typeof min === 'number' || typeof max === 'number') {
+    samples = [min, max].filter((n) => typeof n === 'number');
+  } else {
+    samples = [numeric ? 0 : 'answer'];
   }
-  if (typeof min === 'number' || typeof max === 'number') {
-    return [min, max].filter((n) => typeof n === 'number');
-  }
-  return [field.type === 'number' ? 0 : 'answer'];
+  return [...new Set([...samples, ...compared])];
+}
+
+/**
+ * The most steps a respondent may see, trying the answers each required question that
+ * decides a hidden step could get (and the questions those reveal), so "1 / 3" doesn't
+ * later become "1 / 4". Past `budget` evaluations, it's an estimate.
+ */
+export function mostVisibleSteps(
+  steps: readonly { when: readonly Condition[] }[],
+  fields: readonly FieldSchema[],
+  values: FormValues,
+  budget = 2000,
+): number {
+  const conditions = [...steps.flatMap((step) => step.when), ...fields.flatMap((f) => f.when)];
+  const most = (values: FormValues): number => {
+    const shown = steps.filter((step) => evaluateAll(step.when, values)).length;
+    if (--budget < 0) return shown;
+    // Every awaited question gets answered eventually, so trying them in one order
+    // covers each combination once.
+    let next: FieldSchema | undefined;
+    for (const step of steps) {
+      if (next) break;
+      if (evaluateAll(step.when, values)) continue;
+      for (const name of step.when.flatMap((cond) => [...conditionFields(cond)])) {
+        if (isFilled(ownValue(values, name))) continue;
+        next = fields.find((f) => f.name === name && f.required && evaluateAll(f.when, values));
+        if (next) break;
+      }
+    }
+    if (!next) return shown;
+    const { name } = next;
+    return Math.max(
+      shown,
+      ...sampleAnswers(next, conditions).map((v) => most({ ...values, [name]: v })),
+    );
+  };
+  return most(values);
 }
