@@ -197,6 +197,16 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
       if (id === `\0${SERVER_ENTRY_VMOD}`) return serverEntryModule(paths);
       return null;
     },
+    hotUpdate({ type, file, modules }) {
+      // When a file appears, Vite retries every module that failed to resolve an import,
+      // and reloads every open page doing so. The form the file belongs to retries in
+      // place instead (retryForm); anything else keeps Vite's retry.
+      const formId = type === 'create' && formIdForFile(paths.formsRoot, file);
+      if (!formId) return;
+      return modules.filter(
+        (mod) => !mod.file || formIdForFile(paths.formsRoot, mod.file) !== formId,
+      );
+    },
     async handleHotUpdate(ctx) {
       if (isManifest(ctx.file)) {
         ctx.server.ws.send({ type: 'custom', event: 'open-form:folders-changed', data: {} });
@@ -250,8 +260,31 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
             const mod = server.moduleGraph.getModuleById(`\0${vmod}`);
             if (mod) server.moduleGraph.invalidateModule(mod);
           }
-          server.ws.send({ type: 'full-reload' });
+          // Not a full reload: a page whose form is still there keeps its answers.
+          server.ws.send({
+            type: 'custom',
+            event: 'open-form:project-changed',
+            data: { formIds: findForms(paths.formsRoot).map((f) => f.id) },
+          });
         }, 150);
+      };
+      // A form that imported a file before it existed failed to load, and the server
+      // keeps that failure until the form changes: once the file is here, treat the
+      // form's files as changed so they load again in place (see hotUpdate).
+      const retryForm = (file: string) => {
+        const formId = formIdForFile(paths.formsRoot, file);
+        if (!formId) return;
+        const dir = path.join(paths.formsRoot, formId) + path.sep;
+        const files = new Set(
+          Object.values(server.environments).flatMap((env) => [
+            ...env.moduleGraph.fileToModulesMap.keys(),
+          ]),
+        );
+        for (const modFile of files) {
+          if (modFile !== normalizePath(file) && path.resolve(modFile).startsWith(dir)) {
+            server.watcher.emit('change', modFile);
+          }
+        }
       };
       const isStructural = (file: string) => {
         const rel = path.relative(paths.formsRoot, file);
@@ -268,6 +301,7 @@ export function formsPlugin(opts: FormsPluginOptions): Plugin {
         server.ws.send({ type: 'custom', event: 'open-form:folders-changed', data: {} });
       };
       server.watcher.on('add', foldersChanged);
+      server.watcher.on('add', retryForm);
       server.watcher.on('unlink', foldersChanged);
       server.watcher.on('add', (file) => isStructural(file) && reload());
       server.watcher.on('unlink', (file) => isStructural(file) && reload());

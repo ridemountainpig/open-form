@@ -74,8 +74,7 @@ let inflight: Promise<GoogleFont[]> | null = null;
 async function catalog(): Promise<GoogleFont[]> {
   if (cache && Date.now() - cache.at < CATALOG_TTL) return cache.fonts;
   inflight ??= (async () => {
-    const res = await fetch(CATALOG_URL);
-    if (!res.ok) throw new Error(`Google Fonts catalog: HTTP ${res.status}.`);
+    const res = await fetchOk(CATALOG_URL);
     const text = await res.text();
     // The JSON may carry an XSSI guard like `)]}'` in front.
     const data = JSON.parse(text.slice(text.indexOf('{'))) as { familyMetadataList?: RawFamily[] };
@@ -129,9 +128,28 @@ export function cssRequestUrl(font: GoogleFont): string {
 }
 
 async function fetchOk(url: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(url, init);
-  if (!res.ok) throw new Error(`${new URL(url).host}: HTTP ${res.status}.`);
+  const { host } = new URL(url);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    throw new Error(unreachable(host, err));
+  }
+  if (!res.ok) throw new Error(`${host}: HTTP ${res.status}.`);
   return res;
+}
+
+// Node's fetch only goes through HTTPS_PROXY when NODE_USE_ENV_PROXY is set.
+function unreachable(host: string, err: unknown): string {
+  const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : '';
+  const proxied =
+    (process.env.HTTPS_PROXY || process.env.https_proxy) && !process.env.NODE_USE_ENV_PROXY;
+  return [
+    `Couldn't reach ${host}${cause ? ` (${cause})` : ''}.`,
+    proxied
+      ? 'HTTPS_PROXY is set: run again with NODE_USE_ENV_PROXY=1 (Node 22.21 or later) so Node uses it.'
+      : 'Check the network connection and try again.',
+  ].join(' ');
 }
 
 const MAX_FONT_FILE_BYTES = 5 * 1024 * 1024;

@@ -87,6 +87,10 @@ itself, so respondents never contact Google. Variable families get their whole
 weight range; static ones get weights 400 to 700. Adding the same family again
 replaces its files.
 
+It needs to reach `fonts.google.com`, `fonts.googleapis.com` and
+`fonts.gstatic.com`. Behind a proxy set in `HTTPS_PROXY`, run it with
+`NODE_USE_ENV_PROXY=1` (Node 22.21 or later) so Node's `fetch` goes through the proxy.
+
 Chinese, Japanese and Korean families take a few MB in the project, split into
 small files. Respondents only download the ones holding the characters a page
 uses.

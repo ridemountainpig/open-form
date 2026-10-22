@@ -1,11 +1,18 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 import { resolveConfig } from 'vite';
 import { describe, expect, it } from 'vitest';
 import type { FieldSchema, FormSchema } from '../schema/index.ts';
 import { createViteConfig } from '../vite/config.ts';
-import { checkForms, uniqueWarnings, unusedComponentWarnings, withSsrServer } from './check.ts';
+import {
+  checkForms,
+  languageLines,
+  uniqueWarnings,
+  unusedComponentWarnings,
+  withSsrServer,
+} from './check.ts';
 
 const email = (extra: Partial<FieldSchema> = {}): FieldSchema => ({
   name: 'email',
@@ -119,4 +126,20 @@ export default function WaitlistForm() {
       rmSync(root, { recursive: true, force: true });
     }
   }, 30000);
+});
+
+describe('languageLines', () => {
+  it('says how many unseen translations it left out', () => {
+    const unused = Object.fromEntries(
+      Array.from({ length: 10 }, (_, i) => [`old ${i}`, `舊 ${i}`]),
+    );
+    const definition = {
+      schema: { id: 'f', pages: [], fields: [] },
+      config: { language: 'en', translations: { 'zh-TW': { Hello: '你好', ...unused } } },
+      texts: ['Hello'],
+    } as unknown as Parameters<typeof languageLines>[0];
+    const lines = languageLines(definition).map((line) => stripVTControlCharacters(line));
+    expect(lines.filter((line) => line.includes('not seen "'))).toHaveLength(8);
+    expect(lines.at(-1)).toMatch(/… 2 more/);
+  });
 });

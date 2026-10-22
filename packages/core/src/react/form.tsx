@@ -18,6 +18,7 @@ import {
   type ConditionNames,
   coerceValue,
   coerceValues,
+  conditionFields,
   evaluateAll,
   explainCondition,
   type FieldErrors,
@@ -423,6 +424,26 @@ function InteractiveForm({
       .filter((i) => i >= 0)
       .join(',');
   });
+  // Hidden steps whose conditions read a required question nobody has answered yet: it
+  // must be answered before submitting, so the step before them isn't known to be the last.
+  const undecidedKey = useStoreSelector(store, (s) => {
+    const values = resolve(s.values).values;
+    const awaited = (name: string) =>
+      !isFilled(ownValue(values, name)) &&
+      (collected?.schema.fields.some(
+        (f) => f.name === name && f.required && evaluateAll(f.when, values),
+      ) ??
+        false);
+    return steps
+      .map((step, i) =>
+        !evaluateAll(step.when, values) &&
+        step.when.some((cond) => [...conditionFields(cond)].some(awaited))
+          ? i
+          : -1,
+      )
+      .filter((i) => i >= 0)
+      .join(',');
+  });
   const [inspecting, setInspecting] = useState(false);
   const [quiet, setQuiet] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<PreviewNotice | null>(null);
@@ -460,6 +481,10 @@ function InteractiveForm({
     : (visible.find((i) => i >= step) ?? visible[visible.length - 1] ?? 0);
   const position = Math.max(0, visible.indexOf(current));
   const isLast = position >= visible.length - 1;
+  const mayContinue = undecidedKey
+    .split(',')
+    .filter(Boolean)
+    .some((i) => Number(i) > current);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
@@ -474,6 +499,17 @@ function InteractiveForm({
     (message: string) =>
       store.setState((s) => ({ formError: message, alertCount: s.alertCount + 1 })),
     [store],
+  );
+  // "Fix the marked fields" goes once the last marked field is fixed.
+  useEffect(
+    () =>
+      store.subscribe(() => {
+        const { formError, errors } = store.getState();
+        if (formError === messages.fixErrors && Object.keys(errors).length === 0) {
+          store.setState({ formError: undefined });
+        }
+      }),
+    [messages, store],
   );
   // Next, jumps and submit validate (sometimes asynchronously) before acting; one at a time.
   const busy = useRef(false);
@@ -596,7 +632,8 @@ function InteractiveForm({
           touched: { ...s.touched, ...Object.fromEntries(touched) },
         };
       });
-      if (errors.size > 0) showError(messages.fixErrors);
+      // With one question on screen, its own error already says it all.
+      if (errors.size > 0 && replaced.size > 1) showError(messages.fixErrors);
       else store.setState({ formError: undefined });
     },
     [messages, showError, store],
@@ -856,7 +893,7 @@ function InteractiveForm({
         reachable: inspecting || i <= furthest,
       })),
       isFirst: position === 0,
-      isLast,
+      isLast: isLast && (inspecting || !mayContinue),
       status,
       submitting: status === 'submitting',
       error: formError,
@@ -873,6 +910,7 @@ function InteractiveForm({
       inspecting,
       isLast,
       jump,
+      mayContinue,
       messages,
       next,
       position,

@@ -7,6 +7,8 @@
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  /* Code shows the characters typed: no `=>` turning into an arrow. */
+  --font-mono--font-feature-settings: "liga" 0, "calt" 0;
   --color-brand: #18181b;
 }
 

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { format } from '../schema/index.ts';
-import { defaultComponents, type LayoutUIProps, useFormComponents } from './components.tsx';
+import {
+  defaultComponents,
+  type LayoutUIProps,
+  ScreenHeadingContext,
+  useFormComponents,
+} from './components.tsx';
 import { useFormMessages } from './hooks.ts';
 
 // Ready-made layouts. Use one with `components: { Layout: SplitLayout }` in a
@@ -31,7 +36,9 @@ export function SplitLayout({
         <div className={state === 'success' ? 'of-split-content of-success' : 'of-split-content'}>
           {banner}
           {intro}
-          {content}
+          <ScreenHeadingContext.Provider value={header ? 'h2' : 'h1'}>
+            {content}
+          </ScreenHeadingContext.Provider>
           {alert}
           {actions}
         </div>

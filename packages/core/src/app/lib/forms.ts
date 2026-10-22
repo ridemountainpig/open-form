@@ -1,4 +1,4 @@
-import { loadForm } from 'virtual:open-form/forms';
+import { formIds, loadForm } from 'virtual:open-form/forms';
 import { type ComponentType, useEffect, useState } from 'react';
 import type { FormConfig } from '../../schema/index.ts';
 
@@ -56,4 +56,18 @@ export function reportCurrent(payload: Record<string, unknown>): void {
     credentials: 'same-origin',
     body: JSON.stringify(payload),
   }).catch(() => {});
+}
+
+/**
+ * Dev: a form or theme was added or removed. Reload to pick it up, except on a
+ * form page whose form is still there, so a half-filled form keeps its answers.
+ */
+export function reloadOnProjectChange(): void {
+  if (!import.meta.hot) return;
+  import.meta.hot.on('open-form:project-changed', (data: { formIds?: string[] }) => {
+    const id = /\/f\/([^/]+)\/?$/.exec(location.pathname)?.[1];
+    const formId = id && decodeURIComponent(id);
+    if (formId && formIds.includes(formId) && data?.formIds?.includes(formId)) return;
+    location.reload();
+  });
 }

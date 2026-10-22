@@ -39,12 +39,16 @@ function titleCase(id: string): string {
     .join(' ');
 }
 
+function singleQuoted(text: string): string {
+  return `'${JSON.stringify(text).slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
+}
+
 export function starterForm(id: string, title: string): string {
   return `import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
 import theme from './theme/index.ts';
 
 export const config = defineForm({
-  title: ${JSON.stringify(title)},
+  title: ${singleQuoted(title)},
   description: 'Tell us a little about yourself.',
 });
 
@@ -236,7 +240,7 @@ export async function exportResponses(formId: string, flags: ExportFlags): Promi
     await writeFile(out, output, { mode: 0o600 });
     await chmod(out, 0o600);
     process.stderr.write(
-      `\n  ${chalk.green(glyph.check)} Exported ${count} responses to ${chalk.bold(path.relative(userCwd, out))}\n\n`,
+      `\n  ${chalk.green(glyph.check)} Exported ${count} responses to ${chalk.bold(shownPath(userCwd, out))}\n\n`,
     );
   } finally {
     await storage.close();
@@ -256,4 +260,10 @@ async function loadDefinition(userCwd: string, formId: string): Promise<FormDefi
     );
     return null;
   }
+}
+
+/** Relative to the project when the file is inside it, absolute otherwise. */
+function shownPath(userCwd: string, file: string): string {
+  const rel = path.relative(userCwd, file);
+  return rel.startsWith('..') || path.isAbsolute(rel) ? file : rel;
 }

@@ -168,13 +168,15 @@ responses. It receives `state`, `eyebrow` (the form's title), `title` and
 | `'not-found'` | A [`<FormHost>`](/docs/deploy/nextjs) asked for a form the server doesn't have, or one that's [unpublished](/docs/reference/define-form#published); `title` is "Form not found" | A built-in sentence: the link may be mistyped, or the form is no longer available |
 
 ```tsx title="forms/meetup/index.tsx"
-import { Form, type NoticeUIProps, T } from '@open-form-build/core';
+import { useContext } from 'react';
+import { Form, type NoticeUIProps, ScreenHeadingContext, T } from '@open-form-build/core';
 
 function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
+  const Heading = useContext(ScreenHeadingContext);
   return (
     <div className="meetup-closed">
-      {eyebrow && <p className="of-eyebrow">{eyebrow}</p>}
-      <h1 className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</h1>
+      {eyebrow && Heading === 'h1' && <p className="of-eyebrow">{eyebrow}</p>}
+      <Heading className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</Heading>
       <p className="of-description">{message}</p>
     </div>
   );
@@ -186,9 +188,10 @@ function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
 Branch on `state` for what differs and fall back to `title` and `message`, so
 a state you didn't plan for still reads right. Keep policy messages in
 `config.submissions`, where Studio and the server use them too. Render one
-`<h1>`; layouts that keep the header on the closed screen, like
-`SplitLayout`, already show the title as the `<h1>`, so use `<h2>` and skip
-`eyebrow` there. Studio's Preview shows every closed screen the form can reach.
+`<h1>`: `ScreenHeadingContext` is `'h2'` inside layouts that keep the header,
+and its `<h1>`, on the closed and thank-you screens, like `SplitLayout`, so
+use it for the title and skip `eyebrow` there. A custom `Layout` that does the
+same wraps `content` in `<ScreenHeadingContext.Provider value="h2">`. Studio's Preview shows every closed screen the form can reach.
 
 <Cards>
   <Card title="Themes" href="/docs/core-feature/themes" />

@@ -648,7 +648,11 @@ function DefaultButton({ variant, className, type = 'button', ...props }: Button
   return <button type={type} className={classes} {...props} />;
 }
 
+/** The heading level for a Success / Notice title: `h2` where the layout keeps the form's own `<h1>` on screen. */
+export const ScreenHeadingContext = createContext<'h1' | 'h2'>('h1');
+
 function DefaultSuccess({ title, children }: SuccessUIProps) {
+  const Heading = useContext(ScreenHeadingContext);
   return (
     <>
       <div className="of-success-icon" aria-hidden="true">
@@ -662,17 +666,18 @@ function DefaultSuccess({ title, children }: SuccessUIProps) {
           />
         </svg>
       </div>
-      <h1 className="of-title">{title}</h1>
+      <Heading className="of-title">{title}</Heading>
       {children}
     </>
   );
 }
 
 function DefaultNotice({ eyebrow, title, message }: NoticeUIProps) {
+  const Heading = useContext(ScreenHeadingContext);
   return (
     <>
-      {eyebrow && <p className="of-eyebrow">{eyebrow}</p>}
-      <h1 className="of-title">{title}</h1>
+      {eyebrow && Heading === 'h1' && <p className="of-eyebrow">{eyebrow}</p>}
+      <Heading className="of-title">{title}</Heading>
       <p className="of-description">{message}</p>
     </>
   );
