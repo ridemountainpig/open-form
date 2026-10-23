@@ -644,8 +644,22 @@ describe('config helpers', () => {
     expect(at('America/Santiago', '2026-04-04', 'end')).toBe('2026-04-05T03:59:59.999Z');
   });
 
+  it('keeps two-digit years as written', () => {
+    expect(policyInstant('0050-03-01T00:00:00Z', 'UTC', 'start')).toBe(
+      Date.parse('0050-03-01T00:00:00Z'),
+    );
+  });
+
   it('rejects dates that are not dates', () => {
-    for (const value of ['next friday', '2026-02-30', '2026-10-31T25:00', 'Oct 31 2026']) {
+    for (const value of [
+      'next friday',
+      '2026-02-30',
+      '2026-10-31T25:00',
+      'Oct 31 2026',
+      '2026-02-30T19:00+08:00',
+      '2026-04-31T10:00:00Z',
+      '2026-10-31T24:00:00Z',
+    ]) {
       expect(() => policyInstant(value, 'UTC', 'end')).toThrow(/Invalid date/);
     }
   });

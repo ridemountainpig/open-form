@@ -5,7 +5,8 @@ export const DEFAULT_TIME_ZONE = 'UTC';
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/;
-const ABSOLUTE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i;
+const ABSOLUTE_RE =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i;
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
@@ -108,7 +109,8 @@ function invalidDate(value: string): Error {
 }
 
 function realDate(value: string, y: number, m: number, d: number): void {
-  const date = new Date(Date.UTC(y, m - 1, d));
+  const date = new Date(0);
+  date.setUTCFullYear(y, m - 1, d);
   if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
     throw invalidDate(value);
   }
@@ -151,7 +153,17 @@ export function policyInstant(
     if (h > 23 || min > 59 || s > 59) throw invalidDate(value);
     return zonedInstant(timeZone, y, m, d, h, min, s, ms);
   }
-  if (ABSOLUTE_RE.test(value)) {
+  const absolute = ABSOLUTE_RE.exec(value);
+  if (absolute) {
+    const [y, m, d, h, min] = absolute.slice(1, 6).map(Number) as [
+      number,
+      number,
+      number,
+      number,
+      number,
+    ];
+    realDate(value, y, m, d);
+    if (h > 23 || min > 59 || Number(absolute[6] ?? 0) > 59) throw invalidDate(value);
     const time = Date.parse(value);
     if (!Number.isNaN(time)) return time;
   }
