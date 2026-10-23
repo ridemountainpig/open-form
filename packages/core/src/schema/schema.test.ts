@@ -645,7 +645,15 @@ describe('config helpers', () => {
   });
 
   it('rejects dates that are not dates', () => {
-    for (const value of ['next friday', '2026-02-30', '2026-10-31T25:00', 'Oct 31 2026']) {
+    for (const value of [
+      'next friday',
+      '2026-02-30',
+      '2026-10-31T25:00',
+      'Oct 31 2026',
+      '2026-02-30T19:00+08:00',
+      '2026-04-31T10:00:00Z',
+      '2026-10-31T24:00:00Z',
+    ]) {
       expect(() => policyInstant(value, 'UTC', 'end')).toThrow(/Invalid date/);
     }
   });
