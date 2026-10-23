@@ -769,7 +769,7 @@ function ConfirmDialog({
       aria-describedby={message ? messageId : undefined}
       onClose={() => onDone(ref.current?.returnValue === 'confirm')}
       onClick={(event) => event.target === event.currentTarget && ref.current?.close()}
-      className="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-zinc-200 bg-white p-0 text-zinc-900 shadow-2xl transition-[opacity,scale] duration-200 ease-out backdrop:bg-zinc-950/40 starting:scale-[0.96] starting:opacity-0 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+      className="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-zinc-200 bg-white p-0 text-zinc-900 shadow-2xl transition-[opacity,scale] duration-200 ease-out backdrop:bg-zinc-950/40 starting:scale-[0.96] starting:opacity-0 motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
     >
       <form method="dialog" className="grid gap-5 p-5">
         <div className="flex items-start gap-3">

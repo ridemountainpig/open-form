@@ -59,6 +59,7 @@ import {
   Button,
   Card,
   cx,
+  Dropdown,
   EmptyState,
   ErrorNotice,
   Popover,
@@ -365,6 +366,29 @@ export function Responses() {
           />
         </div>
         <AddFilter properties={properties} onPick={addFilter} count={readyCount(filterDraft)} />
+        {/* Phones have no column headings to sort from. */}
+        <div className="sm:hidden">
+          <Dropdown
+            label={t('sort.label')}
+            showLabel
+            value={sort ? String(properties.findIndex((p) => p.field === sort.field)) : 'newest'}
+            options={[
+              { value: 'newest', label: t('sort.newest') },
+              ...properties.map((p, index) => ({ value: String(index), label: p.label })),
+            ]}
+            onChange={(value) => {
+              const property = properties[Number(value)];
+              setSort(
+                value === 'newest' || !property
+                  ? null
+                  : {
+                      ...(property.field !== undefined && { field: property.field }),
+                      direction: 'asc',
+                    },
+              );
+            }}
+          />
+        </div>
         <span className="text-[13px] text-zinc-500 tabular-nums dark:text-zinc-400">
           {page.data &&
             (narrowed && info
@@ -775,6 +799,8 @@ function ResponseDrawer({
   }, [responseId]);
 
   const submission = data?.submission;
+  // While the next response loads, the last one stays on screen but can't be acted on.
+  const current = submission?.id === responseId ? submission : undefined;
   const fields = data?.schema?.fields ?? [];
   const seen = new Set<string>();
   const rows: Array<{ key: string; label: string; value: string }> = [];
@@ -801,6 +827,7 @@ function ResponseDrawer({
     : '';
 
   const remove = async () => {
+    const submission = current;
     if (
       !submission ||
       !(await confirm({
@@ -923,12 +950,12 @@ function ResponseDrawer({
           </dl>
         </div>
         <div className="flex justify-between gap-2 border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
-          <Button onClick={() => copyAll(allText)} disabled={!submission}>
+          <Button onClick={() => copyAll(allText)} disabled={!current}>
             {copiedAll ? <Check /> : <Copy />}
             {copiedAll ? t('responses.copied') : t('responses.copyAll')}
           </Button>
           {!readOnly && (
-            <Button variant="danger" onClick={remove} disabled={!submission || deleting}>
+            <Button variant="danger" onClick={remove} disabled={!current || deleting}>
               <Trash2 />
               {t('common.delete')}
             </Button>
@@ -959,7 +986,11 @@ function ExportMenu({
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const [everything, setEverything] = useState(false);
+  // "All" holds for the search and filters it was picked under; new ones start at Matching.
+  const criteria = `${narrow.q}\n${narrow.filter}`;
+  const [allFor, setAllFor] = useState<string | null>(null);
+  const everything = allFor === criteria;
+  const setEverything = (all: boolean) => setAllFor(all ? criteria : null);
   const narrowed = matching !== undefined && !everything;
   const root = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
