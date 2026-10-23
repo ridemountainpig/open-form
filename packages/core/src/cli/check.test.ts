@@ -8,6 +8,7 @@ import type { FieldSchema, FormSchema } from '../schema/index.ts';
 import { createViteConfig } from '../vite/config.ts';
 import {
   checkForms,
+  configSecretProblems,
   languageLines,
   uniqueWarnings,
   unusedComponentWarnings,
@@ -141,5 +142,39 @@ describe('languageLines', () => {
     const lines = languageLines(definition).map((line) => stripVTControlCharacters(line));
     expect(lines.filter((line) => line.includes('not seen "'))).toHaveLength(8);
     expect(lines.at(-1)).toMatch(/… 2 more/);
+  });
+});
+
+describe('configSecretProblems', () => {
+  it('flags a connection string with its password written into the config', () => {
+    const problems = configSecretProblems(`import { defineConfig } from '@open-form-build/core';
+export default defineConfig({
+  storage: {
+    url: 'postgres://app:s3cret@db.example.com:5432/forms',
+  },
+  webhooks: [{ url: \`https://user:token@hooks.example.com/\${'x'}\` }],
+});
+`);
+    expect(problems).toHaveLength(2);
+    expect(
+      configSecretProblems(
+        `export default { storage: { url: 'postgres://app@db/forms?sslmode=require&password=s3cret' } };`,
+      ),
+    ).toHaveLength(1);
+    expect(problems[0]).toMatch(/^open-form\.config\.ts:4 holds a URL with a password/);
+    expect(problems[0]).not.toContain('s3cret');
+  });
+
+  it('accepts URLs read from the environment, and URLs without a password', () => {
+    expect(
+      configSecretProblems(`export default {
+  storage: { url: process.env.DATABASE_URL },
+  webhooks: [
+    { url: 'https://hooks.slack.com/services/T0/B0/x' },
+    { url: 'https://example.com:8443/hook?to=me@example.com' },
+    { url: 'postgres://app@localhost/forms' },
+  ],
+};`),
+    ).toEqual([]);
   });
 });

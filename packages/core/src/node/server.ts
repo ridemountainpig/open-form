@@ -12,7 +12,6 @@ import {
   type FormRegistry,
   type OpenFormHandler,
 } from '../server/index.ts';
-import { createSqliteStorage } from '../sqlite/index.ts';
 import {
   clientAddress,
   parseTrustProxy,
@@ -22,6 +21,7 @@ import {
   toWebRequest,
 } from './http.ts';
 import { resolveDatabasePath, resolveSecret } from './secret.ts';
+import { describeStorage, openStorage, resolveStorage } from './storage.ts';
 
 /** What `open-form build` emits at `dist/server/entry.js`. */
 export type ServerEntry = {
@@ -46,6 +46,8 @@ export type StartedServer = {
   /** `studio.public: 'read-only'`: anyone can read Studio without signing in. */
   publicStudio: boolean;
   forms: string[];
+  /** Where responses go, password hidden: `SQLite .open-form/open-form.db`, `Postgres postgres://…`. */
+  storage: string;
   close(): Promise<void>;
 };
 
@@ -178,7 +180,7 @@ export function pageHeaders(
   };
 }
 
-/** Production server: the built app, the API, and SQLite. No other services. */
+/** Production server: the built app, the API, and SQLite (or Postgres). No other services. */
 export async function startServer(opts: StartServerOptions): Promise<StartedServer> {
   const root = path.resolve(opts.root);
   const outDir = path.resolve(root, opts.outDir ?? 'dist');
@@ -196,7 +198,8 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   for (const id of entry.formIds) await registry.load(id);
 
   const databasePath = resolveDatabasePath(root, config.storage?.path);
-  const storage = await createSqliteStorage({ path: databasePath });
+  const storageTarget = resolveStorage(root, config);
+  const storage = await openStorage(storageTarget);
   const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
   const adminEnabled = Boolean(adminPassword);
   const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
@@ -316,6 +319,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     adminEnabled,
     publicStudio,
     forms: entry.formIds,
+    storage: describeStorage(storageTarget, root),
     async close() {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await storage.close();

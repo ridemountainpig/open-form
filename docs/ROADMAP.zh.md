@@ -332,9 +332,16 @@
 
 > Zapier／Make／n8n 已可透過 v0.3 的 webhooks 串接，不另做 integration。
 
-### Step 1 — Remote storage ⬜
+### Step 1 — Remote storage 🚧
 
-- ⬜ Turso / libSQL、Postgres adapter（評估 Drizzle）
+- ✅ 只在一處選擇 adapter（`openStorage`），共用的合約測試對每個 adapter 執行
+- ✅ Postgres adapter（`@open-form-build/core/postgres`，`pg` 為 optional peer dependency）：獨立的 `open_form` schema、advisory lock 下的 migration、以 row lock 保證的編號與 `maxResponses`／`uniqueBy`、Studio 篩選與排序走共用的 JavaScript
+- ✅ `OPEN_FORM_DATABASE_URL`／`storage.url`、預設驗證憑證、所有顯示連線字串之處都遮罩密碼
+- ✅ `open-form init` 詢問資料庫並把連線字串只存進 `.env`；`open-form check` 遇到寫進 `open-form.config.ts` 的密碼會失敗；`open-form db status`
+- ✅ 指南：Postgres、Vercel（Neon、Supabase）；CI 對 Postgres 跑合約測試與 e2e smoke
+- ⬜ `open-form db copy`：把既有 SQLite 搬到 Postgres，保留回覆編號
+- ⬜ 大型表單：常用篩選運算子下推到 SQL
+- ⬜ Turso / libSQL adapter（不採用 Drizzle：查詢維持手寫）
 
 ### Step 2 — S3-compatible 檔案儲存 ⬜
 

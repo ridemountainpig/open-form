@@ -142,8 +142,8 @@ after a rebuild, so `--watch` plus `next dev` picks up edits to forms and to
     },
     storage: {
       type: 'StorageAdapter',
-      default: 'SQLite at OPEN_FORM_DB, else storage.path in open-form.config.ts, else .open-form/open-form.db',
-      description: 'Where responses go. The default needs a persistent disk.',
+      default: 'Postgres at OPEN_FORM_DATABASE_URL or storage.url, else SQLite at OPEN_FORM_DB, storage.path or .open-form/open-form.db',
+      description: 'Where responses go. SQLite needs a persistent disk.',
     },
     secret: {
       type: 'string',
@@ -176,7 +176,8 @@ If you mount the route somewhere else, set `basePath` to match and pass the same
 path to `<FormHost api>`.
 
 Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
-`OPEN_FORM_SECRET`, `OPEN_FORM_DB` and `OPEN_FORM_WEBHOOK_SECRET`. It ignores
+`OPEN_FORM_SECRET`, `OPEN_FORM_DATABASE_URL`, `OPEN_FORM_DB` and
+`OPEN_FORM_WEBHOOK_SECRET`. It ignores
 `OPEN_FORM_TRUST_PROXY`; pass `trustProxy` instead. It also ignores
 `OPEN_FORM_SECURE_COOKIES` and has no option in its place: cookies are marked
 `Secure` when the request URL or the page's `Origin` is `https://`.
@@ -222,9 +223,9 @@ Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
 ## Storage, admin and Vercel
 
 - **Storage.** Responses go to SQLite in `.open-form/` by default, which needs a
-  persistent disk. On a serverless platform pass `storage` with an adapter that
-  persists; see [Storage](/docs/reference/storage). Keep `.open-form/` and `dist/`
-  out of git.
+  persistent disk. On a serverless platform set `OPEN_FORM_DATABASE_URL` to a
+  [Postgres](/docs/deploy/postgres) database and install `pg`; see
+  [Vercel](/docs/deploy/vercel). Keep `.open-form/` and `dist/` out of git.
 - **Secret.** Without `OPEN_FORM_SECRET`, the route generates one into a
   `secret` file next to the database (`.open-form/secret` by default).
   Serverless functions can't write there, so on Vercel and other read-only
@@ -265,6 +266,7 @@ export const { GET, POST, PUT, DELETE, OPTIONS } = createOpenFormRoute({
 ## What's next
 
 <Cards>
+  <Card title="Vercel" href="/docs/deploy/vercel" />
   <Card title="Production" href="/docs/deploy/production" />
   <Card title="Webhooks" href="/docs/deploy/webhooks" />
   <Card title="HTTP API" href="/docs/reference/http-api" />

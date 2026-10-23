@@ -1,0 +1,155 @@
+---
+title: Postgres
+seoTitle: "Store form responses in Postgres"
+description: "Keep responses in Postgres instead of a SQLite file: Supabase, Neon, RDS, Railway or your own server. Set one connection string; Open Form creates its tables."
+---
+
+SQLite needs a persistent disk. When there isn't one (Vercel and other
+serverless hosts), or you want responses in a database you already run, point
+Open Form at Postgres with one environment variable:
+
+```bash title=".env"
+OPEN_FORM_DATABASE_URL='postgres://user:password@host:5432/dbname'
+```
+
+`open-form dev`, `start`, `list`, `responses export`, `delete` and the
+[Next.js route](/docs/deploy/nextjs) all use it. Nothing else changes: Studio,
+filters, exports, webhooks and response numbers work the same as on SQLite.
+
+<Steps>
+<Step>
+
+### Install the driver
+
+Postgres support uses [`pg`](https://node-postgres.com), which isn't installed
+until you need it.
+
+```npm
+npm install pg
+```
+
+`open-form init --database postgres` adds it for you.
+
+</Step>
+<Step>
+
+### Set the connection string
+
+Put it in `.env` for local work (the `.gitignore` from `open-form init` already
+ignores it), and in your host's environment settings in production. The
+environment wins over `.env`.
+
+<Callout type="warn">
+  Never write the connection string into `open-form.config.ts`: that file is
+  committed. To reuse a variable your app already has, read it from the
+  environment instead, and [`open-form check`](/docs/cli/check) fails when the
+  config holds a URL with a password.
+
+  ```ts title="open-form.config.ts"
+  export default defineConfig({
+    storage: { url: process.env.DATABASE_URL },
+  });
+  ```
+</Callout>
+
+`OPEN_FORM_DATABASE_URL` wins over `storage.url`. Open Form doesn't read
+`DATABASE_URL` on its own, because in many apps it points at the app's own
+database.
+
+</Step>
+<Step>
+
+### Check it
+
+```npm
+npx open-form db status
+```
+
+```text
+  ┃  Storage   Postgres (from OPEN_FORM_DATABASE_URL)
+  ┃  Database  postgres://forms:***@db.example.com:5432/app?sslmode=verify-full
+  ┃  Status    ✔ connected PostgreSQL 16.4 · schema open_form · migration 1
+  ┃  Responses contact 12 · meetup 87
+```
+
+The first connection creates the tables. See [`open-form db status`](/docs/cli/db).
+
+</Step>
+</Steps>
+
+## Where the tables go
+
+Open Form keeps its tables in their own schema, `open_form`, away from your
+app's tables in `public`. It creates the schema on first start, then the same
+tables as SQLite: `submissions`, `form_versions`, `form_counters`,
+`form_overrides`, `rate_limits`, `revoked_sessions`, `submission_files` and
+`meta`. Answers are stored as `json`, so they come back with their fields in
+the order the respondent's form sent them, and you can query them:
+
+```sql
+SELECT number, data->>'email' AS email, created_at
+FROM open_form.submissions
+WHERE form_id = 'meetup'
+ORDER BY number DESC;
+```
+
+Migrations run when a server starts. When many start at once (serverless cold
+starts), a Postgres advisory lock lets one run them while the others wait; once
+the database is up to date, starting takes no lock.
+
+To give Open Form a role of its own, the role needs to create the `open_form`
+schema on first start, or own one you create for it:
+
+```sql
+CREATE ROLE open_form_app LOGIN PASSWORD '…';
+CREATE SCHEMA open_form AUTHORIZATION open_form_app;
+```
+
+## Encryption
+
+Connections to any host other than `localhost` verify the server's
+certificate. A connection string without `sslmode` gets
+`sslmode=verify-full`, so answers are never sent in the clear by accident.
+
+- `sslmode=verify-full`: encrypt and verify. Works with providers whose
+  certificates come from a public authority, like Neon. `pg` also verifies on
+  `require`, but `require` with `uselibpqcompat=true` follows libpq and
+  encrypts without verifying, so write `verify-full` to be sure.
+- `sslrootcert=./ca.crt`: verify against your provider's own certificate
+  authority, for providers that sign with one, like Supabase.
+- `sslmode=no-verify`: encrypt without checking who answers. Use it only on a
+  network you trust.
+- `sslmode=disable`: no encryption. Open Form logs a warning when the host
+  isn't local.
+
+## Serverless and pooling
+
+Each server or function keeps a small pool of connections (`pg`'s default of
+10). On serverless hosts, many short-lived functions can run out of
+connections, so use your provider's pooled connection string: Neon's `-pooler`
+host, or Supabase's transaction pooler on port 6543. Open Form doesn't use
+named prepared statements, so transaction pooling works.
+
+Without a writable disk, also set `OPEN_FORM_SECRET`. See
+[Vercel](/docs/deploy/vercel).
+
+## Deleting responses
+
+A deleted response is gone from every query at once, but Postgres keeps the old
+row on disk until `VACUUM` reclaims it (autovacuum does this on its own).
+Backups and point-in-time recovery keep copies for as long as your provider
+retains them. SQLite, by contrast, overwrites a deleted response immediately.
+
+## Moving from SQLite
+
+Responses already in `.open-form/open-form.db` stay there: setting
+`OPEN_FORM_DATABASE_URL` starts with an empty database. Export what you need
+first with [`open-form responses export`](/docs/cli/responses-export).
+
+## What's next
+
+<Cards>
+  <Card title="Vercel" href="/docs/deploy/vercel" />
+  <Card title="Storage reference" href="/docs/reference/storage" />
+  <Card title="open-form db status" href="/docs/cli/db" />
+</Cards>
