@@ -42,9 +42,11 @@ import { type SchemaInfo, useResource } from './api.ts';
 import { type Comment, EditPanel } from './edit-panel.tsx';
 import { FormDesign } from './form-design.tsx';
 import { useFormDetail } from './form-detail.tsx';
-import { useT } from './i18n.tsx';
+import { type Translate, useT } from './i18n.tsx';
 import { IS_APPLE } from './sidebar.tsx';
 import { Button, cx, Dropdown, Segmented } from './ui.tsx';
+
+const DESKTOP_WIDTH = 1280;
 
 const DEVICES = [
   { id: 'desktop', width: null, icon: Monitor },
@@ -119,6 +121,13 @@ const typing = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
   (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
+// Questions shown only for some answers make the count a range: "2–4 questions".
+function questionCount(t: Translate, fields: { conditional: boolean }[]): string {
+  const always = fields.filter((f) => !f.conditional).length;
+  if (always === fields.length) return t.n('preview.questions', fields.length);
+  return t.n('preview.questionsUpTo', fields.length, { min: always });
+}
+
 export function Preview() {
   const { formId, info } = useFormDetail();
   const t = useT();
@@ -130,6 +139,22 @@ export function Preview() {
   usePreviewKeys(frame);
   const shown = usePreviewNav(frame) ?? { step: 0, inspecting: false, done: false, notice: null };
   const current = DEVICES.find((d) => d.id === device) ?? DEVICES[0];
+  // Desktop renders at a real desktop width and scales down to fit, so wide layouts
+  // show as they do on a laptop instead of falling back to their narrow version.
+  const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
+  const [fit, setFit] = useState(1);
+  useEffect(() => {
+    const box = viewport;
+    if (!box || current.width) {
+      setFit(1);
+      return;
+    }
+    const update = () => setFit(Math.min(1, box.clientWidth / DESKTOP_WIDTH));
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [viewport, current.width]);
   const schema = info?.schema;
   const languages = info?.languages?.available ?? [];
   const names = useMemo(() => schemaNames(schema), [schema]);
@@ -137,14 +162,16 @@ export function Preview() {
   const hasConditions = Boolean(schema?.fields.some((f) => f.when.length > 0));
 
   // Each step is named by its title, else its first question — "Step 3" says nothing.
+  // A form with one untitled page is named by the form instead: its first question isn't the page.
   const steps = useMemo(
     () =>
-      (schema?.pages ?? []).map((page) => {
+      (schema?.pages ?? []).map((page, _, pages) => {
         const fields = schema?.fields.filter((f) => f.page === page.index) ?? [];
         const first = fields.find((f) => f.label);
+        const fallback = pages.length === 1 ? schema?.title : first?.label;
         return {
           index: page.index,
-          name: page.title ?? first?.label ?? t('preview.step', { n: page.index + 1 }),
+          name: page.title ?? fallback ?? t('preview.step', { n: page.index + 1 }),
           fields: fields.map((f) => ({
             name: f.name,
             label: f.label ?? f.name,
@@ -303,7 +330,7 @@ export function Preview() {
       mark: String(step.index + 1),
       eyebrow: t('preview.step', { n: step.index + 1 }),
       name: step.name,
-      meta: t.n('preview.questions', step.fields.length),
+      meta: questionCount(t, step.fields),
       hint: null,
       fields: step.fields,
       condition: step.condition,
@@ -654,19 +681,29 @@ export function Preview() {
               )}
               <div
                 className={cx(
-                  'w-full overflow-hidden bg-white shadow-[0_8px_40px_-12px_rgb(0_0_0/0.25)] transition-[max-width] duration-300 ease-out dark:bg-zinc-950',
+                  'h-[min(78dvh,880px)] w-full overflow-hidden bg-white shadow-[0_8px_40px_-12px_rgb(0_0_0/0.25)] transition-[max-width] duration-300 ease-out dark:bg-zinc-950',
                   current.width
                     ? 'rounded-[20px] border border-zinc-200 dark:border-zinc-800'
                     : 'rounded-lg',
                 )}
-                style={{ maxWidth: current.width ?? '100%' }}
+                ref={setViewport}
+                style={{ maxWidth: current.width ?? DESKTOP_WIDTH }}
               >
                 <iframe
                   ref={frame}
                   key={src}
                   title={t('preview.frameTitle', { id: formId })}
                   src={src}
-                  className="block h-[min(78dvh,880px)] w-full"
+                  className="block h-full w-full origin-top-left"
+                  style={
+                    fit < 1
+                      ? {
+                          width: DESKTOP_WIDTH,
+                          height: `${100 / fit}%`,
+                          transform: `scale(${fit})`,
+                        }
+                      : undefined
+                  }
                 />
               </div>
             </div>

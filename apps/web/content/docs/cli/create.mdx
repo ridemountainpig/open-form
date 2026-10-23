@@ -7,6 +7,7 @@ description: "Create a new form from the starter at forms/<id>/index.tsx, with i
 npx open-form create event-registration
 npx open-form create event-registration --title "Event Registration"
 npx open-form create event-registration --theme editorial
+npx open-form create event-registration --locale zh-TW
 ```
 
 Writes `forms/<id>/index.tsx` with a small starter form and
@@ -14,8 +15,10 @@ Writes `forms/<id>/index.tsx` with a small starter form and
 `/f/<id>`. Without `--theme` the look file is empty, which is the plain base
 look. With `--theme`, it holds that theme's tokens: colors and the dark
 palette, fonts, radius, width, spacing and color scheme, plus the web fonts
-those tokens name. The theme's CSS and components aren't copied; your agent
-takes only the parts the form uses. See
+those tokens name. The theme's other web fonts, such as a code font or a font
+for another script, are copied to `theme/fonts/` without an import, ready for
+any CSS borrowed from the theme. The theme's CSS and components aren't copied;
+your agent takes only the parts the form uses. See
 [Themes](/docs/core-feature/themes#writing-the-rest-of-the-look).
 
 The id must be kebab-case: lowercase letters, digits and `-`. It becomes the
@@ -27,6 +30,7 @@ folder name and the public URL. `create` stops if `forms/<id>` already exists.
 | --- | --- | --- |
 | `-t, --title <title>` | the id in title case | The form's `title` in `defineForm()`. |
 | `--theme <theme>` | none | Start the form's look from the tokens of a theme in `themes/`, or else the starter of that name. If the theme doesn't exist, nothing is created. |
+| `--locale <locale>` | the project's `locale` | The language the form is written in, set as `locale` in `defineForm()`: `en`, `zh-TW`, `zh-CN` or `ja`. |
 
 ## The starter
 

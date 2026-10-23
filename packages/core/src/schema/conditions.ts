@@ -1,4 +1,4 @@
-import type { Condition, FieldCondition, FormValues, Primitive } from './types.ts';
+import type { Condition, FieldCondition, FieldSchema, FormValues, Primitive } from './types.ts';
 
 /** `record[key]` only when it's the record's own entry: a field named `constructor` isn't a function. */
 export function ownValue(record: FormValues, key: string): unknown {
@@ -103,4 +103,123 @@ export function conditionFields(cond: Condition, out: Set<string> = new Set()): 
   else if ('not' in cond) conditionFields(cond.not, out);
   else out.add(cond.field);
   return out;
+}
+
+function operands(name: string, cond: Condition, out: Primitive[]): Primitive[] {
+  if ('all' in cond) for (const c of cond.all) operands(name, c, out);
+  else if ('any' in cond) for (const c of cond.any) operands(name, c, out);
+  else if ('not' in cond) operands(name, cond.not, out);
+  else if (cond.field === name) {
+    out.push(
+      ...[cond.equals, cond.notEquals, cond.contains, ...(cond.in ?? [])].filter(
+        (v): v is Primitive => v !== undefined && v !== null,
+      ),
+    );
+    out.push(...[cond.gte, cond.lte].filter((v): v is number => v !== undefined));
+    if (cond.gt !== undefined) out.push(cond.gt + 1);
+    if (cond.lt !== undefined) out.push(cond.lt - 1);
+  }
+  return out;
+}
+
+/**
+ * Answers worth trying when asking what a question can change: each option, a ticked
+ * box, each option and all of them in a group, each score on a short scale, and the values `conditions` compare it with.
+ * Other fields get one stand-in answer.
+ */
+export function sampleAnswers(
+  field: FieldSchema,
+  conditions: readonly Condition[] = [],
+): unknown[] {
+  if (field.type === 'checkbox') return [true];
+  if (field.type === 'checkbox-group') {
+    const values = (field.options ?? []).map((o) => o.value);
+    return [...values.map((v) => [v]), ...(values.length > 1 ? [values] : [])];
+  }
+  if (field.type === 'select' || field.type === 'radio') {
+    return (field.options ?? []).map((o) => o.value);
+  }
+  const { min, max } = field;
+  const numeric = field.type === 'number' || typeof min === 'number' || typeof max === 'number';
+  const compared: unknown[] = [];
+  for (const cond of conditions) {
+    for (const v of operands(field.name, cond, [])) {
+      if (!numeric) {
+        compared.push(String(v));
+        continue;
+      }
+      const n = Number(v);
+      const below = typeof min === 'number' && n < min;
+      const above = typeof max === 'number' && n > max;
+      if (!Number.isNaN(n) && !below && !above) compared.push(n);
+    }
+  }
+  let samples: unknown[];
+  if (typeof min === 'number' && typeof max === 'number' && max - min <= 10) {
+    const steps = Array.from({ length: Math.floor(max - min) + 1 }, (_, i) => min + i);
+    samples = steps.at(-1) === max ? steps : [...steps, max];
+  } else if (typeof min === 'number' || typeof max === 'number') {
+    samples = [min, max].filter((n) => typeof n === 'number');
+  } else {
+    samples = [numeric ? 0 : 'answer'];
+  }
+  // A range can be split across conditions (`gt: 50` in one, `lt: 51` in another), so
+  // also try between each pair of neighbouring values.
+  if (numeric) {
+    const sorted = [...new Set(compared as number[])].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i++) compared.push((sorted[i - 1] + sorted[i]) / 2);
+  }
+  return [...new Set([...samples, ...compared])];
+}
+
+/**
+ * The most steps a respondent may see, trying the answers each required question that
+ * decides a hidden step could get (and the questions those reveal), so "1 / 3" doesn't
+ * later become "1 / 4". Past `budget` evaluations, it's an estimate.
+ */
+export function mostVisibleSteps(
+  steps: readonly { when: readonly Condition[] }[],
+  fields: readonly FieldSchema[],
+  values: FormValues,
+  budget = 2000,
+): number {
+  const conditions = [...steps.flatMap((step) => step.when), ...fields.flatMap((f) => f.when)];
+  const most = (values: FormValues): number => {
+    const shown = steps.filter((step) => evaluateAll(step.when, values)).length;
+    if (--budget < 0) return shown;
+    // Every awaited question gets answered eventually, so trying them in one order
+    // covers each combination once.
+    // A question that's hidden until another is answered waits on that one first.
+    const awaited = (names: Iterable<string>, seen: Set<string>): FieldSchema | undefined => {
+      for (const name of names) {
+        if (seen.has(name) || isFilled(ownValue(values, name))) continue;
+        seen.add(name);
+        for (const f of fields) {
+          if (f.name !== name || !f.required) continue;
+          if (evaluateAll(f.when, values)) return f;
+          const before = awaited(
+            f.when.flatMap((cond) => [...conditionFields(cond)]),
+            seen,
+          );
+          if (before) return before;
+        }
+      }
+    };
+    let next: FieldSchema | undefined;
+    for (const step of steps) {
+      if (next) break;
+      if (evaluateAll(step.when, values)) continue;
+      next = awaited(
+        step.when.flatMap((cond) => [...conditionFields(cond)]),
+        new Set(),
+      );
+    }
+    if (!next) return shown;
+    const { name } = next;
+    return Math.max(
+      shown,
+      ...sampleAnswers(next, conditions).map((v) => most({ ...values, [name]: v })),
+    );
+  };
+  return most(values);
 }

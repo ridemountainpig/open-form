@@ -79,6 +79,8 @@ export type FormRuntime = {
   previewControl?: { subscribe(listener: (command: PreviewCommand) => void): () => void };
   /** Preview only: unsaved tokens from Studio's Adjust panel, in place of the form's own theme's tokens. */
   themeDraft?: Theme;
+  /** Collect only: answers to render with, so text shown only for some answers is counted. */
+  answers?: FormValues;
 };
 
 export const RuntimeContext = createContext<FormRuntime>({ mode: 'interactive' });

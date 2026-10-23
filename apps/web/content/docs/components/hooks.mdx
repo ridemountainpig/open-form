@@ -59,7 +59,7 @@ move. Use it for custom progress, step lists and layouts.
 | --- | --- |
 | `position` | 0-based position among the steps the respondent will see. |
 | `step` | Index of the current `<Page>` among all pages, hidden conditional ones included. |
-| `total` | Number of visible steps. |
+| `total` | The most steps the respondent may see: the visible ones, plus the ones a required question not yet answered could still reveal. It only shrinks as answers come in, except on a form with thousands of answer combinations deciding its steps, where it's an estimate. |
 | `steps` | Each visible step (`NavStep`): `title`, `state` (`'done'`, `'current'` or `'upcoming'`), `reachable`, `position`, and `index` among all pages. |
 | `stepTitle` | The current step's title, if it has one. |
 | `isFirst` / `isLast` | Whether this is the first or last visible step. `isLast` stays `false` while a required answer that decides a later step is still empty. |

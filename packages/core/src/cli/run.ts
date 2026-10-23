@@ -86,6 +86,7 @@ export async function run(argv: string[]): Promise<void> {
     .argument('<id>', 'kebab-case form id, e.g. event-registration')
     .option('-t, --title <title>', 'form title')
     .option('--theme <theme>', "start the form's look from a theme's tokens (themes/ or a starter)")
+    .option('--locale <locale>', 'the language the form is written in, e.g. zh-TW')
     .action(async (id: string, flags) => {
       const { createForm } = await import('./commands.ts');
       await createForm(id, flags);

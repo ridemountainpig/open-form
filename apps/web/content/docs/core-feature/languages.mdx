@@ -146,10 +146,13 @@ npx open-form check feedback
 ```
 
 `check` renders the form like the server does and prints, per language,
-`N/N translated` and the first 8 missing entries; `--json` lists them all.
-Entries it didn't see rendered are counted as **not seen**, and the first 3 are
-shown. Text that appears only for certain answers, or comes from `validate`, is
-expected there. A key left behind after you edited the source text is not:
+`N/N translated` and the first 8 missing entries; `--json` lists them all. It
+also renders the form once per sample answer (each option, a ticked box, each
+score on a scale of up to 11 points), so text that only some answers show, such
+as `{score <= 6 && <T>What could we do better?</T>}`, is counted too. Entries it
+didn't see rendered are counted as **not seen**, and the first 8 are shown. Text
+that depends on an answer it didn't try, or comes from `validate`, is expected
+there. A key left behind after you edited the source text is not:
 update it in every `locales/*.json`.
 
 Studio's **Settings → Languages** shows the translated count and the missing

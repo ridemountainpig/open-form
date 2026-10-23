@@ -16,6 +16,39 @@ import { CollectorContext, ScopeContext, useFormContext, useRuntime } from './co
 import { useTranslate } from './i18n.tsx';
 import { useStoreSelector } from './store.ts';
 
+let pressing = false;
+let watching = false;
+
+// A blur caused by pressing another control would show its error mid-press, push
+// that control down and make the click miss, so the check waits until release.
+function watchPresses() {
+  if (typeof document === 'undefined' || watching) return;
+  watching = true;
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      pressing = true;
+    },
+    true,
+  );
+  const release = () => {
+    pressing = false;
+  };
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+}
+
+function afterPress(run: () => void) {
+  if (typeof document === 'undefined' || !pressing) return run();
+  const done = () => {
+    document.removeEventListener('pointerup', done, true);
+    document.removeEventListener('pointercancel', done, true);
+    setTimeout(run, 0);
+  };
+  document.addEventListener('pointerup', done, true);
+  document.addEventListener('pointercancel', done, true);
+}
+
 export type UseFieldOptions = FieldConstraints & {
   name: string;
   /** Built-in fields set this; custom components can omit it (`'custom'`). */
@@ -108,6 +141,8 @@ export function useField(opts: UseFieldOptions): FieldApi {
   const tr = useTranslate();
   const reactId = useId();
   const id = domId(opts.name, reactId);
+  // Before any field can blur: the press that moves focus must already be seen.
+  useEffect(watchPresses, []);
   const { name } = opts;
 
   if (runtime.mode === 'collect' && collector) {
@@ -173,9 +208,11 @@ export function useField(opts: UseFieldOptions): FieldApi {
   // Format errors show on blur; "required" waits for Next/Submit so tabbing
   // through an untouched form doesn't light it up red.
   const onBlur = useCallback(() => {
-    const current = ownValue(store.getState().values, name);
-    store.setState((s) => ({ touched: { ...s.touched, [name]: true } }));
-    if (isFilled(current) || ownValue(store.getState().errors, name)) void validateNow(current);
+    afterPress(() => {
+      const current = ownValue(store.getState().values, name);
+      store.setState((s) => ({ touched: { ...s.touched, [name]: true } }));
+      if (isFilled(current) || ownValue(store.getState().errors, name)) void validateNow(current);
+    });
   }, [name, store, validateNow]);
 
   const ref = useCallback((element: HTMLElement | null) => {

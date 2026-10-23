@@ -5,8 +5,10 @@ export {
   evaluateAll,
   evaluateCondition,
   isFilled,
+  mostVisibleSteps,
   ownValue,
   sameValue,
+  sampleAnswers,
 } from './conditions.ts';
 export type {
   Duration,

@@ -23,6 +23,8 @@ export const CONTRAST_CHECKS: ContrastCheck[] = [
 export type PaletteReport = {
   scheme: 'light' | 'dark';
   rows: Array<{
+    /** The token pair, e.g. `foreground/background`. */
+    pair: string;
     label: string;
     fg: string;
     bg: string;
@@ -65,6 +67,7 @@ export function contrastReport(theme: Theme): { palettes: PaletteReport[]; warni
       const bg = parseColor(colors[c.bg]);
       const ratio = fg && bg ? Math.round(contrast(fg, bg) * 100) / 100 : null;
       return {
+        pair: `${c.fg}/${c.bg}`,
         label: `${c.label} (${c.fg} / ${c.bg})`,
         fg: fg ? toHex(fg) : colors[c.fg],
         bg: bg ? toHex(bg) : colors[c.bg],

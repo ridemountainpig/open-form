@@ -39,12 +39,14 @@ dark:
 | `primary` focus and selection on `surface` | 3:1 |
 
 A theme with `dark: false` is checked in light only, and one with `colorScheme`
-only in that scheme. It also warns when a theme sets `colors` without `dark`,
+only in that scheme. When the theme has its own `Layout`, a failing
+`foreground` on `background` is shown as a hint (▲) instead of a failure: the
+layout decides whether any text sits straight on `background`. It also warns when a theme sets `colors` without `dark`,
 since dark mode would mix your light colors with the built-in dark defaults.
 
 Colors can be hex, `rgb()`, `hsl()`, `oklch()` or `oklab()`. Values it can't
 resolve, such as `var()` or `color-mix()`, show as `?` and count as failures.
-The command exits with code 1 when any pair fails; fix it by changing that
+The command exits with code 1 when any pair fails, except a hint (▲); fix it by changing that
 token's lightness and keeping its hue.
 
 | Flag | Default | Description |

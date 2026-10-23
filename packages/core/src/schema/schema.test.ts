@@ -8,6 +8,7 @@ import {
   type FormSchema,
   getMessages,
   isTimeZone,
+  mostVisibleSteps,
   overriddenTimeZone,
   parseDuration,
   parseSchedule,
@@ -16,6 +17,7 @@ import {
   policyInstant,
   resolveProtection,
   resolveVisibleFields,
+  sampleAnswers,
   scheduleChanges,
   schemaVersion,
   studioProblem,
@@ -102,6 +104,112 @@ describe('evaluateCondition', () => {
         values,
       ),
     ).toBe(true);
+  });
+});
+
+describe('sampleAnswers', () => {
+  const field = (extra: Partial<FieldSchema>): FieldSchema => ({
+    name: 'x',
+    type: 'number',
+    page: 0,
+    when: [],
+    ...extra,
+  });
+
+  it('tries each option, each step of a short scale and its upper bound', () => {
+    const options = [
+      { value: 'a', label: 'A' },
+      { value: 'b', label: 'B' },
+    ];
+    expect(sampleAnswers(field({ type: 'radio', options }))).toEqual(['a', 'b']);
+    expect(sampleAnswers(field({ type: 'checkbox-group', options }))).toEqual([
+      ['a'],
+      ['b'],
+      ['a', 'b'],
+    ]);
+    expect(sampleAnswers(field({ min: 0, max: 3 }))).toEqual([0, 1, 2, 3]);
+    expect(sampleAnswers(field({ min: 0.5, max: 1 }))).toEqual([0.5, 1]);
+    expect(sampleAnswers(field({ min: 0, max: 100 }))).toEqual([0, 100]);
+    expect(sampleAnswers(field({ type: 'text' }))).toEqual(['answer']);
+  });
+
+  it('adds the values conditions compare the field with, inside its bounds', () => {
+    const when = [
+      {
+        any: [
+          { field: 'x', equals: 50 },
+          { field: 'x', gt: 80 },
+          { field: 'x', lt: 0 },
+        ],
+      },
+      { field: 'other', equals: 7 },
+    ];
+    expect(sampleAnswers(field({ min: 0, max: 100 }), when)).toEqual([0, 100, 50, 81, 65.5]);
+    expect(sampleAnswers(field({ min: 0, max: 100 }), [{ field: 'x', gt: 50, lt: 51 }])).toContain(
+      50.5,
+    );
+    expect(
+      sampleAnswers(field({ min: 0, max: 100 }), [
+        {
+          all: [
+            { field: 'x', gt: 50 },
+            { field: 'x', lt: 51 },
+          ],
+        },
+      ]),
+    ).toContain(50.5);
+    expect(sampleAnswers(field({ type: 'text' }), [{ field: 'x', equals: 'yes' }])).toEqual([
+      'answer',
+      'yes',
+    ]);
+  });
+});
+
+describe('mostVisibleSteps', () => {
+  const required = (name: string, extra: Partial<FieldSchema> = {}): FieldSchema => ({
+    name,
+    type: 'radio',
+    page: 0,
+    when: [],
+    required: true,
+    options: [
+      { value: 'x', label: 'X' },
+      { value: 'y', label: 'Y' },
+    ],
+    ...extra,
+  });
+
+  it('counts a step only a compared number reveals, and one behind several answers', () => {
+    const fields = [
+      required('age', { type: 'number', options: undefined, min: 0, max: 100 }),
+      required('a', { page: 1, when: [{ field: 'age', equals: 50 }] }),
+      required('b', { page: 1, when: [{ field: 'age', equals: 50 }] }),
+    ];
+    const steps = [
+      { when: [] },
+      { when: [{ field: 'age', equals: 50 }] },
+      {
+        when: [
+          { field: 'a', equals: 'y' },
+          { field: 'b', equals: 'y' },
+        ],
+      },
+    ];
+    expect(mostVisibleSteps(steps, fields, {})).toBe(3);
+    expect(mostVisibleSteps(steps, fields, { age: 20 })).toBe(1);
+    expect(mostVisibleSteps(steps, fields, { age: 50, a: 'x' })).toBe(2);
+  });
+
+  it('answers the question that reveals a deciding question first', () => {
+    const fields = [required('a'), required('b', { when: [{ field: 'a', equals: 'y' }] })];
+    const steps = [{ when: [] }, { when: [{ field: 'b', equals: 'y' }] }];
+    expect(mostVisibleSteps(steps, fields, {})).toBe(2);
+  });
+
+  it('tries each combination once, so many branching questions stay within budget', () => {
+    const fields = Array.from({ length: 9 }, (_, i) => required(`q${i}`));
+    const steps = [{ when: [] }, { when: fields.map((f) => ({ field: f.name, equals: 'y' })) }];
+    expect(mostVisibleSteps(steps, fields, {})).toBe(2);
   });
 });
 

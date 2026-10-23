@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import { deleteForm } from '../editing/delete-form.ts';
 import { findReferenceTheme, writeFormTheme } from '../editing/theme-files.ts';
 import { resolveDatabasePath } from '../node/secret.ts';
-import { pickTokens, type Theme } from '../schema/index.ts';
+import { isLocale, LOCALES, type Locale, pickTokens, type Theme } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
 import { exportFormResponses, FORM_ID_RE } from '../server/index.ts';
 import { createSqliteStorage } from '../sqlite/index.ts';
@@ -43,13 +43,13 @@ function singleQuoted(text: string): string {
   return `'${JSON.stringify(text).slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 }
 
-export function starterForm(id: string, title: string): string {
+export function starterForm(id: string, title: string, locale?: Locale): string {
   return `import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
 import theme from './theme/index.ts';
 
 export const config = defineForm({
   title: ${singleQuoted(title)},
-  description: 'Tell us a little about yourself.',
+  description: 'Tell us a little about yourself.',${locale ? `\n  locale: '${locale}',` : ''}
 });
 
 export default function ${componentName(id)}() {
@@ -67,10 +67,14 @@ export default function ${componentName(id)}() {
 
 export async function createForm(
   id: string,
-  opts: { title?: string; theme?: string } = {},
+  opts: { title?: string; theme?: string; locale?: string } = {},
 ): Promise<string> {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) {
     throw new Error(`Form ids are kebab-case (letters, digits, "-"): got "${id}".`);
+  }
+  const { locale } = opts;
+  if (locale !== undefined && !isLocale(locale)) {
+    throw new Error(`Unknown locale "${locale}". Use one of: ${LOCALES.join(', ')}.`);
   }
   const userCwd = process.cwd();
   const { formsRoot } = projectPaths(userCwd, await loadUserConfig(userCwd));
@@ -81,7 +85,7 @@ export async function createForm(
   const file = path.join(dir, 'index.tsx');
   let themeLines = '';
   try {
-    await writeFile(file, starterForm(id, opts.title ?? titleCase(id)));
+    await writeFile(file, starterForm(id, opts.title ?? titleCase(id), locale));
     if (reference) {
       const tokens = await withSsrServer(userCwd, async (server) => {
         const mod = (await server.ssrLoadModule(reference.file)) as { default?: Theme };
@@ -96,8 +100,12 @@ export async function createForm(
           ? `themes/${opts.theme}/THEME.md`
           : `node_modules/@open-form-build/core/themes/${opts.theme}/THEME.md`;
       const fonts = result.fonts.length ? ` and ${result.fonts.join(', ')}` : '';
+      const spare = result.spareFonts.length
+        ? `    ${chalk.dim(`Also copied ${result.spareFonts.join(', ')} to theme/fonts/; import their .css if you use them`)}\n`
+        : '';
       themeLines =
         `    ${chalk.dim(`Its look starts from ${from}'s tokens${fonts} in`)} ${path.relative(userCwd, result.file)}\n` +
+        spare +
         `    ${chalk.dim('Write its styles and components for this form, reading')} ${doc}\n`;
     } else {
       await writeFormTheme(userCwd, id);
