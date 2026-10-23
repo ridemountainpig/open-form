@@ -242,6 +242,7 @@ export const handler = createOpenFormHandler({
     secureCookies: { type: 'boolean', description: 'Always mark cookies Secure. Without it they are Secure when the request URL or the page’s Origin is https.' },
     webhookSecret: { type: 'string', description: 'Signs webhook deliveries. Usually OPEN_FORM_WEBHOOK_SECRET.' },
     turnstileSecret: { type: 'string', description: 'Verifies Cloudflare Turnstile tokens for forms with protection.turnstile. Usually OPEN_FORM_TURNSTILE_SECRET. Without it those forms refuse responses.' },
+    turnstileTestKeys: { type: 'boolean', default: 'false', description: 'Without turnstileSecret, use Cloudflare’s always-pass test site key and secret instead of the configured ones. open-form dev sets it.' },
     waitUntil: { type: '(promise: Promise<unknown>) => void', description: 'Keeps webhook deliveries alive after the response on serverless platforms.' },
     fetch: { type: 'typeof fetch', default: 'global fetch', description: 'Used for webhook deliveries and Turnstile checks.' },
     exposeErrors: { type: 'boolean', default: 'false', description: 'Include error details in 500 responses. Dev only.' },

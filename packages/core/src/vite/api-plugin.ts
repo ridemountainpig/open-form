@@ -20,7 +20,6 @@ import {
   type FormRegistry,
   type OpenFormHandler,
   type StorageAdapter,
-  TURNSTILE_TEST_SECRET,
 } from '../server/index.ts';
 import { createSqliteStorage } from '../sqlite/index.ts';
 import { DEFINITION_MODULE, findForms, formUpdatedAt, type ProjectPaths } from './project.ts';
@@ -130,7 +129,8 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
             exposeErrors: true,
             adminAuth,
             webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
-            turnstileSecret: process.env.OPEN_FORM_TURNSTILE_SECRET || TURNSTILE_TEST_SECRET,
+            turnstileSecret: process.env.OPEN_FORM_TURNSTILE_SECRET || undefined,
+            turnstileTestKeys: true,
             clientAddress: (request) => {
               const req = sockets.get(request);
               return req ? clientAddress(req, { trustProxy: config.trustProxy }) : undefined;

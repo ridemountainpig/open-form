@@ -30,7 +30,7 @@ import { type AdminAuth, createAdminGate, sentOverHttps } from './admin.ts';
 import { checkTimingToken, createSigner, issueTimingToken, type Signer } from './crypto.ts';
 import { responseColumns } from './export.ts';
 import { EXPORT_CONTENT_TYPES, exportFormResponses, schemaHistory } from './form-export.ts';
-import { verifyTurnstile } from './turnstile.ts';
+import { TURNSTILE_TEST_SECRET, TURNSTILE_TEST_SITE_KEY, verifyTurnstile } from './turnstile.ts';
 import { createWebhookSender } from './webhooks.ts';
 
 export type FormDefinition = {
@@ -82,6 +82,11 @@ export type OpenFormHandlerOptions = {
   waitUntil?: (promise: Promise<unknown>) => void;
   /** Checks Turnstile tokens (`protection.turnstile`). Usually `OPEN_FORM_TURNSTILE_SECRET`. */
   turnstileSecret?: string;
+  /**
+   * Without `turnstileSecret`, use Cloudflare's always-pass test site key and
+   * secret in place of the configured ones (`open-form dev`).
+   */
+  turnstileTestKeys?: boolean;
   /** Used for webhook deliveries and Turnstile checks. Default: the global `fetch`. */
   fetch?: typeof fetch;
   /** Include error details in 500 responses (dev). */
@@ -303,7 +308,17 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       '[open-form] Webhooks are sent unsigned. Set OPEN_FORM_WEBHOOK_SECRET so receivers can verify them.',
     );
   }
-  if (resolveProtection(opts.config?.protection).turnstile && !opts.turnstileSecret) {
+  let projectProtection: ReturnType<typeof resolveProtection>;
+  try {
+    projectProtection = resolveProtection(opts.config?.protection);
+  } catch (err) {
+    throw new Error(`open-form.config.ts protection: ${(err as Error).message}`);
+  }
+  const turnstileTest = opts.turnstileTestKeys === true && !opts.turnstileSecret;
+  const turnstileSecret = turnstileTest ? TURNSTILE_TEST_SECRET : opts.turnstileSecret;
+  const siteKeyOf = (turnstile: { siteKey: string }) =>
+    turnstileTest ? TURNSTILE_TEST_SITE_KEY : turnstile.siteKey;
+  if (projectProtection.turnstile && !turnstileSecret) {
     console.warn(
       '[open-form] protection.turnstile is set but OPEN_FORM_TURNSTILE_SECRET is not, so forms that use it refuse every response.',
     );
@@ -463,7 +478,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       title: def.schema.title,
       availability: status,
       token,
-      ...(turnstile ? { turnstile: { siteKey: turnstile.siteKey } } : {}),
+      ...(turnstile ? { turnstile: { siteKey: siteKeyOf(turnstile) } } : {}),
     });
   }
 
@@ -536,7 +551,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
 
     // After the answers are valid: a token is single-use, and fixing a mistake shouldn't need a new one.
     if (protection.turnstile) {
-      if (!opts.turnstileSecret) {
+      if (!turnstileSecret) {
         turnstileProblem(
           'secret',
           `Form "${def.id}" uses protection.turnstile but OPEN_FORM_TURNSTILE_SECRET is not set, so its responses are refused.`,
@@ -544,7 +559,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
         throw new HttpError(503, 'unavailable', messages.genericError);
       }
       const check = await verifyTurnstile({
-        secret: opts.turnstileSecret,
+        secret: turnstileSecret,
         token: body.turnstile,
         remoteIp: opts.clientAddress?.(request),
         fetch: opts.fetch,

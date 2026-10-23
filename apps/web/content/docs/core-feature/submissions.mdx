@@ -117,10 +117,11 @@ token gets `400 human_check` and nothing is stored.
 The server fails closed: with `turnstile` set but no `OPEN_FORM_TURNSTILE_SECRET`,
 or when Cloudflare can't be reached, responses are refused with `503` and the
 server logs why. `open-form check` warns when the secret isn't set. Under
-`open-form dev` without a secret, the server uses Cloudflare's
-[test secret](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
-that accepts any token, so you can try forms locally; use the test site key
-`1x00000000000000000000AA` too if your widget doesn't list `localhost`.
+`open-form dev` without a secret, forms use Cloudflare's always-pass
+[test site key and secret](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
+in place of yours, so you can try them locally without adding `localhost` to
+your widget. Set `OPEN_FORM_TURNSTILE_SECRET` in `.env` to try your real keys
+under `open-form dev`.
 
 The widget loads from `challenges.cloudflare.com`. If your site sends a
 Content-Security-Policy, allow that origin in `script-src` and `frame-src`.

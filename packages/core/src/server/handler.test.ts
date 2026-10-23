@@ -10,6 +10,7 @@ import type { StorageAdapter } from '../storage/index.ts';
 import { createSigner } from './crypto.ts';
 import { toCsv } from './export.ts';
 import { createOpenFormHandler, type FormDefinition, type OpenFormHandler } from './handler.ts';
+import { TURNSTILE_TEST_SECRET, TURNSTILE_TEST_SITE_KEY } from './turnstile.ts';
 import { XLSX_CONTENT_TYPE } from './xlsx.ts';
 
 const SECRET = 'test-secret-0123456789abcdef';
@@ -1224,6 +1225,7 @@ describe('turnstile', () => {
 
   function turnstileHandler(opts: {
     secret?: string;
+    testKeys?: boolean;
     answer?: () => Response | Promise<Response>;
   }) {
     verifyCalls.length = 0;
@@ -1244,6 +1246,7 @@ describe('turnstile', () => {
       now: () => now,
       clientAddress: () => address,
       turnstileSecret: opts.secret,
+      turnstileTestKeys: opts.testKeys,
       fetch: (async (_url: string, init?: RequestInit) => {
         verifyCalls.push(new URLSearchParams(init?.body as URLSearchParams));
         return (opts.answer ?? (() => Response.json({ success: true })))();
@@ -1285,6 +1288,33 @@ describe('turnstile', () => {
     const handle = turnstileHandler({ secret: 'turnstile-secret' });
     expect((await handle(post({ ...alex, email: 'nope' }, { turnstile: 't' }))).status).toBe(422);
     expect(verifyCalls).toHaveLength(0);
+  });
+
+  it('swaps in Cloudflare’s test pair under dev without a secret', async () => {
+    const dev = turnstileHandler({ testKeys: true });
+    const info = await dev(new Request(`${ORIGIN}/api/forms/meetup`));
+    expect(((await info.json()) as { turnstile?: unknown }).turnstile).toEqual({
+      siteKey: TURNSTILE_TEST_SITE_KEY,
+    });
+    expect((await dev(post(alex, { turnstile: 'XXXX.DUMMY.TOKEN.XXXX' }))).status).toBe(201);
+    expect(verifyCalls[0]?.get('secret')).toBe(TURNSTILE_TEST_SECRET);
+
+    const real = turnstileHandler({ secret: 'turnstile-secret', testKeys: true });
+    const realInfo = await real(new Request(`${ORIGIN}/api/forms/meetup`));
+    expect(((await realInfo.json()) as { turnstile?: unknown }).turnstile).toEqual({
+      siteKey: SITE_KEY,
+    });
+  });
+
+  it('refuses to start with an invalid project turnstile config', () => {
+    expect(() =>
+      createOpenFormHandler({
+        registry: { list: async () => [], load: async () => null },
+        storage,
+        secret: SECRET,
+        config: { protection: { turnstile: { siteKey: ' ' } } },
+      }),
+    ).toThrow(/open-form.config.ts protection: turnstile needs a siteKey/);
   });
 
   it('fails closed without a secret or when Cloudflare is unreachable', async () => {

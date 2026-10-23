@@ -267,7 +267,7 @@ export function turnstileWarnings(
     return [];
   }
   return [
-    'protection.turnstile is on but OPEN_FORM_TURNSTILE_SECRET is not set here. Set it wherever the server runs, or every response is refused (open-form dev uses a test secret that accepts any token).',
+    'protection.turnstile is on but OPEN_FORM_TURNSTILE_SECRET is not set here. Set it wherever the server runs, or every response is refused (open-form dev uses the Cloudflare test keys instead).',
   ];
 }
 

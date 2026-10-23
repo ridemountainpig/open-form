@@ -1,6 +1,8 @@
 export const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
-/** Cloudflare's test secret that accepts every token, for `open-form dev`. */
+// Cloudflare's always-pass test pair. The test secret accepts only the test site
+// key's dummy token, so the two are always swapped in together.
+export const TURNSTILE_TEST_SITE_KEY = '1x00000000000000000000AA';
 export const TURNSTILE_TEST_SECRET = '1x0000000000000000000000000000000AA';
 
 const TOKEN_MAX_LENGTH = 2048;
