@@ -134,6 +134,15 @@ describe('icsCalendar', () => {
     expect(ics).not.toMatch(/^ATTENDEE/m);
   });
 
+  it('escapes a lone carriage return in text', () => {
+    const ics = icsCalendar(
+      { title: 'Meetup', start: '2026-11-15', description: 'Bring a laptop\rATTENDEE:x' },
+      { now: NOW },
+    );
+    expect(ics.split('\r\n')).toContain('DESCRIPTION:Bring a laptop\\nATTENDEE:x');
+    expect(ics).not.toMatch(/^ATTENDEE/m);
+  });
+
   it('writes all-day dates and folds long lines without splitting characters', () => {
     const title = '年度活動'.repeat(20);
     const ics = icsCalendar({ title, start: '2026-11-14' }, { now: NOW });

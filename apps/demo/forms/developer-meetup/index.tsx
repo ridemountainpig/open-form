@@ -26,7 +26,7 @@ export const config = defineForm({
   title: 'Taipei Developer Meetup',
   locale: 'en',
   translations: { 'zh-TW': zhTW },
-  description: 'Thursday, Oct 30 · 7 PM · Songshan Cultural Park. Free entry, 100 seats.',
+  description: 'Friday, Oct 30 · 7 PM · Songshan Cultural Park. Free entry, 100 seats.',
   submissions: {
     maxResponses: 100,
     uniqueBy: 'email',
