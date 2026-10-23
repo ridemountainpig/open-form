@@ -109,7 +109,8 @@ function invalidDate(value: string): Error {
 }
 
 function realDate(value: string, y: number, m: number, d: number): void {
-  const date = new Date(Date.UTC(y, m - 1, d));
+  const date = new Date(0);
+  date.setUTCFullYear(y, m - 1, d);
   if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
     throw invalidDate(value);
   }
