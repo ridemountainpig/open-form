@@ -62,7 +62,10 @@ registrations and applications differ in composition too, meaning how the page
 is arranged around the questions: a full-page poster, a hero beside the form, a
 wide document sheet, a form with a sticky summary, a step rail, or one question
 per screen, which it suggests for an NPS survey or a quiz. At most one is the
-plain centered card. A brand theme in
+plain centered card. Each direction also says its color scheme: following the
+device's light and dark (most forms), or light only or dark only when the look
+depends on one ground, like a terminal or a paper document. When that's still
+open, it asks in the same question. A brand theme in
 `themes/` is the recommended option. If you already named the look, it skips
 the question.
 
@@ -158,7 +161,8 @@ and phone width and compares them with the direction: the composition reads
 as planned at desktop width, the title shows, the
 form's own CSS applies, nothing is low-contrast, clipped or overlapping (on a
 translated form, nothing sits under the language picker in the top-right
-corner), and on a phone the first question is on the first screen. It also
+corner), and on a phone the first question is on the first screen. A form that follows
+the device gets the same shots again in dark mode. It also
 sends one test response to see the success screen, which Studio can't preview,
 and checks that it echoes the form's signature element. It opens the **Schema** tab in Studio
 (`/studio/<id>/schema`) to compare the derived steps, fields, required flags
