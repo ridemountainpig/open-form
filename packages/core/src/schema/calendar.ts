@@ -173,7 +173,7 @@ export function icsCalendar(
   if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);
   const notes = details(event);
   if (notes) lines.push(`DESCRIPTION:${escapeText(notes)}`);
-  if (event.url) lines.push(`URL:${event.url}`);
+  if (event.url) lines.push(`URL:${event.url.replace(/[\r\n]/g, '')}`);
   lines.push('END:VEVENT', 'END:VCALENDAR');
   return `${lines.map(fold).join('\r\n')}\r\n`;
 }

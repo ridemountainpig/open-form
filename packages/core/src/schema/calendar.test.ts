@@ -125,6 +125,15 @@ describe('icsCalendar', () => {
     expect(lines.at(-2)).toBe('END:VCALENDAR');
   });
 
+  it('keeps a URL on its own line', () => {
+    const ics = icsCalendar(
+      { title: 'Meetup', start: '2026-11-15', url: 'https://example.com/e\r\nATTENDEE:x' },
+      { now: NOW },
+    );
+    expect(ics.split('\r\n')).toContain('URL:https://example.com/eATTENDEE:x');
+    expect(ics).not.toMatch(/^ATTENDEE/m);
+  });
+
   it('writes all-day dates and folds long lines without splitting characters', () => {
     const title = '年度活動'.repeat(20);
     const ics = icsCalendar({ title, start: '2026-11-14' }, { now: NOW });
