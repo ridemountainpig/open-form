@@ -1,3 +1,11 @@
+export type { CalendarEvent, ResolvedCalendarTimes } from './calendar.ts';
+export {
+  calendarEventProblem,
+  calendarTimes,
+  googleCalendarUrl,
+  icsCalendar,
+  icsFileName,
+} from './calendar.ts';
 export type { Rgb } from './color.ts';
 export { contrast, parseColor, toHex } from './color.ts';
 export {

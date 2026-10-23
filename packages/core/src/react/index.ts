@@ -1,3 +1,5 @@
+export type { AddToCalendarProps } from './calendar.tsx';
+export { AddToCalendar } from './calendar.tsx';
 export type {
   ButtonUIProps,
   CheckboxUIProps,

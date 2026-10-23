@@ -26,7 +26,7 @@ export const config = defineForm({
   title: 'Taipei Developer Meetup',
   locale: 'en',
   translations: { 'zh-TW': zhTW },
-  description: 'Thursday, Oct 30 · 7 PM · Songshan Cultural Park. Free entry, 100 seats.',
+  description: 'Friday, Oct 30 · 7 PM · Songshan Cultural Park. Free entry, 100 seats.',
   submissions: {
     maxResponses: 100,
     uniqueBy: 'email',
@@ -34,6 +34,14 @@ export const config = defineForm({
     duplicateMessage: 'This email is already registered — check your inbox for the ticket.',
     closedMessage: 'We’re not taking sign-ups for this one anymore.',
     fullMessage: 'All the seats are spoken for.',
+  },
+  success: {
+    calendar: {
+      start: '2026-10-30T19:00',
+      end: '2026-10-30T21:30',
+      timeZone: 'Asia/Taipei',
+      location: 'Songshan Cultural and Creative Park',
+    },
   },
   drafts: true,
 });

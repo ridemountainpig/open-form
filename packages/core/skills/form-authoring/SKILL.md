@@ -74,6 +74,7 @@ Rules:
 | `<Heading>` / `<Paragraph>` | Section title / explanatory copy between fields. |
 | `<Submit>` | Final button label, e.g. `<Submit>Register</Submit>`. Back/Next are automatic. |
 | `<Success title="…">…</Success>` | Custom thank-you screen. Or use `config.success`. |
+| `<AddToCalendar start="…" />` | Add to Google Calendar + `.ics` download (Apple, Outlook) for an event that depends on the answers. A fixed event goes in `config.success.calendar` instead (see *Event forms*). |
 
 Top-level content outside `<Page>`s in a multi-page form renders above every step — use sparingly.
 
@@ -247,7 +248,7 @@ To restyle what the runtime renders, use these classes, scoped to `[data-of-them
 | Actions | `.of-nav`, `.of-button-primary`, `.of-button-secondary`, `.of-alert` |
 | Progress | `.of-progress`, `.of-progress-label`, `.of-progress-track`, `.of-progress-bar` |
 | Layouts | default: `.of-form` (the card), `.of-aside` · `SplitLayout`: `.of-split-brand` (the panel; its background is `--of-primary`), `.of-split-main` · `StepperLayout`: `.of-stepper-rail` · `FocusLayout`: `.of-focus` |
-| End screens | `.of-success`, `.of-notice` |
+| End screens | `.of-success`, `.of-notice`, `.of-calendar` (`.of-calendar-label`, `.of-calendar-link`) |
 
 Tokens to build on: `--of-bg` (page), `--of-surface` (card), `--of-fg`, `--of-muted`, `--of-primary`, `--of-primary-fg`, `--of-border`, `--of-control`, `--of-input`, `--of-error`, `--of-success`, `--of-radius`, `--of-button-radius`, `--of-gap`, `--of-width`, `--of-font`, `--of-heading-font`.
 
@@ -273,6 +274,7 @@ defineForm({
     rateLimit: { max: 10, window: '10m' },  // valid submissions per IP (IPv6 /64) per form; false to disable
   },
   success: { title: 'Thanks!', message: 'See you there.', redirect: 'https://…' },
+  // event forms: success: { calendar: { start: '2026-11-15T19:00', end: '2026-11-15T21:00', location: '…' } } — see *Event forms*
   drafts: true,                    // long forms: keep unfinished answers in the browser 7 days ({ expires: '1d' }); off by default for shared computers
   published: false,                // take it offline: the link says "Form not found", Studio still previews it and keeps its responses. Unlike `closed`, which shows a closed screen
 });
@@ -283,6 +285,30 @@ Only add what the user asked for; defaults are sensible.
 Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
 
 People can also change `opensAt`, `closesAt`, `maxResponses`, `closed`, the form's `timeZone` and `published` in Studio (form → Settings). Under `open-form dev` that rewrites these keys in the form's code; on a deployed server it is stored in the database and wins over the code until someone restores it there — so if a deployed form ignores a date you changed in code, it was likely changed in Studio.
+
+### Event forms (add to calendar)
+
+When the form signs people up for something that happens at a known date — a meetup, workshop, RSVP, webinar, conference, class, appointment slot, tasting — the success screen offers to save it: set `success.calendar` and the thank-you screen shows **Google Calendar** and **Apple / Outlook (.ics)** buttons under the message, with no code.
+
+```ts
+success: {
+  title: 'You’re in!',
+  calendar: {
+    start: '2026-11-15T19:00',     // in the event's or the form's timeZone; 'YYYY-MM-DD' = all-day
+    end: '2026-11-15T21:30',       // optional: default 1 hour later; for all-day, the last day (inclusive)
+    location: 'Songshan Cultural Park, Taipei',
+    description: 'Doors open 18:30. Bring your ID.',   // optional
+    url: 'https://…',              // optional: a page about the event, added to the notes
+    // title: defaults to the form's title; timeZone: defaults to the form's
+  },
+},
+```
+
+- Use it only with a date and time the user gave. Don't invent a time or an end; a date without a time is an all-day event. No date yet ("we'll announce it") → leave it out and say in the success copy when they'll hear.
+- A wall-clock `start` needs a zone: set `timeZone` on the event or the form (the project's `timeZone` doesn't reach the browser). `check` fails with `success.calendar: … has no time zone` otherwise. An event in another city than the form's zone sets its own `timeZone`.
+- `title`, `location` and `description` are translated like other config text.
+- It shows after any `<Success>` children, so it works with a custom success screen. When the event depends on the answers (they picked a session or a date), leave `success.calendar` out and render `<AddToCalendar title start end location />` inside `<Success>`, built from `useFieldValue`.
+- Not for forms with no event: applications, waitlists, feedback, contact, a deadline ("apply by Oct 31" is not an event they attend).
 
 ### Sending responses elsewhere (webhooks)
 
@@ -609,7 +635,7 @@ export const config = defineForm({
 });
 ```
 
-- **Translated automatically**: title, description, success copy, policy messages (`fullMessage`…), `<Page>` titles and descriptions, field `label` / `description` / `placeholder` / `unit`, option labels, `Rating` `lowLabel` / `highLabel`, `Checkbox` text, `<Submit>` text, `<Heading>` / `<Paragraph>` text, and messages returned by `validate`. Buttons and built-in errors come from `locale` already.
+- **Translated automatically**: title, description, success copy (and `success.calendar`'s `title` / `location` / `description`), policy messages (`fullMessage`…), `<Page>` titles and descriptions, field `label` / `description` / `placeholder` / `unit`, option labels, `Rating` `lowLabel` / `highLabel`, `Checkbox` text, `<Submit>` text, `<Heading>` / `<Paragraph>` text, and messages returned by `validate`. Buttons and built-in errors come from `locale` already.
 - **Your own markup**: wrap text in `<T>` — `<T>Early-bird ends Friday.</T>` — or call `const tr = useTranslate()` and use `tr('…')`. `useFormLanguage()` gives `{ locale, available, setLocale }` for custom pickers.
 - **Values stay put**: option `value`s, field `name`s and conditions are never translated. Use explicit values (`{ value: 'engineer', label: '工程師' }`) so every language stores the same answer.
 - **Respondents** get the best match for their browser, can switch with the picker in the corner (`languageSwitch: false` hides it; replace it with `components.LanguageSwitch`), and links can force one: `/f/<id>?lang=ja`. Responses record the language (Studio, CSV `Language` column).
@@ -669,7 +695,7 @@ The answer fields stay in **one column**: people read and fill a single column f
 **One question per screen is a choice about the questions**, not the theme or the field count: a five-question NPS is one per screen even though five fields would fit on one page. It fits forms where each answer needs a moment's thought — an NPS survey, a quiz, a short reflective survey — and people know it from Typeform: `FocusLayout` gives Enter to continue and big type, and a custom `ChoiceGroup` can add letter keys (the `conversational` starter has one). Data entry stays together (*Questions*): splitting name, email and phone into three screens is the thing people dislike most about one-question forms.
 
 Pick the composition from the form's subject and the moment: a concert sign-up can be a poster, a scholarship application a document, a workshop booking a form with a sticky summary. `width`, `.of-root`'s padding and background, and the `Layout` are all part of the form's own theme. On phones, every composition collapses to the single column with a compact visual band above it.
-- **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. Use the person's answers (`useFormValues()` in a component inside `<Success>`; `title` is a plain string, so the personal line goes in the children): "3 seats are held for you — see you on Nov 15" beats a generic thank-you. Add what they need next from facts the user gave: an add-to-calendar link for an event (a Google Calendar `render?action=TEMPLATE` URL needs no code), the venue's map link, what to prepare. `<Success>` echoes the signature element (*Look*). Closed screens: see *Closed screens*.
+- **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. Use the person's answers (`useFormValues()` in a component inside `<Success>`; `title` is a plain string, so the personal line goes in the children): "3 seats are held for you — see you on Nov 15" beats a generic thank-you. Add what they need next from facts the user gave: for an event with a date, `success.calendar` (see *Event forms*; don't hand-write Google Calendar links), the venue's map link, what to prepare. `<Success>` echoes the signature element (*Look*). Closed screens: see *Closed screens*.
 - **Motion**: the runtime already animates steps and errors, and turns all motion in the form off for `prefers-reduced-motion`. Add at most a hover or a transition on the signature element.
 
 ## Anti-patterns

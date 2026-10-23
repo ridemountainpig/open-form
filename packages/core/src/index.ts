@@ -1,5 +1,6 @@
 export * from './react/index.ts';
 export type {
+  CalendarEvent,
   Condition,
   CustomValidator,
   FieldOption,

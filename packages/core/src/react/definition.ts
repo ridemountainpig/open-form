@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import {
+  calendarEventProblem,
   type FormConfig,
   type FormSchema,
   localeProblem,
@@ -33,6 +34,13 @@ function assertValidConfig(id: string, config: FormConfig, schema: FormSchema): 
   const timeZone = timeZoneProblem(config.timeZone);
   if (timeZone) problems.push(timeZone);
   problems.push(...translationProblems(config));
+  if (config.success?.calendar) {
+    const calendar = calendarEventProblem(config.success.calendar, {
+      title: config.title,
+      timeZone: timeZone ? undefined : config.timeZone,
+    });
+    if (calendar) problems.push(calendar);
+  }
   const uniqueBy = config.submissions?.uniqueBy;
   if (uniqueBy && uniqueBy !== 'device' && !schema.fields.some((f) => f.name === uniqueBy)) {
     const names = [...new Set(schema.fields.map((f) => f.name))].join(', ');
