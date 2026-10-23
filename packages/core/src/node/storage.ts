@@ -73,6 +73,6 @@ export function redactUrl(url: string): string {
     }
     return parsed.toString();
   } catch {
-    return url.replace(/\/\/([^:/@]*):.*@/, '//$1:***@');
+    return '[invalid connection string]';
   }
 }

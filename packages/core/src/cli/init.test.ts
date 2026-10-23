@@ -181,11 +181,12 @@ describe('scaffold with Postgres', () => {
   const url = 'postgres://app:p#ss@db.example.com:5432/forms';
 
   it('keeps the connection string in .env only, and adds pg', async () => {
-    const { pkg } = await scaffold(root, {
+    const { pkg, databaseUrl } = await scaffold(root, {
       timeZone: 'UTC',
       database: 'postgres',
       databaseUrl: url,
     });
+    expect(databaseUrl).toBe('saved');
     expect(pkg.dependencies?.pg).toMatch(/^\^8\./);
     const env = readFileSync(path.join(root, '.env'), 'utf8');
     expect(env).toBe(`OPEN_FORM_DATABASE_URL='${url}'\n`);
@@ -208,7 +209,12 @@ describe('scaffold with Postgres', () => {
       path.join(root, '.env'),
       'OTHER=1\nOPEN_FORM_DATABASE_URL=postgres://mine@db/app',
     );
-    await scaffold(root, { timeZone: 'UTC', database: 'postgres', databaseUrl: url });
+    const result = await scaffold(root, {
+      timeZone: 'UTC',
+      database: 'postgres',
+      databaseUrl: url,
+    });
+    expect(result.databaseUrl).toBe('kept');
     expect(readFileSync(path.join(root, '.env'), 'utf8')).toBe(
       'OTHER=1\nOPEN_FORM_DATABASE_URL=postgres://mine@db/app',
     );

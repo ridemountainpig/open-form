@@ -111,9 +111,10 @@ Connections to any host other than `localhost` verify the server's
 certificate. A connection string without `sslmode` gets
 `sslmode=verify-full`, so answers are never sent in the clear by accident.
 
-- `sslmode=verify-full` (or `require`, which `pg` treats the same way): encrypt
-  and verify. Works with providers whose certificates come from a public
-  authority, like Neon.
+- `sslmode=verify-full`: encrypt and verify. Works with providers whose
+  certificates come from a public authority, like Neon. `pg` also verifies on
+  `require`, but `require` with `uselibpqcompat=true` follows libpq and
+  encrypts without verifying, so write `verify-full` to be sure.
 - `sslrootcert=./ca.crt`: verify against your provider's own certificate
   authority, for providers that sign with one, like Supabase.
 - `sslmode=no-verify`: encrypt without checking who answers. Use it only on a

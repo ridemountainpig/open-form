@@ -161,6 +161,8 @@ export type ScaffoldResult = {
   /** Template files left alone because the target already had them. */
   kept: string[];
   pkg: PackageJson;
+  /** Whether the connection string was written to `.env`, or one already there was kept. */
+  databaseUrl?: 'saved' | 'kept';
 };
 
 function withMissing(
@@ -241,12 +243,18 @@ export async function scaffold(target: string, flags: InitFlags = {}): Promise<S
   }
 
   await writeGitignore(target);
+  let databaseUrl: ScaffoldResult['databaseUrl'];
   if (flags.database === 'postgres') {
     await setEnv(path.join(target, '.env.example'), 'OPEN_FORM_DATABASE_URL', DATABASE_URL_EXAMPLE);
     if (flags.databaseUrl?.trim()) {
-      await setEnv(path.join(target, '.env'), 'OPEN_FORM_DATABASE_URL', flags.databaseUrl.trim(), {
-        secret: true,
-      });
+      databaseUrl = (await setEnv(
+        path.join(target, '.env'),
+        'OPEN_FORM_DATABASE_URL',
+        flags.databaseUrl.trim(),
+        { secret: true },
+      ))
+        ? 'saved'
+        : 'kept';
     }
   }
 
@@ -263,7 +271,7 @@ export async function scaffold(target: string, flags: InitFlags = {}): Promise<S
   else await symlink('AGENTS.md', claudeMd);
 
   await syncSkills(target, { quiet: true });
-  return { kept: kept.sort(), pkg };
+  return { kept: kept.sort(), pkg, databaseUrl };
 }
 
 function run(cmd: string, args: string[], cwd: string): Promise<{ ok: boolean; output: string }> {
@@ -411,14 +419,20 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
   if (urlProblem) throw new Error(`OPEN_FORM_DATABASE_URL: ${urlProblem}`);
 
   const pm = flags.pm ?? detectPackageManager();
-  const { kept, pkg } = await scaffold(target, { ...flags, pm, database, databaseUrl });
+  const {
+    kept,
+    pkg,
+    databaseUrl: savedUrl,
+  } = await scaffold(target, { ...flags, pm, database, databaseUrl });
   p.log.step(`Created workspace in ${chalk.dim(path.relative(process.cwd(), target) || '.')}`);
   if (kept.length > 0) p.log.info(`Kept your existing ${kept.join(', ')}`);
   if (database === 'postgres') {
     p.log.step(
-      databaseUrl?.trim()
+      savedUrl === 'saved'
         ? `Saved the Postgres connection string to ${chalk.bold('.env')} ${chalk.dim('(git ignores it)')}`
-        : `Add your Postgres connection string to ${chalk.bold('.env')} as OPEN_FORM_DATABASE_URL ${chalk.dim('(see .env.example)')}`,
+        : savedUrl === 'kept'
+          ? `Kept the OPEN_FORM_DATABASE_URL already in ${chalk.bold('.env')}`
+          : `Add your Postgres connection string to ${chalk.bold('.env')} as OPEN_FORM_DATABASE_URL ${chalk.dim('(see .env.example)')}`,
     );
   }
 

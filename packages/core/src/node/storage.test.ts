@@ -1,10 +1,17 @@
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { describeStorage, redactUrl, resolveStorage } from './storage.ts';
 
 const ENV = ['OPEN_FORM_DATABASE_URL', 'OPEN_FORM_DB'] as const;
-afterEach(() => {
+const inherited = Object.fromEntries(ENV.map((key) => [key, process.env[key]]));
+beforeEach(() => {
   for (const key of ENV) delete process.env[key];
+});
+afterEach(() => {
+  for (const key of ENV) {
+    if (inherited[key] === undefined) delete process.env[key];
+    else process.env[key] = inherited[key];
+  }
 });
 
 describe('resolveStorage', () => {
@@ -67,7 +74,9 @@ describe('redactUrl', () => {
     expect(redactUrl('postgres://user@db.example.com/app')).toBe(
       'postgres://user@db.example.com/app',
     );
-    expect(redactUrl('postgres://user:p@ss@[broken')).toBe('postgres://user:***@[broken');
+    expect(redactUrl('postgres://user:primary@bad host/db?password=secondary')).toBe(
+      '[invalid connection string]',
+    );
   });
 
   it('describes where responses go', () => {

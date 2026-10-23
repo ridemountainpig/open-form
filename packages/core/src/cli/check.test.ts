@@ -156,6 +156,11 @@ export default defineConfig({
 });
 `);
     expect(problems).toHaveLength(2);
+    expect(
+      configSecretProblems(
+        `export default { storage: { url: 'postgres://app@db/forms?sslmode=require&password=s3cret' } };`,
+      ),
+    ).toHaveLength(1);
     expect(problems[0]).toMatch(/^open-form\.config\.ts:4 holds a URL with a password/);
     expect(problems[0]).not.toContain('s3cret');
   });

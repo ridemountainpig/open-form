@@ -310,7 +310,8 @@ export function languageLines(definition: FormDefinition): string[] {
   return lines;
 }
 
-const CREDENTIALS_RE = /[a-z][a-z0-9+.-]*:\/\/[^/\s:@]*:[^/\s@]+@/i;
+const CREDENTIALS_RE =
+  /[a-z][a-z0-9+.-]*:\/\/(?:[^/\s:@]*:[^/\s@]+@|[^\s?#]*\?(?:[^\s#]*&)?(?:password|pass|passwd)=[^&\s#])/i;
 
 /**
  * `open-form.config.ts` is committed, so a connection string with its password

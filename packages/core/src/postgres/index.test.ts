@@ -64,6 +64,24 @@ describe('postgres storage', () => {
     expect(await reopened.info?.()).toMatchObject({ schemaVersion: 1, location: 'schema forms' });
   });
 
+  it('searches past an answer that jsonb cannot hold', async () => {
+    const storage = await createPostgresStorage({ pool: shared, schema: 'nul' });
+    await submit(storage, { name: 'nul \u0000 byte' });
+    await submit(storage, { name: 'needle in a haystack' });
+    const page = await storage.listSubmissions('f', { search: 'needle' });
+    expect(page.items.map((s) => s.data.name)).toEqual(['needle in a haystack']);
+    expect((await storage.listSubmissions('f', {})).total).toBe(2);
+  });
+
+  it('says what went wrong when it cannot connect, without the password', async () => {
+    const error = await createPostgresStorage({
+      url: 'postgres://app:hunter2@127.0.0.1:1/forms',
+    }).catch((err: Error) => err);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toMatch(/^Couldn't connect to Postgres: \S/);
+    expect((error as Error).message).not.toContain('hunter2');
+  });
+
   it('refuses a schema name it would have to quote', async () => {
     await expect(createPostgresStorage({ pool: shared, schema: 'x"; DROP' })).rejects.toThrow(
       'Invalid Postgres schema',

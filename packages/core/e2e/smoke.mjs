@@ -17,7 +17,15 @@ const WS = path.join(SCRATCH, 'workspace');
 const PORT = 3900 + Math.floor(Math.random() * 90);
 const BASE = `http://localhost:${PORT}`;
 const ADMIN = 'e2e admin password 0123456789';
-const POSTGRES = process.env.E2E_POSTGRES_URL;
+const ADMIN_POSTGRES = process.env.E2E_POSTGRES_URL;
+const E2E_DATABASE = `open_form_e2e_${process.pid}`;
+const POSTGRES = ADMIN_POSTGRES && withDatabase(ADMIN_POSTGRES, E2E_DATABASE);
+
+function withDatabase(url, name) {
+  const parsed = new URL(url);
+  parsed.pathname = `/${name}`;
+  return parsed.toString();
+}
 
 function step(name) {
   process.stdout.write(`\n▸ ${name}\n`);
@@ -50,9 +58,10 @@ let server;
 try {
   if (POSTGRES) {
     const { default: pg } = await import('pg');
-    const admin = new pg.Client({ connectionString: POSTGRES });
+    const admin = new pg.Client({ connectionString: ADMIN_POSTGRES });
     await admin.connect();
-    await admin.query('DROP SCHEMA IF EXISTS open_form CASCADE');
+    await admin.query(`DROP DATABASE IF EXISTS ${E2E_DATABASE}`);
+    await admin.query(`CREATE DATABASE ${E2E_DATABASE}`);
     await admin.end();
   }
 
@@ -273,5 +282,19 @@ try {
 } finally {
   server?.kill();
   if (process.env.E2E_KEEP) process.stdout.write(`kept ${WS}\n`);
-  else rmSync(SCRATCH, { recursive: true, force: true });
+  else {
+    rmSync(SCRATCH, { recursive: true, force: true });
+    if (ADMIN_POSTGRES) await dropDatabase().catch(() => {});
+  }
+}
+
+async function dropDatabase() {
+  const { default: pg } = await import('pg');
+  const admin = new pg.Client({ connectionString: ADMIN_POSTGRES });
+  await admin.connect();
+  try {
+    await admin.query(`DROP DATABASE IF EXISTS ${E2E_DATABASE} WITH (FORCE)`);
+  } finally {
+    await admin.end();
+  }
 }

@@ -144,14 +144,20 @@ async function createPool(url: string): Promise<PostgresPool> {
 }
 
 function connectError(err: unknown): Error {
-  const message = err instanceof Error ? err.message : String(err);
-  const hint = /certificate/i.test(message)
+  // Node's AggregateError (localhost on both ::1 and 127.0.0.1) has no message of its own.
+  const message =
+    (err instanceof Error && err.message) || String(errorCode(err) ?? err) || 'unknown error';
+  const hint = /certificate|CERT/.test(`${message} ${String(errorCode(err) ?? '')}`)
     ? " The server's TLS certificate didn't verify: add your provider's CA with `sslrootcert=` (https://open-form.build/docs/deploy/postgres)."
     : '';
   return new Error(`Couldn't connect to Postgres: ${message}.${hint}`, { cause: err });
 }
 
 const errorCode = (err: unknown) => (err as { code?: unknown } | null)?.code;
+
+// SQLSTATE: five characters, never starting with E. Node's network and TLS codes aren't.
+const isServerError = (err: unknown) =>
+  /^[0-9A-DF-Z][0-9A-Z]{4}$/.test(String(errorCode(err) ?? ''));
 
 function json<T>(value: unknown): T {
   return (typeof value === 'string' ? JSON.parse(value) : value) as T;
@@ -261,7 +267,7 @@ export async function createPostgresStorage(opts: PostgresStorageOptions): Promi
     }
   } catch (err) {
     if (ownsPool) await pool.end().catch(() => {});
-    throw errorCode(err) ? err : connectError(err);
+    throw isServerError(err) ? err : connectError(err);
   }
 
   let hits = 0;
@@ -381,12 +387,13 @@ export async function createPostgresStorage(opts: PostgresStorageOptions): Promi
       if (opts.search?.trim()) {
         params.push(`%${escapeLike(opts.search.trim())}%`);
         // Answers only: field names are keys, never strings or numbers in the tree.
+        // jsonb rejects the \u0000 that json keeps, so such rows are skipped, not fatal.
         where.push(
-          `EXISTS (
+          `CASE WHEN strpos(data::text, '\\u0000') = 0 THEN EXISTS (
              SELECT 1 FROM jsonb_path_query(data::jsonb, 'strict $.**') AS answer (value)
              WHERE jsonb_typeof(answer.value) IN ('string', 'number')
                AND answer.value #>> '{}' ILIKE $${params.length} ESCAPE '\\'
-           )`,
+           ) ELSE false END`,
         );
       }
       const clause = where.join(' AND ');

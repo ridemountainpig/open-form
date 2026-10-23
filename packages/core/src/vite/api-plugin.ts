@@ -139,7 +139,10 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
               return req ? clientAddress(req, { trustProxy: config.trustProxy }) : undefined;
             },
           });
-        })();
+        })().catch((err) => {
+          handler = undefined;
+          throw err;
+        });
         return handler;
       };
 
