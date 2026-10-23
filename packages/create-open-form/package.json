@@ -1,6 +1,6 @@
 {
   "name": "create-open-form",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Create an Open Form workspace: npm create open-form@latest",
   "type": "module",
   "bin": {

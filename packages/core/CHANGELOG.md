@@ -1,5 +1,27 @@
 # @open-form-build/core
 
+## 0.3.0
+
+### Minor Changes
+
+- 9542b02: Studio's Responses tab shows new responses as they arrive, exports what the current search and filters show, lets you pick its columns, steps through responses with the arrow keys, reads rating scales as `4 / 5`, shows cards on phones and confirms deletes in its own dialog. CSV exports give **Submitted at** in the form's time zone, checkboxes as Yes / No and languages by name.
+- 049f2c7: Studio's Themes pages are read-only and ship in production builds too: a redesigned theme page with a live preview, the tokens a new form copies, and `THEME.md` with an outline, while changes go through your agent (a copyable prompt) or `open-form theme add`; the theme page's Adjust drawer and the gallery's add-starter button are gone.
+- 16da7eb: Event forms can offer "add to calendar" on the thank-you screen: set `success.calendar` (`start`, `end`, `location`…) for a Google Calendar link and an `.ics` download for Apple Calendar and Outlook, or render `<AddToCalendar>` inside `<Success>` when the event depends on the answers.
+
+### Patch Changes
+
+- 049f2c7: `open-form build` leaves out a reference theme that fails to load, with a warning, instead of failing the build.
+- f86c38c: CLI fixes: `open-form list` lines up Chinese, Japanese and Korean titles, piping a command into `head` no longer ends in an EPIPE error, `theme font` says which host it couldn't reach and how to use a proxy, `create` writes the title in single quotes, `responses export -o` prints an absolute path outside the project, `theme add --as` marks the copied description as started from the starter, and `check` says how many unseen translations it left out of the list.
+- 824678a: Studio's contrast report labels the help-text pair in your language instead of showing "help text".
+- f86c38c: `open-form dev` no longer reloads open form pages, losing their answers, when another form is added or removed, and a form that imported a file before it existed loads as soon as the file is written.
+- f86c38c: The button reads Next, not Submit, while a required answer still decides whether a later step shows; "Fix the marked fields" clears once they are fixed and no longer repeats a single question's own error; `SplitLayout`'s thank-you and closed screens use an `<h2>` under the form's `<h1>` (`ScreenHeadingContext`); and on a narrow screen a `<Tel>` country picker takes its own line instead of clipping "+886".
+- 48382ce: `open-form --help`, the package description and the README lead with the website's new tagline, "Forms your agent writes. Responses you own."
+- b7a9c40: CLI and Studio fixes: `check` counts text that only some answers show, `theme check` treats `foreground` on `background` as a hint when the theme has its own Layout, `create` takes `--locale` and with `--theme` also copies the theme's other web fonts, Studio's Desktop preview renders at 1280 pixels and scales to fit, and the Steps list names an untitled single page after the form and shows a question range when some questions are conditional.
+- b7a9c40: Form fixes: an error shown when a field loses focus waits until the click on the next control ends, so the click no longer misses, and the step count (`useFormNav().total`, the progress bar and FocusLayout's counter) includes the steps an unanswered question can still reveal.
+- 867943d: The form skills now tell agents what Open Form can't do (file uploads, self-scoring quizzes, repeating groups, emails to respondents) and to raise it before building, vary the page composition around the single answer column instead of always a centered card, keep Latin uppercase and italics off Chinese and Japanese text, and fall back sensibly when `open-form theme font` can't reach Google. They also design from the audience's world: they avoid the common AI-default looks, put the signature on the key question's control, size the composition to the form's moment, review the plan before building, and state the step count and time up front.
+- 48759a9: Dates with an offset (`'2026-02-30T19:00+08:00'`) that don't exist are rejected like other bad dates instead of rolling over to the next month.
+- f86c38c: Studio's Schema tab shows each field's ranges, lengths, choice counts, steps and patterns; code no longer turns `=>` into an arrow; and switching the preview language keeps the step on screen.
+
 ## 0.2.0
 
 ### Breaking Changes

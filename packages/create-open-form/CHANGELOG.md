@@ -1,5 +1,25 @@
 # create-open-form
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies [049f2c7]
+- Updated dependencies [f86c38c]
+- Updated dependencies [824678a]
+- Updated dependencies [f86c38c]
+- Updated dependencies [f86c38c]
+- Updated dependencies [48382ce]
+- Updated dependencies [b7a9c40]
+- Updated dependencies [b7a9c40]
+- Updated dependencies [867943d]
+- Updated dependencies [48759a9]
+- Updated dependencies [9542b02]
+- Updated dependencies [f86c38c]
+- Updated dependencies [049f2c7]
+- Updated dependencies [16da7eb]
+  - @open-form-build/core@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes
