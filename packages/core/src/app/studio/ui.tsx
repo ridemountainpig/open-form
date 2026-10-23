@@ -1,14 +1,17 @@
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Trash2 } from 'lucide-react';
 import {
   type ComponentProps,
   type KeyboardEvent,
   type ReactNode,
   type RefObject,
+  useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, type LinkProps } from 'react-router-dom';
 import type { FormStatus } from './api.ts';
 import { useT } from './i18n.tsx';
@@ -696,5 +699,104 @@ export function Dropdown<T extends string>({
         </div>
       )}
     </div>
+  );
+}
+
+export type ConfirmOptions = {
+  title: string;
+  message?: string;
+  confirmLabel: string;
+};
+
+/**
+ * Studio's stand-in for `window.confirm`: `await confirm({...})` resolves true
+ * when the person confirms. Render `dialog` somewhere in the component.
+ */
+export function useConfirm(): [
+  confirm: (options: ConfirmOptions) => Promise<boolean>,
+  dialog: ReactNode,
+] {
+  const [asking, setAsking] = useState<{
+    options: ConfirmOptions;
+    resolve(ok: boolean): void;
+  } | null>(null);
+  const confirm = useCallback(
+    (options: ConfirmOptions) => new Promise<boolean>((resolve) => setAsking({ options, resolve })),
+    [],
+  );
+  const dialog = asking && (
+    <ConfirmDialog
+      {...asking.options}
+      onDone={(ok) => {
+        asking.resolve(ok);
+        setAsking(null);
+      }}
+    />
+  );
+  return [confirm, dialog];
+}
+
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  onDone,
+}: ConfirmOptions & { onDone(ok: boolean): void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
+  const t = useT();
+  const titleId = useId();
+  const messageId = useId();
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    dialog.showModal();
+    cancel.current?.focus();
+    // Escape closes this dialog only, not a drawer open underneath.
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') event.stopPropagation();
+    };
+    dialog.addEventListener('keydown', onKey);
+    return () => dialog.removeEventListener('keydown', onKey);
+  }, []);
+
+  return createPortal(
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the backdrop click is a shortcut; Escape closes it too
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      aria-describedby={message ? messageId : undefined}
+      onClose={() => onDone(ref.current?.returnValue === 'confirm')}
+      onClick={(event) => event.target === event.currentTarget && ref.current?.close()}
+      className="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-zinc-200 bg-white p-0 text-zinc-900 shadow-2xl transition-[opacity,scale] duration-200 ease-out backdrop:bg-zinc-950/40 starting:scale-[0.96] starting:opacity-0 motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+    >
+      <form method="dialog" className="grid gap-5 p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+            <Trash2 className="size-4" aria-hidden />
+          </span>
+          <div className="min-w-0 pt-0.5">
+            <h2 id={titleId} className="text-[15px] font-semibold break-words">
+              {title}
+            </h2>
+            {message && (
+              <p id={messageId} className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+                {message}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button ref={cancel} type="submit" value="cancel">
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" value="confirm" variant="danger">
+            {confirmLabel}
+          </Button>
+        </div>
+      </form>
+    </dialog>,
+    document.body,
   );
 }

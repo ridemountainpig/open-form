@@ -18,7 +18,15 @@ export function formatValue(
   if (Array.isArray(value)) return value.map(label).join(', ');
   if (typeof value === 'boolean') return value ? yesNo[0] : yesNo[1];
   if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'number' && isScale(field)) return `${value} / ${field?.max}`;
   return label(value);
+}
+
+/** A whole-number field with a short fixed range, like a rating or an NPS score: "4 / 5" reads better than "4". */
+function isScale(field: FieldSchema | undefined): boolean {
+  if (field?.type !== 'number' || field.integer !== true) return false;
+  const { min, max } = field;
+  return typeof min === 'number' && typeof max === 'number' && max - min <= 10;
 }
 
 export function timeAgo(iso: string, locale: string, now = Date.now()): string {

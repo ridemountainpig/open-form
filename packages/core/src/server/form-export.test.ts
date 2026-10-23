@@ -45,8 +45,9 @@ describe('exportFormResponses', () => {
     });
     expect(count).toBe(2);
     const csv = String(body);
-    expect(csv).toContain('#,Submitted at,Language,Name\r\n');
-    expect(csv).toContain(',en,Amy\r\n');
+    expect(csv).toContain('#,Submitted at (UTC),Language,Name\r\n');
+    expect(csv).toContain(',English,Amy\r\n');
+    expect(csv).toContain(',繁體中文,Amy\r\n');
   });
 
   it('leaves the Language column out when the form no longer loads or has no translations', async () => {
@@ -58,7 +59,7 @@ describe('exportFormResponses', () => {
         format: 'csv',
         definition: def,
       });
-      expect(String(body)).toContain(`#,Submitted at,${def ? 'Name' : 'Old name'}\r\n`);
+      expect(String(body)).toContain(`#,Submitted at (UTC),${def ? 'Name' : 'Old name'}\r\n`);
     }
   });
 

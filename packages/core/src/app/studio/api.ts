@@ -125,7 +125,7 @@ type Settled<T> = { key: string; url: string; data?: T; error?: Error };
  */
 export function useResource<T>(
   url: string | null,
-  opts: { live?: boolean; scope?: string } = {},
+  opts: { live?: boolean; scope?: string; refresh?: number } = {},
 ): Resource<T> {
   const key = url && (opts.scope ?? url);
   const [settled, setSettled] = useState<Settled<T>>();
@@ -169,6 +169,23 @@ export function useResource<T>(
     return onFormChanged(reload);
   }, [live, reload]);
 
+  // New responses arrive from other tabs and devices: refetch while the page is
+  // visible, and as soon as the viewer comes back to it.
+  const refresh = opts.refresh;
+  useEffect(() => {
+    if (!refresh || !url) return;
+    const visible = () => document.visibilityState === 'visible';
+    const timer = setInterval(() => visible() && reload(), refresh);
+    const onShow = () => visible() && reload();
+    document.addEventListener('visibilitychange', onShow);
+    window.addEventListener('focus', onShow);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onShow);
+      window.removeEventListener('focus', onShow);
+    };
+  }, [refresh, url, reload]);
+
   return { data: current?.data, error: current?.error, loading, reload };
 }
 
@@ -180,8 +197,17 @@ export const EXPORT_FORMATS = [
   { format: 'json', label: 'JSON' },
 ] as const;
 
-export const exportPath = (id: string, format: (typeof EXPORT_FORMATS)[number]['format']) =>
-  `${formPath(id)}/export?format=${format}`;
+/** `narrow` carries Studio's search (`q`) and filter, so the file holds what the table shows. */
+export const exportPath = (
+  id: string,
+  format: (typeof EXPORT_FORMATS)[number]['format'],
+  narrow?: { q?: string; filter?: string },
+) => {
+  const params = new URLSearchParams({ format });
+  if (narrow?.q) params.set('q', narrow.q);
+  if (narrow?.filter) params.set('filter', narrow.filter);
+  return `${formPath(id)}/export?${params}`;
+};
 
 export function deleteSubmission(formId: string, submissionId: string) {
   return request<{ ok: true }>(

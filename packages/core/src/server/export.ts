@@ -1,4 +1,11 @@
-import type { FieldType, FormSchema } from '../schema/index.ts';
+import {
+  DEFAULT_TIME_ZONE,
+  type FieldType,
+  type FormSchema,
+  isLocale,
+  LOCALE_NAMES,
+  wallClock,
+} from '../schema/index.ts';
 import type { StoredSubmission } from '../storage/index.ts';
 
 export type ExportColumn = {
@@ -49,6 +56,7 @@ export function responseColumns(
 
 export function formatCell(value: unknown): string {
   if (value === undefined || value === null) return '';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (Array.isArray(value)) return value.map(formatCell).join('; ');
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
@@ -69,18 +77,36 @@ function csvCell(value: unknown): string {
   return /[",;\t\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+/** A response's language by its own name ("繁體中文"), or the stored code when it isn't one. */
+export function localeName(locale: string | null | undefined): string {
+  if (!locale) return '';
+  return isLocale(locale) ? LOCALE_NAMES[locale] : locale;
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** `2026-10-13 08:48:03`, as a clock in `timeZone` shows it: what spreadsheets read as a date. */
+export function submittedAtText(createdAt: string, timeZone: string): string {
+  const instant = Date.parse(createdAt);
+  if (Number.isNaN(instant)) return createdAt;
+  const c = wallClock(instant, timeZone);
+  return `${c.year}-${pad(c.month)}-${pad(c.day)} ${pad(c.hour)}:${pad(c.minute)}:${pad(c.second)}`;
+}
+
 export function toCsv(
   columns: readonly ExportColumn[],
   rows: readonly StoredSubmission[],
-  opts: { language?: boolean } = {},
+  opts: { language?: boolean; timeZone?: string } = {},
 ): string {
-  const meta = opts.language ? ['#', 'Submitted at', 'Language'] : ['#', 'Submitted at'];
+  const timeZone = opts.timeZone ?? DEFAULT_TIME_ZONE;
+  const meta = ['#', `Submitted at (${timeZone})`, ...(opts.language ? ['Language'] : [])];
   const header = [...meta, ...columns.map((c) => c.header)];
   const lines = [header.map(csvCell).join(',')];
   for (const row of rows) {
+    const submitted = submittedAtText(row.createdAt, timeZone);
     const cells = opts.language
-      ? [row.number, row.createdAt, row.locale ?? '']
-      : [row.number, row.createdAt];
+      ? [row.number, submitted, localeName(row.locale)]
+      : [row.number, submitted];
     lines.push([...cells, ...columns.map((c) => row.data[c.key])].map(csvCell).join(','));
   }
   // BOM so Excel opens UTF-8 (CJK, accents) correctly.

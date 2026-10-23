@@ -1,4 +1,4 @@
-import { type FormSchema, overriddenTimeZone } from '../schema/index.ts';
+import { type FormSchema, overriddenTimeZone, type ResponseFilter } from '../schema/index.ts';
 import type { StorageAdapter } from '../storage/index.ts';
 import { responseColumns, toCsv, toJsonExport } from './export.ts';
 import type { FormDefinition } from './handler.ts';
@@ -20,6 +20,12 @@ export type FormExportOptions = {
   definition: FormDefinition | null;
   /** The project's `timeZone`, for forms that don't set one. */
   projectTimeZone?: string;
+  /** Only the responses Studio's search matches. */
+  search?: string;
+  /** Only the responses Studio's filter rules match. */
+  filter?: ResponseFilter;
+  /** The current time for relative filter rules. */
+  now?: number;
 };
 
 /**
@@ -45,8 +51,11 @@ export async function exportFormResponses({
   format,
   definition,
   projectTimeZone,
+  search,
+  filter,
+  now,
 }: FormExportOptions): Promise<{ body: string | Uint8Array<ArrayBuffer>; count: number }> {
-  const { items } = await storage.listSubmissions(formId, { order: 'asc' });
+  const { items } = await storage.listSubmissions(formId, { order: 'asc', search, filter, now });
   if (format === 'json') {
     return { body: JSON.stringify(toJsonExport(items), null, 2), count: items.length };
   }
@@ -56,10 +65,10 @@ export async function exportFormResponses({
     items.some((item) => item.locale) &&
     Object.keys(definition?.config.translations ?? {}).length > 0;
 
+  const overrides = definition ? await storage.getFormOverrides(formId) : null;
+  const timeZone = overriddenTimeZone(definition?.config, overrides, projectTimeZone);
   if (format === 'xlsx') {
-    const overrides = definition ? await storage.getFormOverrides(formId) : null;
-    const timeZone = overriddenTimeZone(definition?.config, overrides, projectTimeZone);
     return { body: await toXlsx(columns, items, { language, timeZone }), count: items.length };
   }
-  return { body: toCsv(columns, items, { language }), count: items.length };
+  return { body: toCsv(columns, items, { language, timeZone }), count: items.length };
 }

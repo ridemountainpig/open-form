@@ -133,10 +133,13 @@ rule answers `400 bad_request`.
 ## Export
 
 `GET /api/forms/:id/export?format=csv` downloads every response as
-`<id>-responses-<date>.<format>`, oldest first.
+`<id>-responses-<date>.<format>`, oldest first. `q` and `filter`, the same as
+on the submissions list, export only the responses they match.
 
-- **CSV** (default): `#`, `Submitted at`, `Language` on translated forms once
-  a response has one, then one column per field headed by its label. Fields
+- **CSV** (default): `#`, `Submitted at (<time zone>)` as `YYYY-MM-DD HH:mm:ss`
+  in the form's time zone, `Language` by name on translated forms once a
+  response has one, then one column per field headed by its label. Checkboxes
+  are `Yes` or `No`. Fields
   that only older versions had keep their columns. UTF-8 with a BOM, and text
   cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return are
   escaped so spreadsheets don't run them as formulas, except a `+` followed
