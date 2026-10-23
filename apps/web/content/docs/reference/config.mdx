@@ -56,9 +56,9 @@ loads `.env` itself.
       description: 'IANA zone for submission dates in forms that do not set their own.',
     },
     storage: {
-      type: '{ path?: string }',
+      type: '{ path?: string; url?: string }',
       default: "{ path: '.open-form/open-form.db' }",
-      description: 'SQLite file, relative to the project root. OPEN_FORM_DB overrides it.',
+      description: 'path: SQLite file, relative to the project root; OPEN_FORM_DB overrides it. url: a Postgres connection string, read from process.env and never written here; OPEN_FORM_DATABASE_URL overrides it, and either one wins over path.',
     },
     protection: {
       type: 'ProtectionConfig',
@@ -174,6 +174,19 @@ OPEN_FORM_SECRET=<at least 16 random characters>
 ```
 
 See [Storage](/docs/reference/storage).
+
+### Store responses in Postgres
+
+Set `OPEN_FORM_DATABASE_URL` and leave the config alone, or reuse a variable
+your app already has:
+
+```ts
+export default defineConfig({ storage: { url: process.env.DATABASE_URL } });
+```
+
+This file is committed, so the connection string itself stays in the
+environment; [`open-form check`](/docs/cli/check) fails on a URL with a
+password written here. See [Postgres](/docs/deploy/postgres).
 
 ### A public demo Studio
 

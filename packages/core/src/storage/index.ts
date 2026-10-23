@@ -1,3 +1,4 @@
+export { pageSubmissions } from './list.ts';
 export { createMemoryStorage } from './memory.ts';
 export type {
   CreateSubmissionInput,
@@ -5,6 +6,7 @@ export type {
   FormVersionRecord,
   ListSubmissionsOptions,
   StorageAdapter,
+  StorageInfo,
   StoredOverrides,
   StoredSubmission,
   SubmissionPage,

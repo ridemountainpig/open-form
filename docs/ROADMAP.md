@@ -332,9 +332,16 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 
 > Zapier / Make / n8n can already connect through v0.3's webhooks, so there's no separate integration for them.
 
-### Step 1 — Remote storage ⬜
+### Step 1 — Remote storage 🚧
 
-- ⬜ Turso / libSQL and Postgres adapters (evaluate Drizzle)
+- ✅ One place picks the adapter (`openStorage`), and a shared contract test suite runs against every adapter
+- ✅ Postgres adapter (`@open-form-build/core/postgres`, `pg` as an optional peer dependency): its own `open_form` schema, migrations under an advisory lock, row-locked numbering and `maxResponses` / `uniqueBy`, Studio filters and sorts through the shared JavaScript
+- ✅ `OPEN_FORM_DATABASE_URL` / `storage.url`, certificate verification by default, connection strings redacted everywhere they're shown
+- ✅ `open-form init` asks for the database and keeps the connection string in `.env`; `open-form check` fails on a password written into `open-form.config.ts`; `open-form db status`
+- ✅ Guides: Postgres, Vercel (Neon, Supabase); CI runs the contract tests and the e2e smoke against Postgres
+- ⬜ `open-form db copy` to move an existing SQLite database to Postgres, keeping response numbers
+- ⬜ Push common filter operators down to SQL for large forms
+- ⬜ Turso / libSQL adapter (decided against Drizzle: the queries stay hand-written)
 
 ### Step 2 — S3-compatible file storage ⬜
 

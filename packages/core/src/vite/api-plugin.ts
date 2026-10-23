@@ -9,6 +9,7 @@ import {
   toWebRequest,
 } from '../node/http.ts';
 import { resolveDatabasePath, resolveSecret } from '../node/secret.ts';
+import { openStorage, resolveStorage } from '../node/storage.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import {
   type AdminAuth,
@@ -21,7 +22,6 @@ import {
   type OpenFormHandler,
   type StorageAdapter,
 } from '../server/index.ts';
-import { createSqliteStorage } from '../sqlite/index.ts';
 import { DEFINITION_MODULE, findForms, formUpdatedAt, type ProjectPaths } from './project.ts';
 import { studioCommentsMiddleware } from './studio-comments.ts';
 import { studioCurrentMiddleware } from './studio-current.ts';
@@ -78,7 +78,12 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
       let storage: Promise<StorageAdapter> | undefined;
       let handler: Promise<OpenFormHandler> | undefined;
       const databasePath = resolveDatabasePath(paths.userCwd, config.storage?.path);
-      const getStorage = () => (storage ??= createSqliteStorage({ path: databasePath }));
+      const target = resolveStorage(paths.userCwd, config);
+      const getStorage = () =>
+        (storage ??= openStorage(target).catch((err) => {
+          storage = undefined;
+          throw err;
+        }));
       const sockets = new WeakMap<Request, IncomingMessage>();
       const secret = resolveSecret(paths.userCwd, databasePath);
       const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;

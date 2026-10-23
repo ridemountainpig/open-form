@@ -20,6 +20,10 @@
       "types": "./dist/sqlite/index.d.ts",
       "import": "./dist/sqlite/index.js"
     },
+    "./postgres": {
+      "types": "./dist/postgres/index.d.ts",
+      "import": "./dist/postgres/index.js"
+    },
     "./node": {
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.js"
@@ -76,6 +80,7 @@
     "react",
     "vite",
     "sqlite",
+    "postgres",
     "claude-code"
   ],
   "homepage": "https://open-form.build",
@@ -106,11 +111,22 @@
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.0"
   },
+  "peerDependencies": {
+    "pg": "^8.11.0"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@babel/types": "^7.29.8",
+    "@electric-sql/pglite": "^0.5.11",
     "@types/node": "^26.6.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "pg": "^8.23.1",
     "tsdown": "^0.22.14",
     "typescript": "^7.0.2"
   }

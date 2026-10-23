@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import chalk from 'chalk';
 import { createServer, mergeConfig, type ViteDevServer } from 'vite';
 import { importsOwnTheme } from '../editing/form-theme.ts';
+import { parseSource, walk } from '../editing/loc-tags.ts';
 import {
   describeCondition,
   type FieldSchema,
@@ -18,6 +19,7 @@ import { createDevRegistry } from '../vite/api-plugin.ts';
 import { createViteConfig } from '../vite/config.ts';
 import { sourceFiles } from '../vite/form-files.ts';
 import {
+  CONFIG_FILE,
   findForms,
   formThemeFile,
   loadUserConfig,
@@ -308,7 +310,39 @@ export function languageLines(definition: FormDefinition): string[] {
   return lines;
 }
 
+const CREDENTIALS_RE = /[a-z][a-z0-9+.-]*:\/\/[^/\s:@]*:[^/\s@]+@/i;
+
+/**
+ * `open-form.config.ts` is committed, so a connection string with its password
+ * written into it ends up in git. Values read from `process.env` are fine.
+ */
+export function configSecretProblems(source: string): string[] {
+  const problems: string[] = [];
+  walk(parseSource(source).program, (node) => {
+    const text =
+      node.type === 'StringLiteral'
+        ? (node.value as string)
+        : node.type === 'TemplateElement'
+          ? (node.value as { cooked?: string }).cooked
+          : undefined;
+    if (!text || !CREDENTIALS_RE.test(text)) return;
+    problems.push(
+      `${CONFIG_FILE}:${node.loc.start.line} holds a URL with a password, and this file is committed. ` +
+        'Put it in .env (OPEN_FORM_DATABASE_URL=…, already in .gitignore) and read it with process.env.',
+    );
+  });
+  return problems;
+}
+
 export async function checkCommand(id: string | undefined, flags: { json?: boolean }) {
+  const configFile = path.join(process.cwd(), CONFIG_FILE);
+  const secretProblems = existsSync(configFile)
+    ? configSecretProblems(readFileSync(configFile, 'utf8'))
+    : [];
+  if (secretProblems.length > 0) process.exitCode = 1;
+  for (const problem of secretProblems) {
+    process.stderr.write(`\n  ${chalk.red(`${glyph.cross} ${problem}`)}\n`);
+  }
   const results = await checkForms(process.cwd(), id);
 
   if (flags.json) {

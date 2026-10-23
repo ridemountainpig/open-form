@@ -1,6 +1,16 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { cp, lstat, mkdir, readdir, readFile, stat, symlink, writeFile } from 'node:fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
+import {
+  chmod,
+  cp,
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  stat,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import path from 'node:path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
@@ -42,7 +52,53 @@ export type InitFlags = {
   openFormVersion?: string;
   /** Written to `open-form.config.ts`. Defaults to this computer's time zone. */
   timeZone?: string;
+  /** Where responses go. `postgres` adds `pg` and an `OPEN_FORM_DATABASE_URL` line to `.env`. */
+  database?: Database;
+  /** Written to `.env`, never to a file that is committed. */
+  databaseUrl?: string;
 };
+
+export const DATABASES = ['sqlite', 'postgres'] as const;
+export type Database = (typeof DATABASES)[number];
+
+const DATABASE_URL_EXAMPLE = 'postgres://user:password@host:5432/dbname';
+
+function pgVersion(): string {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf8'),
+    ) as PackageJson & { peerDependencies?: Record<string, string> };
+    return pkg.peerDependencies?.pg ?? '^8.11.0';
+  } catch {
+    return '^8.11.0';
+  }
+}
+
+/** Sets `key` in a dotenv file unless it is already there. */
+async function setEnv(
+  file: string,
+  key: string,
+  value: string,
+  opts: { secret?: boolean } = {},
+): Promise<boolean> {
+  const existing = existsSync(file) ? await readFile(file, 'utf8') : '';
+  if (new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=`, 'm').test(existing)) return false;
+  const separator = existing && !existing.endsWith('\n') ? '\n' : '';
+  // Unquoted, a `#` in the password would start a comment.
+  const quoted = value.includes("'") ? `"${value}"` : `'${value}'`;
+  await writeFile(file, `${existing}${separator}${key}=${quoted}\n`, {
+    mode: opts.secret ? 0o600 : 0o644,
+  });
+  if (opts.secret) await chmod(file, 0o600);
+  return true;
+}
+
+export function databaseUrlProblem(value: string): string | undefined {
+  if (!value.trim()) return undefined;
+  return /^postgres(?:ql)?:\/\/\S+$/i.test(value.trim())
+    ? undefined
+    : `Use a Postgres connection string, e.g. ${DATABASE_URL_EXAMPLE}`;
+}
 
 function localTimeZone(): string | undefined {
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -159,6 +215,11 @@ export async function scaffold(target: string, flags: InitFlags = {}): Promise<S
   });
 
   const pkg = existing ? mergePackageJson(existing, template) : { ...template };
+  if (flags.database === 'postgres') {
+    pkg.dependencies = withMissing(pkg.dependencies, { pg: pgVersion() }, (name) =>
+      Boolean(pkg.dependencies?.[name] ?? pkg.devDependencies?.[name]),
+    );
+  }
   if (flags.name || !existing?.name) pkg.name = sanitizeName(flags.name ?? path.basename(target));
   const keepOpenForm =
     !flags.openFormVersion &&
@@ -180,6 +241,14 @@ export async function scaffold(target: string, flags: InitFlags = {}): Promise<S
   }
 
   await writeGitignore(target);
+  if (flags.database === 'postgres') {
+    await setEnv(path.join(target, '.env.example'), 'OPEN_FORM_DATABASE_URL', DATABASE_URL_EXAMPLE);
+    if (flags.databaseUrl?.trim()) {
+      await setEnv(path.join(target, '.env'), 'OPEN_FORM_DATABASE_URL', flags.databaseUrl.trim(), {
+        secret: true,
+      });
+    }
+  }
 
   const pm = flags.pm ?? 'pnpm';
   for (const guide of ['AGENTS.md', 'README.md', 'themes/README.md']) {
@@ -312,10 +381,46 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
     }
   }
 
+  let database = flags.database;
+  if (!database && interactive) {
+    database = unwrap<Database>(
+      await p.select({
+        message: 'Where should responses be stored?',
+        initialValue: 'sqlite' as Database,
+        options: [
+          { value: 'sqlite', label: 'SQLite', hint: 'a file in .open-form/, nothing to set up' },
+          {
+            value: 'postgres',
+            label: 'Postgres',
+            hint: 'Supabase, Neon, RDS… for serverless hosts',
+          },
+        ],
+      }),
+    );
+  }
+  let databaseUrl = flags.databaseUrl ?? process.env.OPEN_FORM_DATABASE_URL;
+  if (database === 'postgres' && !databaseUrl && interactive) {
+    databaseUrl = unwrap<string>(
+      await p.password({
+        message: `Postgres connection string ${chalk.dim('(saved to .env only; leave empty to add it later)')}`,
+        validate: (value) => databaseUrlProblem(value ?? ''),
+      }),
+    );
+  }
+  const urlProblem = database === 'postgres' && databaseUrl && databaseUrlProblem(databaseUrl);
+  if (urlProblem) throw new Error(`OPEN_FORM_DATABASE_URL: ${urlProblem}`);
+
   const pm = flags.pm ?? detectPackageManager();
-  const { kept, pkg } = await scaffold(target, { ...flags, pm });
+  const { kept, pkg } = await scaffold(target, { ...flags, pm, database, databaseUrl });
   p.log.step(`Created workspace in ${chalk.dim(path.relative(process.cwd(), target) || '.')}`);
   if (kept.length > 0) p.log.info(`Kept your existing ${kept.join(', ')}`);
+  if (database === 'postgres') {
+    p.log.step(
+      databaseUrl?.trim()
+        ? `Saved the Postgres connection string to ${chalk.bold('.env')} ${chalk.dim('(git ignores it)')}`
+        : `Add your Postgres connection string to ${chalk.bold('.env')} as OPEN_FORM_DATABASE_URL ${chalk.dim('(see .env.example)')}`,
+    );
+  }
 
   let installed = false;
   if (flags.install !== false) {

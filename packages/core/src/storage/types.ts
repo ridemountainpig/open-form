@@ -59,14 +59,24 @@ export type ListSubmissionsOptions = {
 /** Settings changed in Studio on a running server; they win over the form's code. */
 export type StoredOverrides = FormOverrides & { updatedAt: string };
 
+/** For `open-form db status`. */
+export type StorageInfo = {
+  /** e.g. `PostgreSQL 16.4`, `SQLite 3.50.4`. */
+  engine: string;
+  /** Where inside the database Open Form's tables are, when that isn't obvious. */
+  location?: string;
+  /** Migrations applied. */
+  schemaVersion: number;
+};
+
 export type SubmissionPage = {
   items: StoredSubmission[];
   total: number;
 };
 
 /**
- * Persistence for runtime data. Async so remote databases (Postgres, Turso)
- * can implement it; the SQLite adapter just resolves synchronously.
+ * Persistence for runtime data. Async so remote databases (Postgres) can
+ * implement it; the SQLite adapter just resolves synchronously.
  */
 export type StorageAdapter = {
   ensureFormVersion(
@@ -103,5 +113,7 @@ export type StorageAdapter = {
   /** Ends a Studio session before it expires (sign-out); kept until `expiresAt` (epoch ms). */
   revokeSession(id: string, expiresAt: number, now?: number): Promise<void>;
   isSessionRevoked(id: string): Promise<boolean>;
+  /** Optional: what `open-form db status` reports. */
+  info?(): Promise<StorageInfo>;
   close(): Promise<void>;
 };

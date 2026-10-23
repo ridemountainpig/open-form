@@ -120,6 +120,12 @@ export type OpenFormConfig = {
   storage?: {
     /** SQLite file path, relative to the project root. Default `.open-form/open-form.db`. */
     path?: string;
+    /**
+     * A Postgres connection string, read from the environment
+     * (`url: process.env.DATABASE_URL`) and never written here: this file is committed.
+     * `OPEN_FORM_DATABASE_URL` wins over it.
+     */
+    url?: string;
   };
   /** Defaults applied to every form; each form's own `protection` wins. */
   protection?: ProtectionConfig;

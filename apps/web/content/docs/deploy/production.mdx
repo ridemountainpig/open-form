@@ -5,7 +5,8 @@ description: Build once, run one Node process, and keep the database on a persis
 ---
 
 A production deployment is one Node.js process that serves the forms, the API,
-Studio and SQLite. There are no other services to run.
+Studio and SQLite. There are no other services to run, unless you keep responses
+in [Postgres](/docs/deploy/postgres).
 
 ```npm
 npm run build  # open-form build
@@ -45,8 +46,10 @@ Responses live in a SQLite file, so the server needs a **persistent disk**:
 - [Railway](/docs/deploy/railway) or Fly.io, with a volume attached.
 
 Serverless platforms with an ephemeral filesystem (Vercel and similar) lose the
-file between invocations, so local SQLite doesn't work there. To run inside a
-Next.js app, see [Next.js](/docs/deploy/nextjs) and pass your own storage.
+file between invocations, so local SQLite doesn't work there. Keep responses in
+[Postgres](/docs/deploy/postgres) instead; on Vercel, run inside a Next.js app
+([Vercel](/docs/deploy/vercel)). With Postgres, `open-form start` needs no disk
+for responses either.
 
 By default the data lives in `.open-form/` in the project: the database and a
 generated signing secret, which is always written next to the database. Either
@@ -71,6 +74,7 @@ environment win, so your platform's settings override the file.
 | `PORT` | Port to listen on without `--port` (default: `port` in `open-form.config.ts`, else `3000`). |
 | `HOST` | Address to bind without `--host` (default `0.0.0.0`). |
 | `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio and the admin API. At least 16 characters with at least 8 different ones, not one word or pattern repeated; a passphrase of a few words works. |
+| `OPEN_FORM_DATABASE_URL` | A Postgres connection string: responses go to [Postgres](/docs/deploy/postgres) instead of SQLite (default: `storage.url` in `open-form.config.ts`). |
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`). |
 | `OPEN_FORM_SECRET` | Signs timing tokens and Studio sessions, and hashes visitor ids (default: generated into a `secret` file next to the database). At least 16 characters. Keep it stable and private. |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally prefixed `whsec_` as the Standard Webhooks libraries expect. |

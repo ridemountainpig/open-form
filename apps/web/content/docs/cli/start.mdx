@@ -1,6 +1,6 @@
 ---
 title: open-form start
-description: "Serve the production build from one Node process: form pages, Studio, the submission and admin API, and SQLite on a persistent disk."
+description: "Serve the production build from one Node process: form pages, Studio, the submission and admin API, and responses in SQLite on a persistent disk or in Postgres."
 ---
 
 ```npm
@@ -10,8 +10,10 @@ npx open-form start
 ```
 
 Serves the output of [`open-form build`](/docs/cli/build): the form pages,
-Studio, the submission and admin API, and responses in SQLite. Run `build`
-first; `start` exits with an error when there's no build.
+Studio, the submission and admin API, and responses in SQLite (or
+[Postgres](/docs/deploy/postgres)). Run `build` first; `start` exits with an
+error when there's no build. Its startup lines include where responses go, with
+any password hidden.
 
 At startup it renders every form once, so a broken form fails the deploy instead
 of a respondent. It shuts down cleanly on `SIGINT` and `SIGTERM`.
@@ -31,6 +33,7 @@ of a respondent. It shuts down cleanly on `SIGINT` and `SIGTERM`.
 | `PORT` | Port to listen on. |
 | `HOST` | Host to bind. |
 | `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio and the admin API; you sign in with it. At least 16 characters with at least 8 different ones, not one word or pattern repeated — a passphrase of a few words works. |
+| `OPEN_FORM_DATABASE_URL` | Postgres connection string; responses go there instead of SQLite. Default: `storage.url` in `open-form.config.ts`. See [Postgres](/docs/deploy/postgres). |
 | `OPEN_FORM_DB` | SQLite file path. Default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`. |
 | `OPEN_FORM_SECRET` | Signing secret, at least 16 characters; a shorter one stops `start`. Default: generated once into a `secret` file next to the database. |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally after a `whsec_` prefix; a value that isn't stops `start`. |

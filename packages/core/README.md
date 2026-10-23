@@ -1,6 +1,6 @@
 # @open-form-build/core
 
-**Forms your agent writes. Responses you own.** Open Form is an open-source form framework for coding agents: your agent writes the questions and logic, and Open Form provides the runtime, validation, responsive UI, submission API, spam protection, SQLite storage and a Responses Studio.
+**Forms your agent writes. Responses you own.** Open Form is an open-source form framework for coding agents: your agent writes the questions and logic, and Open Form provides the runtime, validation, responsive UI, submission API, spam protection, SQLite (or Postgres) storage and a Responses Studio.
 
 ```bash
 pnpm create open-form my-forms
@@ -46,6 +46,7 @@ export default function Meetup() {
 | `@open-form-build/core/schema` | Framework-agnostic schema, conditions and validation |
 | `@open-form-build/core/server` | Web-standard `(Request) => Response` handler and storage interface |
 | `@open-form-build/core/sqlite` | `node:sqlite` storage adapter |
+| `@open-form-build/core/postgres` | Postgres storage adapter (needs `pg`); used automatically when `OPEN_FORM_DATABASE_URL` is set |
 | `@open-form-build/core/node` | Node HTTP adapter and production server |
 | `@open-form-build/core/vite` | The Vite config and project helpers the CLI is built on (`createViteConfig`, `findForms`, `loadUserConfig`) |
 | `@open-form-build/core/next` | Next.js route handlers (`createOpenFormRoute`) |
@@ -88,7 +89,7 @@ export function RsvpForm() {
 
 On Windows `cmd`, `&` doesn't run the two in parallel; run `open-form build --server-only --watch` and `next dev` in two terminals instead.
 
-App Router route handlers can't render the forms to learn their fields, so the route reads the server bundle `open-form build --server-only` writes to `dist/server/entry.js` (outside production it reloads it after each rebuild) — validation still comes from the same form files as the browser. Next.js can't trace that file, so with `output: 'standalone'` or on Vercel add `outputFileTracingIncludes: { '/api/*': ['./dist/server/**/*'] }` to `next.config`, and set `OPEN_FORM_SECRET`, since serverless functions can't write the `secret` file generated next to the database. Responses go to SQLite in `.open-form/` by default, which needs a persistent disk; pass `storage` for anything else. The admin API exists only when `OPEN_FORM_ADMIN_PASSWORD` is set or you pass `adminAuth` (for example `authorize: async () => isAdmin(await auth())`). On Vercel, pass `waitUntil: after` (from `next/server`) so webhooks finish after the response.
+App Router route handlers can't render the forms to learn their fields, so the route reads the server bundle `open-form build --server-only` writes to `dist/server/entry.js` (outside production it reloads it after each rebuild) — validation still comes from the same form files as the browser. Next.js can't trace that file, so with `output: 'standalone'` or on Vercel add `outputFileTracingIncludes: { '/api/*': ['./dist/server/**/*'] }` to `next.config`, and set `OPEN_FORM_SECRET`, since serverless functions can't write the `secret` file generated next to the database. Responses go to SQLite in `.open-form/` by default, which needs a persistent disk; on serverless hosts set `OPEN_FORM_DATABASE_URL` to a Postgres database (and install `pg`), or pass `storage`. The admin API exists only when `OPEN_FORM_ADMIN_PASSWORD` is set or you pass `adminAuth` (for example `authorize: async () => isAdmin(await auth())`). On Vercel, pass `waitUntil: after` (from `next/server`) so webhooks finish after the response.
 
 ## CLI
 

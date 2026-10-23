@@ -489,6 +489,16 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
       return Boolean(stmt.isRevoked.get(id));
     },
 
+    async info() {
+      const { version } = db.prepare('SELECT sqlite_version() AS version').get() as {
+        version: string;
+      };
+      const row = db.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get() as
+        | { value: string }
+        | undefined;
+      return { engine: `SQLite ${version}`, schemaVersion: Number(row?.value ?? 0) };
+    },
+
     async close() {
       db.close();
     },
