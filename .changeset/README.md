@@ -10,3 +10,5 @@ On every push to `main`, the Release PR workflow runs `pnpm version-packages` an
 pnpm release
 git push --follow-tags
 ```
+
+Then run the **GitHub Release** workflow from the Actions tab. It turns the version's CHANGELOG section into a GitHub Release; leave the version empty for the one just published, or enter an older one to backfill it.
