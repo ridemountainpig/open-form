@@ -406,7 +406,7 @@ export default defineTheme({
   spacing: 'comfortable',          // 'compact' | 'comfortable' | 'spacious'
   width: '640px',
   layout: 'card',                  // 'card' | 'plain' (no card, for embedding)
-  colorScheme: 'dark',             // optional: force 'dark' or 'light' regardless of the system setting
+  // colorScheme: 'dark',          // optional: force one scheme; `colors` is then that scheme's palette and `dark` is unused
   colors: {
     primary: '#0f766e', primaryForeground: '#ffffff',
     background: '#f5f7f6',         // page
