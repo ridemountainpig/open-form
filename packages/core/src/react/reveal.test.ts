@@ -68,7 +68,7 @@ describe('revealField', () => {
     reducedMotion = true;
     const element = fakeElement(1, { top: -300, bottom: -260, height: 40 });
     revealField(fakeField('email', element));
-    expect(element.scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'auto' });
+    expect(element.scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'instant' });
   });
 
   it('leaves the page alone when the field is already in view', () => {
@@ -76,6 +76,22 @@ describe('revealField', () => {
     revealField(fakeField('email', element));
     expect(element.focus).toHaveBeenCalled();
     expect(element.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('scrolls a row hidden by a scrolling panel even when it is inside the window', () => {
+    const panel = {
+      parentElement: null,
+      scrollHeight: 2000,
+      clientHeight: 400,
+      getBoundingClientRect: () => ({ top: 0, bottom: 400 }),
+    };
+    vi.stubGlobal('getComputedStyle', () => ({ overflowY: 'auto' }));
+    const element = {
+      ...fakeElement(1, { top: 500, bottom: 540, height: 40 }),
+      parentElement: panel,
+    };
+    revealField(fakeField('email', element));
+    expect(element.scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' });
   });
 
   it('scrolls the whole question row, from its top when it is taller than the screen', () => {
