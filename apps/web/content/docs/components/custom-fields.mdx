@@ -119,7 +119,7 @@ typing your own components.
 | `required` | Whether the field is required. |
 | `label` / `description` | Translated into the language being shown. |
 | `id`, `errorId`, `descriptionId` | DOM ids the shell and ARIA attributes use. |
-| `ref` | Attach to the element that should receive focus when the field is invalid. |
+| `ref` | Attach to the element that should receive focus when the field is invalid. Without it, the element carrying `controlProps` (found by its `id`) is focused. |
 | `controlProps` | `id`, `name`, `aria-invalid`, `aria-describedby`, `aria-required` and `onBlur`, for the main control. |
 
 ## Native controls

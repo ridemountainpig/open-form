@@ -74,7 +74,10 @@ export type FieldApi = {
   description?: string;
   descriptionId?: string;
   errorId: string;
-  /** Attach to the element that should receive focus when the field is invalid. */
+  /**
+   * Attach to the element that should receive focus when the field is invalid.
+   * Without it, the element carrying `controlProps` is focused.
+   */
   ref(element: HTMLElement | null): void;
   /** Spread onto the primary control for labels, ARIA and blur handling. */
   controlProps: {
@@ -193,9 +196,9 @@ export function useField(opts: UseFieldOptions): FieldApi {
       getSchema: () => toDefinition(optsRef.current),
       getValidator: () => optsRef.current.validate,
       getDefault: () => optsRef.current.defaultValue,
-      focus: () => elementRef.current?.focus(),
+      element: () => elementRef.current ?? document.getElementById(id),
     });
-  }, [name, register, runtime.mode, scope.page, store]);
+  }, [id, name, register, runtime.mode, scope.page, store]);
 
   const setValue = useCallback(
     (next: unknown) => {
