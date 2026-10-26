@@ -34,6 +34,7 @@ them in `.agents/skills/` and turns each `.claude/skills/<name>` into a link, as
 | `-f, --force` | off | Scaffold into a non-empty directory. |
 | `-n, --name <name>` | folder name | The `package.json` name, lowercased and made npm-safe. Without it, an existing `package.json` keeps its name. |
 | `--pm <pm>` | auto-detected | Package manager: `pnpm`, `npm`, `yarn` or `bun`. |
+| `--database <database>` | asks; `sqlite` without a terminal | Where responses are stored: `sqlite` or `postgres`. |
 | `--no-install` | off | Skip installing dependencies. |
 | `--no-git` | off | Skip `git init` and the initial commit. |
 
@@ -67,9 +68,18 @@ my-forms/
 ├── README.md
 ├── package.json
 ├── tsconfig.json
+├── .env, .env.example       # --database postgres: the connection string, a placeholder
 └── .gitignore               # node_modules, dist, .open-form/, .env*, exported responses
 ```
 
+- **Database** — an interactive run asks where responses go: SQLite (a file
+  in `.open-form/`, nothing to set up) or [Postgres](/docs/deploy/postgres).
+  For Postgres, init adds `pg` to `package.json`, writes `.env.example` with a
+  placeholder `OPEN_FORM_DATABASE_URL`, and asks for the connection string
+  without echoing it. It goes into `.env` only (owner-readable, ignored by
+  git), never into a committed file; leave it empty to add it later. Without
+  a terminal, init takes it from `OPEN_FORM_DATABASE_URL` in the environment,
+  if set. A `.env` that already sets it is left alone.
 - **Time zone** — init writes your computer's time zone into
   `open-form.config.ts` as `timeZone` (falling back to `UTC`), so form open and
   close dates mean the same in dev and in production. Change it if your forms

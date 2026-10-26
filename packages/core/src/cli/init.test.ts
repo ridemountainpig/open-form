@@ -1,9 +1,17 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { forPackageManager, gitInit, scaffold, shellQuote } from './init.ts';
+import { databaseUrlProblem, forPackageManager, gitInit, scaffold, shellQuote } from './init.ts';
 
 let root: string;
 
@@ -166,5 +174,93 @@ describe('shellQuote', () => {
     expect(shellQuote("Amy's forms", false)).toBe("'Amy'\\''s forms'");
     expect(shellQuote('C:\\work\\forms', true)).toBe('C:\\work\\forms');
     expect(shellQuote('C:\\my forms', true)).toBe('"C:\\my forms"');
+  });
+});
+
+describe('scaffold with Postgres', () => {
+  const url = 'postgres://app:p#ss@db.example.com:5432/forms';
+
+  it('keeps the connection string in .env only, and adds pg', async () => {
+    const { pkg, databaseUrl } = await scaffold(root, {
+      timeZone: 'UTC',
+      database: 'postgres',
+      databaseUrl: url,
+    });
+    expect(databaseUrl).toBe('saved');
+    expect(pkg.dependencies?.pg).toMatch(/^\^8\./);
+    const env = readFileSync(path.join(root, '.env'), 'utf8');
+    expect(env).toBe(`OPEN_FORM_DATABASE_URL='${url}'\n`);
+    process.loadEnvFile(path.join(root, '.env'));
+    expect(process.env.OPEN_FORM_DATABASE_URL).toBe(url);
+    delete process.env.OPEN_FORM_DATABASE_URL;
+    if (process.platform !== 'win32') {
+      expect(statSync(path.join(root, '.env')).mode & 0o777).toBe(0o600);
+    }
+    expect(readFileSync(path.join(root, '.env.example'), 'utf8')).toBe(
+      "OPEN_FORM_DATABASE_URL='postgres://user:password@host:5432/dbname'\n",
+    );
+    for (const file of ['open-form.config.ts', 'package.json', 'README.md']) {
+      expect(readFileSync(path.join(root, file), 'utf8')).not.toContain('p#ss');
+    }
+  });
+
+  it('puts pg in dependencies even when it was only a devDependency', async () => {
+    writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({ name: 'mine', devDependencies: { pg: '^8.12.0' } }),
+    );
+    const { pkg } = await scaffold(root, { timeZone: 'UTC', database: 'postgres' });
+    expect(pkg.dependencies?.pg).toBe('^8.12.0');
+  });
+
+  it('writes a password with both quote characters so .env reads it back', async () => {
+    const tricky = `postgres://app:a'b"c@db.example.com/forms`;
+    await scaffold(root, { timeZone: 'UTC', database: 'postgres', databaseUrl: tricky });
+    process.loadEnvFile(path.join(root, '.env'));
+    expect(process.env.OPEN_FORM_DATABASE_URL).toBe(tricky);
+    delete process.env.OPEN_FORM_DATABASE_URL;
+  });
+
+  it('never replaces a connection string that is already in .env', async () => {
+    writeFileSync(
+      path.join(root, '.env'),
+      'OTHER=1\nOPEN_FORM_DATABASE_URL=postgres://mine@db/app',
+    );
+    const result = await scaffold(root, {
+      timeZone: 'UTC',
+      database: 'postgres',
+      databaseUrl: url,
+    });
+    expect(result.databaseUrl).toBe('kept');
+    expect(readFileSync(path.join(root, '.env'), 'utf8')).toBe(
+      'OTHER=1\nOPEN_FORM_DATABASE_URL=postgres://mine@db/app',
+    );
+  });
+
+  it('leaves .env out of the first commit', async () => {
+    await scaffold(root, { timeZone: 'UTC', database: 'postgres', databaseUrl: url });
+    const git = await gitInit(root);
+    if (git.status !== 'committed') return;
+    const files = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n');
+    expect(files).toContain('.env.example');
+    expect(files).not.toContain('.env');
+  });
+
+  it('writes no .env for SQLite', async () => {
+    const { pkg } = await scaffold(root, { timeZone: 'UTC' });
+    expect(pkg.dependencies?.pg).toBeUndefined();
+    expect(existsSync(path.join(root, '.env'))).toBe(false);
+    expect(existsSync(path.join(root, '.env.example'))).toBe(false);
+  });
+});
+
+describe('databaseUrlProblem', () => {
+  it('takes a Postgres URL or nothing', () => {
+    expect(databaseUrlProblem('')).toBeUndefined();
+    expect(databaseUrlProblem('postgresql://u:p@h/db')).toBeUndefined();
+    expect(databaseUrlProblem('mysql://u:p@h/db')).toMatch('Postgres connection string');
+    expect(databaseUrlProblem('postgres://u:p#12@h/db')).toMatch('%23');
+    expect(databaseUrlProblem('postgres://u:p%2312@h/db')).toBeUndefined();
+    expect(databaseUrlProblem('postgres://u@/db?host=/var/run/postgresql')).toBeUndefined();
   });
 });

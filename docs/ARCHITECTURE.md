@@ -21,7 +21,7 @@ Most technology choices from the original plan were kept, but six were adjusted 
 | --- | --- | --- |
 | Next.js | **Vite (hidden inside the package) + a Web-standard `fetch` handler** | The core lesson from open-slide: the user's repo has only `forms/`, `open-form.config.ts` and `package.json` — no `app/`, no `next.config`. Next.js requires `app/` to live in the user's project, so it can't hide the whole app in `node_modules` the way Vite can. The server is written as `(Request) => Response`, so it can still be mounted in a Next.js Route Handler (the `@open-form-build/core/next` adapter, see §7). |
 | 10 `@open-form/*` packages | **Two published packages under the `@open-form-build` npm org: `@open-form-build/core` (the framework, layered internally + subpath exports, with the `open-form` CLI) and `@open-form-build/cli` (the scaffolder), plus unscoped `create-open-form` for `npm create open-form`** | `@open-form/core` and `@open-form/cli` are already registered on npm by someone else, so we don't control the scope, and npm refuses unscoped `open-form` as too similar to the existing `openform`. Like open-slide (`@open-slide/core` + `@open-slide/cli`), workspaces depend on and import `@open-form-build/core`, and `npx @open-form-build/cli init` scaffolds one. Unlike open-slide, `create-open-form` also gives the `npm create open-form@latest` / `pnpm create open-form` convention; it runs the same `init`. Layers live in `src/<layer>/` with the dependency direction enforced by Biome `noRestrictedImports`, and are exposed through subpaths such as `@open-form-build/core`, `@open-form-build/core/schema`, `@open-form-build/core/server` and `@open-form-build/core/sqlite`. If we ever need to split into packages, the boundaries are already there. |
-| Drizzle + SQLite driver | **`node:sqlite` (built into Node) + a hand-written storage adapter over 4 tables** | "Zero infrastructure to start": no native addon (better-sqlite3 needs compiling) and no ORM. With 4 tables and a dozen or so queries, an ORM only adds install size. Drizzle will be re-evaluated in the Postgres adapter phase. |
+| Drizzle + SQLite driver | **`node:sqlite` (built into Node) + a hand-written storage adapter over 4 tables** | "Zero infrastructure to start": no native addon (better-sqlite3 needs compiling) and no ORM. With 4 tables and a dozen or so queries, an ORM only adds install size. The Postgres adapter (§8) is hand-written too: about twenty queries, and the JSON search is dialect-specific either way. |
 | Zod | **A built-in lightweight validation engine + Standard Schema support** | Client and server must run **the same** validation logic, and the schema must be serializable into the DB. The built-in engine handles required / length / pattern / range / options; the `validate` escape hatch accepts a function or any [Standard Schema](https://standardschema.dev) (implemented by Zod, Valibot and ArkType), so Zod works but isn't a dependency. |
 | Radix / shadcn | **Native inputs + CSS variables for the form runtime; Tailwind for Studio** | Native `<select>` and `<input type=radio>` have the best a11y and experience on mobile, and the runtime stays at zero extra dependencies so it can be embedded in any React app. Studio (our own UI) follows open-slide's Tailwind approach. |
 | `<Number />`, `<Date />` | **`<NumberInput />`, `<DateInput />`** | `import { Number, Date }` shadows the JS globals `Number()` / `new Date()` in the same file (Biome's `noShadowRestrictedNames` flags it too). Agents often write `Number(v)` inside validators; the rename avoids that trap. |
@@ -40,12 +40,13 @@ open-form/                         ← this repo (pnpm + Turborepo monorepo)
 │   │   │   ├── server/            Web-standard fetch handler, submission pipeline, protection, export
 │   │   │   ├── storage/           StorageAdapter interface + in-memory adapter (for tests)
 │   │   │   ├── sqlite/            node:sqlite adapter (default storage)
-│   │   │   ├── node/              Node http adapter, production server, secret management
+│   │   │   ├── postgres/          Postgres adapter over `pg` (an optional peer dependency)
+│   │   │   ├── node/              Node http adapter, production server, secret management, storage selection
 │   │   │   ├── next/              `@open-form-build/core/next`: Next.js App Router route handler
 │   │   │   ├── vite/              Vite plugin: form discovery, virtual modules, dev API middleware
 │   │   │   ├── editing/           dev write-back to source (Babel AST): submission settings, theme tokens, text, translations, comments, folders, loc markers
 │   │   │   ├── cli/               `open-form` CLI: init / dev / build / start / create / check / comments / list /
-│   │   │   │                      responses export / theme list|check|add|font / sync:skills
+│   │   │   │                      responses export / db status / theme list|check|add|font / sync:skills
 │   │   │   ├── app/               hidden Vite app (shipped as source): public form page + Studio
 │   │   │   └── index.ts           public DSL entry imported by forms
 │   │   ├── themes/                starter themes (classic, editorial, terminal, brutalist, conversational): references for `theme add` and `create --theme`
@@ -110,7 +111,8 @@ my-forms/
 | `storage/` | `schema/` | react, node:*, other layers | `@open-form-build/core/server` (types, `createMemoryStorage`) |
 | `server/` | `schema/`, `storage/` | react, node:*, sqlite, node, vite, cli, app | `@open-form-build/core/server` |
 | `sqlite/` | `storage/`, `schema/`, node:sqlite | react (by convention) | `@open-form-build/core/sqlite` |
-| `node/` | `server/`, `sqlite/`, `schema/`, node:* | — | `@open-form-build/core/node` |
+| `postgres/` | `storage/`, `schema/`, `pg` (loaded on demand) | react (by convention) | `@open-form-build/core/postgres` |
+| `node/` | `server/`, `sqlite/`, `postgres/`, `schema/`, node:* | — | `@open-form-build/core/node` |
 | `next/` | `node/`, `server/`, `sqlite/`, `schema/` | — | `@open-form-build/core/next` |
 | `editing/` | `schema/`, `vite/project.ts`, `@babel/parser`, node:* | — | (internal, used by vite / cli) |
 | `vite/`, `cli/` | everything | — | `@open-form-build/core/vite` (internal) |
@@ -120,7 +122,7 @@ There are also `@open-form-build/core/styles.css` (the runtime's base styles) an
 
 `server/` depends only on Web standards (`Request`, `Response`, `crypto.subtle`), so the same handler runs in Vite dev middleware, the Node production server and a Next.js Route Handler (`@open-form-build/core/next`), and could later run on Cloudflare Workers or Bun.
 
-The `noRestrictedImports` overrides in `biome.json` enforce three of these groups: `schema/`, `react/` + `app/`, and `server/` + `storage/` (the "May not import" column above). `sqlite/`, `node/`, `next/`, `editing/`, `vite/` and `cli/` have no lint rules and are kept in line by convention.
+The `noRestrictedImports` overrides in `biome.json` enforce three of these groups: `schema/`, `react/` + `app/`, and `server/` + `storage/` (the "May not import" column above). `sqlite/`, `postgres/`, `node/`, `next/`, `editing/`, `vite/` and `cli/` have no lint rules and are kept in line by convention.
 
 ---
 
@@ -337,7 +339,9 @@ DELETE /api/studio/session                          sign out
 
 ---
 
-## 8. Storage (SQLite-first)
+## 8. Storage (SQLite-first, Postgres when configured)
+
+`openStorage(resolveStorage(root, config))` (`node/storage.ts`) is the only place that picks an adapter; `open-form dev` / `start`, the CLI commands and the Next.js route all go through it. In order: `OPEN_FORM_DATABASE_URL` → Postgres, `storage.url` → Postgres, else SQLite at `OPEN_FORM_DB` / `storage.path` / `.open-form/open-form.db`. `DATABASE_URL` is deliberately not read on its own: in many apps it is the app's own database. The adapter modules are imported on demand, so a SQLite workspace never loads `pg`.
 
 ```sql
 form_versions    (id, form_id, version, schema JSON, created_at)            UNIQUE(form_id, version)
@@ -359,14 +363,24 @@ meta             (key, value)                                                -- 
 - Search uses `CASE WHEN json_valid(data) THEN EXISTS(json_tree …) END`: `json_tree` fails the whole query on JSON it can't walk, so such rows are skipped instead of causing a 500. The write side also limits custom fields to at most 10 levels of nesting.
 - `PRAGMA secure_delete = ON`, plus `wal_checkpoint(TRUNCATE)` after deleting responses: deleting in Studio really erases the data, leaving no copies in the DB or WAL file (leftovers from older versions need a single `VACUUM` to clear).
 - The dev server's Vite `fs.allow` covers the whole project, so `fs.deny` (`devServerDeny` in `vite/config.ts`) explicitly excludes `**/.open-form/**` and any custom DB path (including `-wal` / `-shm`), and re-lists Vite's original defaults (a custom `deny` replaces them). Otherwise `/@fs/…/.open-form/open-form.db` would bypass Studio sign-in and serve the file directly.
-- `StorageAdapter` is an async interface; the SQLite adapter's API is synchronous, but the interface stays async to accommodate future Postgres / Turso adapters.
+- `StorageAdapter` is an async interface; the SQLite adapter's API is synchronous, but the interface stays async for Postgres.
 - `maxResponses` and `uniqueBy` are checked inside the adapter's transaction, so there are no races.
 - `number` is a per-form sequence number (Studio's "Response #147"). It's never renumbered after deletions, nor reused: numbers come from the monotonically increasing `form_counters`, incremented in the same transaction as the `maxResponses` / `uniqueBy` checks. `MAX(number) + 1` alone isn't used, because after deleting the latest response the next one would get the same number, which webhook receivers have already seen; but it still takes `max(counter + 1, MAX(number) + 1)`, so data from before the upgrade, or responses written by older code that bypassed the counter, never cause duplicate numbers.
 - Search (`listSubmissions({ search })`, Studio's `?q=`) matches only answer values (strings and numbers from `json_tree`), not field names; otherwise searching "email" would match every row.
 - Filters (`listSubmissions({ filter, now })`, Studio's `?filter=` JSON) are defined once in `schema/response-filter.ts`: `parseResponseFilter` validates them (the handler answers 400 on a bad one) and `responseFilterTest` evaluates them. The memory adapter calls the test directly; SQLite registers it as the `open_form_filter(data, created_at)` SQL function, so `COUNT`, `LIMIT` and `OFFSET` stay in SQL and both adapters agree. Day rules on the submission time are read in the `timeZone` Studio sends (the viewer's).
 - Sorting (`listSubmissions({ sort })`, Studio's `?sort=` JSON) works the same way: `schema/response-sort.ts` turns an answer into a key (`responseSortKey`: numbers, lowercased text, or a choice's position in the `values` Studio sends, so options sort in form order) and defines the order (`compareResponseSortKeys`: SQLite's — numbers before text, empty answers last either way). SQLite registers the key as `open_form_sort_key(data)` and sorts in a subquery, so pages are still cut in SQL; ties fall back to `number DESC`.
 
-**Deployment note**: SQLite suits environments with a persistent volume (VPS, Docker, Railway + Volume, Fly.io + Volume). Serverless platforms (Vercel and the like) aren't suited to local SQLite and need to wait for a remote adapter.
+### Postgres (`@open-form-build/core/postgres`)
+
+- The same tables in their own schema, `open_form` by default (`createPostgresStorage({ schema })`), so they never mix with an app's tables in `public`. `data`, `schema` and override data are `json`, not `jsonb`: answers come back with their keys in the order the form sent them. Timestamps stay ISO-8601 `TEXT`, as in SQLite, so every adapter returns identical `createdAt` strings. `(form_id, number)` has a unique index on top of SQLite's indexes.
+- One migration so far (the whole current schema), tracked in `open_form.meta` like SQLite's. A server first reads `schema_version` without a lock (so warm serverless starts cost one query), and only when behind takes `pg_advisory_xact_lock` inside the migration transaction; concurrent cold starts wait and then find nothing to do. The schema is created only when `pg_namespace` lacks it, so a role that merely owns an existing schema works.
+- `createSubmission` runs in one transaction: upsert the form's `form_counters` row, `SELECT … FOR UPDATE` it, then check `maxResponses` and the unique key, bump the counter and insert. The row lock serializes responses to one form across processes, and under READ COMMITTED each later statement sees the previous response. A `23505` on the partial unique index still maps to `duplicate`. Numbers come from the counter alone; there is no legacy data to bound it with `MAX(number)`.
+- Search runs in SQL: `jsonb_path_query(data::jsonb, 'strict $.**')` filtered to strings and numbers, `ILIKE` with escaped wildcards. Without a filter or column sort, `COUNT` / `ORDER BY number` / `LIMIT` / `OFFSET` stay in SQL. With one, the adapter reads the form's matching rows and hands them to `pageSubmissions` (`storage/list.ts`, shared with the memory adapter), which runs `responseFilterTest` / `responseSortKey` — Postgres can't call JavaScript, and translating 26 operators with time zones to SQL would let the adapters disagree. Pushing common operators down to SQL is a later optimization, guarded by the shared contract tests.
+- Connections: `pg`'s `Pool` (unnamed statements only, so PgBouncer / Supabase transaction pooling works), with an `error` listener so a dropped idle client doesn't crash the server. A remote host without `sslmode` gets `sslmode=verify-full`; `sslmode=disable` to a remote host logs a warning. Connection strings are shown only through `redactUrl` (password and `password=`-like query parameters replaced by `***`).
+- Deletes don't overwrite: dead rows stay until `VACUUM`, and provider backups keep their own copies — documented, unlike SQLite's `secure_delete`.
+- Tests: `test/storage-contract.ts` holds the behavior every adapter shares (numbering, deletes, search, filters, sorting, overrides, rate limits, revocations, and `maxResponses` / `uniqueBy` under concurrent submissions). It runs against memory, SQLite, Postgres on PGlite (in process, every `pnpm test`) and, with `OPEN_FORM_TEST_POSTGRES_URL`, a real server (CI's `postgres` job, which also runs the e2e smoke with `E2E_POSTGRES_URL`).
+
+**Deployment note**: SQLite suits environments with a persistent volume (VPS, Docker, Railway + Volume, Fly.io + Volume). Serverless platforms (Vercel and the like) aren't suited to local SQLite; they use Postgres (`OPEN_FORM_DATABASE_URL`) through the Next.js route.
 
 ---
 

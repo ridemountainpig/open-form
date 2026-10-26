@@ -17,5 +17,5 @@
     "skipLibCheck": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "themes", "tsdown.config.ts", "e2e"]
+  "include": ["src", "test", "themes", "tsdown.config.ts", "e2e"]
 }

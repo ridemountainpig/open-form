@@ -35,6 +35,12 @@ export async function run(argv: string[]): Promise<void> {
     .option('-f, --force', 'scaffold into a non-empty directory')
     .option('-n, --name <name>', 'package name (defaults to the folder name)')
     .addOption(new Option('--pm <pm>', 'package manager').choices(['pnpm', 'npm', 'yarn', 'bun']))
+    .addOption(
+      new Option('--database <database>', 'where responses are stored').choices([
+        'sqlite',
+        'postgres',
+      ]),
+    )
     .option('--no-install', 'skip installing dependencies')
     .option('--no-git', 'skip git init')
     .addOption(new Option('--open-form-version <spec>', 'dependency spec for open-form').hideHelp())
@@ -67,7 +73,7 @@ export async function run(argv: string[]): Promise<void> {
 
   program
     .command('start')
-    .description('Serve the production build (forms, API, SQLite)')
+    .description('Serve the production build (forms, API, storage)')
     .addOption(
       new Option('-p, --port <port>', 'port (default: $PORT, config port, or 3000)').argParser(
         parsePort,
@@ -140,6 +146,15 @@ export async function run(argv: string[]): Promise<void> {
     .action(async (formId: string, flags) => {
       const { exportResponses } = await import('./commands.ts');
       await exportResponses(formId, flags);
+    });
+
+  const db = program.command('db').description('Where responses are stored');
+  db.command('status')
+    .description('Show which database is in use, and check that it answers')
+    .option('--json', 'machine-readable output')
+    .action(async (flags: { json?: boolean }) => {
+      const { dbStatus } = await import('./db.ts');
+      await dbStatus(flags);
     });
 
   const theme = program

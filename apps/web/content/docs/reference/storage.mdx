@@ -1,13 +1,25 @@
 ---
 title: Storage
-seoTitle: "SQLite storage and adapters"
-description: The SQLite database, the StorageAdapter interface and its built-in adapters.
+seoTitle: "SQLite and Postgres storage, and adapters"
+description: The SQLite database, Postgres, the StorageAdapter interface and its built-in adapters.
 ---
 
-Responses live in a SQLite file in your project, written through Node's
-built-in `node:sqlite` — no database server, no native addon. Everything goes
-through one interface, `StorageAdapter`, so the handler doesn't care where
-the data lives.
+By default responses live in a SQLite file in your project, written through
+Node's built-in `node:sqlite` — no database server, no native addon. Set a
+connection string and they go to [Postgres](/docs/deploy/postgres) instead.
+Everything goes through one interface, `StorageAdapter`, so the handler
+doesn't care where the data lives.
+
+## Which database
+
+Every `open-form` command and the Next.js route pick the first of:
+
+1. `OPEN_FORM_DATABASE_URL`: Postgres.
+2. `storage.url` in [`open-form.config.ts`](/docs/reference/config): Postgres. Read it
+   from `process.env`; never write it into the file.
+3. `OPEN_FORM_DB`, then `storage.path`, then `.open-form/open-form.db`: SQLite.
+
+[`open-form db status`](/docs/cli/db) shows which one is in use.
 
 ## Where the data lives
 
@@ -48,7 +60,8 @@ Studio sessions, open form pages and `uniqueBy: 'device'` keep working.
   time they're opened.
 - `PRAGMA secure_delete` is on, and the write-ahead log is truncated after a
   delete, so a response deleted in Studio is overwritten rather than left in
-  free pages.
+  free pages. Postgres keeps deleted rows until `VACUUM`; see
+  [Deleting responses](/docs/deploy/postgres#deleting-responses).
 - The dev server refuses to serve the database files, other `*.db` / `*.sqlite`
   files, `.env*`, keys and exported responses, so they can't be fetched around
   Studio's sign-in.
@@ -70,6 +83,28 @@ Studio sessions, open form pages and `uniqueBy: 'device'` keep working.
 Migrations run in order when the database opens. Every response records the
 schema version it was submitted under, so Responses and exports keep columns
 for fields you've since removed.
+
+## Postgres
+
+The same tables in their own `open_form` schema, with answers stored as `json`.
+Studio's filters and column sorts run the same JavaScript as on SQLite, over the
+form's responses read from the database, so both agree on every result; search,
+paging without a filter, and counts run in SQL. Each response to a form takes a
+lock on that form's row in `form_counters`, so `maxResponses` and `uniqueBy`
+hold across servers. See [Postgres](/docs/deploy/postgres) for setup, encryption
+and permissions.
+
+```ts
+import { createPostgresStorage } from '@open-form-build/core/postgres';
+
+const storage = await createPostgresStorage({ url: process.env.OPEN_FORM_DATABASE_URL });
+```
+
+| Option | Description |
+| --- | --- |
+| `url` | The connection string. Needs the `pg` package. |
+| `pool` | A pool of your own instead of `url`: a `pg` `Pool`, or anything with its `query`, `connect` and `end`, such as Neon's serverless `Pool`. `close()` leaves it open. |
+| `schema` | Where the tables go. Default `open_form`. Lowercase letters, digits and `_`. |
 
 ## `createSqliteStorage`
 
@@ -119,14 +154,22 @@ along with the ones its methods use: `StoredSubmission`, `CreateSubmissionInput`
 | `getFormOverrides` / `setFormOverrides` / `listFormOverrides` | Studio's overrides: schedule, time zone and `published`. `setFormOverrides` takes `FormOverrides`, or `null` to clear them; the getters return `StoredOverrides`, which add `updatedAt`. |
 | `hitRateLimit(key, windowMs, now?)` | Increment a fixed-window counter and return the count. |
 | `revokeSession(id, expiresAt, now?)` / `isSessionRevoked(id)` | Record a signed-out Studio session until `expiresAt` (epoch ms), and check for one. Expired entries may be dropped. |
+| `info()` | Optional. `{ engine, location?, schemaVersion }` for [`open-form db status`](/docs/cli/db). |
 | `close()` | Release the connection. |
 
-`open-form start` always uses SQLite. To store responses elsewhere, implement
+An adapter that can't run Studio's filters inside its database can read a
+form's responses and hand them to `pageSubmissions(rows, opts)` from
+`@open-form-build/core/server`, which applies `filter`, `sort`, `order`,
+`limit` and `offset` exactly as the built-in adapters do. Search is left to the
+adapter.
+
+`open-form start` uses SQLite or Postgres. For anything else, implement
 `StorageAdapter` and pass it where you build the handler yourself — with
 `createOpenFormHandler`, or `createOpenFormRoute` in
 [Next.js](/docs/deploy/nextjs).
 
 <Cards>
+  <Card title="Postgres" href="/docs/deploy/postgres" />
   <Card title="HTTP API" href="/docs/reference/http-api" />
   <Card title="Production" href="/docs/deploy/production" />
   <Card title="Responses" href="/docs/core-feature/responses" />

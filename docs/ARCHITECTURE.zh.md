@@ -21,7 +21,7 @@ Questions + Logic  →  Production-ready Form  →  Responses
 | --- | --- | --- |
 | Next.js | **Vite（隱藏在套件內）+ Web-standard `fetch` handler** | open-slide 的核心經驗：使用者 repo 只有 `forms/`、`open-form.config.ts`、`package.json`，沒有 `app/`、沒有 `next.config`。Next.js 要求 `app/` 在使用者專案內，無法像 Vite 一樣把整個 app 藏在 `node_modules`。Server 端寫成 `(Request) => Response`，所以也能掛進 Next.js Route Handler（`@open-form-build/core/next` adapter，見 §7）。 |
 | 10 個 `@open-form/*` 套件 | **`@open-form-build` npm org 底下兩個發佈套件：`@open-form-build/core`（framework，內部分層 + subpath exports，附 `open-form` CLI）與 `@open-form-build/cli`（建立 workspace），另有 unscoped 的 `create-open-form` 提供 `npm create open-form`** | npm 上 `@open-form/core`、`@open-form/cli` 已被其他人註冊，scope 不在我們手上；unscoped 的 `open-form` 也被 npm 判定和既有的 `openform` 太像而拒絕發佈。做法比照 open-slide（`@open-slide/core` + `@open-slide/cli`）：workspace 直接依賴並 import `@open-form-build/core`，用 `npx @open-form-build/cli init` 建立。open-slide 沒有的是 `create-open-form`：提供 `npm create open-form@latest` / `pnpm create open-form` 這個慣例，執行的是同一個 `init`。分層改用 `src/<layer>/` + Biome `noRestrictedImports` 強制依賴方向，對外以 `@open-form-build/core`、`@open-form-build/core/schema`、`@open-form-build/core/server`、`@open-form-build/core/sqlite` 等 subpath 暴露。日後真的需要拆套件，邊界已經在了。 |
-| Drizzle + SQLite driver | **`node:sqlite`（Node 內建）+ 手寫 4 張表的 storage adapter** | 「Zero infrastructure to start」：不需要 native addon（better-sqlite3 要編譯）、不需要 ORM。4 張表、十來個 query，用 ORM 反而增加安裝體積。Postgres adapter 階段再評估 Drizzle。 |
+| Drizzle + SQLite driver | **`node:sqlite`（Node 內建）+ 手寫 4 張表的 storage adapter** | 「Zero infrastructure to start」：不需要 native addon（better-sqlite3 要編譯）、不需要 ORM。4 張表、十來個 query，用 ORM 反而增加安裝體積。Postgres adapter（§8）也是手寫：約二十個 query，JSON 搜尋本來就依方言而異。 |
 | Zod | **內建輕量 validation engine + 支援 Standard Schema** | Client 與 server 必須用**同一份**驗證邏輯，schema 也必須能序列化存進 DB。內建 engine 處理 required / length / pattern / range / options；escape hatch `validate` 接受函式或任何 [Standard Schema](https://standardschema.dev)（Zod、Valibot、ArkType 皆實作），所以 Zod 可用但不是依賴。 |
 | Radix / shadcn | **Form runtime 用原生 input + CSS variables；Studio 用 Tailwind** | 原生 `<select>`、`<input type=radio>` 在手機上的 a11y 與體驗最好，且 runtime 0 額外依賴、可以被任何 React app 嵌入。Studio（我們自己的 UI）沿用 open-slide 的 Tailwind 做法。 |
 | `<Number />`、`<Date />` | **`<NumberInput />`、`<DateInput />`** | `import { Number, Date }` 會遮蔽同檔案裡的 JS 全域 `Number()` / `new Date()`（Biome `noShadowRestrictedNames` 也會報錯）。Agent 很常在 validator 裡寫 `Number(v)`，改名避免這個陷阱。 |
@@ -40,6 +40,7 @@ open-form/                         ← 本 repo（pnpm + Turborepo monorepo）
 │   │   │   ├── server/            Web-standard fetch handler、submission pipeline、protection、export
 │   │   │   ├── storage/           StorageAdapter 介面 + in-memory adapter（測試用）
 │   │   │   ├── sqlite/            node:sqlite adapter（預設 storage）
+│   │   │   ├── postgres/          以 `pg` 實作的 Postgres adapter（optional peer dependency）
 │   │   │   ├── node/              Node http adapter、production server、secret 管理
 │   │   │   ├── next/              `@open-form-build/core/next`：Next.js App Router route handler
 │   │   │   ├── vite/              Vite plugin：forms 探索、virtual modules、dev API middleware
@@ -110,7 +111,8 @@ my-forms/
 | `storage/` | `schema/` | react、node:*、其他 layer | `@open-form-build/core/server`（型別、`createMemoryStorage`） |
 | `server/` | `schema/`、`storage/` | react、node:*、sqlite、node、vite、cli、app | `@open-form-build/core/server` |
 | `sqlite/` | `storage/`、`schema/`、node:sqlite | react（慣例） | `@open-form-build/core/sqlite` |
-| `node/` | `server/`、`sqlite/`、`schema/`、node:* | — | `@open-form-build/core/node` |
+| `postgres/` | `storage/`、`schema/`、`pg`（用到才載入） | react（慣例） | `@open-form-build/core/postgres` |
+| `node/` | `server/`、`sqlite/`、`postgres/`、`schema/`、node:* | — | `@open-form-build/core/node` |
 | `next/` | `node/`、`server/`、`sqlite/`、`schema/` | — | `@open-form-build/core/next` |
 | `editing/` | `schema/`、`vite/project.ts`、`@babel/parser`、node:* | — | （內部，供 vite / cli 使用） |
 | `vite/`、`cli/` | 全部 | — | `@open-form-build/core/vite`（內部） |
@@ -336,7 +338,9 @@ DELETE /api/studio/session                          登出
 
 ---
 
-## 8. Storage（SQLite-first）
+## 8. Storage（SQLite-first，有設定時用 Postgres）
+
+選擇 adapter 只在一個地方：`openStorage(resolveStorage(root, config))`（`node/storage.ts`）；`open-form dev`／`start`、CLI 指令與 Next.js route 都經過它。順序：`OPEN_FORM_DATABASE_URL` → Postgres，`storage.url` → Postgres，否則 SQLite（`OPEN_FORM_DB`／`storage.path`／`.open-form/open-form.db`）。刻意不自動讀 `DATABASE_URL`：很多 app 裡它是 app 自己的資料庫。adapter 模組用到才 import，所以 SQLite 專案永遠不會載入 `pg`。
 
 ```sql
 form_versions    (id, form_id, version, schema JSON, created_at)            UNIQUE(form_id, version)
@@ -358,14 +362,24 @@ meta             (key, value)                                                -- 
 - 搜尋用 `CASE WHEN json_valid(data) THEN EXISTS(json_tree …) END`：`json_tree` 遇到走不完的 JSON 會讓整個查詢失敗，所以跳過該筆而不是 500。寫入端另限制 custom 欄位最多 10 層巢狀。
 - `PRAGMA secure_delete = ON`，刪除回覆後再 `wal_checkpoint(TRUNCATE)`：Studio 的刪除是真的抹除，DB 與 WAL 檔裡都不留副本（舊版留下的殘留要 `VACUUM` 一次才會清掉）。
 - dev server 的 Vite `fs.allow` 涵蓋整個專案，所以 `fs.deny`（`vite/config.ts` 的 `devServerDeny`）明確排除 `**/.open-form/**` 與自訂的 DB 路徑（含 `-wal`／`-shm`），並重列 Vite 原本的預設（自訂 `deny` 會取代預設）。否則 `/@fs/…/.open-form/open-form.db` 會繞過 Studio 登入直接回傳。
-- `StorageAdapter` 是 async 介面；SQLite adapter 雖然是同步 API，介面保持 async 以容納未來的 Postgres / Turso。
+- `StorageAdapter` 是 async 介面；SQLite adapter 雖然是同步 API，介面保持 async 以容納 Postgres。
 - `maxResponses` 與 `uniqueBy` 在 adapter 的 transaction 內檢查，不會有 race。
 - `number` 是每張表單內的流水號（Studio 的「Response #147」），刪除後不會重排，也不會重用：編號來自只增不減的 `form_counters`，與 `maxResponses`／`uniqueBy` 檢查在同一個 transaction 內遞增。不單用 `MAX(number) + 1`，因為刪掉最新一筆後下一筆會拿到同一個編號，而 webhook 接收端已經看過它；但仍取 `max(計數器 + 1, MAX(number) + 1)`，所以升級前的資料、或舊版程式繞過計數器寫入的回覆，都不會造成重複編號。
 - 搜尋（`listSubmissions({ search })`，Studio 的 `?q=`）只比對答案的值（`json_tree` 的字串與數字），不比對欄位名稱；否則搜「email」會命中每一筆。
 - 篩選（`listSubmissions({ filter, now })`，Studio 的 `?filter=` JSON）只在 `schema/response-filter.ts` 定義一次：`parseResponseFilter` 驗證（handler 遇到不合法的回 400），`responseFilterTest` 執行。memory adapter 直接呼叫；SQLite 把它註冊成 `open_form_filter(data, created_at)` SQL 函式，所以 `COUNT`、`LIMIT`、`OFFSET` 仍在 SQL 裡做，兩個 adapter 結果一致。送出時間的「日」以 Studio 傳來的 `timeZone`（檢視者的時區）計算。
 - 排序（`listSubmissions({ sort })`，Studio 的 `?sort=` JSON）同樣做法：`schema/response-sort.ts` 把答案轉成排序鍵（`responseSortKey`：數字、轉小寫的文字，或選項在 Studio 傳來的 `values` 中的位置，讓選項依表單順序排）並定義順序（`compareResponseSortKeys`：與 SQLite 相同——數字在文字前、空答案不論升降冪都排最後）。SQLite 把排序鍵註冊成 `open_form_sort_key(data)`，在子查詢裡排序，所以分頁仍在 SQL 完成；同值以 `number DESC` 決定先後。
 
-**部署注意**：SQLite 適合有 persistent volume 的環境（VPS、Docker、Railway + Volume、Fly.io + Volume）。Serverless（Vercel 類）不適合本機 SQLite，需等 remote adapter。
+### Postgres（`@open-form-build/core/postgres`）
+
+- 同樣的表，放在獨立 schema（預設 `open_form`，可用 `createPostgresStorage({ schema })` 改），不跟 app 在 `public` 的表混在一起。`data`、`schema` 與覆寫資料用 `json` 而非 `jsonb`：答案取回時欄位順序與表單送出時相同。時間跟 SQLite 一樣存 ISO-8601 `TEXT`，所有 adapter 回傳的 `createdAt` 字串一致。另加 `(form_id, number)` 唯一索引。
+- 目前只有一個 migration（整份現行 schema），記錄在 `open_form.meta`。server 先不加鎖讀 `schema_version`（serverless 熱啟動只多一個 query），落後時才在 migration transaction 內取 `pg_advisory_xact_lock`；同時冷啟動的其他實例會等待，之後發現已無事可做。只有 `pg_namespace` 沒有該 schema 時才建立，所以只擁有既有 schema 的 role 也能用。
+- `createSubmission` 在一個 transaction 內：upsert 該表單的 `form_counters` 列並 `SELECT … FOR UPDATE`，再檢查 `maxResponses` 與 unique key、遞增計數器、插入。這個 row lock 讓同一表單的回覆跨 process 依序寫入，READ COMMITTED 下後續語句看得到前一筆。partial unique index 的 `23505` 仍轉成 `duplicate`。編號只來自計數器，沒有舊資料需要用 `MAX(number)` 墊底。
+- 搜尋在 SQL 內：`jsonb_path_query(data::jsonb, 'strict $.**')` 只取字串與數字，跳脫萬用字元後 `ILIKE`。沒有篩選或欄位排序時，`COUNT`／`ORDER BY number`／`LIMIT`／`OFFSET` 都在 SQL；有的話，adapter 讀出該表單符合搜尋的列，交給 `pageSubmissions`（`storage/list.ts`，與 memory adapter 共用）跑 `responseFilterTest`／`responseSortKey`——Postgres 不能呼叫 JavaScript，把 26 個含時區的運算子翻成 SQL 會讓 adapter 之間結果不一致。常用運算子下推到 SQL 是之後的優化，由共用的合約測試把關。
+- 連線：`pg` 的 `Pool`（只用 unnamed statement，PgBouncer／Supabase transaction pooling 可用），掛 `error` listener，閒置連線斷掉不會讓 server 崩潰。遠端主機沒寫 `sslmode` 時補上 `sslmode=verify-full`；遠端 `sslmode=disable` 會印警告。連線字串只透過 `redactUrl` 顯示（密碼與類似 `password=` 的 query 參數換成 `***`）。
+- 刪除不覆寫：dead row 留到 `VACUUM`，供應商的備份也有自己的副本——文件寫明，不同於 SQLite 的 `secure_delete`。
+- 測試：`test/storage-contract.ts` 是所有 adapter 共同的行為（編號、刪除、搜尋、篩選、排序、覆寫、rate limit、session 撤銷，以及並發送出下的 `maxResponses`／`uniqueBy`），對 memory、SQLite、PGlite 上的 Postgres（in process，每次 `pnpm test` 都跑）執行；設定 `OPEN_FORM_TEST_POSTGRES_URL` 時也對真的 server 跑（CI 的 `postgres` job，同時以 `E2E_POSTGRES_URL` 跑 e2e smoke）。
+
+**部署注意**：SQLite 適合有 persistent volume 的環境（VPS、Docker、Railway + Volume、Fly.io + Volume）。Serverless（Vercel 類）不適合本機 SQLite，改經由 Next.js route 使用 Postgres（`OPEN_FORM_DATABASE_URL`）。
 
 ---
 

@@ -9,20 +9,21 @@ pnpm start      # serve forms + API + SQLite
 ```
 
 - Forms live in `forms/<id>/index.tsx` and are served at `/f/<id>`.
-- Responses are stored in `.open-form/open-form.db` (SQLite, gitignored).
+- Responses are stored in `.open-form/open-form.db` (SQLite, gitignored), or in Postgres when `OPEN_FORM_DATABASE_URL` is set.
 - Export: `pnpm exec open-form responses export <id> -o responses.xlsx` (or `.csv`, `.json`).
 - Each form owns its look in `forms/<id>/theme/`: its tokens, plus the CSS and components it needs. `pnpm exec open-form create <id> --theme <theme>` starts it from a theme's tokens; your agent writes the rest, and Studio's preview has **Adjust** for colors, fonts and shape. No other form changes.
 - `themes/` holds your reference themes for new forms — browse them in Studio → Themes. Start from a starter (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) with `pnpm exec open-form theme add <starter>`, or ask your agent for a new one (`create-theme`). Forms never import them, so changing a theme there never changes a form.
 
 ## Deploying
 
-`open-form start` needs a persistent disk for `.open-form/` (VPS, Docker, Railway / Fly.io with a volume). Step-by-step guides: [Docker](https://open-form.build/docs/deploy/docker), [Railway](https://open-form.build/docs/deploy/railway). It reads these variables from the environment, or from a `.env` file in this folder (the environment wins).
+`open-form start` needs a persistent disk for `.open-form/` (VPS, Docker, Railway / Fly.io with a volume), or responses in [Postgres](https://open-form.build/docs/deploy/postgres) (`OPEN_FORM_DATABASE_URL`, plus the `pg` package). Step-by-step guides: [Docker](https://open-form.build/docs/deploy/docker), [Railway](https://open-form.build/docs/deploy/railway), [Vercel](https://open-form.build/docs/deploy/vercel). It reads these variables from the environment, or from a `.env` file in this folder (the environment wins).
 
 | Variable | Purpose |
 | --- | --- |
 | `PORT` | Port to listen on (default: `port` in `open-form.config.ts`, else 3000) |
 | `HOST` | Address to bind (default `0.0.0.0`) |
 | `OPEN_FORM_ADMIN_PASSWORD` | Enables Studio in production; a password you choose and sign in with. At least 16 characters with at least 8 different ones, not one word or pattern repeated — a passphrase of a few words works |
+| `OPEN_FORM_DATABASE_URL` | Postgres connection string; responses go there instead of SQLite. Keep it in `.env` or your host's settings, never in `open-form.config.ts` |
 | `OPEN_FORM_DB` | SQLite file path (default: `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`) |
 | `OPEN_FORM_SECRET` | Signs form tokens and Studio sessions; at least 16 characters (default: generated into a `secret` file next to the database) |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs `webhooks` deliveries ([Standard Webhooks](https://www.standardwebhooks.com)); base64, optionally prefixed `whsec_` |

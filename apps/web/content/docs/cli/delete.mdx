@@ -25,7 +25,9 @@ npx open-form responses export event-registration -o responses.xlsx
 
 `delete` asks you to type the form id to confirm. Without a terminal (in CI, or
 when an agent runs it) it stops unless you pass `--yes`. Code you've committed
-can come back from git; responses can't.
+can come back from git; responses can't. On Postgres the deleted rows stay on
+disk until `VACUUM` and in your provider's backups; see
+[Deleting responses](/docs/deploy/postgres#deleting-responses).
 
 `delete` also cleans up data left behind by a form whose folder was already
 removed by hand: if `forms/<id>/` is gone but the database still holds responses

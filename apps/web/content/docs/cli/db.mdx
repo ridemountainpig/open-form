@@ -1,0 +1,36 @@
+---
+title: open-form db status
+description: "See which database stores this workspace's responses, which setting chose it, and whether it answers."
+---
+
+```npm
+npx open-form db status
+```
+
+Reads the same settings as `open-form start` and connects once:
+
+```text
+  ┃  Storage   Postgres (from OPEN_FORM_DATABASE_URL)
+  ┃  Database  postgres://forms:***@db.example.com:5432/app?sslmode=verify-full
+  ┃  Status    ✔ connected PostgreSQL 16.4 · schema open_form · migration 1
+  ┃  Responses contact 12 · meetup 87
+```
+
+| Row | Meaning |
+| --- | --- |
+| `Storage` | SQLite or Postgres, and the setting that chose it: `OPEN_FORM_DATABASE_URL`, `storage.url`, `OPEN_FORM_DB`, `storage.path`, or the default `.open-form/open-form.db`. |
+| `Database` | The file, or the connection string with its password replaced by `***`. |
+| `Status` | Whether it answered, the database version, and the migration it's on. Connecting applies any migration that's missing, as starting the server would. |
+| `Responses` | The count per form, including forms in `forms/` that have none yet. |
+
+A SQLite file that doesn't exist yet is reported as not created; `db status`
+doesn't create it. When the database doesn't answer, the error is printed and
+the command exits with code `1`, so you can run it before a deploy.
+
+## Flags
+
+| Flag | Description |
+| --- | --- |
+| `--json` | Print `{ kind, location, source, ok, created, info, responses, error }` instead. |
+
+To store responses in Postgres, see [Postgres](/docs/deploy/postgres).

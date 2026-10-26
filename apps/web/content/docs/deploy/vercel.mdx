@@ -1,0 +1,126 @@
+---
+title: Vercel
+seoTitle: "Deploy forms to Vercel with Neon or Supabase"
+description: "Run Open Form inside a Next.js app on Vercel, with responses in Neon or Supabase Postgres."
+---
+
+Vercel runs your app as serverless functions with no persistent disk, so
+responses can't live in SQLite there. Mount Open Form in a
+[Next.js app](/docs/deploy/nextjs) and keep responses in
+[Postgres](/docs/deploy/postgres): Neon or Supabase both work.
+
+<Steps>
+<Step>
+
+### Set up the Next.js route
+
+Follow [Next.js](/docs/deploy/nextjs): mount `createOpenFormRoute()`, build the
+server bundle, and add it to `outputFileTracingIncludes`. Then install the
+Postgres driver:
+
+```npm
+npm install pg
+```
+
+</Step>
+<Step>
+
+### Create the database
+
+<Tabs items={['Neon', 'Supabase']}>
+<Tab value="Neon">
+
+Create a project in [Neon](https://neon.tech), or add Neon from the Vercel
+Marketplace. Copy the **pooled** connection string (its host has `-pooler` in
+it). It looks like:
+
+```text
+postgres://user:password@ep-cool-name-123456-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+```
+
+Neon's certificates come from a public authority, so `sslmode=require` verifies
+them as is. Change it to `sslmode=verify-full` to say so outright and to
+silence `pg`'s notice about `require`.
+
+</Tab>
+<Tab value="Supabase">
+
+Create a project in [Supabase](https://supabase.com). Under **Connect**, copy
+the **Transaction pooler** connection string (port 6543), the one meant for
+serverless functions:
+
+```text
+postgres://postgres.abcdefghijklmnop:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+```
+
+Supabase signs its certificates with its own authority, so verifying them
+needs its certificate. Download it from **Database settings → SSL
+configuration**, commit it to your app (it is public, not a secret), point the
+connection string at it, and ship it with the route:
+
+```text
+…:6543/postgres?sslmode=verify-full&sslrootcert=./supabase-ca.crt
+```
+
+```ts title="next.config.ts"
+outputFileTracingIncludes: {
+  '/api/*': ['./dist/server/**/*', './supabase-ca.crt'],
+},
+```
+
+Open Form keeps its tables in the `open_form` schema. Supabase's table editor
+shows `public` by default; pick `open_form` there to browse responses.
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+### Set the environment variables
+
+In the Vercel project's **Settings → Environment Variables**:
+
+| Variable | Value |
+| --- | --- |
+| `OPEN_FORM_DATABASE_URL` | The connection string from the last step. |
+| `OPEN_FORM_SECRET` | At least 16 random characters, the same on every deploy. Functions can't write the generated secret file. |
+| `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. |
+
+Generate the secret with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+For local development, put the same variables in `.env`. A separate database
+(or Neon branch) for development keeps test responses out of production.
+
+</Step>
+<Step>
+
+### Deploy
+
+Push, or run `vercel deploy`. The first request creates the tables. To check
+the production database from your machine, run
+[`open-form db status`](/docs/cli/db) with its connection string in the
+environment:
+
+```bash
+OPEN_FORM_DATABASE_URL='postgres://…' npx open-form db status
+```
+
+</Step>
+</Steps>
+
+Pass `waitUntil: after` to `createOpenFormRoute()` so
+[webhooks](/docs/deploy/webhooks) are delivered after the response; see
+[Next.js](/docs/deploy/nextjs#storage-admin-and-vercel).
+
+## What's next
+
+<Cards>
+  <Card title="Postgres" href="/docs/deploy/postgres" />
+  <Card title="Next.js" href="/docs/deploy/nextjs" />
+  <Card title="Webhooks" href="/docs/deploy/webhooks" />
+</Cards>

@@ -6,6 +6,7 @@ export default defineConfig({
     'schema/index': 'src/schema/index.ts',
     'server/index': 'src/server/index.ts',
     'sqlite/index': 'src/sqlite/index.ts',
+    'postgres/index': 'src/postgres/index.ts',
     'node/index': 'src/node/index.ts',
     'vite/index': 'src/vite/index.ts',
     'next/index': 'src/next/index.ts',
@@ -18,5 +19,5 @@ export default defineConfig({
   clean: true,
   dts: true,
   shims: false,
-  deps: { neverBundle: ['vite', 'react', 'react-dom', 'react-router-dom', /^node:/] },
+  deps: { neverBundle: ['vite', 'react', 'react-dom', 'react-router-dom', 'pg', /^node:/] },
 });

@@ -17,3 +17,11 @@ export type {
   StartServerOptions,
 } from './server.ts';
 export { createEntryRegistry, inlineScriptHashes, pageHeaders, startServer } from './server.ts';
+export type { StorageTarget } from './storage.ts';
+export {
+  describeStorage,
+  openStorage,
+  redactUrl,
+  resolveStorage,
+  storageExists,
+} from './storage.ts';

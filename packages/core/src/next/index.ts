@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { forwardedAddress } from '../node/http.ts';
 import { resolveDatabasePath, resolveSecret, secretPath } from '../node/secret.ts';
 import { createEntryRegistry, type ServerEntry } from '../node/server.ts';
+import { openStorage, resolveStorage, type StorageTarget } from '../node/storage.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import {
   type AdminAuth,
@@ -12,14 +13,16 @@ import {
   type OpenFormHandler,
   type StorageAdapter,
 } from '../server/index.ts';
-import { createSqliteStorage } from '../sqlite/index.ts';
 
 export type OpenFormRouteOptions = {
   /** Project root: where `forms/`, `open-form.config.ts` and `dist/` live. Default `process.cwd()`. */
   root?: string;
   /** `open-form build` output directory. Default `dist`. */
   outDir?: string;
-  /** Default: SQLite at `OPEN_FORM_DB`, else `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`. Needs a persistent disk. */
+  /**
+   * Default: Postgres at `OPEN_FORM_DATABASE_URL` or `storage.url`; else SQLite at
+   * `OPEN_FORM_DB`, `storage.path` or `.open-form/open-form.db`, which needs a persistent disk.
+   */
   storage?: StorageAdapter;
   /** Default: `OPEN_FORM_SECRET`, else a `secret` file generated next to the database. */
   secret?: string;
@@ -70,13 +73,14 @@ function defaultSecret(root: string, databasePath: string): string {
   }
 }
 
-async function defaultStorage(file: string): Promise<StorageAdapter> {
+async function defaultStorage(target: StorageTarget): Promise<StorageAdapter> {
+  if (target.kind === 'postgres') return openStorage(target);
   try {
-    return await createSqliteStorage({ path: file });
+    return await openStorage(target);
   } catch (err) {
     throw new Error(
-      `Couldn't open the SQLite database at ${file} (${errorCode(err)}). ` +
-        `It needs a persistent, writable disk; on serverless hosts pass \`storage\` to createOpenFormRoute() (${DOCS}).`,
+      `Couldn't open the SQLite database at ${target.path} (${errorCode(err)}). ` +
+        `It needs a persistent, writable disk; on serverless hosts set OPEN_FORM_DATABASE_URL to a Postgres database (${DOCS}).`,
     );
   }
 }
@@ -157,7 +161,7 @@ export function createOpenFormRoute(opts: OpenFormRouteOptions = {}): OpenFormRo
     const databasePath = resolveDatabasePath(root, config.storage?.path);
     storage ??= opts.storage
       ? Promise.resolve(opts.storage)
-      : defaultStorage(databasePath).catch((err) => {
+      : defaultStorage(resolveStorage(root, config)).catch((err) => {
           storage = undefined;
           throw err;
         });

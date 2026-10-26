@@ -1,6 +1,6 @@
 ---
 title: open-form responses export
-description: "Export a form's responses from the workspace's SQLite database as CSV, Excel or JSON, to stdout or a file, oldest first."
+description: "Export a form's responses from the workspace's database (SQLite or Postgres) as CSV, Excel or JSON, to stdout or a file, oldest first."
 ---
 
 ```npm
@@ -9,10 +9,11 @@ npx open-form responses export meetup -o responses.xlsx  # Excel file
 npx open-form responses export meetup --format json > responses.json
 ```
 
-Reads one form's responses from the workspace's SQLite database (`OPEN_FORM_DB`,
-else `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`),
-oldest first, and writes them to stdout or a file — the same file Studio's
-export gives you. It exits with an error if there's no database yet.
+Reads one form's responses from the workspace's database (Postgres at
+`OPEN_FORM_DATABASE_URL` or `storage.url`, else SQLite at `OPEN_FORM_DB`,
+`storage.path` or `.open-form/open-form.db`), oldest first, and writes them to
+stdout or a file — the same file Studio's export gives you. It exits with an
+error if there's no SQLite database yet.
 
 For CSV and Excel it also loads the form the way the server does (like
 [`open-form check`](/docs/cli/check)), for its current labels, languages and

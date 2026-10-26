@@ -5,11 +5,10 @@ import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { deleteForm } from '../editing/delete-form.ts';
 import { findReferenceTheme, writeFormTheme } from '../editing/theme-files.ts';
-import { resolveDatabasePath } from '../node/secret.ts';
+import { openStorage, resolveStorage, storageExists } from '../node/storage.ts';
 import { isLocale, LOCALES, type Locale, pickTokens, type Theme } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
 import { exportFormResponses, FORM_ID_RE } from '../server/index.ts';
-import { createSqliteStorage } from '../sqlite/index.ts';
 import { createDevRegistry } from '../vite/api-plugin.ts';
 import { findForms, loadUserConfig, projectPaths } from '../vite/project.ts';
 import { withSsrServer } from './check.ts';
@@ -129,8 +128,8 @@ export async function deleteFormCommand(id: string, flags: DeleteFlags = {}): Pr
   const config = await loadUserConfig(userCwd);
   const { formsRoot } = projectPaths(userCwd, config);
   const dir = path.join(formsRoot, id);
-  const dbPath = resolveDatabasePath(userCwd, config.storage?.path);
-  const storage = existsSync(dbPath) ? await createSqliteStorage({ path: dbPath }) : undefined;
+  const target = resolveStorage(userCwd, config);
+  const storage = storageExists(target) ? await openStorage(target) : undefined;
   try {
     const responses = storage ? await storage.countSubmissions(id) : 0;
     const stored = storage ? (await storage.listFormVersions(id)).length > 0 : false;
@@ -174,11 +173,14 @@ export async function listForms(): Promise<void> {
     return;
   }
   let counts: Record<string, number> = {};
-  const dbPath = resolveDatabasePath(userCwd, config.storage?.path);
-  if (existsSync(dbPath)) {
-    const storage = await createSqliteStorage({ path: dbPath });
-    counts = await storage.countsByForm();
-    await storage.close();
+  const target = resolveStorage(userCwd, config);
+  if (storageExists(target)) {
+    const storage = await openStorage(target);
+    try {
+      counts = await storage.countsByForm();
+    } finally {
+      await storage.close();
+    }
   }
   const rows = await Promise.all(
     forms.map(async (form) => {
@@ -218,15 +220,17 @@ export async function exportResponses(formId: string, flags: ExportFlags): Promi
   if (!FORM_ID_RE.test(formId)) throw new Error(`Invalid form id "${formId}".`);
   const userCwd = process.cwd();
   const config = await loadUserConfig(userCwd);
-  const dbPath = resolveDatabasePath(userCwd, config.storage?.path);
-  if (!existsSync(dbPath)) throw new Error(`No database at ${path.relative(userCwd, dbPath)} yet.`);
+  const target = resolveStorage(userCwd, config);
+  if (target.kind === 'sqlite' && !existsSync(target.path)) {
+    throw new Error(`No database at ${path.relative(userCwd, target.path)} yet.`);
+  }
   const format = exportFormat(flags);
   if (format === 'xlsx' && !flags.out && process.stdout.isTTY) {
     throw new Error('Excel files are binary. Write one with -o responses.xlsx.');
   }
 
   const definition = format === 'json' ? null : await loadDefinition(userCwd, formId);
-  const storage = await createSqliteStorage({ path: dbPath });
+  const storage = await openStorage(target);
   try {
     const { body, count } = await exportFormResponses({
       storage,

@@ -1,5 +1,6 @@
 // End-to-end smoke test of the user journey, against the local build:
 // create-open-form → install → create/list → build → start → submit → Studio API → CLI export.
+// With E2E_POSTGRES_URL, the workspace stores its responses in that Postgres database instead.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -16,6 +17,15 @@ const WS = path.join(SCRATCH, 'workspace');
 const PORT = 3900 + Math.floor(Math.random() * 90);
 const BASE = `http://localhost:${PORT}`;
 const ADMIN = 'e2e admin password 0123456789';
+const ADMIN_POSTGRES = process.env.E2E_POSTGRES_URL;
+const E2E_DATABASE = `open_form_e2e_${process.pid}`;
+const POSTGRES = ADMIN_POSTGRES && withDatabase(ADMIN_POSTGRES, E2E_DATABASE);
+
+function withDatabase(url, name) {
+  const parsed = new URL(url);
+  parsed.pathname = `/${name}`;
+  return parsed.toString();
+}
 
 function step(name) {
   process.stdout.write(`\n▸ ${name}\n`);
@@ -46,11 +56,32 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let server;
 
 try {
-  step('init (create-open-form)');
+  if (POSTGRES) {
+    const { default: pg } = await import('pg');
+    const admin = new pg.Client({ connectionString: ADMIN_POSTGRES });
+    await admin.connect();
+    await admin.query(`DROP DATABASE IF EXISTS ${E2E_DATABASE}`);
+    await admin.query(`CREATE DATABASE ${E2E_DATABASE}`);
+    await admin.end();
+  }
+
+  step(`init (create-open-form${POSTGRES ? ', Postgres' : ''})`);
   execFileSync(
     process.execPath,
-    [CREATE, WS, '--no-git', '--pm', 'pnpm', '--open-form-version', `link:${PKG}`],
-    { stdio: 'inherit', env: { ...process.env, CI: '1' } },
+    [
+      CREATE,
+      WS,
+      '--no-git',
+      '--pm',
+      'pnpm',
+      '--open-form-version',
+      `link:${PKG}`,
+      ...(POSTGRES ? ['--database', 'postgres'] : []),
+    ],
+    {
+      stdio: 'inherit',
+      env: { ...process.env, CI: '1', OPEN_FORM_DATABASE_URL: POSTGRES ?? '' },
+    },
   );
   for (const file of [
     'package.json',
@@ -66,6 +97,10 @@ try {
     assert.ok(existsSync(path.join(WS, file)), `missing ${file}`);
   }
   assert.match(readFileSync(path.join(WS, '.gitignore'), 'utf8'), /\.open-form\//);
+  if (POSTGRES) {
+    assert.match(readFileSync(path.join(WS, '.env'), 'utf8'), /^OPEN_FORM_DATABASE_URL=/);
+    assert.ok(existsSync(path.join(WS, 'node_modules/pg/package.json')), 'pg installed');
+  }
 
   step('create + list');
   cli(['create', 'waitlist', '--title', 'Beta waitlist', '--theme', 'editorial']);
@@ -206,6 +241,18 @@ try {
   const reopened = await (await fetch(`${BASE}/api/forms/contact`)).json();
   assert.equal(reopened.availability.state, 'open');
 
+  step('db status');
+  const status = JSON.parse(cli(['db', 'status', '--json']));
+  assert.equal(status.ok, true);
+  assert.equal(status.kind, POSTGRES ? 'postgres' : 'sqlite');
+  assert.equal(status.responses.contact, 1);
+  if (POSTGRES) {
+    assert.equal(status.source, 'OPEN_FORM_DATABASE_URL');
+    const { password } = new URL(POSTGRES);
+    if (password) assert.ok(!JSON.stringify(status).includes(`:${password}@`), 'password hidden');
+    assert.ok(!existsSync(path.join(WS, '.open-form/open-form.db')), 'nothing in SQLite');
+  }
+
   step('cli export');
   const exported = cli(['responses', 'export', 'contact', '--format', 'json']);
   assert.equal(JSON.parse(exported)[0].data.email, 'amy@example.com');
@@ -235,5 +282,19 @@ try {
 } finally {
   server?.kill();
   if (process.env.E2E_KEEP) process.stdout.write(`kept ${WS}\n`);
-  else rmSync(SCRATCH, { recursive: true, force: true });
+  else {
+    rmSync(SCRATCH, { recursive: true, force: true });
+    if (ADMIN_POSTGRES) await dropDatabase().catch(() => {});
+  }
+}
+
+async function dropDatabase() {
+  const { default: pg } = await import('pg');
+  const admin = new pg.Client({ connectionString: ADMIN_POSTGRES });
+  await admin.connect();
+  try {
+    await admin.query(`DROP DATABASE IF EXISTS ${E2E_DATABASE} WITH (FORCE)`);
+  } finally {
+    await admin.end();
+  }
 }
