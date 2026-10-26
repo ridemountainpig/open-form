@@ -99,16 +99,35 @@ function isLocalHost(url: URL): boolean {
   return LOCAL_HOSTS.has(host) || host.startsWith('/') || host.endsWith('.localhost');
 }
 
+const SOCKET_RE = /^postgres(?:ql)?:\/\/[^/]*@\//i;
+
+/**
+ * Why a connection string can't be used as written, without repeating it: a raw `#` or
+ * other reserved character in the password would otherwise change which host is used.
+ */
+export function connectionStringProblem(url: string): string | undefined {
+  const encode = 'percent-encode special characters in the user name and password (# is %23)';
+  if (url.includes('#')) return `The Postgres connection string contains #: ${encode}.`;
+  try {
+    new URL(url);
+  } catch {
+    // Socket paths (`postgres://user@/db?host=/var/run/postgresql`) are pg's to parse.
+    if (!SOCKET_RE.test(url)) return `The Postgres connection string can't be parsed: ${encode}.`;
+  }
+  return undefined;
+}
+
 /**
  * Remote connections verify the server's certificate unless the URL says otherwise:
  * a connection string without `sslmode` would otherwise send answers in the clear.
  */
 export function connectionString(url: string): { url: string; warning?: string } {
+  const problem = connectionStringProblem(url);
+  if (problem) throw new Error(problem);
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    // Socket paths (`postgres://user@/db?host=/var/run/postgresql`) are pg's to parse.
     return { url };
   }
   if (isLocalHost(parsed)) return { url };

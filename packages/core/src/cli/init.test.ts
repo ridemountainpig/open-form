@@ -204,6 +204,14 @@ describe('scaffold with Postgres', () => {
     }
   });
 
+  it('writes a password with both quote characters so .env reads it back', async () => {
+    const tricky = `postgres://app:a'b"c@db.example.com/forms`;
+    await scaffold(root, { timeZone: 'UTC', database: 'postgres', databaseUrl: tricky });
+    process.loadEnvFile(path.join(root, '.env'));
+    expect(process.env.OPEN_FORM_DATABASE_URL).toBe(tricky);
+    delete process.env.OPEN_FORM_DATABASE_URL;
+  });
+
   it('never replaces a connection string that is already in .env', async () => {
     writeFileSync(
       path.join(root, '.env'),
@@ -242,5 +250,8 @@ describe('databaseUrlProblem', () => {
     expect(databaseUrlProblem('')).toBeUndefined();
     expect(databaseUrlProblem('postgresql://u:p@h/db')).toBeUndefined();
     expect(databaseUrlProblem('mysql://u:p@h/db')).toMatch('Postgres connection string');
+    expect(databaseUrlProblem('postgres://u:p#12@h/db')).toMatch('%23');
+    expect(databaseUrlProblem('postgres://u:p%2312@h/db')).toBeUndefined();
+    expect(databaseUrlProblem('postgres://u@/db?host=/var/run/postgresql')).toBeUndefined();
   });
 });

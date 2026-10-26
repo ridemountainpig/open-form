@@ -14,6 +14,7 @@ import {
 import path from 'node:path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
+import { connectionStringProblem } from '../postgres/index.ts';
 import { isTimeZone } from '../schema/index.ts';
 import { PACKAGE_NAME, PKG_ROOT, readPackageVersion } from '../vite/project.ts';
 import { EXEC, PACKAGE_MANAGERS, type PackageManager, RUN } from './package-managers.ts';
@@ -85,7 +86,9 @@ async function setEnv(
   if (new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=`, 'm').test(existing)) return false;
   const separator = existing && !existing.endsWith('\n') ? '\n' : '';
   // Unquoted, a `#` in the password would start a comment.
-  const quoted = value.includes("'") ? `"${value}"` : `'${value}'`;
+  const quote = ["'", '"', '`'].find((q) => !value.includes(q));
+  if (!quote) throw new Error(`${key} has every quote character, so .env can't hold it.`);
+  const quoted = `${quote}${value}${quote}`;
   await writeFile(file, `${existing}${separator}${key}=${quoted}\n`, {
     mode: opts.secret ? 0o600 : 0o644,
   });
@@ -94,10 +97,12 @@ async function setEnv(
 }
 
 export function databaseUrlProblem(value: string): string | undefined {
-  if (!value.trim()) return undefined;
-  return /^postgres(?:ql)?:\/\/\S+$/i.test(value.trim())
-    ? undefined
-    : `Use a Postgres connection string, e.g. ${DATABASE_URL_EXAMPLE}`;
+  const url = value.trim();
+  if (!url) return undefined;
+  if (!/^postgres(?:ql)?:\/\/\S+$/i.test(url)) {
+    return `Use a Postgres connection string, e.g. ${DATABASE_URL_EXAMPLE}`;
+  }
+  return connectionStringProblem(url);
 }
 
 function localTimeZone(): string | undefined {

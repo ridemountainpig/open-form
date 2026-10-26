@@ -111,6 +111,14 @@ describe('connectionString', () => {
     );
   });
 
+  it('refuses a # rather than connecting to the wrong host without TLS', () => {
+    expect(() => connectionString('postgres://u:12#x@db.example.com/app')).toThrow('%23');
+    expect(() => connectionString('postgres://u:12#x@db.example.com/app')).not.toThrow('12#x');
+    expect(() => connectionString('postgres://u:p q@db example.com/app')).toThrow(
+      "can't be parsed",
+    );
+  });
+
   it('warns about unencrypted remote connections', () => {
     expect(connectionString('postgres://u:p@db.example.com/app?sslmode=disable').warning).toMatch(
       'unencrypted',

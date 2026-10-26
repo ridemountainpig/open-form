@@ -12,6 +12,10 @@ Open Form at Postgres with one environment variable:
 OPEN_FORM_DATABASE_URL='postgres://user:password@host:5432/dbname'
 ```
 
+Percent-encode special characters in the user name and password, such as `#`
+as `%23` and `@` as `%40`. Open Form refuses a connection string it can't read
+rather than guess which part is the host.
+
 `open-form dev`, `start`, `list`, `responses export`, `delete` and the
 [Next.js route](/docs/deploy/nextjs) all use it. Nothing else changes: Studio,
 filters, exports, webhooks and response numbers work the same as on SQLite.
