@@ -406,7 +406,7 @@ export default defineTheme({
   spacing: 'comfortable',          // 'compact' | 'comfortable' | 'spacious'
   width: '640px',
   layout: 'card',                  // 'card' | 'plain' (no card, for embedding)
-  colorScheme: 'dark',             // optional: force 'dark' or 'light' regardless of the system setting
+  // colorScheme: 'dark',          // optional: force one scheme; `colors` is then that scheme's palette and `dark` is unused
   colors: {
     primary: '#0f766e', primaryForeground: '#ffffff',
     background: '#f5f7f6',         // page
@@ -422,6 +422,31 @@ export default defineTheme({
 ```
 
 Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google). For "make it look like our product", use the `create-theme` skill.
+
+### Light and dark
+
+A form follows the respondent's device (`prefers-color-scheme`) unless its theme says otherwise. There's no toggle on the form; the theme picks one of three:
+
+| Scheme | Tokens | Use for |
+| --- | --- | --- |
+| Follows the device | `colors` + a full `dark` | The default for most forms |
+| Light only | `colors` + `dark: false` | A look built on a light ground: paper, a document, a bright poster |
+| Dark only | `colorScheme: 'dark'`, the dark palette in `colors` | A look built on a dark ground: a terminal, a night event |
+
+`colorScheme: 'light'` also forces light, keeping the light `colors`. A theme with `colors` and no `dark` mixes your light colors with the runtime's dark defaults on a dark device (`theme check` warns about it) — always pick one of the three.
+
+- **Design the dark palette, don't invert the light one.** Keep `primary`'s hue and raise its lightness until `primaryForeground` still passes; backgrounds go dark but not pure black (`surface` a step lighter than `background`); `foreground` off-white; `border` and `control` lifted so inputs stay visible (`control` ≥ 3:1 against `input`). A brand's own `.dark` palette wins over a derived one.
+- **CSS follows the scheme through tokens.** Rules on `var(--of-*)` and `color-mix()` on them need nothing more. What tokens don't carry — a drop shadow, an image, a CSS-drawn texture's opacity — gets a dark variant scoped to the form. Write it for both ways the runtime goes dark: the device setting, and a forced `data-scheme="dark"` (`colorScheme: 'dark'`, and Studio's Adjust preview in dark):
+
+  ```css
+  @media (prefers-color-scheme: dark) {
+    .of-root[data-of-theme="meetup"]:not([data-scheme]) .mt-pass { box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.6); }
+  }
+  .of-root[data-of-theme="meetup"][data-scheme="dark"] .mt-pass { box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.6); }
+  ```
+
+  A single-scheme form needs neither: write its CSS for its one ground.
+- **Check both.** `open-form theme check <form-id> --form` reports contrast in each scheme the theme can show; Studio's **Adjust** previews either palette; and the screenshots (*Self-review*) are taken again with the browser emulating dark mode.
 
 ### Components
 
@@ -719,6 +744,8 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 | English uppercase / italic styling on Chinese or Japanese text | Upright CJK text, weight and size for emphasis, Latin styling under `:lang(en)` |
 | Styling tags (`button[type="submit"]`, `h1`) or unscoped `.of-*` rules | The `.of-*` classes under `[data-of-theme="<id>"]` (*Custom styling*) |
 | Hex colors in the form's CSS | `var(--of-*)` tokens; tints via `color-mix()` |
+| `colors` without `dark`, or a dark palette nobody looked at | One of the three schemes (*Light and dark*), seen in a dark-mode screenshot |
+| A dark variant under `@media (prefers-color-scheme: dark)` alone | The same rule for `[data-scheme="dark"]` too (*Light and dark*) |
 | The date and venue in the description *and* in an aside | Each fact once |
 | A bare "Thanks!" success screen | What happens next, in the form's voice |
 | `<label>` / `<input>` markup | DSL components (they handle ARIA, focus, errors) |
@@ -731,9 +758,9 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 2. Required fields are minimal and correct; conditional fields use `<When>`, not ternaries. Anything the brief asked for that Open Form can't do (*What Open Form can't do*) was raised with the user, and the workaround is listed at hand-off.
 3. Policy matches the request (limits, dates, uniqueness, language).
 4. No hand-rolled state, fetch, validation or styling outside the theme / form CSS.
-5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the reference's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, and no uppercase, small-caps or italic styling on Chinese or Japanese text.
+5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the reference's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, the agreed color scheme set in the tokens (`dark`, `dark: false` or `colorScheme`; *Light and dark*), and no uppercase, small-caps or italic styling on Chinese or Japanese text.
 6. Custom components spread `field.controlProps`, attach `field.ref`, keep native inputs and a visible focus style.
 7. `open-form check <id>` passes and its output (steps, fields, conditions, required flags, policy) matches your plan; the `typecheck` script passes.
 8. Closed screens: `closedMessage` (plus `fullMessage` / `duplicateMessage` where they apply) is in the form's voice, and a custom `Notice` handles every `state` the form can reach and invents no facts.
 9. Multilingual: `locale` is set, options have explicit values, `check` shows every language `N/N translated`, and every "not seen" entry is dynamic text or a `validate` message — not a key left behind by edited text.
-10. You **saw** it — `check` proves the form works, not that it looks right. Screenshot `/f/<id>` on the dev server at desktop (~1440×900) and phone (~390×844) width with whatever browser tool you have, and compare it with the plan: the title shows, the form's own CSS applies (`.of-root` has `data-of-theme="<id>"` when the form has its own theme), nothing is low-contrast or clipped, nothing sits under the language picker (translated forms), and on the phone the first question is on the first screen. Then use Studio's Preview (`/studio/<id>`): the step buttons open conditional pages directly, *When closed* shows each closed screen, and the language picker shows each translation in place. Without a browser tool, say so at hand-off — never describe a look you haven't seen.
+10. You **saw** it — `check` proves the form works, not that it looks right. Screenshot `/f/<id>` on the dev server at desktop (~1440×900) and phone (~390×844) width with whatever browser tool you have, and compare it with the plan: the title shows, the form's own CSS applies (`.of-root` has `data-of-theme="<id>"` when the form has its own theme), nothing is low-contrast or clipped, nothing sits under the language picker (translated forms), and on the phone the first question is on the first screen. When the form follows the device, take both shots again with the browser in dark mode (Playwright's `colorScheme: 'dark'`, or DevTools → Rendering): no light patch from a hard-coded color, motifs and shadows still read. Then use Studio's Preview (`/studio/<id>`): the step buttons open conditional pages directly, *When closed* shows each closed screen, and the language picker shows each translation in place. Without a browser tool, say so at hand-off — never describe a look you haven't seen.
