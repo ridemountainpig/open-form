@@ -76,7 +76,7 @@ export default function Meetup() {
 - **Studio** — forms list with folders; a live preview with Edit mode, where you change text in place or leave comments your agent applies; a responses table with filters, sorting and Excel / CSV / JSON export; schedule, response-limit and **Published** settings that take effect on a deployed server without a redeploy; a gallery of the reference themes. Turn on a public read-only Studio for demos.
 - **Designed, not defaulted** — like open-slide, themes are references: five starters (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) and your own in `themes/` are what an agent reads to write each form its own look in `forms/<id>/theme/`, with only the tokens, CSS and components that form uses. Studio previews every theme, and **Adjust** fine-tunes a form's colors, fonts and shape.
 - **Agent-native** — built-in skills (`create-form` proposes visual directions before writing, `create-theme` turns your design system into a theme, `form-authoring`, `current-form`, `apply-comments` turns notes left in Studio into edits) and a `current.json` cursor so "this form" means what you're looking at.
-- **Deploy it your way** — `open-form start` on any Node host (guides for Docker and Railway), a route handler in your Next.js app, or a one-snippet embed on another site.
+- **Deploy it your way** — `open-form start` on any Node host (guides for Docker and Railway), the whole project on Vercel with Postgres, a route handler in your Next.js app, or a one-snippet embed on another site.
 - **Repo owns the artifact, runtime data stays yours** — questions, logic and policy live in git; responses live in `.open-form/` and never do.
 
 ## Repo layout

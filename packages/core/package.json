@@ -36,6 +36,10 @@
       "types": "./dist/next/index.d.ts",
       "import": "./dist/next/index.js"
     },
+    "./vercel": {
+      "types": "./dist/vercel/index.d.ts",
+      "import": "./dist/vercel/index.js"
+    },
     "./styles.css": "./src/react/styles.css",
     "./env": {
       "types": "./env.d.ts"

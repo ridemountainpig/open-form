@@ -305,6 +305,8 @@ POST /api/forms/:id/submissions
 
 **Next.js（`@open-form-build/core/next`）**：`createOpenFormRoute()` 回傳 `{ GET, POST, PUT, DELETE, OPTIONS }`，掛在 `app/api/[...openform]/route.ts`。App Router 的 route handler 跑在 React Server Components 層（沒有 `createContext`／`react-dom/server`），不能 render 表單來推導 schema，所以 adapter 讀 `open-form build --server-only` 產生的 `dist/server/entry.js`（自帶 React、單一檔案）——client 與 server 仍來自同一份表單原始碼。非 production 時每個 request 檢查 bundle 的 mtime，變了就以 `?v=<mtime>` 重新 import（所以 server entry 必須是單一檔案：拆出去的 chunk 會 import 沒有 query 的舊 entry，等於兩份 React），並用 bundle 的 `config` 建新的 handler，所以 `--watch` 也會帶上 `open-form.config.ts` 的修改。bundle 是以執行期路徑 import，Next 的 file tracing 看不到它：`output: 'standalone'` 與 Vercel 需要 `outputFileTracingIncludes`；serverless function 也寫不了 `.open-form/secret`，需要 `OPEN_FORM_SECRET`（adapter 的錯誤訊息會說明這兩點）。client IP 從 `X-Forwarded-For` 右邊取（預設 1 層：Next.js／Vercel 會把 client 放在最後）。頁面用 `<FormHost id form config />`（`react/host.tsx`）取得 availability 與 timing token 後 render。已用 Next.js 16（Turbopack）實測 build、start、dev + watch、送出。
 
+**Vercel（`@open-form-build/core/vercel`）**：`createOpenFormApp()` 回傳 `{ fetch }`，作為一般 Open Form 專案裡 `api/index.ts` 的 default export。`vercel.json` 把 build 指令設為 `open-form build`、靜態輸出設為 `dist/client`，並把 `/`、`/index.html` 與所有不是建置檔案的路徑導到這個 function（`/` 與 `/index.html` 先導，讓頁面殼不會在沒有 headers 的情況下送出）。function 用和 `open-form start` 相同的 handler 回應 `/api/*`，其他路徑回傳頁面殼；哪個路徑拿哪個殼與狀態碼（`pageRoute`）及其 headers（`pageHeaders`）都與 `startServer` 共用，所以沒有 `OPEN_FORM_ADMIN_PASSWORD` 或公開 Studio 時 Studio 仍然隱藏。`dist/server/entry.js` 是用路徑 import，所以靠 `includeFiles: "dist/**"` 一起帶上。儲存與 `open-form start` 相同（`OPEN_FORM_DATABASE_URL` 時走 Postgres），secret 必須來自 `OPEN_FORM_SECRET`，client IP 取 `X-Forwarded-For` 的最後一個（除非 config 或 `OPEN_FORM_TRUST_PROXY` 另有設定，否則 `trustProxy` 為 1）。初始化在第一個請求時執行，失敗後會重試。
+
 **Embed**：`open-form.config.ts` 的 `embed.origins`（origin 清單或 `'*'`）是唯一開關。`/embed.js`（`src/app/embed.js`，build 時複製到 `dist/client/`，不加 hash）把 `[data-open-form]` 換成 `/f/<id>?embed` 的 iframe；嵌入模式下頁面取消 `100dvh`，以 `ResizeObserver` 回報 body 高度（`open-form:resize`），送出後發 `open-form:submitted`——訊息只帶 form id，所以 `targetOrigin: '*'`。`success.redirect` 以 `window.open(url, '_top')` 離開宿主頁。`/f/:id` 的 `frame-ancestors` 跟著 `embed.origins`；CORS 只開在公開路由（表單狀態、送出、其 preflight），永不帶 credentials，admin 永不開。第三方 iframe 存不了 cookie（`SameSite=Lax`、瀏覽器封鎖），所以 runtime 另在 localStorage 保留一個隨機 visitor id（`x-open-form-visitor` header／body `visitor`），server 先用 cookie、沒有才用它——兩者都不是身分，強度相同。
 
 Admin API（Studio 使用）：
@@ -379,7 +381,7 @@ meta             (key, value)                                                -- 
 - 刪除不覆寫：dead row 留到 `VACUUM`，供應商的備份也有自己的副本——文件寫明，不同於 SQLite 的 `secure_delete`。
 - 測試：`test/storage-contract.ts` 是所有 adapter 共同的行為（編號、刪除、搜尋、篩選、排序、覆寫、rate limit、session 撤銷，以及並發送出下的 `maxResponses`／`uniqueBy`），對 memory、SQLite、PGlite 上的 Postgres（in process，每次 `pnpm test` 都跑）執行；設定 `OPEN_FORM_TEST_POSTGRES_URL` 時也對真的 server 跑（CI 的 `postgres` job，同時以 `E2E_POSTGRES_URL` 跑 e2e smoke）。
 
-**部署注意**：SQLite 適合有 persistent volume 的環境（VPS、Docker、Railway + Volume、Fly.io + Volume）。Serverless（Vercel 類）不適合本機 SQLite，改經由 Next.js route 使用 Postgres（`OPEN_FORM_DATABASE_URL`）。
+**部署注意**：SQLite 適合有 persistent volume 的環境（VPS、Docker、Railway + Volume、Fly.io + Volume）。Serverless（Vercel 類）不適合本機 SQLite，改用 Postgres（`OPEN_FORM_DATABASE_URL`），可以透過 Vercel function 部署整個專案，或經由 Next.js route。
 
 ---
 

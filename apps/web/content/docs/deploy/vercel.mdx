@@ -1,26 +1,57 @@
 ---
 title: Vercel
 seoTitle: "Deploy forms to Vercel with Neon or Supabase"
-description: "Run Open Form inside a Next.js app on Vercel, with responses in Neon or Supabase Postgres."
+description: "Deploy a whole Open Form project to Vercel, with responses in Neon or Supabase Postgres."
 ---
 
-Vercel runs your app as serverless functions with no persistent disk, so
-responses can't live in SQLite there. Mount Open Form in a
-[Next.js app](/docs/deploy/nextjs) and keep responses in
+Vercel runs your project as static files plus a function: the built forms and
+Studio are served as they are, and one function answers the API and the pages.
+Functions have no persistent disk, so responses go to
 [Postgres](/docs/deploy/postgres): Neon or Supabase both work.
+
+This is the same project `open-form dev` runs: forms at `/f/<id>`, Studio at
+`/studio`. To render forms inside a Next.js app you already have instead, see
+[Next.js](/docs/deploy/nextjs).
 
 <Steps>
 <Step>
 
-### Set up the Next.js route
+### Add the function
 
-Follow [Next.js](/docs/deploy/nextjs): mount `createOpenFormRoute()`, build the
-server bundle, and add it to `outputFileTracingIncludes`. Then install the
-Postgres driver:
+Install the Postgres driver:
 
 ```npm
 npm install pg
 ```
+
+Add two files at the root of the project, next to `forms/`:
+
+```ts title="api/index.ts"
+import { createOpenFormApp } from '@open-form-build/core/vercel';
+
+export default createOpenFormApp();
+```
+
+```json title="vercel.json"
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "open-form build",
+  "outputDirectory": "dist/client",
+  "functions": {
+    "api/index.ts": { "includeFiles": "dist/**" }
+  },
+  "routes": [
+    { "src": "/(index\\.html)?", "dest": "/api" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/api" }
+  ]
+}
+```
+
+Vercel serves the built assets from `dist/client`, and every other path goes
+to the function. The function reads the server bundle from
+`dist/server/entry.js` by path, so `includeFiles` ships it along.
 
 </Step>
 <Step>
@@ -55,17 +86,17 @@ postgres://postgres.abcdefghijklmnop:password@aws-0-us-east-1.pooler.supabase.co
 
 Supabase signs its certificates with its own authority, so verifying them
 needs its certificate. Download it from **Database settings → SSL
-configuration**, commit it to your app (it is public, not a secret), point the
-connection string at it, and ship it with the route:
+configuration**, commit it to your project (it is public, not a secret), point
+the connection string at it, and ship it with the function:
 
 ```text
 …:6543/postgres?sslmode=verify-full&sslrootcert=./supabase-ca.crt
 ```
 
-```ts title="next.config.ts"
-outputFileTracingIncludes: {
-  '/api/*': ['./dist/server/**/*', './supabase-ca.crt'],
-},
+```json title="vercel.json"
+"functions": {
+  "api/index.ts": { "includeFiles": "{dist/**,supabase-ca.crt}" }
+}
 ```
 
 Open Form keeps its tables in the `open_form` schema. Supabase's table editor
@@ -85,7 +116,7 @@ In the Vercel project's **Settings → Environment Variables**:
 | --- | --- |
 | `OPEN_FORM_DATABASE_URL` | The connection string from the last step. |
 | `OPEN_FORM_SECRET` | At least 16 random characters, the same on every deploy. Functions can't write the generated secret file. |
-| `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. |
+| `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. Without it, `/studio` answers 404 unless `studio.public` is `'read-only'`. |
 
 Generate the secret with:
 
@@ -93,16 +124,23 @@ Generate the secret with:
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-For local development, put the same variables in `.env`. A separate database
-(or Neon branch) for development keeps test responses out of production.
+You don't need `OPEN_FORM_TRUST_PROXY`: the function counts rate limits by the
+address Vercel puts last in `X-Forwarded-For`.
+
+For local development, `open-form dev` keeps using SQLite in `.open-form/`
+unless `.env` sets `OPEN_FORM_DATABASE_URL`. A separate database (or Neon
+branch) for development keeps test responses out of production.
 
 </Step>
 <Step>
 
 ### Deploy
 
-Push, or run `vercel deploy`. The first request creates the tables. To check
-the production database from your machine, run
+Push to a Git repository connected to Vercel, or run `vercel deploy`. The first
+request creates the tables. Forms are at `https://<your-app>.vercel.app/f/<id>`
+and Studio at `/studio`.
+
+To check the production database from your machine, run
 [`open-form db status`](/docs/cli/db) with its connection string in the
 environment:
 
@@ -113,9 +151,28 @@ OPEN_FORM_DATABASE_URL='postgres://…' npx open-form db status
 </Step>
 </Steps>
 
-Pass `waitUntil: after` to `createOpenFormRoute()` so
-[webhooks](/docs/deploy/webhooks) are delivered after the response; see
-[Next.js](/docs/deploy/nextjs#storage-admin-and-vercel).
+## Webhooks
+
+A function stops once it has answered, so a [webhook](/docs/deploy/webhooks)
+delivery still in flight is cut off. Install `@vercel/functions` and pass its
+`waitUntil` to keep it alive:
+
+```ts title="api/index.ts"
+import { waitUntil } from '@vercel/functions';
+import { createOpenFormApp } from '@open-form-build/core/vercel';
+
+export default createOpenFormApp({ waitUntil });
+```
+
+Retries that come minutes later outlast the function and are lost.
+
+## Setup errors
+
+The function sets itself up on its first request. A missing build, a SQLite
+database it can't open (no `OPEN_FORM_DATABASE_URL`), a secret it can't
+create (no `OPEN_FORM_SECRET`), or an admin password that breaks the
+[rules](/docs/deploy/production) makes that fail, and every request then
+answers 500 with the reason in the function logs.
 
 ## What's next
 
