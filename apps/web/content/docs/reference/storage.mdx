@@ -60,7 +60,8 @@ Studio sessions, open form pages and `uniqueBy: 'device'` keep working.
   time they're opened.
 - `PRAGMA secure_delete` is on, and the write-ahead log is truncated after a
   delete, so a response deleted in Studio is overwritten rather than left in
-  free pages.
+  free pages. Postgres keeps deleted rows until `VACUUM`; see
+  [Deleting responses](/docs/deploy/postgres#deleting-responses).
 - The dev server refuses to serve the database files, other `*.db` / `*.sqlite`
   files, `.env*`, keys and exported responses, so they can't be fetched around
   Studio's sign-in.

@@ -9,7 +9,7 @@ pnpm start      # serve forms + API + SQLite
 ```
 
 - Forms live in `forms/<id>/index.tsx` and are served at `/f/<id>`.
-- Responses are stored in `.open-form/open-form.db` (SQLite, gitignored).
+- Responses are stored in `.open-form/open-form.db` (SQLite, gitignored), or in Postgres when `OPEN_FORM_DATABASE_URL` is set.
 - Export: `pnpm exec open-form responses export <id> -o responses.xlsx` (or `.csv`, `.json`).
 - Each form owns its look in `forms/<id>/theme/`: its tokens, plus the CSS and components it needs. `pnpm exec open-form create <id> --theme <theme>` starts it from a theme's tokens; your agent writes the rest, and Studio's preview has **Adjust** for colors, fonts and shape. No other form changes.
 - `themes/` holds your reference themes for new forms — browse them in Studio → Themes. Start from a starter (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) with `pnpm exec open-form theme add <starter>`, or ask your agent for a new one (`create-theme`). Forms never import them, so changing a theme there never changes a form.

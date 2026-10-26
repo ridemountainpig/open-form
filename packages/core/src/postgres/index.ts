@@ -1,3 +1,4 @@
+import { ADD, PACKAGE_MANAGERS } from '../cli/package-managers.ts';
 import type { FormOverrides, FormSchema, FormValues } from '../schema/index.ts';
 import type {
   CreateSubmissionResult,
@@ -149,7 +150,9 @@ async function createPool(url: string): Promise<PostgresPool> {
     pg = await import('pg');
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
-      throw new Error('Postgres storage needs the `pg` package. Add it with `pnpm add pg`.');
+      const agent = process.env.npm_config_user_agent ?? '';
+      const pm = PACKAGE_MANAGERS.find((name) => agent.startsWith(name)) ?? 'npm';
+      throw new Error(`Postgres storage needs the \`pg\` package. Add it with \`${ADD[pm]} pg\`.`);
     }
     throw err;
   }

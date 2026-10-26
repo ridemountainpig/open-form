@@ -86,8 +86,8 @@ The first connection creates the tables. See [`open-form db status`](/docs/cli/d
 Open Form keeps its tables in their own schema, `open_form`, away from your
 app's tables in `public`. It creates the schema on first start, then the same
 tables as SQLite: `submissions`, `form_versions`, `form_counters`,
-`form_overrides`, `rate_limits`, `revoked_sessions`, `submission_files` and
-`meta`. Answers are stored as `json`, so they come back with their fields in
+`form_overrides`, `rate_limits`, `revoked_sessions` and `meta`, plus
+`submission_files`, which is reserved for file uploads and unused today. Answers are stored as `json`, so they come back with their fields in
 the order the respondent's form sent them, and you can query them:
 
 ```sql
@@ -97,9 +97,13 @@ WHERE form_id = 'meetup'
 ORDER BY number DESC;
 ```
 
-Migrations run when a server starts. When many start at once (serverless cold
-starts), a Postgres advisory lock lets one run them while the others wait; once
-the database is up to date, starting takes no lock.
+There's no separate migrate command: whatever opens the database applies any
+migration that's missing. That's the dev server, `open-form start` and the
+[Next.js route](/docs/deploy/nextjs) on their first request, and
+[`db status`](/docs/cli/db), `list`, `responses export` and `delete`. When many
+open it at once (serverless cold starts), a Postgres advisory lock lets one run
+the migrations while the others wait; once the database is up to date, opening
+it takes no lock.
 
 To give Open Form a role of its own, the role needs to create the `open_form`
 schema on first start, or own one you create for it:
@@ -115,16 +119,21 @@ Connections to any host other than `localhost` verify the server's
 certificate. A connection string without `sslmode` gets
 `sslmode=verify-full`, so answers are never sent in the clear by accident.
 
-- `sslmode=verify-full`: encrypt and verify. Works with providers whose
-  certificates come from a public authority, like Neon. `pg` also verifies on
-  `require`, but `require` with `uselibpqcompat=true` follows libpq and
-  encrypts without verifying, so write `verify-full` to be sure.
+- `sslmode=verify-full`: encrypt and verify. Write this one. Works with
+  providers whose certificates come from a public authority, like Neon.
 - `sslrootcert=./ca.crt`: verify against your provider's own certificate
-  authority, for providers that sign with one, like Supabase.
+  authority, for providers that sign with one, like Supabase. `pg` reads the
+  file relative to the directory the process runs in, not the project root, so
+  use an absolute path if you start Open Form from another directory. On Vercel,
+  ship the file with the function as shown in
+  [Vercel](/docs/deploy/vercel).
 - `sslmode=no-verify`: encrypt without checking who answers. Use it only on a
   network you trust.
 - `sslmode=disable`: no encryption. Open Form logs a warning when the host
   isn't local.
+
+`sslmode=require` also verifies in `pg`, unless the URL adds
+`uselibpqcompat=true`; `verify-full` means the same thing either way.
 
 ## Serverless and pooling
 
@@ -146,9 +155,36 @@ retains them. SQLite, by contrast, overwrites a deleted response immediately.
 
 ## Moving from SQLite
 
-Responses already in `.open-form/open-form.db` stay there: setting
-`OPEN_FORM_DATABASE_URL` starts with an empty database. Export what you need
-first with [`open-form responses export`](/docs/cli/responses-export).
+Setting `OPEN_FORM_DATABASE_URL` starts with an empty Postgres database.
+Responses already in `.open-form/open-form.db` stay in that file, and there's no
+import yet: `open-form db copy`, which moves a SQLite database to Postgres with
+its response numbers, is planned but not built.
+
+1. **Export before you switch.** Once the connection string is set, every
+   command reads Postgres, so run
+   [`open-form responses export`](/docs/cli/responses-export) for each form
+   first:
+
+   ```npm
+   npx open-form responses export meetup -o meetup-responses.json
+   ```
+
+   The file is an archive: Open Form can't read it back in.
+2. **Already switched?** An empty value reads SQLite again for one command, as
+   long as `storage.url` isn't set in `open-form.config.ts`:
+
+   ```bash
+   OPEN_FORM_DATABASE_URL= npx open-form responses export meetup -o meetup-responses.json
+   ```
+
+3. **Set Studio's settings again.** Schedules (opening and closing times, time
+   zone, response caps, closed) and whether a form is published live in the
+   database,
+   so Postgres starts with none of them. Response numbers start again at #1 too.
+
+The two databases stay separate. If you switch back to SQLite, Studio shows the
+responses in `.open-form/open-form.db` again, and the ones collected in Postgres
+are only visible while `OPEN_FORM_DATABASE_URL` points there.
 
 ## What's next
 
