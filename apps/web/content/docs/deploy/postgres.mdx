@@ -155,36 +155,32 @@ retains them. SQLite, by contrast, overwrites a deleted response immediately.
 
 ## Moving from SQLite
 
-Setting `OPEN_FORM_DATABASE_URL` starts with an empty Postgres database.
-Responses already in `.open-form/open-form.db` stay in that file, and there's no
-import yet: `open-form db copy`, which moves a SQLite database to Postgres with
-its response numbers, is planned but not built.
+Setting `OPEN_FORM_DATABASE_URL` starts with an empty Postgres database:
+responses already in `.open-form/open-form.db` stay in that file until you copy
+them. [`open-form db copy`](/docs/cli/db#db-copy) moves them across with their
+response numbers and Studio's settings:
 
-1. **Export before you switch.** Once the connection string is set, every
-   command reads Postgres, so run
-   [`open-form responses export`](/docs/cli/responses-export) for each form
-   first:
+```npm
+npx open-form db copy --dry-run
+npx open-form db copy
+```
 
-   ```npm
-   npx open-form responses export meetup -o meetup-responses.json
-   ```
+Run it once the connection string is set and before the form takes responses
+on Postgres: it copies only into an empty database, so a second run, or a
+Postgres that already has responses, writes nothing. On a deployed app, point
+your local `OPEN_FORM_DATABASE_URL` at the production database and run it from
+the workspace that holds the SQLite file.
 
-   The file is an archive: Open Form can't read it back in.
-2. **Already switched?** An empty value reads SQLite again for one command, as
-   long as `storage.url` isn't set in `open-form.config.ts`:
+The two databases stay separate afterwards. If you switch back to SQLite,
+Studio shows the responses in `.open-form/open-form.db` again, and the ones
+collected in Postgres are only visible while `OPEN_FORM_DATABASE_URL` points
+there. To read the SQLite file for one command without switching, leave the
+variable empty (this works as long as `storage.url` isn't set in
+`open-form.config.ts`):
 
-   ```bash
-   OPEN_FORM_DATABASE_URL= npx open-form responses export meetup -o meetup-responses.json
-   ```
-
-3. **Set Studio's settings again.** Schedules (opening and closing times, time
-   zone, response caps, closed) and whether a form is published live in the
-   database,
-   so Postgres starts with none of them. Response numbers start again at #1 too.
-
-The two databases stay separate. If you switch back to SQLite, Studio shows the
-responses in `.open-form/open-form.db` again, and the ones collected in Postgres
-are only visible while `OPEN_FORM_DATABASE_URL` points there.
+```bash
+OPEN_FORM_DATABASE_URL= npx open-form responses export meetup -o meetup-responses.json
+```
 
 ## What's next
 

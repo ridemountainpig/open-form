@@ -156,6 +156,14 @@ export async function run(argv: string[]): Promise<void> {
       const { dbStatus } = await import('./db.ts');
       await dbStatus(flags);
     });
+  db.command('copy')
+    .description('Copy the SQLite database into the Postgres one in OPEN_FORM_DATABASE_URL')
+    .option('--from <file>', 'SQLite file to copy (default: the one the workspace uses)')
+    .option('--dry-run', 'show what would be copied, without writing')
+    .action(async (flags: { from?: string; dryRun?: boolean }) => {
+      const { dbCopy } = await import('./db.ts');
+      await dbCopy(flags);
+    });
 
   const theme = program
     .command('theme')
