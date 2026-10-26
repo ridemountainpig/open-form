@@ -71,6 +71,7 @@ import { type FormLanguage, TranslateContext, type Translator } from './i18n.tsx
 import { InspectContext } from './inspect.ts';
 import { conditionFromProps } from './layout.tsx';
 import { type FormNav, NavContext } from './nav.ts';
+import { firstOnPage, revealField, scrollBehavior } from './reveal.ts';
 import { type FormParts, partitionForm, type StepEntry } from './steps.ts';
 import { createFormStore, type FormStore, useStoreSelector } from './store.ts';
 import type { FormTheme } from './theme.ts';
@@ -290,6 +291,9 @@ const subscribeNever = () => () => {};
 const onClient = () => true;
 const onServer = () => false;
 
+/** After the next render: the step itself, or the first invalid field on it. */
+type FocusTarget = 'step' | 'invalid';
+
 type Resolve = (values: FormValues) => VisibleFields;
 
 // One cached result per store snapshot: every <When> and step asks for the same values.
@@ -503,9 +507,9 @@ function InteractiveForm({
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
-  const focusAfterRender = useRef<'step' | string | null>(null);
+  const focusAfterRender = useRef<FocusTarget | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
-  const requestFocus = useCallback((target: 'step' | string) => {
+  const requestFocus = useCallback((target: FocusTarget) => {
     focusAfterRender.current = target;
     setFocusRequest((n) => n + 1);
   }, []);
@@ -604,22 +608,19 @@ function InteractiveForm({
     const target = focusAfterRender.current;
     focusAfterRender.current = null;
     if (!target) return;
-    if (target === 'step') {
-      stepRef.current?.focus({ preventScroll: true });
-      const top = rootRef.current?.getBoundingClientRect().top ?? 0;
-      if (top < 0) rootRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      return;
+    if (target === 'invalid') {
+      const { errors } = store.getState();
+      const invalid = [...registry].filter((field) => ownValue(errors, field.name));
+      const first = firstOnPage(invalid);
+      if (first && revealField(first)) return;
     }
-    for (const field of registry) {
-      if (field.name === target) {
-        field.focus();
-        break;
-      }
-    }
+    stepRef.current?.focus({ preventScroll: true });
+    const top = rootRef.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) rootRef.current?.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
   }, [current, status, focusRequest]);
 
   const goTo = useCallback(
-    (next: number, focus: 'step' | string = 'step') => {
+    (next: number, focus: FocusTarget = 'step') => {
       requestFocus(focus);
       store.setState({ step: next });
     },
@@ -648,7 +649,6 @@ function InteractiveForm({
     const { values } = store.getState();
     const shown = resolve(values).values;
     const errors = new Map<string, string>();
-    let firstInvalid: RegisteredField | undefined;
     for (const field of registry) {
       if (errors.has(field.name)) continue;
       const def = { ...field.getSchema(), page: field.page, when: [] };
@@ -659,18 +659,15 @@ function InteractiveForm({
         message = await runCustomValidator(validator, value, shown);
         if (message) message = tr(message);
       }
-      if (message) {
-        errors.set(field.name, message);
-        firstInvalid ??= field;
-      }
+      if (message) errors.set(field.name, message);
     }
     markInvalid(
       errors,
       [...registry].map((field) => field.name),
     );
     // After the render that sets aria-invalid and the error, so it's read with the field.
-    if (firstInvalid) requestFocus(firstInvalid.name);
-    return !firstInvalid;
+    if (errors.size > 0) requestFocus('invalid');
+    return errors.size === 0;
   }, [markInvalid, messages, registry, requestFocus, resolve, store, tr]);
 
   /** Steps the respondent skips past, checked from the schema since they aren't mounted. */
@@ -759,12 +756,12 @@ function InteractiveForm({
         });
         showError(messages.fixErrors);
         const shown = resolve(values).values;
-        let target: { step: number; name: string } | undefined;
+        let target: number | undefined;
         for (const [name] of entries) {
           const step = stepOf(name, shown);
-          if (step !== undefined && (!target || step < target.step)) target = { step, name };
+          if (step !== undefined && (target === undefined || step < target)) target = step;
         }
-        if (target) goTo(target.step, target.name);
+        if (target !== undefined) goTo(target, 'invalid');
         return;
       }
       store.setState({ status: 'error' });
@@ -851,7 +848,7 @@ function InteractiveForm({
       try {
         if (!(await validateMounted())) return;
         const invalid = await validateSkipped(visible.slice(position + 1, target));
-        if (invalid) goTo(invalid.step, invalid.name);
+        if (invalid) goTo(invalid.step, 'invalid');
         else goTo(index);
       } finally {
         busy.current = false;

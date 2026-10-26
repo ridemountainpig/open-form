@@ -188,6 +188,8 @@ export function PlanPicker({ name, label }: { name: string; label: string }) {
 
 `useField` returns `name`, `value`, `setValue`, `onBlur`, `error`, `invalid`, `required`, `ref`, and `controlProps` (id, name, aria-* and onBlur — spread it on a native input; in a group, pass `aria-invalid` / `aria-describedby` to each control as above). Style custom fields with the theme tokens (`var(--of-primary)`, `var(--of-control)` for control outlines, `var(--of-border)`, `var(--of-radius)`, `var(--of-input)`, `var(--of-muted)`, `var(--of-fg)`) so they match.
 
+When Next or Submit finds missing or invalid answers, the framework scrolls the first one on the page into view and focuses it, on every layout and for server-side errors too. Don't write your own scroll-to-error, `scrollIntoView`, focus or "jump to field" code. A custom field joins in through `field.ref` on the element to focus (the first radio of a group, the button that opens a picker); without it, the element carrying `controlProps` is used. Keep that element in the field's row, not a portal or popover, so the label and error scroll into view with it.
+
 ## Live answers — previews, summaries, prices
 
 Forms are React, so UI can react to answers. Read them with hooks from `@open-form-build/core` anywhere inside `<Form>`:
@@ -722,6 +724,7 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 | The date and venue in the description *and* in an aside | Each fact once |
 | A bare "Thanks!" success screen | What happens next, in the form's voice |
 | `<label>` / `<input>` markup | DSL components (they handle ARIA, focus, errors) |
+| Scroll-to-first-error or focus code on submit | Nothing: the framework does it; custom fields attach `field.ref` |
 | Renaming a field that already has responses | Keep the name; change only `label` |
 | Reading `window` during render | `useEffect` |
 
