@@ -223,9 +223,10 @@ export async function scaffold(target: string, flags: InitFlags = {}): Promise<S
 
   const pkg = existing ? mergePackageJson(existing, template) : { ...template };
   if (flags.database === 'postgres') {
-    pkg.dependencies = withMissing(pkg.dependencies, { pg: pgVersion() }, (name) =>
-      Boolean(pkg.dependencies?.[name] ?? pkg.devDependencies?.[name]),
-    );
+    // `start` needs pg at runtime, so a devDependency alone won't survive a production install.
+    pkg.dependencies = withMissing(pkg.dependencies, {
+      pg: pkg.devDependencies?.pg ?? pgVersion(),
+    });
   }
   if (flags.name || !existing?.name) pkg.name = sanitizeName(flags.name ?? path.basename(target));
   const keepOpenForm =

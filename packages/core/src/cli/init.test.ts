@@ -204,6 +204,15 @@ describe('scaffold with Postgres', () => {
     }
   });
 
+  it('puts pg in dependencies even when it was only a devDependency', async () => {
+    writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({ name: 'mine', devDependencies: { pg: '^8.12.0' } }),
+    );
+    const { pkg } = await scaffold(root, { timeZone: 'UTC', database: 'postgres' });
+    expect(pkg.dependencies?.pg).toBe('^8.12.0');
+  });
+
   it('writes a password with both quote characters so .env reads it back', async () => {
     const tricky = `postgres://app:a'b"c@db.example.com/forms`;
     await scaffold(root, { timeZone: 'UTC', database: 'postgres', databaseUrl: tricky });
