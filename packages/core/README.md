@@ -56,7 +56,7 @@ export default function Meetup() {
 
 ## Vercel
 
-Deploy the whole project — form pages, Studio and the API — to Vercel, with responses in Postgres. Install `pg` and add two files next to `forms/`:
+Deploy the whole project — form pages, Studio and the API — to Vercel, with responses in Postgres. `open-form init --vercel` sets it up; in an existing project, install `pg` and add two files next to `forms/`:
 
 ```ts
 // api/index.ts

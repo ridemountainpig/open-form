@@ -41,6 +41,7 @@ export async function run(argv: string[]): Promise<void> {
         'postgres',
       ]),
     )
+    .option('--vercel', 'add api/index.ts and vercel.json to deploy on Vercel (implies Postgres)')
     .option('--no-install', 'skip installing dependencies')
     .option('--no-git', 'skip git init')
     .addOption(new Option('--open-form-version <spec>', 'dependency spec for open-form').hideHelp())

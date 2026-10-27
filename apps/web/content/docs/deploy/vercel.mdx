@@ -18,7 +18,15 @@ This is the same project `open-form dev` runs: forms at `/f/<id>`, Studio at
 
 ### Add the function
 
-Install the Postgres driver:
+Starting a new project? `open-form init --vercel` (or answering yes to
+**Deploy to Vercel?** after picking Postgres) writes both files below and adds
+`pg`, so you can skip to the database.
+
+```npm
+npm create open-form@latest my-forms -- --vercel
+```
+
+For an existing project, install the Postgres driver:
 
 ```npm
 npm install pg
