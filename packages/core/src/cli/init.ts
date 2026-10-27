@@ -537,8 +537,9 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
   if (vercel) {
     p.note(
       [
-        `Set ${chalk.bold('OPEN_FORM_DATABASE_URL')}, ${chalk.bold('OPEN_FORM_SECRET')} and ${chalk.bold('OPEN_FORM_ADMIN_PASSWORD')}`,
-        'in the Vercel project, then push or run `vercel deploy`.',
+        `Set ${chalk.bold('OPEN_FORM_SECRET')} and ${chalk.bold('OPEN_FORM_ADMIN_PASSWORD')} in the Vercel project, and`,
+        `${chalk.bold('OPEN_FORM_DATABASE_URL')} unless a Marketplace database (Neon) set ${chalk.bold('POSTGRES_URL')}.`,
+        'Then push, or run `vercel deploy`.',
         chalk.dim('https://open-form.build/docs/deploy/vercel'),
       ].join('\n'),
       'Deploy to Vercel',
