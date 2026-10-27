@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryStorage } from '../server/index.ts';
-import { createOpenFormApp } from './index.ts';
+import { createOpenFormApp, resolveVercelStorage } from './index.ts';
 
 const ORIGIN = 'https://forms.example';
 let root: string;
@@ -113,5 +113,43 @@ describe('createOpenFormApp', () => {
     vi.stubEnv('OPEN_FORM_ADMIN_PASSWORD', 'short');
     writeBuild();
     await expect(get('/f/rsvp')).rejects.toThrow(/OPEN_FORM_ADMIN_PASSWORD/);
+  });
+});
+
+describe('resolveVercelStorage', () => {
+  const neon = 'postgres://neon@ep-x-pooler.neon.tech/neondb?sslmode=require';
+
+  beforeEach(() => {
+    for (const name of ['OPEN_FORM_DATABASE_URL', 'OPEN_FORM_DB', 'POSTGRES_URL', 'DATABASE_URL']) {
+      vi.stubEnv(name, '');
+    }
+  });
+
+  it('falls back to the Marketplace variables, POSTGRES_URL first', () => {
+    vi.stubEnv('DATABASE_URL', 'postgres://other@db/app');
+    vi.stubEnv('POSTGRES_URL', neon);
+    expect(resolveVercelStorage(root)).toEqual({
+      kind: 'postgres',
+      url: neon,
+      source: 'POSTGRES_URL',
+    });
+    vi.stubEnv('POSTGRES_URL', '');
+    expect(resolveVercelStorage(root)).toMatchObject({ source: 'DATABASE_URL' });
+  });
+
+  it('lets OPEN_FORM_DATABASE_URL and the config win', () => {
+    vi.stubEnv('POSTGRES_URL', neon);
+    vi.stubEnv('OPEN_FORM_DATABASE_URL', 'postgres://mine@db/forms');
+    expect(resolveVercelStorage(root)).toMatchObject({ source: 'OPEN_FORM_DATABASE_URL' });
+    vi.stubEnv('OPEN_FORM_DATABASE_URL', '');
+    expect(resolveVercelStorage(root, { storage: { path: 'data.db' } })).toMatchObject({
+      kind: 'sqlite',
+      source: 'storage.path',
+    });
+  });
+
+  it('ignores a DATABASE_URL that is not Postgres', () => {
+    vi.stubEnv('DATABASE_URL', 'mysql://app@db/app');
+    expect(resolveVercelStorage(root)).toMatchObject({ kind: 'sqlite', source: 'default' });
   });
 });

@@ -11,8 +11,8 @@ import {
   pageRoute,
   type ServerEntry,
 } from '../node/server.ts';
-import { openStorage, resolveStorage } from '../node/storage.ts';
-import { studioProblem } from '../schema/index.ts';
+import { openStorage, POSTGRES_RE, resolveStorage, type StorageTarget } from '../node/storage.ts';
+import { type OpenFormConfig, studioProblem } from '../schema/index.ts';
 import {
   adminPasswordProblem,
   createOpenFormHandler,
@@ -39,6 +39,23 @@ const DOCS = 'https://open-form.build/docs/deploy/vercel';
 
 const errorCode = (err: unknown) =>
   (err as NodeJS.ErrnoException | undefined)?.code ?? (err instanceof Error ? err.message : err);
+
+/** What Neon and Supabase from the Vercel Marketplace set, pooled first. */
+const MARKETPLACE_URLS = ['POSTGRES_URL', 'DATABASE_URL'] as const;
+
+/**
+ * Like `open-form start`, then the Marketplace's variables when nothing else
+ * picked a database: functions have no disk, so default SQLite can never work here.
+ */
+export function resolveVercelStorage(root: string, config: OpenFormConfig = {}): StorageTarget {
+  const target = resolveStorage(root, config);
+  if (target.kind !== 'sqlite' || target.source !== 'default') return target;
+  for (const source of MARKETPLACE_URLS) {
+    const url = process.env[source]?.trim();
+    if (url && POSTGRES_RE.test(url)) return { kind: 'postgres', url, source };
+  }
+  return target;
+}
 
 type App = {
   handler: OpenFormHandler;
@@ -75,7 +92,7 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
     const publicStudio = config.studio?.public === 'read-only';
     const trustProxy = config.trustProxy ?? parseTrustProxy(process.env.OPEN_FORM_TRUST_PROXY) ?? 1;
 
-    const target = resolveStorage(root, config);
+    const target = resolveVercelStorage(root, config);
     let storage = opts.storage;
     if (!storage) {
       try {
@@ -83,8 +100,8 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
       } catch (err) {
         throw new Error(
           target.kind === 'sqlite'
-            ? `Couldn't open the SQLite database at ${target.path} (${errorCode(err)}). Vercel has no persistent disk: set OPEN_FORM_DATABASE_URL to a Postgres database (${DOCS}).`
-            : `Couldn't connect to Postgres (${errorCode(err)}).`,
+            ? `Couldn't open the SQLite database at ${target.path} (${errorCode(err)}). Vercel has no persistent disk: set OPEN_FORM_DATABASE_URL to a Postgres database, or add one from the Vercel Marketplace (${DOCS}).`
+            : `${target.source}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }

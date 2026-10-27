@@ -69,9 +69,13 @@ to the function. The function reads the server bundle from
 <Tabs items={['Neon', 'Supabase']}>
 <Tab value="Neon">
 
-Create a project in [Neon](https://neon.tech), or add Neon from the Vercel
-Marketplace. Copy the **pooled** connection string (its host has `-pooler` in
-it). It looks like:
+The quickest way: add Neon from the Vercel Marketplace (**Storage → Create
+Database**) and connect it to the project. Neon then sets `POSTGRES_URL` (and
+`DATABASE_URL`) in the project, and the function uses it whenever
+`OPEN_FORM_DATABASE_URL` isn't set, so there's nothing to copy.
+
+Otherwise, create a project in [Neon](https://neon.tech) and copy the
+**pooled** connection string (its host has `-pooler` in it). It looks like:
 
 ```text
 postgres://user:password@ep-cool-name-123456-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
@@ -107,6 +111,10 @@ the connection string at it, and ship it with the function:
 }
 ```
 
+The Supabase integration in the Vercel Marketplace also sets `POSTGRES_URL`,
+but without the certificate it can't be verified, so set
+`OPEN_FORM_DATABASE_URL` as above anyway; it wins over `POSTGRES_URL`.
+
 Open Form keeps its tables in the `open_form` schema. Supabase's table editor
 shows `public` by default; pick `open_form` there to browse responses.
 
@@ -122,7 +130,7 @@ In the Vercel project's **Settings → Environment Variables**:
 
 | Variable | Value |
 | --- | --- |
-| `OPEN_FORM_DATABASE_URL` | The connection string from the last step. |
+| `OPEN_FORM_DATABASE_URL` | The connection string from the last step. Leave it out when the Marketplace set `POSTGRES_URL` or `DATABASE_URL` for you; when it's set, it wins. |
 | `OPEN_FORM_SECRET` | At least 16 random characters, the same on every deploy. Functions can't write the generated secret file. |
 | `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. Without it, `/studio` answers 404 unless `studio.public` is `'read-only'`. |
 
@@ -177,7 +185,8 @@ Retries that come minutes later outlast the function and are lost.
 ## Setup errors
 
 The function sets itself up on its first request. A missing build, a SQLite
-database it can't open (no `OPEN_FORM_DATABASE_URL`), a secret it can't
+database it can't open (no `OPEN_FORM_DATABASE_URL`, `POSTGRES_URL` or
+`DATABASE_URL`), a secret it can't
 create (no `OPEN_FORM_SECRET`), or an admin password that breaks the
 [rules](/docs/deploy/production) makes that fail, and every request then
 answers 500 with the reason in the function logs.

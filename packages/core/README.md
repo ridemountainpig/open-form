@@ -80,7 +80,7 @@ export default createOpenFormApp();
 }
 ```
 
-Then set `OPEN_FORM_DATABASE_URL` (a pooled Postgres connection string), `OPEN_FORM_SECRET` (functions can't write the generated `secret` file) and `OPEN_FORM_ADMIN_PASSWORD` in the Vercel project, and deploy. Pass `waitUntil` from `@vercel/functions` to `createOpenFormApp()` so webhooks finish after the response. Guide: [Vercel](https://open-form.build/docs/deploy/vercel).
+Then set `OPEN_FORM_DATABASE_URL` (a pooled Postgres connection string; not needed when a Marketplace database such as Neon set `POSTGRES_URL` or `DATABASE_URL`), `OPEN_FORM_SECRET` (functions can't write the generated `secret` file) and `OPEN_FORM_ADMIN_PASSWORD` in the Vercel project, and deploy. Pass `waitUntil` from `@vercel/functions` to `createOpenFormApp()` so webhooks finish after the response. Guide: [Vercel](https://open-form.build/docs/deploy/vercel).
 
 ## Next.js
 
