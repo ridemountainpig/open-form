@@ -623,6 +623,9 @@
   letter-spacing: -0.02em;
   text-align: left;
 }
+[data-of-theme="cafe-order"] .co-narrow {
+  display: none;
+}
 
 @media (max-width: 560px) {
   /* Room above the computer for the language switcher. */
@@ -753,9 +756,6 @@
   content: "_";
   animation: co-caret 1.1s steps(1) infinite;
 }
-[data-of-theme="cafe-order"] .co-narrow {
-  display: none;
-}
 [data-of-theme="cafe-order"] .co-boot {
   display: grid;
 }
@@ -774,6 +774,9 @@
 [data-of-theme="cafe-order"] .co-mac[data-power="off"] .co-power {
   background: var(--of-primary);
   box-shadow: 0 0 10px var(--of-primary);
+}
+[data-of-theme="cafe-order"] .co-rain {
+  display: none;
 }
 
 /* Effects: the CRT warms up, a bright band rolls down it, the power light
@@ -889,6 +892,7 @@
   }
 
   [data-of-theme="cafe-order"] .co-rain {
+    display: block;
     position: absolute;
     inset: 0;
     z-index: 1;

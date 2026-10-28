@@ -614,6 +614,9 @@
   letter-spacing: -0.02em;
   text-align: left;
 }
+[data-of-theme="phosphor"] .ph-narrow {
+  display: none;
+}
 
 @media (max-width: 560px) {
   /* Room above the computer for the language switcher. */
@@ -744,9 +747,6 @@
   content: "_";
   animation: ph-caret 1.1s steps(1) infinite;
 }
-[data-of-theme="phosphor"] .ph-narrow {
-  display: none;
-}
 [data-of-theme="phosphor"] .ph-boot {
   display: grid;
 }
@@ -765,6 +765,9 @@
 [data-of-theme="phosphor"] .ph-mac[data-power="off"] .ph-power {
   background: var(--of-primary);
   box-shadow: 0 0 10px var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-rain {
+  display: none;
 }
 
 /* Effects: the CRT warms up, a bright band rolls down it, the power light
@@ -880,6 +883,7 @@
   }
 
   [data-of-theme="phosphor"] .ph-rain {
+    display: block;
     position: absolute;
     inset: 0;
     z-index: 1;

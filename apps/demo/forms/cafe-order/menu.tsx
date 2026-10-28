@@ -59,6 +59,7 @@ export function MenuField({
                               aria-label={tr(`${item.name} · ${temp}`)}
                               aria-invalid={invalid}
                               aria-describedby={describedBy}
+                              required={field.required}
                               onBlur={field.onBlur}
                               onChange={() => field.setValue(value)}
                             />

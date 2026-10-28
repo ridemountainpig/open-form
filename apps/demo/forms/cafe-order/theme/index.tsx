@@ -588,6 +588,7 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
               checked={selected.includes(option.value)}
               aria-invalid={field.controlProps['aria-invalid']}
               aria-describedby={field.controlProps['aria-describedby']}
+              required={!multiple && field.required}
               onBlur={field.onBlur}
               onChange={(e) => onToggle(option.value, e.target.checked)}
             />
