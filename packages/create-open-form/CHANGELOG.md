@@ -1,5 +1,14 @@
 # create-open-form
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [4c0e340]
+- Updated dependencies [617dfb0]
+- Updated dependencies [1e16b0d]
+  - @open-form-build/core@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes
