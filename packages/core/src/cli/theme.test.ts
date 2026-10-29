@@ -252,6 +252,29 @@ describe('check: font files the form never loads', () => {
     ]);
   });
 
+  it('tells a face by its comment or unicode-range, never by its file name', () => {
+    const { fonts, warnings } = form("import './fonts/archivo.css';\nexport default {};\n");
+    // Downloaded by hand: Google's hashed file names, and one comment lost.
+    const files = {
+      cyrillicExt: 'k3kQo8UDI-1M0wlSfdboLmvDIaK18A.woff2',
+      cyrillic: 'k3kQo8UDI-1M0wlSfdfoLmvDIaK18A.woff2',
+      latin: 'k3kQo8UDI-1M0wlSfdnoLmvDIaI.woff2',
+    };
+    const face = (file: string, range: string) =>
+      `@font-face {\n  font-family: 'Archivo';\n  src: url(./archivo/${file}) format('woff2');\n  unicode-range: ${range};\n}\n`;
+    writeFileSync(
+      path.join(fonts, 'archivo.css'),
+      `${fontCss('Archivo')}\n/* cyrillic-ext */\n${face(files.cyrillicExt, 'U+0460-052F, U+20B4')}` +
+        face(files.cyrillic, 'U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116') +
+        `/* latin */\n${face(files.latin, 'U+0000-00FF, U+0131')}`,
+    );
+    mkdirSync(path.join(fonts, 'archivo'));
+    for (const file of Object.values(files)) writeFileSync(path.join(fonts, 'archivo', file), '');
+    expect(warnings()).toEqual([
+      `forms/cafe/theme/fonts/archivo.css has cyrillic-ext, cyrillic faces, for scripts none of Open Form's languages use: delete those @font-face rules and archivo/${files.cyrillicExt}, archivo/${files.cyrillic}.`,
+    ]);
+  });
+
   it('flags folders and files no stylesheet points at', () => {
     const { fonts, warnings } = form();
     writeFont(fonts, 'Inter', ['latin']);

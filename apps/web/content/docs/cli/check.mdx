@@ -43,7 +43,9 @@ verifies a form before anyone opens it, and it works whether or not
   `theme/fonts/` it never loads: a `<slug>.css` nothing imports (and its
   `<slug>/` folder), a folder or font file no stylesheet points at, and faces for
   scripts no Open Form language uses, such as `cyrillic` or `greek`, left by a
-  `theme font` from before it skipped them. Each line says what to delete; for
+  `theme font` from before it skipped them. A face's script comes from the
+  `/* subset */` comment Google puts above it, or else from its
+  `unicode-range`, never from its file name. Each line says what to delete; for
   those faces, delete their `@font-face` rules too, or the build fails on the
   missing files. Running `open-form theme font <id> <Family> --form` again
   also replaces them.

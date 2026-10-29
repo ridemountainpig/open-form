@@ -13,7 +13,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cssRequestUrl, type GoogleFont } from './google-fonts.ts';
 import {
   addCssImport,
+  type FontFaceRule,
   FontInstallError,
+  faceSubset,
   fontFileNames,
   fontSlug,
   fontStack,
@@ -85,6 +87,9 @@ const scriptsCss = (family: string, subsets: string[]) =>
     )
     .join('\n');
 
+const LATIN_RANGE =
+  'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
+
 // Inter's subsets, in the order css2 lists them.
 const SCRIPTS_CSS = scriptsCss('Inter', [
   'cyrillic-ext',
@@ -135,6 +140,30 @@ describe('Google Fonts stylesheets', () => {
       kept(SLICED_CSS.replace(/@font-face/g, () => `/* [${n++}] */\n@font-face`)),
     ).toHaveLength(2);
     expect(kept(scriptsCss('Noto Sans Arabic', ['arabic', 'math', 'symbols']))).toEqual([]);
+  });
+
+  it("reads a face's subset from its comment, else from its unicode-range", () => {
+    const face = (unicodeRange: string, subset?: string): FontFaceRule => ({
+      family: 'Archivo',
+      style: 'normal',
+      weight: '400',
+      unicodeRange,
+      url: `${GSTATIC}/archivo/k3kQo8UDI-1M0wlSfdboLmvDIaK18A.woff2`,
+      ...(subset ? { subset } : {}),
+    });
+    expect(faceSubset(face('U+0400-045F', 'latin'))).toBe('latin');
+    expect(faceSubset(face(LATIN_RANGE))).toBe('latin');
+    const cyrillic = face('U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116');
+    expect(faceSubset(cyrillic)).toBe('cyrillic');
+    expect(isKeptFace(cyrillic)).toBe(false);
+    // Before 2023 Google's Cyrillic range had no U+0301.
+    expect(faceSubset(face('U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116'))).toBe('cyrillic');
+    expect(faceSubset(face('U+1F00-1FFF'))).toBe('greek-ext');
+    // CJK slices fit no subset, even Noto Sans TC's slice of nothing but symbols.
+    for (const slice of ['U+4e00-4e10, U+ff70', 'U+2649-2656, U+2658-265c, U+265e-2660']) {
+      expect(faceSubset(face(slice))).toBeUndefined();
+      expect(isKeptFace(face(slice))).toBe(true);
+    }
   });
 
   it('keeps names from a hostile stylesheet inside the fonts folder', () => {

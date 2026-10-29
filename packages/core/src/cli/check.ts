@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import { createServer, mergeConfig, type ViteDevServer } from 'vite';
 import { importsOwnTheme } from '../editing/form-theme.ts';
 import { parseSource, walk } from '../editing/loc-tags.ts';
-import { isKeptFace, parseFontFaces, readFontHeader } from '../editing/theme-fonts.ts';
+import { faceSubset, isKeptFace, parseFontFaces, readFontHeader } from '../editing/theme-fonts.ts';
 import {
   describeCondition,
   type FieldSchema,
@@ -230,7 +230,7 @@ export function deadFontWarnings(formDir: string, userCwd: string): string[] {
     }
     const dropped = header ? parseFontFaces(css).filter((face) => !isKeptFace(face)) : [];
     if (!dropped.length) continue;
-    const subsets = new Set(dropped.map((face) => face.subset));
+    const subsets = new Set(dropped.map(faceSubset));
     const files = new Set(dropped.map((face) => inFonts(path.resolve(fontsDir, face.url))));
     warnings.push(
       `${shown(file)} has ${[...subsets].join(', ')} faces, for scripts none of Open Form's languages use: delete those @font-face rules and ${[...files].join(', ')}.`,
