@@ -1,10 +1,18 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { findReferenceTheme, rescope, writeFormTheme } from '../editing/theme-files.ts';
 import { formThemeFile, resolveThemes } from '../vite/project.ts';
-import { importWarnings } from './check.ts';
+import { deadFontWarnings, importWarnings } from './check.ts';
 import { addStarterTheme, starterCatalog, themeCatalog } from './theme.ts';
 
 let root: string;
@@ -114,30 +122,50 @@ describe("a form's own look", () => {
     expect(existsSync(path.join(root, 'forms/signup/theme/terminal.css'))).toBe(false);
   });
 
-  it('imports the web fonts its tokens name and copies the rest', async () => {
+  it('brings in the web fonts its tokens name and says where the rest are', async () => {
     makeForm('survey');
     mkdirSync(path.join(root, 'themes/night/fonts/inter'), { recursive: true });
+    mkdirSync(path.join(root, 'themes/night/fonts/mono'), { recursive: true });
     const themeFile = path.join(root, 'themes/night/index.ts');
     writeFileSync(
       themeFile,
-      "import './fonts/inter.css';\nimport './fonts/mono.css';\nexport default {};\n",
+      "import './fonts/inter.css';\nimport './fonts/mono.css';\nimport './fonts/kai.css';\nexport default {};\n",
     );
     writeFileSync(path.join(root, 'themes/night/fonts/inter.css'), fontCss('Inter'));
     writeFileSync(path.join(root, 'themes/night/fonts/inter/latin.woff2'), '');
     writeFileSync(path.join(root, 'themes/night/fonts/mono.css'), fontCss('Mono'));
+    writeFileSync(path.join(root, 'themes/night/fonts/mono/latin.woff2'), '');
+    writeFileSync(path.join(root, 'themes/night/fonts/kai.css'), fontCss('Kai'));
     const result = await writeFormTheme(root, 'survey', {
       tokens: { font: "'inter', sans-serif" },
       themeFile,
     });
     expect(result.fonts).toEqual(['Inter']);
-    expect(result.spareFonts).toEqual(['Mono']);
+    expect(result.spareFonts).toEqual([
+      {
+        family: 'Mono',
+        css: 'themes/night/fonts/mono.css',
+        folder: 'themes/night/fonts/mono',
+      },
+      { family: 'Kai', css: 'themes/night/fonts/kai.css' },
+    ]);
     const dir = path.join(root, 'forms/survey/theme');
-    expect(existsSync(path.join(dir, 'fonts/inter.css'))).toBe(true);
+    expect(readdirSync(path.join(dir, 'fonts'))).toEqual(['inter', 'inter.css']);
     expect(existsSync(path.join(dir, 'fonts/inter/latin.woff2'))).toBe(true);
-    expect(existsSync(path.join(dir, 'fonts/mono.css'))).toBe(true);
     const source = readFileSync(result.file, 'utf8');
     expect(source).toContain("import './fonts/inter.css';");
     expect(source).not.toContain('mono.css');
+  });
+
+  it('copies no fonts folder when the tokens name none', async () => {
+    makeForm('quiz');
+    mkdirSync(path.join(root, 'themes/night/fonts'), { recursive: true });
+    const themeFile = path.join(root, 'themes/night/index.ts');
+    writeFileSync(themeFile, "import './fonts/mono.css';\nexport default {};\n");
+    writeFileSync(path.join(root, 'themes/night/fonts/mono.css'), fontCss('Mono'));
+    const result = await writeFormTheme(root, 'quiz', { tokens: {}, themeFile });
+    expect(result.spareFonts).toHaveLength(1);
+    expect(existsSync(path.join(root, 'forms/quiz/theme/fonts'))).toBe(false);
   });
 
   it('never replaces a look the form already has, and needs the form', async () => {
@@ -164,6 +192,108 @@ describe("a form's own look", () => {
     expect(rescope(css, 'a', 'form')).toBe(
       `[data-of-theme="form"] x, [data-of-theme='form'] y, [data-of-theme=form] z, [data-of-theme="ab"] w`,
     );
+  });
+});
+
+/** A font as `theme font` writes it: `fonts/<slug>.css` and a file per subset. */
+function writeFont(fontsDir: string, family: string, subsets: string[]): void {
+  const slug = family.toLowerCase().replace(/ /g, '-');
+  mkdirSync(path.join(fontsDir, slug), { recursive: true });
+  const faces = subsets.map(
+    (subset) =>
+      `/* ${subset} */\n@font-face {\n  font-family: '${family}';\n  src: url('./${slug}/${subset}.woff2') format('woff2');\n}\n`,
+  );
+  writeFileSync(path.join(fontsDir, `${slug}.css`), `${fontCss(family)}\n${faces.join('')}`);
+  for (const subset of subsets) writeFileSync(path.join(fontsDir, slug, `${subset}.woff2`), '');
+}
+
+describe('check: font files the form never loads', () => {
+  function form(themeSource = "import './fonts/inter.css';\nexport default {};\n") {
+    const dir = makeForm('cafe');
+    const fonts = path.join(dir, 'theme/fonts');
+    mkdirSync(fonts, { recursive: true });
+    writeFileSync(path.join(dir, 'theme/index.ts'), themeSource);
+    return { dir, fonts, warnings: () => deadFontWarnings(dir, root) };
+  }
+
+  it('says nothing when the form loads every font file', () => {
+    const { fonts, warnings } = form();
+    writeFont(fonts, 'Inter', ['vietnamese', 'latin-ext', 'latin']);
+    expect(warnings()).toEqual([]);
+  });
+
+  it('flags a font stylesheet nothing imports, with its folder', () => {
+    const { fonts, warnings } = form();
+    writeFont(fonts, 'Inter', ['latin']);
+    writeFont(fonts, 'JetBrains Mono', ['latin']);
+    expect(warnings()).toEqual([
+      "forms/cafe/theme/fonts/jetbrains-mono.css isn't imported, so the form never loads JetBrains Mono: delete it and its jetbrains-mono/ folder.",
+    ]);
+  });
+
+  it("counts imports from anywhere in the form, and fonts the form's own CSS declares", () => {
+    const { dir, fonts, warnings } = form("import './cafe.css';\nexport default {};\n");
+    writeFont(fonts, 'Inter', ['latin']);
+    writeFont(fonts, 'JetBrains Mono', ['latin']);
+    writeFileSync(path.join(dir, 'index.tsx'), "import './theme/fonts/inter.css?url';\n");
+    mkdirSync(path.join(dir, 'theme/parts/code/blocks'), { recursive: true });
+    writeFileSync(
+      path.join(dir, 'theme/parts/code/blocks/Snippet.tsx'),
+      "import '../../../fonts/jetbrains-mono.css';\n",
+    );
+    mkdirSync(path.join(fonts, 'brand'));
+    writeFileSync(path.join(fonts, 'brand/regular.woff2'), '');
+    writeFileSync(path.join(fonts, 'brand/bold.woff2'), '');
+    writeFileSync(
+      path.join(dir, 'theme/cafe.css'),
+      "@font-face { font-family: 'Brand'; src: url('./fonts/brand/regular.woff2?v=2'); }\n" +
+        "@font-face { font-family: 'Brand'; font-weight: 700; src: url('./fonts/brand/bold.woff2#bold'); }\n",
+    );
+    expect(warnings()).toEqual([]);
+  });
+
+  it("flags faces for scripts none of Open Form's languages use", () => {
+    const { fonts, warnings } = form();
+    writeFont(fonts, 'Inter', ['cyrillic', 'greek', 'latin-ext', 'latin']);
+    expect(warnings()).toEqual([
+      "forms/cafe/theme/fonts/inter.css has cyrillic, greek faces, for scripts none of Open Form's languages use: delete those @font-face rules and inter/cyrillic.woff2, inter/greek.woff2.",
+    ]);
+  });
+
+  it('tells a face by its comment or unicode-range, never by its file name', () => {
+    const { fonts, warnings } = form("import './fonts/archivo.css';\nexport default {};\n");
+    // Downloaded by hand: Google's hashed file names, and one comment lost.
+    const files = {
+      cyrillicExt: 'k3kQo8UDI-1M0wlSfdboLmvDIaK18A.woff2',
+      cyrillic: 'k3kQo8UDI-1M0wlSfdfoLmvDIaK18A.woff2',
+      latin: 'k3kQo8UDI-1M0wlSfdnoLmvDIaI.woff2',
+    };
+    const face = (file: string, range: string) =>
+      `@font-face {\n  font-family: 'Archivo';\n  src: url(./archivo/${file}) format('woff2');\n  unicode-range: ${range};\n}\n`;
+    writeFileSync(
+      path.join(fonts, 'archivo.css'),
+      `${fontCss('Archivo')}\n/* cyrillic-ext */\n${face(files.cyrillicExt, 'U+0460-052F, U+20B4')}` +
+        face(files.cyrillic, 'U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116') +
+        `/* latin */\n${face(files.latin, 'U+0000-00FF, U+0131')}`,
+    );
+    mkdirSync(path.join(fonts, 'archivo'));
+    for (const file of Object.values(files)) writeFileSync(path.join(fonts, 'archivo', file), '');
+    expect(warnings()).toEqual([
+      `forms/cafe/theme/fonts/archivo.css has cyrillic-ext, cyrillic faces, for scripts none of Open Form's languages use: delete those @font-face rules and archivo/${files.cyrillicExt}, archivo/${files.cyrillic}.`,
+    ]);
+  });
+
+  it('flags folders and files no stylesheet points at', () => {
+    const { fonts, warnings } = form();
+    writeFont(fonts, 'Inter', ['latin']);
+    writeFileSync(path.join(fonts, 'inter/greek.woff2'), '');
+    writeFileSync(path.join(fonts, 'inter/OFL.txt'), '');
+    mkdirSync(path.join(fonts, 'lora'));
+    writeFileSync(path.join(fonts, 'lora/latin.woff2'), '');
+    expect(warnings()).toEqual([
+      "forms/cafe/theme/fonts/lora/ isn't used by any stylesheet: delete it.",
+      'forms/cafe/theme/fonts/inter/ holds greek.woff2, which no stylesheet points at: delete it.',
+    ]);
   });
 });
 

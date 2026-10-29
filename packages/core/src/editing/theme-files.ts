@@ -187,12 +187,20 @@ export function formThemeSource(tokens: ThemeTokens = {}): string {
   return `import { defineTheme } from '@open-form-build/core';\n\nexport default defineTheme(${body});\n`;
 }
 
+export type SpareFont = {
+  family: string;
+  /** The reference's stylesheet, relative to the project. */
+  css: string;
+  /** The folder of files it points at, relative to the project. */
+  folder?: string;
+};
+
 export type FormThemeResult = {
   file: string;
   /** Web fonts brought in with the tokens. */
   fonts: string[];
-  /** The reference's other web fonts (code, other scripts): copied, not imported yet. */
-  spareFonts: string[];
+  /** The reference's other web fonts (code, other scripts), left where they are. */
+  spareFonts: SpareFont[];
 };
 
 /**
@@ -200,7 +208,7 @@ export type FormThemeResult = {
  * takes the tokens and imports the web fonts they name: the reference's CSS and
  * components are for the agent to read and borrow from while writing this form's
  * look, so the form never depends on the reference. The reference's other fonts
- * are copied without an import, ready for the CSS borrowed from it.
+ * stay behind, since only the CSS borrowed from it can say whether one is needed.
  */
 export async function writeFormTheme(
   projectRoot: string,
@@ -218,31 +226,33 @@ export async function writeFormTheme(
   await mkdir(dir, { recursive: true });
   let source = formThemeSource(seed?.tokens);
   const fonts: string[] = [];
-  const spareFonts: string[] = [];
+  const spareFonts: SpareFont[] = [];
   if (seed) {
     const named = new Set([
       ...stackFamilies(seed.tokens.font),
       ...stackFamilies(seed.tokens.headingFont),
     ]);
     const from = path.dirname(seed.themeFile);
+    const rel = (file: string) => path.relative(projectRoot, file).split(path.sep).join('/');
     for (const spec of fontImports(await readFile(seed.themeFile, 'utf8'))) {
       const css = await readFile(path.join(from, spec), 'utf8').catch(() => null);
       const header = css && readFontHeader(css);
       if (!header) continue;
       const slug = path.basename(spec, '.css');
+      const folder = path.join(from, 'fonts', slug);
+      if (!named.has(header.family.toLowerCase())) {
+        spareFonts.push({
+          family: header.family,
+          css: rel(path.join(from, spec)),
+          ...(existsSync(folder) ? { folder: rel(folder) } : {}),
+        });
+        continue;
+      }
       await mkdir(path.join(dir, 'fonts'), { recursive: true });
       await copyFile(path.join(from, spec), path.join(dir, 'fonts', `${slug}.css`));
-      if (existsSync(path.join(from, 'fonts', slug))) {
-        await cp(path.join(from, 'fonts', slug), path.join(dir, 'fonts', slug), {
-          recursive: true,
-        });
-      }
-      if (named.has(header.family.toLowerCase())) {
-        source = addCssImport(source, `./fonts/${slug}.css`);
-        fonts.push(header.family);
-      } else {
-        spareFonts.push(header.family);
-      }
+      if (existsSync(folder)) await cp(folder, path.join(dir, 'fonts', slug), { recursive: true });
+      source = addCssImport(source, `./fonts/${slug}.css`);
+      fonts.push(header.family);
     }
   }
   const file = path.join(dir, 'index.ts');
