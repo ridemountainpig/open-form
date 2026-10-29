@@ -1,0 +1,42 @@
+.co-root .co-static {
+  margin: 0;
+}
+
+.co-root .co-k {
+  font-weight: 700;
+}
+.co-root .co-indent {
+  padding-left: 4ch;
+}
+.co-root .co-item {
+  overflow-wrap: anywhere;
+}
+.co-root .co-pick-wrap {
+  white-space: nowrap;
+}
+.co-root .co-name {
+  cursor: pointer;
+}
+.co-root .co-item[data-picked] .co-name {
+  font-weight: 700;
+}
+
+.co-root .co-receipt {
+  display: grid;
+  gap: 12px;
+}
+.co-root .co-json {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.co-root .co-v {
+  color: var(--of-primary);
+}
+
+@media (max-width: 560px) {
+  .co-root .co-indent {
+    padding-left: 2ch;
+  }
+}

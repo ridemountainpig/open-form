@@ -1,0 +1,917 @@
+/* A computer drawn in thin lines on a black page; the order glows on its CRT. */
+.of-root[data-of-theme="phosphor"] {
+  --ph-screen-h: clamp(400px, calc(100dvh - 420px), 680px);
+  --ph-bezel: clamp(28px, 3.5vw, 44px);
+  min-height: 100dvh;
+  padding: clamp(24px, 3vw, 32px) 16px 40px;
+  overflow-x: clip;
+  background: #000;
+}
+
+[data-of-theme="phosphor"] .ph-logo {
+  flex: none;
+  width: 0.9em;
+  height: 0.9em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-of-theme="phosphor"] .ph-mac {
+  --ph-line: color-mix(in srgb, var(--of-fg) 36%, #000);
+  position: relative;
+  max-width: calc(var(--of-width) + 200px);
+  margin: 0 auto;
+}
+/* A rounded cabinet drawn with a double line. */
+[data-of-theme="phosphor"] .ph-monitor {
+  padding: clamp(18px, 2.2vw, 30px) clamp(18px, 2.2vw, 30px) 0;
+  border: 1.5px solid var(--ph-line);
+  border-bottom: 0;
+  border-radius: 40px 40px 0 0;
+  box-shadow:
+    inset 0 0 0 7px #000,
+    inset 0 0 0 8.5px color-mix(in srgb, var(--ph-line) 55%, #000);
+}
+[data-of-theme="phosphor"] .ph-bezel {
+  padding: var(--ph-bezel);
+  border: 1.5px solid var(--ph-line);
+  border-radius: 30px;
+}
+[data-of-theme="phosphor"] .ph-screen {
+  position: relative;
+  height: var(--ph-screen-h);
+  overflow: hidden;
+  border-radius: 6% / 9%;
+  outline: 1.5px solid var(--ph-line);
+  outline-offset: -1px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .8 0 0 0 0 .5 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(
+      90% 80% at 50% 45%,
+      color-mix(in srgb, var(--of-fg) 7%, var(--of-surface)),
+      var(--of-surface) 70%
+    );
+}
+/* The glass: scanlines and a darker rim over the text. */
+[data-of-theme="phosphor"] .ph-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background: repeating-linear-gradient(180deg, transparent 0 2px, #0000002e 2px 3px);
+  box-shadow: inset 0 0 60px #000c;
+}
+[data-of-theme="phosphor"] .ph-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: clamp(40px, 5vw, 60px) clamp(24px, 5vw, 64px) clamp(56px, 7vw, 80px);
+  scrollbar-color: var(--ph-line) transparent;
+  scrollbar-width: thin;
+}
+[data-of-theme="phosphor"] .ph-sheet {
+  color: var(--of-fg);
+  font-family: var(--of-font);
+  font-size: 15px;
+  line-height: 1.8;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--of-fg) 28%, transparent);
+}
+
+/* Under the screen: the nameplate, a speaker grille, two knobs and the light. */
+[data-of-theme="phosphor"] .ph-base {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  height: 104px;
+  padding: 22px 8px 0;
+}
+[data-of-theme="phosphor"] .ph-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ph-line);
+  font-family: var(--of-heading-font);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-of-theme="phosphor"] .ph-badge .ph-logo {
+  width: 18px;
+  height: 18px;
+}
+[data-of-theme="phosphor"] .ph-grille {
+  flex: 1;
+  height: 22px;
+  margin-top: 1px;
+  background: repeating-linear-gradient(180deg, var(--ph-line) 0 1.5px, transparent 1.5px 6px);
+  mask: linear-gradient(90deg, transparent, #000 12% 88%, transparent);
+}
+/* Other phosphors for the knob; the theme's tokens are the amber one. */
+[data-of-theme="phosphor"] .ph-mac[data-phosphor="green"],
+.of-root[data-of-theme="phosphor"]:has(.ph-mac[data-phosphor="green"]) > .of-lang {
+  --of-fg: #8dff9e;
+  --of-surface: #0c150e;
+  --of-input: #0c150e;
+  --of-muted: #5fae72;
+  --of-primary: #e6ff7a;
+  --of-primary-fg: #0c150e;
+  --of-border: #2f5a3a;
+  --of-control: #5f9e6e;
+  --of-error: #ff8a80;
+}
+[data-of-theme="phosphor"] .ph-mac[data-phosphor="white"],
+.of-root[data-of-theme="phosphor"]:has(.ph-mac[data-phosphor="white"]) > .of-lang {
+  --of-fg: #eef1f4;
+  --of-surface: #15171a;
+  --of-input: #15171a;
+  --of-muted: #9aa0a8;
+  --of-primary: #7cc4ff;
+  --of-primary-fg: #0d1114;
+  --of-border: #4a4f56;
+  --of-control: #868c94;
+  --of-error: #ff7a7a;
+}
+/* The panel's controls: an engraved label, then the knob or switch. */
+[data-of-theme="phosphor"] .ph-control {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ph-line);
+  font: 700 9px / 1 var(--of-heading-font);
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+[data-of-theme="phosphor"] .ph-control:hover {
+  color: var(--of-fg);
+}
+[data-of-theme="phosphor"] .ph-control:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 3px;
+}
+[data-of-theme="phosphor"] .ph-knob,
+[data-of-theme="phosphor"] .ph-switch {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  transition: box-shadow 150ms ease;
+}
+[data-of-theme="phosphor"] .ph-control:hover :is(.ph-knob, .ph-switch) {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--of-fg) 40%, transparent);
+}
+[data-of-theme="phosphor"] .ph-knob[data-turn="1"] {
+  --ph-turn: 120deg;
+}
+[data-of-theme="phosphor"] .ph-knob[data-turn="2"] {
+  --ph-turn: 240deg;
+}
+[data-of-theme="phosphor"] .ph-knob::after,
+[data-of-theme="phosphor"] .ph-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 1.5px;
+  height: 8px;
+  background: currentColor;
+  transform: translateX(-50%) rotate(var(--ph-turn, 0deg));
+  transform-origin: 50% 9px;
+  transition: transform 200ms ease;
+}
+/* One dot per phosphor, in its own color; the current one is lit. */
+[data-of-theme="phosphor"] .ph-dots {
+  display: flex;
+  gap: 4px;
+}
+[data-of-theme="phosphor"] .ph-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ph-dot);
+  opacity: 0.28;
+}
+[data-of-theme="phosphor"] .ph-dots [data-p="amber"] {
+  --ph-dot: #ffc979;
+}
+[data-of-theme="phosphor"] .ph-dots [data-p="green"] {
+  --ph-dot: #8dff9e;
+}
+[data-of-theme="phosphor"] .ph-dots [data-p="white"] {
+  --ph-dot: #eef1f4;
+}
+[data-of-theme="phosphor"] .ph-dots [data-on] {
+  opacity: 1;
+  box-shadow: 0 0 6px var(--ph-dot);
+}
+[data-of-theme="phosphor"] .ph-power {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin: 11px 6px 0 -16px;
+  border-radius: 50%;
+  background: var(--of-success);
+  box-shadow: 0 0 10px var(--of-success);
+}
+
+/* The keyboard sits in front of the base, wider than the monitor. */
+[data-of-theme="phosphor"] .ph-keyboard {
+  position: relative;
+  display: block;
+  width: 112%;
+  margin: -54px -6% 0;
+  overflow: visible;
+}
+[data-of-theme="phosphor"] .ph-keyboard polygon,
+[data-of-theme="phosphor"] .ph-keyboard path {
+  fill: #000;
+  stroke: var(--ph-line);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+[data-of-theme="phosphor"] .ph-keyboard text {
+  fill: var(--ph-line);
+  stroke: none;
+  font-family: var(--of-font);
+  text-anchor: middle;
+  dominant-baseline: central;
+  user-select: none;
+}
+[data-of-theme="phosphor"] .ph-key-cap {
+  cursor: pointer;
+}
+[data-of-theme="phosphor"] .ph-key-top {
+  transition: transform 60ms ease-out;
+}
+/* Pressed, by the real keyboard or a click: the cap sinks and lights up. */
+[data-of-theme="phosphor"] .ph-key-cap[data-down] .ph-key-top {
+  transform: translateY(3px);
+}
+[data-of-theme="phosphor"] .ph-key-cap[data-down] :is(polygon, path) {
+  stroke: var(--of-fg);
+}
+[data-of-theme="phosphor"] .ph-key-cap[data-down] .ph-key-top polygon {
+  fill: color-mix(in srgb, var(--of-fg) 22%, #000);
+}
+[data-of-theme="phosphor"] .ph-key-cap[data-down] text {
+  fill: var(--of-fg);
+}
+[data-of-theme="phosphor"] .ph-key-cap[data-code="Enter"] :is(polygon, path) {
+  stroke: var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-key-cap[data-code="Enter"] text {
+  fill: var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-key-cap[data-code="Enter"][data-down] .ph-key-top polygon {
+  fill: color-mix(in srgb, var(--of-primary) 30%, #000);
+}
+
+[data-of-theme="phosphor"] .ph-rule {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1.5px solid var(--of-border);
+}
+
+/* Header: the wordmark and the request's meta, then the red request line. */
+[data-of-theme="phosphor"] .ph-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+}
+[data-of-theme="phosphor"] .ph-meta {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+[data-of-theme="phosphor"] .ph-meta > div {
+  display: flex;
+  gap: 1ch;
+}
+[data-of-theme="phosphor"] .ph-meta dt {
+  min-width: 7ch;
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-meta dt::after {
+  content: ":";
+}
+[data-of-theme="phosphor"] .ph-meta dd {
+  margin: 0;
+}
+[data-of-theme="phosphor"] .ph-meta dd[data-state="form"]::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 0.6ch;
+  border-radius: 50%;
+  background: var(--of-success);
+  vertical-align: 1px;
+}
+[data-of-theme="phosphor"] .ph-meta dd[data-state="success"] {
+  color: var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-header {
+  margin: 0;
+  text-align: left;
+}
+[data-of-theme="phosphor"] .ph-wordmark {
+  margin: 0;
+  font-family: var(--of-heading-font);
+  font-size: clamp(32px, 6vw, 46px);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--of-fg);
+}
+[data-of-theme="phosphor"] .ph-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.28em;
+}
+[data-of-theme="phosphor"] .ph-wordmark strong {
+  font-weight: 700;
+}
+[data-of-theme="phosphor"] .ph-tagline {
+  margin: 10px 0 0;
+  font-family: var(--of-heading-font);
+  font-size: 15px;
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-curl {
+  margin: 0;
+  color: var(--of-primary);
+  overflow-wrap: anywhere;
+}
+
+/* Fields: reset the runtime's spacing; JSON punctuation comes from here. */
+[data-of-theme="phosphor"] .ph-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+[data-of-theme="phosphor"] .ph-field > * + * {
+  margin-top: 0;
+}
+[data-of-theme="phosphor"] .ph-field .of-label {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 400;
+  color: var(--of-fg);
+}
+[data-of-theme="phosphor"] .ph-field .of-label::after {
+  content: ":";
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-help,
+[data-of-theme="phosphor"] .ph-comment {
+  margin: 0;
+  font-size: inherit;
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-help::before {
+  content: "// ";
+}
+[data-of-theme="phosphor"] .ph-error {
+  margin: 0;
+  font-size: inherit;
+  color: var(--of-error);
+}
+[data-of-theme="phosphor"] .ph-error::before {
+  content: "// ! ";
+}
+
+[data-of-theme="phosphor"] .ph-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+}
+[data-of-theme="phosphor"] .ph-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: baseline;
+}
+[data-of-theme="phosphor"] .of-input.ph-input-line {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1.5px dashed var(--of-control);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+  color: var(--of-fg);
+}
+[data-of-theme="phosphor"] .of-input.ph-input-line:focus,
+[data-of-theme="phosphor"] .of-input.ph-input-line:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 1px;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+[data-of-theme="phosphor"] .ph-field[data-invalid] .ph-input-line {
+  border-bottom-color: var(--of-error);
+}
+
+/* JSON body: the fields container is the object, each field a key. */
+[data-of-theme="phosphor"] .ph-sheet .of-fields {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--of-border);
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields::before,
+[data-of-theme="phosphor"] .ph-sheet .of-fields::after {
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields::before {
+  content: "{";
+  margin-bottom: -18px;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields::after {
+  content: "}";
+  margin-top: -18px;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields > .ph-field {
+  padding-left: 4ch;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-key {
+  font-weight: 700;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-key::before,
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-key::after {
+  content: '"';
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .of-required {
+  display: none;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields fieldset > legend {
+  float: left;
+  margin-right: 2ch;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-obj) > legend::after {
+  content: ": {";
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-arr) > legend::after {
+  content: ": [";
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields fieldset > .ph-help,
+[data-of-theme="phosphor"] .ph-sheet .of-fields fieldset > .ph-error {
+  clear: both;
+  padding-left: 4ch;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-value {
+  clear: both;
+  padding-left: 4ch;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-obj) .ph-value::after,
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-arr) .ph-value::after {
+  display: block;
+  margin-left: -4ch;
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-obj) .ph-value::after {
+  content: "},";
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-arr) .ph-value::after {
+  content: "],";
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:not(fieldset) .ph-help,
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:not(fieldset) .ph-error {
+  padding-left: 0;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-text::before,
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-text::after {
+  content: '"';
+  color: var(--of-muted);
+}
+
+/* Choices: a quoted string you circle in pen. */
+[data-of-theme="phosphor"] .ph-p {
+  color: var(--of-muted);
+}
+[data-of-theme="phosphor"] .ph-pick-wrap {
+  white-space: nowrap;
+}
+[data-of-theme="phosphor"] .ph-pick {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+[data-of-theme="phosphor"] .ph-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+[data-of-theme="phosphor"] .ph-str {
+  position: relative;
+  display: inline-block;
+  padding: 0 0.15em;
+  margin: 0 -0.15em;
+  line-height: 1.5;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
+}
+[data-of-theme="phosphor"] .ph-pick:hover .ph-str {
+  background: color-mix(in srgb, var(--of-fg) 9%, transparent);
+}
+/* Picked: selected like text in an editor, with the caret after it. */
+[data-of-theme="phosphor"] .ph-input:checked + .ph-str {
+  background: var(--of-fg);
+  color: var(--of-surface);
+}
+[data-of-theme="phosphor"] .ph-input:checked + .ph-str::after {
+  content: "";
+  position: absolute;
+  top: 0.1em;
+  bottom: 0.1em;
+  right: -3px;
+  width: 2px;
+  background: var(--of-primary);
+  animation: ph-caret 1.1s steps(1) infinite;
+}
+@keyframes ph-caret {
+  50% {
+    opacity: 0;
+  }
+}
+[data-of-theme="phosphor"] .ph-input:focus-visible + .ph-str {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 2px;
+}
+
+/* Submit */
+[data-of-theme="phosphor"] .of-nav {
+  justify-content: flex-start;
+  margin-top: 32px;
+}
+[data-of-theme="phosphor"] .of-nav .of-button-primary {
+  min-height: 46px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 0;
+  background: var(--of-fg);
+  color: var(--of-surface);
+  font-family: var(--of-font);
+  font-size: 15px;
+  font-weight: 600;
+}
+[data-of-theme="phosphor"] .of-nav .of-button-primary:hover {
+  background: var(--of-primary);
+}
+[data-of-theme="phosphor"] .of-nav .of-button-primary:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 3px;
+}
+[data-of-theme="phosphor"] .of-alert {
+  font-family: var(--of-font);
+}
+
+/* Response screens */
+[data-of-theme="phosphor"] .ph-main.of-success,
+[data-of-theme="phosphor"] .ph-main.of-notice {
+  padding: 0;
+  text-align: left;
+  align-items: stretch;
+}
+[data-of-theme="phosphor"] .ph-status {
+  margin: 0;
+  color: var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-screen-title {
+  margin: 6px 0 14px;
+  font-family: var(--of-heading-font);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: left;
+}
+[data-of-theme="phosphor"] .ph-narrow {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  /* Room above the computer for the language switcher. */
+  .of-root[data-of-theme="phosphor"] {
+    --ph-bezel: 10px;
+    padding: 60px 6px 24px;
+  }
+  /* The page scrolls instead of the screen. */
+  [data-of-theme="phosphor"] .ph-monitor {
+    padding: 8px 8px 0;
+    border-radius: 24px 24px 0 0;
+    box-shadow: none;
+  }
+  [data-of-theme="phosphor"] .ph-bezel {
+    border-radius: 18px;
+  }
+  [data-of-theme="phosphor"] .ph-screen {
+    height: auto;
+    border-radius: 14px;
+  }
+  [data-of-theme="phosphor"] .ph-scroll {
+    overflow: visible;
+    padding: 26px 14px 32px;
+  }
+  [data-of-theme="phosphor"] .ph-base {
+    gap: 18px;
+    height: 84px;
+    padding-top: 16px;
+  }
+  [data-of-theme="phosphor"] .ph-keyboard {
+    margin-top: -36px;
+  }
+  /* The power button is far below the fold on a phone. */
+  [data-of-theme="phosphor"] .ph-wide {
+    display: none;
+  }
+  [data-of-theme="phosphor"] .ph-narrow {
+    display: inline;
+  }
+  [data-of-theme="phosphor"] .ph-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2ch;
+    font-size: 12px;
+  }
+  [data-of-theme="phosphor"] .ph-meta dt {
+    min-width: 0;
+  }
+  [data-of-theme="phosphor"] .ph-sheet {
+    font-size: 13px;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields > .ph-field,
+  [data-of-theme="phosphor"] .ph-sheet .of-fields fieldset > .ph-help,
+  [data-of-theme="phosphor"] .ph-sheet .of-fields fieldset > .ph-error {
+    clear: both;
+    padding-left: 4ch;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-tuple) > legend {
+    margin-right: 0;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-tuple) > legend::after {
+    content: ": ";
+    white-space: pre;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-tuple) > .ph-value {
+    clear: none;
+    padding-left: 0;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-tuple) > .ph-error {
+    clear: both;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-value {
+    padding-left: 2ch;
+  }
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-obj) .ph-value::after,
+  [data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-arr) .ph-value::after {
+    margin-left: -2ch;
+  }
+}
+
+/* Inline arrays: `"尺寸": ["M", "L"],` on one line; the tuple draws its own key. */
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-tuple) > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-of-theme="phosphor"] .ph-sheet .of-fields .ph-field:has(.ph-tuple) > .ph-value {
+  padding-left: 0;
+}
+[data-of-theme="phosphor"] .ph-tuple {
+  padding-left: 4ch;
+  text-indent: -4ch;
+}
+[data-of-theme="phosphor"] .ph-tuple .ph-pick {
+  text-indent: 0;
+}
+
+/* Powered off: a dark screen asking for the power button, then boot lines. */
+[data-of-theme="phosphor"] .ph-scroll[inert] {
+  visibility: hidden;
+}
+[data-of-theme="phosphor"] .ph-off {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  margin: 0;
+  padding: min(24vh, 200px) 24px 0;
+  border: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--of-surface) 40%, #000);
+  color: var(--of-fg);
+  font: 15px / 1.9 var(--of-font);
+  text-align: left;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--of-fg) 35%, transparent);
+  cursor: pointer;
+}
+[data-of-theme="phosphor"] .ph-off:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: -10px;
+}
+[data-of-theme="phosphor"] .ph-prompt::after {
+  content: "_";
+  animation: ph-caret 1.1s steps(1) infinite;
+}
+[data-of-theme="phosphor"] .ph-boot {
+  display: grid;
+}
+[data-of-theme="phosphor"] .ph-boot span {
+  opacity: 0;
+  animation: ph-line 1ms calc(var(--ph-i) * 300ms + 100ms) forwards;
+}
+@keyframes ph-line {
+  to {
+    opacity: 1;
+  }
+}
+[data-of-theme="phosphor"] .ph-mac[data-power="off"] .ph-power-btn {
+  color: var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-mac[data-power="off"] .ph-power {
+  background: var(--of-primary);
+  box-shadow: 0 0 10px var(--of-primary);
+}
+[data-of-theme="phosphor"] .ph-rain {
+  display: none;
+}
+
+/* Effects: the CRT warms up, a bright band rolls down it, the power light
+   flickers while keys are down, and a sent order rains JSON. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-of-theme="phosphor"] .ph-scroll {
+    animation: ph-boot 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes ph-boot {
+    0% {
+      opacity: 0;
+      transform: scale(1, 0.004);
+      filter: brightness(4);
+    }
+    35% {
+      opacity: 1;
+      transform: scale(1, 0.004);
+      filter: brightness(4);
+    }
+    70% {
+      transform: scale(1, 1);
+      filter: brightness(1.6);
+    }
+    100% {
+      transform: none;
+      filter: none;
+    }
+  }
+  [data-of-theme="phosphor"] .ph-screen::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: -20%;
+    z-index: 2;
+    height: 18%;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--of-fg) 5%, transparent),
+      transparent
+    );
+    animation: ph-roll 9s linear infinite;
+  }
+  @keyframes ph-roll {
+    to {
+      top: 110%;
+    }
+  }
+  [data-of-theme="phosphor"] .ph-screen::after {
+    animation: ph-flicker 5s steps(1) infinite;
+  }
+  @keyframes ph-flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    41% {
+      opacity: 0.85;
+    }
+    42% {
+      opacity: 1;
+    }
+    77% {
+      opacity: 0.92;
+    }
+    78% {
+      opacity: 1;
+    }
+  }
+
+  [data-of-theme="phosphor"] .ph-key-cap:hover:not([data-down]) .ph-key-top polygon {
+    stroke: color-mix(in srgb, var(--of-fg) 70%, #000);
+  }
+  [data-of-theme="phosphor"] .ph-mac[data-power="off"] .ph-power {
+    animation: ph-breathe 2.4s ease-in-out infinite;
+  }
+  /* Once the screen is on, the color knob wiggles to say it turns. */
+  [data-of-theme="phosphor"] .ph-mac[data-power="on"] .ph-knob {
+    animation: ph-nudge 800ms 1.6s ease-in-out 2;
+  }
+  @keyframes ph-nudge {
+    25% {
+      transform: rotate(-20deg);
+    }
+    75% {
+      transform: rotate(20deg);
+    }
+  }
+  [data-of-theme="phosphor"] .ph-mac[data-power="on"] .ph-color {
+    animation: ph-hint 1.6s 1.6s ease-in-out;
+  }
+  @keyframes ph-hint {
+    50% {
+      color: var(--of-fg);
+      text-shadow: 0 0 8px var(--of-fg);
+    }
+  }
+  @keyframes ph-breathe {
+    50% {
+      opacity: 0.25;
+    }
+  }
+  [data-of-theme="phosphor"] .ph-mac:has(.ph-key-cap[data-down]) .ph-power,
+  [data-of-theme="phosphor"] .of-frame[aria-busy="true"] .ph-power {
+    animation: ph-blink 140ms steps(1) infinite;
+  }
+  @keyframes ph-blink {
+    50% {
+      background: var(--of-primary);
+      box-shadow: 0 0 12px var(--of-primary);
+    }
+  }
+
+  [data-of-theme="phosphor"] .ph-rain {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  [data-of-theme="phosphor"] .ph-rain span {
+    position: absolute;
+    top: -10%;
+    left: var(--ph-x);
+    color: var(--of-primary);
+    font-family: var(--of-font);
+    font-size: 18px;
+    text-shadow: 0 0 10px var(--of-primary);
+    opacity: 0;
+    animation: ph-fall var(--ph-dur) var(--ph-delay) ease-in forwards;
+  }
+  @keyframes ph-fall {
+    0% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    10% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(var(--ph-screen-h, 80vh));
+    }
+  }
+}
