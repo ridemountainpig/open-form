@@ -168,11 +168,17 @@ export function importWarnings(
 const CSS_IMPORT_RE = /@import\s+(?:url\(\s*)?['"]?(\.{1,2}\/[^'")\s;]+)/g;
 const CSS_URL_RE = /url\(\s*['"]?([^'")\s]+)/g;
 const FONT_FILE_RE = /\.(woff2?|ttf|otf)$/i;
+const SOURCE_FILE_RE = /\.(tsx|jsx|ts|js)$/;
 
 function filesUnder(dir: string, test: (name: string) => boolean): string[] {
   return readdirSync(dir, { recursive: true, encoding: 'utf8' })
     .filter((name) => test(name) && !name.split(path.sep).includes('node_modules'))
     .map((name) => path.join(dir, name));
+}
+
+/** The file a relative import or `url()` names, without `?v=1` or `#iefix`. */
+function localTarget(dir: string, spec: string): string {
+  return path.resolve(dir, spec.replace(/[?#].*$/, ''));
 }
 
 /**
@@ -186,11 +192,15 @@ export function deadFontWarnings(formDir: string, userCwd: string): string[] {
   const shown = (file: string) => path.relative(userCwd, file).split(path.sep).join('/');
   const inFonts = (file: string) => path.relative(fontsDir, file).split(path.sep).join('/');
   const styles = filesUnder(formDir, (name) => name.endsWith('.css'));
+  const sources = filesUnder(
+    formDir,
+    (name) => SOURCE_FILE_RE.test(name) && !name.endsWith('.d.ts'),
+  );
   const imported = new Set<string>();
-  for (const file of [...sourceFiles(formDir), ...styles]) {
+  for (const file of [...sources, ...styles]) {
     const re = file.endsWith('.css') ? CSS_IMPORT_RE : IMPORT_RE;
     for (const match of readFileSync(file, 'utf8').matchAll(re)) {
-      imported.add(path.resolve(path.dirname(file), match[1] as string));
+      imported.add(localTarget(path.dirname(file), match[1] as string));
     }
   }
   const used = new Set<string>();
@@ -198,7 +208,7 @@ export function deadFontWarnings(formDir: string, userCwd: string): string[] {
     if (path.dirname(file) === fontsDir && !imported.has(file)) continue;
     for (const match of readFileSync(file, 'utf8').matchAll(CSS_URL_RE)) {
       const url = match[1] as string;
-      if (!/^([a-z][a-z0-9+.-]*:|\/|#)/i.test(url)) used.add(path.resolve(path.dirname(file), url));
+      if (!/^([a-z][a-z0-9+.-]*:|\/|#)/i.test(url)) used.add(localTarget(path.dirname(file), url));
     }
   }
 
@@ -231,7 +241,7 @@ export function deadFontWarnings(formDir: string, userCwd: string): string[] {
     const dropped = header ? parseFontFaces(css).filter((face) => !isKeptFace(face)) : [];
     if (!dropped.length) continue;
     const subsets = new Set(dropped.map(faceSubset));
-    const files = new Set(dropped.map((face) => inFonts(path.resolve(fontsDir, face.url))));
+    const files = new Set(dropped.map((face) => inFonts(localTarget(fontsDir, face.url))));
     warnings.push(
       `${shown(file)} has ${[...subsets].join(', ')} faces, for scripts none of Open Form's languages use: delete those @font-face rules and ${[...files].join(', ')}.`,
     );

@@ -234,12 +234,20 @@ describe('check: font files the form never loads', () => {
   it("counts imports from anywhere in the form, and fonts the form's own CSS declares", () => {
     const { dir, fonts, warnings } = form("import './cafe.css';\nexport default {};\n");
     writeFont(fonts, 'Inter', ['latin']);
-    writeFileSync(path.join(dir, 'index.tsx'), "import './theme/fonts/inter.css';\n");
+    writeFont(fonts, 'JetBrains Mono', ['latin']);
+    writeFileSync(path.join(dir, 'index.tsx'), "import './theme/fonts/inter.css?url';\n");
+    mkdirSync(path.join(dir, 'theme/parts/code/blocks'), { recursive: true });
+    writeFileSync(
+      path.join(dir, 'theme/parts/code/blocks/Snippet.tsx'),
+      "import '../../../fonts/jetbrains-mono.css';\n",
+    );
     mkdirSync(path.join(fonts, 'brand'));
     writeFileSync(path.join(fonts, 'brand/regular.woff2'), '');
+    writeFileSync(path.join(fonts, 'brand/bold.woff2'), '');
     writeFileSync(
       path.join(dir, 'theme/cafe.css'),
-      "@font-face { font-family: 'Brand'; src: url('./fonts/brand/regular.woff2'); }\n",
+      "@font-face { font-family: 'Brand'; src: url('./fonts/brand/regular.woff2?v=2'); }\n" +
+        "@font-face { font-family: 'Brand'; font-weight: 700; src: url('./fonts/brand/bold.woff2#bold'); }\n",
     );
     expect(warnings()).toEqual([]);
   });

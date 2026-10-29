@@ -44,8 +44,9 @@ and otherwise the starter of that name. It writes the theme's **tokens** into
 the new form's `theme/index.ts`: colors and the dark palette, fonts, radius,
 width, spacing, color scheme. Web fonts those tokens name come along into
 `theme/fonts/`. The theme's CSS and components stay with the reference, and so
-do fonts only its CSS uses; `create` prints where they are, so you can copy one
-in when you borrow that CSS.
+do fonts only its CSS uses. `create` prints where the ones the theme imports
+from `fonts/` are, so you can copy one in when you borrow that CSS; for a font
+the CSS declares with its own `@font-face`, copy the files its `url()`s name.
 
 ```ts title="forms/meetup/theme/index.ts"
 import { defineTheme } from '@open-form-build/core';
