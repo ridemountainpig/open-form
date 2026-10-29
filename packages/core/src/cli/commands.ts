@@ -100,7 +100,13 @@ export async function createForm(
           : `node_modules/@open-form-build/core/themes/${opts.theme}/THEME.md`;
       const fonts = result.fonts.length ? ` and ${result.fonts.join(', ')}` : '';
       const spare = result.spareFonts.length
-        ? `    ${chalk.dim(`Also copied ${result.spareFonts.join(', ')} to theme/fonts/; import their .css if you use them`)}\n`
+        ? `    ${chalk.dim(`Its other fonts stay where they are; if CSS this form borrows uses one, copy it into ${path.relative(userCwd, path.dirname(result.file))}/fonts/ and import its .css:`)}\n` +
+          result.spareFonts
+            .map(
+              (font) =>
+                `      ${font.family}: ${chalk.dim([font.css, font.folder && `${font.folder}/`].filter(Boolean).join(' and '))}\n`,
+            )
+            .join('')
         : '';
       themeLines =
         `    ${chalk.dim(`Its look starts from ${from}'s tokens${fonts} in`)} ${path.relative(userCwd, result.file)}\n` +

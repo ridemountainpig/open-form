@@ -15,10 +15,11 @@ Writes `forms/<id>/index.tsx` with a small starter form and
 `/f/<id>`. Without `--theme` the look file is empty, which is the plain base
 look. With `--theme`, it holds that theme's tokens: colors and the dark
 palette, fonts, radius, width, spacing and color scheme, plus the web fonts
-those tokens name. The theme's other web fonts, such as a code font or a font
-for another script, are copied to `theme/fonts/` without an import, ready for
-any CSS borrowed from the theme. The theme's CSS and components aren't copied;
-your agent takes only the parts the form uses. See
+those tokens name. The theme's other web fonts, such as a code font or a
+Japanese face its CSS uses, aren't copied: `create` lists each one with where it
+lives, to copy into `theme/fonts/` if the form borrows CSS that uses it. The
+theme's CSS and components aren't copied either; your agent takes only the
+parts the form uses. See
 [Themes](/docs/core-feature/themes#writing-the-rest-of-the-look).
 
 The id must be kebab-case: lowercase letters, digits and `-`. It becomes the

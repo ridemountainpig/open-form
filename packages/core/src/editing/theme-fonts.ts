@@ -34,6 +34,18 @@ export class FontInstallError extends Error {}
 
 const MARKER = 'open-form font:';
 const FONT_IMPORT_RE = /^\.\/fonts\/[a-z0-9][a-z0-9-]*\.css$/;
+// Open Form's languages are written in Latin and CJK, and respondents type names
+// in Vietnamese and other Latin-script languages. Other scripts only appear in
+// what a respondent types, where the system font the browser falls back to is enough.
+const KEPT_SUBSETS = new Set(['latin', 'latin-ext', 'vietnamese']);
+
+/**
+ * A face Open Form's languages can use. Google names Latin, Cyrillic, Greek and
+ * other script subsets, but leaves a CJK family's numbered slices unnamed.
+ */
+export function isKeptFace(rule: FontFaceRule): boolean {
+  return !rule.subset || KEPT_SUBSETS.has(rule.subset);
+}
 
 export function fontSlug(family: string): string {
   return family
@@ -222,16 +234,22 @@ const CONCURRENCY = 8;
 const MAX_FACES = 500;
 
 /**
- * Download every face of a Google Fonts stylesheet into the theme's `fonts/`
- * folder, write a matching stylesheet and import it from the theme.
- * Adding the same family again replaces its files.
+ * Download the faces of a Google Fonts stylesheet that Open Form's languages use
+ * into the theme's `fonts/` folder, write a matching stylesheet and import it
+ * from the theme. Adding the same family again replaces its files.
  */
 export async function installThemeFont(opts: InstallFontOptions): Promise<ThemeFont> {
-  const rules = parseFontFaces(opts.css);
-  if (rules.length === 0)
+  const faces = parseFontFaces(opts.css);
+  if (faces.length === 0)
     throw new FontInstallError(`Google Fonts returned no faces for "${opts.family}".`);
-  if (rules.length > MAX_FACES) {
+  if (faces.length > MAX_FACES) {
     throw new FontInstallError(`Google Fonts returned too many faces for "${opts.family}".`);
+  }
+  const rules = faces.filter(isKeptFace);
+  if (rules.length === 0) {
+    throw new FontInstallError(
+      `"${opts.family}" has no Latin or CJK faces, the only scripts Open Form's languages use.`,
+    );
   }
   for (const rule of rules) {
     const url = new URL(rule.url);

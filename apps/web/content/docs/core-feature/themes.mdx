@@ -43,7 +43,9 @@ npx open-form create meetup --theme terminal
 and otherwise the starter of that name. It writes the theme's **tokens** into
 the new form's `theme/index.ts`: colors and the dark palette, fonts, radius,
 width, spacing, color scheme. Web fonts those tokens name come along into
-`theme/fonts/`. The theme's CSS and components stay with the reference.
+`theme/fonts/`. The theme's CSS and components stay with the reference, and so
+do fonts only its CSS uses; `create` prints where they are, so you can copy one
+in when you borrow that CSS.
 
 ```ts title="forms/meetup/theme/index.ts"
 import { defineTheme } from '@open-form-build/core';
@@ -247,6 +249,17 @@ The form serves these files itself, so respondents never contact Google.
 Linking `fonts.googleapis.com` instead would send every respondent's IP address
 to Google. For a font that isn't on Google Fonts, copy its `.woff2` files into
 `fonts/` and declare `@font-face` in the theme's CSS.
+
+Only the scripts forms are written in are downloaded. Open Form's languages
+(English, Traditional and Simplified Chinese, Japanese) use Latin and CJK, so a
+family brings Google's `latin`, `latin-ext` and `vietnamese` subsets (for names
+respondents type in other Latin-script languages) and, for a Chinese, Japanese
+or Korean family, every CJK slice. Cyrillic, Greek and other scripts are left
+out: a respondent who types them sees them in a system font. Respondents see no
+difference, since a browser fetches each file only for characters on the page;
+what changes is your repository, where every form keeps its own copy.
+[`open-form check`](/docs/cli/check) flags font files a form never loads,
+including subsets downloaded by earlier versions.
 
 ## Check contrast
 

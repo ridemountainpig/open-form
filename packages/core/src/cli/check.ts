@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import chalk from 'chalk';
 import { createServer, mergeConfig, type ViteDevServer } from 'vite';
 import { importsOwnTheme } from '../editing/form-theme.ts';
 import { parseSource, walk } from '../editing/loc-tags.ts';
+import { isKeptFace, parseFontFaces, readFontHeader } from '../editing/theme-fonts.ts';
 import {
   describeCondition,
   type FieldSchema,
@@ -26,6 +27,7 @@ import {
   PKG_ROOT,
   type ProjectPaths,
   projectPaths,
+  THEME_DIR,
 } from '../vite/project.ts';
 import { glyph } from './ui.ts';
 
@@ -103,6 +105,7 @@ export async function checkForms(userCwd: string, only?: string): Promise<CheckR
           theme: applied ? shownTheme : null,
           warnings: [
             ...importWarnings(path.join(paths.formsRoot, id), paths),
+            ...deadFontWarnings(path.join(paths.formsRoot, id), userCwd),
             ...policyWarnings(definition.config, config),
             ...uniqueWarnings(definition),
             ...(theme && shownTheme && entry && !applied
@@ -160,6 +163,91 @@ export function importWarnings(
     }
   }
   return [...warnings];
+}
+
+const CSS_IMPORT_RE = /@import\s+(?:url\(\s*)?['"]?(\.{1,2}\/[^'")\s;]+)/g;
+const CSS_URL_RE = /url\(\s*['"]?([^'")\s]+)/g;
+const FONT_FILE_RE = /\.(woff2?|ttf|otf)$/i;
+
+function filesUnder(dir: string, test: (name: string) => boolean): string[] {
+  return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((name) => test(name) && !name.split(path.sep).includes('node_modules'))
+    .map((name) => path.join(dir, name));
+}
+
+/**
+ * Font files a form carries but never loads: a `theme/fonts/<slug>.css` nothing
+ * imports and its folder, files no stylesheet points at, and faces for scripts
+ * outside Open Form's languages, which `theme font` no longer downloads.
+ */
+export function deadFontWarnings(formDir: string, userCwd: string): string[] {
+  const fontsDir = path.join(formDir, THEME_DIR, 'fonts');
+  if (!existsSync(fontsDir) || !statSync(fontsDir).isDirectory()) return [];
+  const shown = (file: string) => path.relative(userCwd, file).split(path.sep).join('/');
+  const inFonts = (file: string) => path.relative(fontsDir, file).split(path.sep).join('/');
+  const styles = filesUnder(formDir, (name) => name.endsWith('.css'));
+  const imported = new Set<string>();
+  for (const file of [...sourceFiles(formDir), ...styles]) {
+    const re = file.endsWith('.css') ? CSS_IMPORT_RE : IMPORT_RE;
+    for (const match of readFileSync(file, 'utf8').matchAll(re)) {
+      imported.add(path.resolve(path.dirname(file), match[1] as string));
+    }
+  }
+  const used = new Set<string>();
+  for (const file of styles) {
+    if (path.dirname(file) === fontsDir && !imported.has(file)) continue;
+    for (const match of readFileSync(file, 'utf8').matchAll(CSS_URL_RE)) {
+      const url = match[1] as string;
+      if (!/^([a-z][a-z0-9+.-]*:|\/|#)/i.test(url)) used.add(path.resolve(path.dirname(file), url));
+    }
+  }
+
+  const entries = readdirSync(fontsDir, { withFileTypes: true }).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  const deadFolders = new Set<string>();
+  const strayFiles = new Map<string, string[]>();
+  for (const entry of entries.filter((e) => e.isDirectory())) {
+    const files = filesUnder(path.join(fontsDir, entry.name), (name) => FONT_FILE_RE.test(name));
+    const unused = files.filter((file) => !used.has(file));
+    if (unused.length === 0) continue;
+    if (unused.length === files.length) deadFolders.add(entry.name);
+    else strayFiles.set(entry.name, unused);
+  }
+
+  const warnings: string[] = [];
+  for (const entry of entries.filter((e) => e.isFile() && e.name.endsWith('.css'))) {
+    const file = path.join(fontsDir, entry.name);
+    const slug = entry.name.slice(0, -'.css'.length);
+    const css = readFileSync(file, 'utf8');
+    const header = readFontHeader(css);
+    if (!imported.has(file)) {
+      const folder = deadFolders.delete(slug);
+      warnings.push(
+        `${shown(file)} isn't imported, so the form never loads ${header?.family ?? 'it'}: delete it${folder ? ` and its ${slug}/ folder` : ''}.`,
+      );
+      continue;
+    }
+    const dropped = header ? parseFontFaces(css).filter((face) => !isKeptFace(face)) : [];
+    if (!dropped.length) continue;
+    const subsets = new Set(dropped.map((face) => face.subset));
+    const files = new Set(dropped.map((face) => inFonts(path.resolve(fontsDir, face.url))));
+    warnings.push(
+      `${shown(file)} has ${[...subsets].join(', ')} faces, for scripts none of Open Form's languages use: delete those @font-face rules and ${[...files].join(', ')}.`,
+    );
+  }
+  for (const name of deadFolders) {
+    warnings.push(`${shown(path.join(fontsDir, name))}/ isn't used by any stylesheet: delete it.`);
+  }
+  for (const [name, unused] of strayFiles) {
+    const folder = path.join(fontsDir, name);
+    const names = unused.map((file) => path.relative(folder, file).split(path.sep).join('/'));
+    const them = unused.length === 1 ? 'it' : 'them';
+    warnings.push(
+      `${shown(folder)}/ holds ${names.join(', ')}, which no stylesheet points at: delete ${them}.`,
+    );
+  }
+  return warnings;
 }
 
 async function themeComponents(

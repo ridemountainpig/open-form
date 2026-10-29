@@ -39,6 +39,14 @@ verifies a form before anyone opens it, and it works whether or not
 - **Unapplied theme** — a warning when `forms/<id>/theme/` has a look file
   but the form's `index.tsx` doesn't import it, so the form shows the default
   look.
+- **Unused font files** — a warning, one per finding, for files in the form's
+  `theme/fonts/` it never loads: a `<slug>.css` nothing imports (and its
+  `<slug>/` folder), a folder or font file no stylesheet points at, and faces for
+  scripts no Open Form language uses, such as `cyrillic` or `greek`, left by a
+  `theme font` from before it skipped them. Each line says what to delete; for
+  those faces, delete their `@font-face` rules too, or the build fails on the
+  missing files. Running `open-form theme font <id> <Family> --form` again
+  also replaces them.
 - **Unused theme components** — a warning when the form's own theme defines
   components for parts the form never renders: a `Rating` in a form without a
   rating, or a `Select` that `<Form components>` replaces. Chrome (`Layout`,

@@ -113,6 +113,10 @@ export default function WaitlistForm() {
         'forms/waitlist/theme/index.ts',
         'export default { components: { Rating: () => null } };\n',
       );
+      write(
+        'forms/waitlist/theme/fonts/mono.css',
+        "@font-face { font-family: 'Mono'; src: url('./mono/latin.woff2'); }\n",
+      );
       const [rsvp, waitlist] = await checkForms(root);
       expect(rsvp).toMatchObject({ id: 'rsvp', ok: true, theme: 'forms/rsvp/theme/index.tsx' });
       expect(rsvp?.ok && rsvp.warnings).toEqual([
@@ -121,6 +125,7 @@ export default function WaitlistForm() {
       // A look file the form never imports is reported as such, not combed for unused parts.
       expect(waitlist).toMatchObject({ id: 'waitlist', ok: true, theme: null });
       expect(waitlist?.ok && waitlist.warnings).toEqual([
+        "forms/waitlist/theme/fonts/mono.css isn't imported, so the form never loads it: delete it.",
         "forms/waitlist/theme/index.ts isn't applied: forms/waitlist/index.tsx doesn't import it. Import it and pass it to <Form theme={theme}>, or delete it.",
       ]);
     } finally {
