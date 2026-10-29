@@ -1,5 +1,16 @@
 # @open-form-build/core
 
+## 0.4.0
+
+### Minor Changes
+
+- 4c0e340: Stores responses in Postgres when `OPEN_FORM_DATABASE_URL` (or `storage.url`) is set: `@open-form-build/core/postgres`, `open-form init --database postgres`, `open-form db status`, and `open-form check` fails on a password written into `open-form.config.ts`.
+
+### Patch Changes
+
+- 617dfb0: Next and Submit now scroll the first unanswered or invalid field on the page into the middle of the screen and focus it (instantly for reduced motion), and custom fields without `field.ref` are found through `controlProps`.
+- 1e16b0d: The `create-form` skill settles each form's color scheme (follows the device, light only or dark only) with the visual direction, and checks the form in dark mode before handing off; `form-authoring` explains how to write a dark palette and dark-mode CSS.
+
 ## 0.3.0
 
 ### Minor Changes
