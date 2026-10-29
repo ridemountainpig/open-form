@@ -49,11 +49,43 @@ export default function Meetup() {
 | `@open-form-build/core/postgres` | Postgres storage adapter (needs `pg`); used automatically when `OPEN_FORM_DATABASE_URL` is set |
 | `@open-form-build/core/node` | Node HTTP adapter and production server |
 | `@open-form-build/core/vite` | The Vite config and project helpers the CLI is built on (`createViteConfig`, `findForms`, `loadUserConfig`) |
+| `@open-form-build/core/vercel` | A whole project as one Vercel Function (`createOpenFormApp`) |
 | `@open-form-build/core/next` | Next.js route handlers (`createOpenFormRoute`) |
 | `@open-form-build/core/styles.css` | Runtime styles (when rendering forms in your own React app with `<FormHost>`) |
 | `@open-form-build/core/env` | Types for images and CSS imported from forms (`*.svg`, `*.png`, `*.css`, …); the workspace `tsconfig.json` loads it with `"types": ["@open-form-build/core/env"]` |
 
+## Vercel
+
+Deploy the whole project — form pages, Studio and the API — to Vercel, with responses in Postgres. `open-form init --vercel` sets it up; in an existing project, install `pg` and add two files next to `forms/`:
+
+```ts
+// api/index.ts
+import { createOpenFormApp } from '@open-form-build/core/vercel';
+
+export default createOpenFormApp();
+```
+
+```json
+// vercel.json
+{
+  "framework": null,
+  "buildCommand": "open-form build",
+  "outputDirectory": "dist/client",
+  "functions": { "api/index.ts": { "includeFiles": "dist/**" } },
+  "routes": [
+    { "src": "/(index\\.html)?", "dest": "/api" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/api" }
+  ]
+}
+```
+
+Then set `OPEN_FORM_DATABASE_URL` (a pooled Postgres connection string; not needed when a Marketplace database such as Neon set `POSTGRES_URL` or `DATABASE_URL`), `OPEN_FORM_SECRET` (functions can't write the generated `secret` file) and `OPEN_FORM_ADMIN_PASSWORD` in the Vercel project, and deploy. Pass `waitUntil` from `@vercel/functions` to `createOpenFormApp()` so webhooks finish after the response. Guide: [Vercel](https://open-form.build/docs/deploy/vercel).
+
 ## Next.js
+
+To render forms inside a Next.js app you already have:
+
 
 Install `@open-form-build/core` and keep `forms/` (and optionally `open-form.config.ts`) at the root of your Next.js app; a form's look travels with it in `forms/<id>/theme/`. Then mount the API and render forms with `<FormHost>`:
 

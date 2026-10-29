@@ -12,11 +12,18 @@ export {
 export { DATA_DIR, resolveDatabasePath, resolveSecret } from './secret.ts';
 export type {
   PageHeaderOptions,
+  PageRoute,
   ServerEntry,
   StartedServer,
   StartServerOptions,
 } from './server.ts';
-export { createEntryRegistry, inlineScriptHashes, pageHeaders, startServer } from './server.ts';
+export {
+  createEntryRegistry,
+  inlineScriptHashes,
+  pageHeaders,
+  pageRoute,
+  startServer,
+} from './server.ts';
 export type { StorageTarget } from './storage.ts';
 export {
   describeStorage,

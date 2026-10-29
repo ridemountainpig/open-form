@@ -47,9 +47,9 @@ Responses live in a SQLite file, so the server needs a **persistent disk**:
 
 Serverless platforms with an ephemeral filesystem (Vercel and similar) lose the
 file between invocations, so local SQLite doesn't work there. Keep responses in
-[Postgres](/docs/deploy/postgres) instead; on Vercel, run inside a Next.js app
-([Vercel](/docs/deploy/vercel)). With Postgres, `open-form start` needs no disk
-for responses either.
+[Postgres](/docs/deploy/postgres) instead, and deploy the project as a
+function ([Vercel](/docs/deploy/vercel)). With Postgres, `open-form start` needs
+no disk for responses either.
 
 By default the data lives in `.open-form/` in the project: the database and a
 generated signing secret, which is always written next to the database. Either

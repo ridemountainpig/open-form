@@ -177,6 +177,38 @@ describe('shellQuote', () => {
   });
 });
 
+describe('scaffold for Vercel', () => {
+  it('adds the function, vercel.json and api/ to tsconfig', async () => {
+    await scaffold(root, { timeZone: 'UTC', database: 'postgres', vercel: true });
+    expect(readFileSync(path.join(root, 'api/index.ts'), 'utf8')).toContain(
+      "import { createOpenFormApp } from '@open-form-build/core/vercel';",
+    );
+    const vercel = JSON.parse(readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+    expect(vercel.buildCommand).toBe('open-form build');
+    expect(vercel.outputDirectory).toBe('dist/client');
+    expect(vercel.functions['api/index.ts'].includeFiles).toBe('dist/**');
+    expect(vercel.routes[0]).toEqual({ src: '/(index\\.html)?', dest: '/api' });
+    const tsconfig = JSON.parse(readFileSync(path.join(root, 'tsconfig.json'), 'utf8'));
+    expect(tsconfig.include).toContain('api/**/*');
+    expect(readFileSync(path.join(root, '.gitignore'), 'utf8')).toMatch(/^\.vercel$/m);
+  });
+
+  it('keeps a vercel.json and tsconfig.json that are already there', async () => {
+    writeFileSync(path.join(root, 'vercel.json'), '{}');
+    writeFileSync(path.join(root, 'tsconfig.json'), '{ "include": ["src"] }');
+    const { kept } = await scaffold(root, { timeZone: 'UTC', database: 'postgres', vercel: true });
+    expect(kept).toEqual(expect.arrayContaining(['tsconfig.json', 'vercel.json']));
+    expect(readFileSync(path.join(root, 'vercel.json'), 'utf8')).toBe('{}');
+    expect(readFileSync(path.join(root, 'tsconfig.json'), 'utf8')).toBe('{ "include": ["src"] }');
+  });
+
+  it('leaves Vercel out unless asked', async () => {
+    await scaffold(root, { timeZone: 'UTC', database: 'postgres' });
+    expect(existsSync(path.join(root, 'vercel.json'))).toBe(false);
+    expect(existsSync(path.join(root, 'api'))).toBe(false);
+  });
+});
+
 describe('scaffold with Postgres', () => {
   const url = 'postgres://app:p#ss@db.example.com:5432/forms';
 
