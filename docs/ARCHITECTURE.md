@@ -46,7 +46,7 @@ open-form/                         ← this repo (pnpm + Turborepo monorepo)
 │   │   │   ├── vite/              Vite plugin: form discovery, virtual modules, dev API middleware
 │   │   │   ├── editing/           dev write-back to source (Babel AST): submission settings, theme tokens, text, translations, comments, folders, loc markers
 │   │   │   ├── cli/               `open-form` CLI: init / dev / build / start / create / check / comments / list /
-│   │   │   │                      responses export / db status / theme list|check|add|font / sync:skills
+│   │   │   │                      responses export / db status|copy / theme list|check|add|font / sync:skills
 │   │   │   ├── app/               hidden Vite app (shipped as source): public form page + Studio
 │   │   │   └── index.ts           public DSL entry imported by forms
 │   │   ├── themes/                starter themes (classic, editorial, terminal, brutalist, conversational): references for `theme add` and `create --theme`

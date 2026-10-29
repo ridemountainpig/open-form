@@ -3,9 +3,11 @@ export { createMemoryStorage } from './memory.ts';
 export type {
   CreateSubmissionInput,
   CreateSubmissionResult,
+  DumpedSubmission,
   FormVersionRecord,
   ListSubmissionsOptions,
   StorageAdapter,
+  StorageDump,
   StorageInfo,
   StoredOverrides,
   StoredSubmission,

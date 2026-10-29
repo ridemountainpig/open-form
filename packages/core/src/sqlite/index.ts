@@ -10,10 +10,12 @@ import {
   responseFilterTest,
   responseSortKey,
 } from '../schema/index.ts';
+import { countersFor, planVersions, RESTORE_NOT_EMPTY } from '../storage/dump.ts';
 import type {
   CreateSubmissionResult,
   FormVersionRecord,
   StorageAdapter,
+  StorageDump,
   StoredOverrides,
   StoredSubmission,
 } from '../storage/index.ts';
@@ -281,6 +283,41 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
     ],
   };
 
+  function readDump(): StorageDump {
+    const submissions = (
+      db.prepare('SELECT * FROM submissions ORDER BY form_id, number').all() as Array<
+        SubmissionRow & { unique_key: string | null; updated_at: string }
+      >
+    ).map((row) => ({
+      ...toSubmission(row),
+      uniqueKey: row.unique_key,
+      updatedAt: row.updated_at,
+    }));
+    const stored = db.prepare('SELECT * FROM form_counters').all() as Array<{
+      form_id: string;
+      last_number: number;
+    }>;
+    const overrides: Record<string, StoredOverrides> = {};
+    for (const row of stmt.listOverrides.all() as OverridesRow[]) {
+      overrides[row.form_id] = toOverrides(row);
+    }
+    const revoked = db
+      .prepare('SELECT * FROM revoked_sessions WHERE expires_at > ?')
+      .all(Date.now()) as Array<{ id: string; expires_at: number }>;
+    return {
+      formVersions: (
+        db.prepare('SELECT * FROM form_versions ORDER BY created_at').all() as VersionRow[]
+      ).map(toVersion),
+      submissions,
+      counters: countersFor(
+        submissions,
+        Object.fromEntries(stored.map((row) => [row.form_id, Number(row.last_number)])),
+      ),
+      overrides,
+      revokedSessions: Object.fromEntries(revoked.map((row) => [row.id, Number(row.expires_at)])),
+    };
+  }
+
   let hits = 0;
 
   return {
@@ -487,6 +524,67 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
 
     async isSessionRevoked(id) {
       return Boolean(stmt.isRevoked.get(id));
+    },
+
+    async dump() {
+      // One read transaction, so a response submitted mid-dump can't leave the counters behind.
+      db.exec('BEGIN');
+      try {
+        return readDump();
+      } finally {
+        db.exec('COMMIT');
+      }
+    },
+
+    async restore(dump) {
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        const taken = db
+          .prepare(
+            `SELECT EXISTS (SELECT 1 FROM submissions) OR EXISTS (SELECT 1 FROM form_overrides)
+               OR EXISTS (SELECT 1 FROM form_counters WHERE last_number > 0) AS taken`,
+          )
+          .get() as { taken: number };
+        if (Number(taken.taken)) throw new Error(RESTORE_NOT_EMPTY);
+        const plan = planVersions(
+          dump,
+          (db.prepare('SELECT * FROM form_versions').all() as VersionRow[]).map(toVersion),
+        );
+        for (const v of plan.insert) {
+          stmt.insertVersion.run(v.id, v.formId, v.version, JSON.stringify(v.schema), v.createdAt);
+        }
+        for (const row of dump.submissions) {
+          stmt.insert.run(
+            row.id,
+            row.formId,
+            row.number,
+            plan.idFor(row.formVersionId),
+            JSON.stringify(row.data),
+            row.visitorHash,
+            row.locale ?? null,
+            row.uniqueKey,
+            row.createdAt,
+            row.updatedAt,
+          );
+        }
+        const setCounter = db.prepare(
+          `INSERT INTO form_counters (form_id, last_number) VALUES (?, ?)
+           ON CONFLICT (form_id) DO UPDATE SET last_number = excluded.last_number`,
+        );
+        for (const [formId, last] of Object.entries(countersFor(dump.submissions, dump.counters))) {
+          setCounter.run(formId, last);
+        }
+        for (const [formId, { updatedAt, ...overrides }] of Object.entries(dump.overrides)) {
+          stmt.setOverrides.run(formId, JSON.stringify(overrides), updatedAt);
+        }
+        for (const [id, expiresAt] of Object.entries(dump.revokedSessions)) {
+          stmt.revoke.run(id, expiresAt);
+        }
+        db.exec('COMMIT');
+      } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+      }
     },
 
     async info() {

@@ -1,11 +1,14 @@
 ---
-title: open-form db status
-description: "See which database stores this workspace's responses, which setting chose it, and whether it answers."
+title: open-form db
+description: "See which database stores this workspace's responses and whether it answers, and copy a SQLite database into Postgres."
 ---
 
 ```npm
 npx open-form db status
+npx open-form db copy
 ```
+
+## `db status`
 
 Reads the same settings as `open-form start` and connects once:
 
@@ -27,10 +30,50 @@ A SQLite file that doesn't exist yet is reported as not created; `db status`
 doesn't create it. When the database doesn't answer, the error is printed and
 the command exits with code `1`, so you can run it before a deploy.
 
-## Flags
-
 | Flag | Description |
 | --- | --- |
 | `--json` | Print `{ kind, location, source, ok, created, info, responses, error }` instead. |
+
+## `db copy`
+
+Copies the workspace's SQLite database into the Postgres database that
+`OPEN_FORM_DATABASE_URL` (or `storage.url`) points at:
+
+```npm
+npx open-form db copy --dry-run
+npx open-form db copy
+```
+
+```text
+  ┃  From      SQLite .open-form/open-form.db
+  ┃  To        Postgres postgres://forms:***@db.example.com:5432/app?sslmode=verify-full
+  ┃  Responses 99 (contact 12 · meetup 87)
+  ┃  Settings  Studio settings of meetup
+  ┃  Status    ✔ copied · the SQLite file keeps its own copy
+```
+
+Everything comes across as it was: each response with its id, number,
+submission time and language, the schema versions they were submitted under,
+each form's response numbering (the next response to a form whose newest was
+#87 is #88, even if #87 was deleted), the unique keys behind `uniqueBy`, Studio's
+settings (schedule, time zone, response caps, closed, published) and signed-out
+Studio sessions. Rate-limit counters stay behind; they reset within minutes
+anyway.
+
+- **One transaction.** Either everything is copied or nothing is. Responses
+  submitted to Postgres while it runs wait for it, then land after the copied
+  ones.
+- **Into an empty database only.** If Postgres already has responses, response
+  numbers or Studio settings, `db copy` stops and writes nothing, so running it
+  twice can't duplicate anything. Form versions a dev server already recorded
+  there are reused.
+- **The SQLite file stays.** Nothing is deleted from it. Studio and every
+  command read Postgres from now on; keep the file as a backup or delete it
+  yourself.
+
+| Flag | Description |
+| --- | --- |
+| `--from <file>` | The SQLite file to copy, relative to the workspace. Default: the one the workspace uses without Postgres (`OPEN_FORM_DB`, `storage.path`, else `.open-form/open-form.db`). |
+| `--dry-run` | Count what would be copied, without connecting to Postgres. |
 
 To store responses in Postgres, see [Postgres](/docs/deploy/postgres).

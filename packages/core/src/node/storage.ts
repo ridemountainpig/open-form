@@ -35,6 +35,14 @@ export function resolveStorage(projectRoot: string, config: OpenFormConfig = {})
     }
     return { kind: 'postgres', url, source };
   }
+  return resolveSqlite(projectRoot, config);
+}
+
+/** The SQLite file this workspace uses when no Postgres URL is set. */
+export function resolveSqlite(
+  projectRoot: string,
+  config: OpenFormConfig = {},
+): Extract<StorageTarget, { kind: 'sqlite' }> {
   const source = process.env.OPEN_FORM_DB
     ? 'OPEN_FORM_DB'
     : config.storage?.path
