@@ -72,6 +72,18 @@ describe('createOpenFormRoute', () => {
     expect((await GET(new Request(`${ORIGIN}/api/forms`))).status).toBe(404);
   });
 
+  it('turns only the admin API off when the admin password breaks the rules', async () => {
+    vi.stubEnv('OPEN_FORM_ADMIN_PASSWORD', 'short');
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    writeEntry('RSVP', 1_000);
+    const { GET, POST } = route();
+    expect((await submit(POST, '203.0.113.7')).status).toBe(201);
+    expect((await GET(new Request(`${ORIGIN}/api/forms`))).status).toBe(404);
+    expect(logged).toHaveBeenCalledWith(expect.stringMatching(/OPEN_FORM_ADMIN_PASSWORD/));
+    logged.mockRestore();
+    vi.unstubAllEnvs();
+  });
+
   it('rate limits by the address Next.js appended, not the one the client sent', async () => {
     writeEntry('RSVP', 1_000);
     const { POST } = route();

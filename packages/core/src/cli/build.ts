@@ -5,6 +5,8 @@ import { stripVTControlCharacters } from 'node:util';
 import chalk from 'chalk';
 import { mergeConfig, type Plugin, build as viteBuild } from 'vite';
 import type { OpenFormConfig } from '../schema/index.ts';
+import { adminPasswordProblem } from '../server/index.ts';
+import { resolveVercelStorage } from '../vercel/index.ts';
 import { createViteConfig } from '../vite/config.ts';
 import { SERVER_ENTRY_VMOD } from '../vite/forms-plugin.ts';
 import {
@@ -82,6 +84,42 @@ export async function unloadableThemes(
   });
 }
 
+/**
+ * Settings the deployed server can't start with, checked before building so a
+ * bad one fails the deploy (the last good one stays live) instead of the site.
+ * Only what's set is checked, except in a project deployed with the Vercel
+ * Function (`vercel.json`), which has no disk for the generated secret or SQLite.
+ */
+export function deployProblems(
+  userCwd: string,
+  config: OpenFormConfig,
+  opts: { serverOnly?: boolean } = {},
+): string[] {
+  const problems: string[] = [];
+  const password = process.env.OPEN_FORM_ADMIN_PASSWORD;
+  const passwordProblem = password && adminPasswordProblem(password);
+  if (passwordProblem) problems.push(`OPEN_FORM_ADMIN_PASSWORD: ${passwordProblem}`);
+  const secret = process.env.OPEN_FORM_SECRET;
+  if (secret && secret.length < 16) {
+    problems.push('OPEN_FORM_SECRET: use at least 16 characters.');
+  }
+  // `--server-only` feeds the Next.js route, which may get its secret and storage in code;
+  // other workspaces in a monorepo built on Vercel don't run the function at all.
+  if (process.env.VERCEL && !opts.serverOnly && existsSync(path.join(userCwd, 'vercel.json'))) {
+    if (!secret) {
+      problems.push(
+        "OPEN_FORM_SECRET isn't set. Vercel Functions can't write a generated one, so set it in the project's environment variables.",
+      );
+    }
+    if (resolveVercelStorage(userCwd, config).kind === 'sqlite') {
+      problems.push(
+        'No Postgres database. Vercel has no disk for SQLite: set OPEN_FORM_DATABASE_URL, or add a database from the Vercel Marketplace.',
+      );
+    }
+  }
+  return problems;
+}
+
 /** Client bundle → dist/client, server entry (forms + collector) → dist/server/entry.js. */
 export async function build(flags: BuildFlags = {}): Promise<void> {
   if (flags.watch && !flags.serverOnly) {
@@ -90,6 +128,12 @@ export async function build(flags: BuildFlags = {}): Promise<void> {
   printHeader(flags.serverOnly ? 'building the server entry' : 'building for production');
   const userCwd = process.cwd();
   const config = await loadUserConfig(userCwd);
+  const problems = deployProblems(userCwd, config, flags);
+  if (problems.length > 0) {
+    throw new Error(
+      `Fix ${problems.length === 1 ? 'this' : 'these'} before deploying:\n${problems.map((p) => `  - ${p}`).join('\n')}`,
+    );
+  }
   const outDir = path.resolve(userCwd, flags.outDir ?? 'dist');
   assertReplaceable(userCwd, outDir);
   await mkdir(outDir, { recursive: true });

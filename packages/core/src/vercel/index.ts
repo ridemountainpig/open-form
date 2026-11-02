@@ -62,8 +62,16 @@ type App = {
   indexHtml: string;
   scriptHashes: string[];
   studio: boolean;
+  /** Why Studio is off although an admin password is set. */
+  studioOff?: string;
   config: ServerEntry['config'];
 };
+
+const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+function studioOffPage(reason: string): string {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Studio is off</title></head><body style="font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:15vh auto;padding:0 1rem"><h1 style="font-size:1.25rem">Studio is off</h1><p>${escapeHtml(reason)}</p><p>Change it in the Vercel project's environment variables and deploy again. Forms keep taking responses meanwhile.</p></body></html>`;
+}
 
 /**
  * A whole Open Form project as one Vercel Function: `export default createOpenFormApp()`
@@ -84,9 +92,14 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
     }
     const entry = (await import(/* @vite-ignore */ pathToFileURL(entryFile).href)) as ServerEntry;
     const config = entry.config ?? {};
-    const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
+    let adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
     const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
-    if (passwordProblem) throw new Error(`OPEN_FORM_ADMIN_PASSWORD: ${passwordProblem}`);
+    // A bad admin password turns Studio off, not the forms respondents are filling in.
+    const studioOff = passwordProblem ? `OPEN_FORM_ADMIN_PASSWORD: ${passwordProblem}` : undefined;
+    if (studioOff) {
+      console.error(`[open-form] Studio is off. ${studioOff}`);
+      adminPassword = undefined;
+    }
     const studioConfigProblem = studioProblem(config.studio);
     if (studioConfigProblem) throw new Error(`open-form.config.ts: ${studioConfigProblem}`);
     const publicStudio = config.studio?.public === 'read-only';
@@ -135,6 +148,7 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
       indexHtml,
       scriptHashes: inlineScriptHashes(indexHtml),
       studio: Boolean(adminPassword) || publicStudio,
+      studioOff: publicStudio ? undefined : studioOff,
       config,
     };
   };
@@ -150,13 +164,23 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
 
   return {
     async fetch(request) {
-      const { handler, indexHtml, scriptHashes, studio, config } = await current();
+      const { handler, indexHtml, scriptHashes, studio, studioOff, config } = await current();
       const url = new URL(request.url);
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return handler(request);
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         return new Response(null, { status: 405 });
       }
-      const route = pageRoute(url.pathname, { studio });
+      const route = pageRoute(url.pathname, { studio: studio || Boolean(studioOff) });
+      if (studioOff && 'page' in route && route.page === 'studio') {
+        return new Response(request.method === 'HEAD' ? null : studioOffPage(studioOff), {
+          status: 503,
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'cache-control': 'no-store',
+            ...pageHeaders('studio', config, { https: url.protocol === 'https:' }),
+          },
+        });
+      }
       if ('redirect' in route) {
         return new Response(null, { status: 302, headers: { location: route.redirect } });
       }
