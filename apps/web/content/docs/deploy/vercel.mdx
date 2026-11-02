@@ -7,7 +7,8 @@ description: "Deploy a whole Open Form project to Vercel, with responses in Neon
 Vercel runs your project as static files plus a function: the built forms and
 Studio are served as they are, and one function answers the API and the pages.
 Functions have no persistent disk, so responses go to
-[Postgres](/docs/deploy/postgres): Neon or Supabase both work.
+[Postgres](/docs/deploy/postgres): Neon, Supabase, or any Postgres the function
+can reach over the internet.
 
 This is the same project `open-form dev` runs: forms at `/f/<id>`, Studio at
 `/studio`. To render forms inside a Next.js app you already have instead, see
@@ -66,7 +67,7 @@ to the function. The function reads the server bundle from
 
 ### Create the database
 
-<Tabs items={['Neon', 'Supabase']}>
+<Tabs items={['Neon', 'Supabase', 'Other Postgres']}>
 <Tab value="Neon">
 
 The quickest way: add Neon from the Vercel Marketplace (**Storage → Create
@@ -119,6 +120,32 @@ Open Form keeps its tables in the `open_form` schema. Supabase's table editor
 shows `public` by default; pick `open_form` there to browse responses.
 
 </Tab>
+<Tab value="Other Postgres">
+
+Any Postgres works if Vercel can reach it: RDS, Railway, your own server.
+
+- **Reachable from the internet.** A database on `localhost` or a private
+  network isn't. On Railway, use the public connection string
+  (`DATABASE_PUBLIC_URL`, a `*.proxy.rlwy.net` host), not the internal one.
+  Vercel's outgoing addresses change, so an IP allowlist has to let any
+  address in, or use Vercel's Secure Compute.
+- **Pooled.** Each function opens its own connections, so put a pooler such as
+  PgBouncer or RDS Proxy in front when you expect traffic.
+- **A certificate Open Form can verify.** A public authority's works as is; a
+  provider's own authority needs `sslrootcert`, shipped with the function as
+  in the Supabase tab. A self-signed certificate, like Railway's, can't be
+  verified, and the function fails with `self-signed certificate in
+  certificate chain`. To try it anyway, add `sslmode=no-verify`: the
+  connection is still encrypted, but nothing checks that the server is your
+  database. For production, prefer a provider whose certificate verifies.
+
+```text
+postgres://postgres:password@roundhouse.proxy.rlwy.net:12345/railway?sslmode=no-verify
+```
+
+Set it as `OPEN_FORM_DATABASE_URL`.
+
+</Tab>
 </Tabs>
 
 </Step>
@@ -132,7 +159,7 @@ In the Vercel project's **Settings → Environment Variables**:
 | --- | --- |
 | `OPEN_FORM_DATABASE_URL` | The connection string from the last step. Leave it out when the Marketplace set `POSTGRES_URL` or `DATABASE_URL` for you; when it's set, it wins. |
 | `OPEN_FORM_SECRET` | At least 16 random characters, the same on every deploy. Functions can't write the generated secret file. |
-| `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. Without it, `/studio` answers 404 unless `studio.public` is `'read-only'`. |
+| `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. At least 16 characters with at least 8 different ones, not one word or pattern repeated; a passphrase of a few words works. Without it, `/studio` answers 404 unless `studio.public` is `'read-only'`. |
 
 Generate the secret with:
 
@@ -140,21 +167,40 @@ Generate the secret with:
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
+Or set them from the command line, after `vercel link`:
+
+```bash
+vercel env add OPEN_FORM_SECRET
+vercel env add OPEN_FORM_ADMIN_PASSWORD
+```
+
+Vercel reads variables when it deploys, so a variable you add or change takes
+effect with the next deployment. Set each one for every environment you deploy
+to: one set only for Production is missing from Preview deployments.
+
 You don't need `OPEN_FORM_TRUST_PROXY`: the function counts rate limits by the
 address Vercel puts last in `X-Forwarded-For`.
 
 For local development, `open-form dev` keeps using SQLite in `.open-form/`
-unless `.env` sets `OPEN_FORM_DATABASE_URL`. A separate database (or Neon
-branch) for development keeps test responses out of production.
+unless `.env` sets `OPEN_FORM_DATABASE_URL`. It reads neither `.env.local`
+(what `vercel env pull` writes) nor `POSTGRES_URL`. A separate database (or
+Neon branch) for development keeps test responses out of production.
 
 </Step>
 <Step>
 
 ### Deploy
 
-Push to a Git repository connected to Vercel, or run `vercel deploy`. The first
-request creates the tables. Forms are at `https://<your-app>.vercel.app/f/<id>`
-and Studio at `/studio`.
+Push to a Git repository connected to Vercel, or from the project folder:
+
+```bash
+vercel link        # once; Vercel picks up vercel.json, so keep its settings
+vercel --prod
+```
+
+The first request creates the tables. Forms are at
+`https://<your-app>.vercel.app/f/<id>`, Studio at `/studio`, and `/` sends you
+to Studio.
 
 To check the production database from your machine, run
 [`open-form db status`](/docs/cli/db) with its connection string in the
@@ -187,9 +233,11 @@ Retries that come minutes later outlast the function and are lost.
 The function sets itself up on its first request. A missing build, a SQLite
 database it can't open (no `OPEN_FORM_DATABASE_URL`, `POSTGRES_URL` or
 `DATABASE_URL`), a secret it can't
-create (no `OPEN_FORM_SECRET`), or an admin password that breaks the
-[rules](/docs/deploy/production) makes that fail, and every request then
-answers 500 with the reason in the function logs.
+create (no `OPEN_FORM_SECRET`), an admin password that breaks the rules above,
+or a database it can't connect to makes that fail. Every request then answers
+500, the public forms included, and the function logs (**Logs** in the Vercel
+project) give the reason. Fix the variable and deploy again; the next request
+retries.
 
 ## What's next
 

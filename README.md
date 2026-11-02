@@ -72,11 +72,11 @@ export default function Meetup() {
 - **Fully customizable** — it is React: themes via `defineTheme`, custom field components via `useField`.
 - **Responsive and accessible by default** — labels, ARIA, keyboard, 16px inputs on mobile, dark mode, reduced motion.
 - **Backend included** — `POST /api/forms/:id/submissions` with server validation, honeypot, signed timing token, rate limiting, submission windows, response limits, uniqueness and signed webhooks.
-- **SQLite-first, zero infrastructure** — `node:sqlite`, no Docker, no database server, no API keys.
+- **SQLite-first, zero infrastructure** — `node:sqlite`, no Docker, no database server, no API keys. Switch to [Postgres](https://open-form.build/docs/deploy/postgres) (Neon, Supabase, RDS…) with one connection string when you need it.
 - **Studio** — forms list with folders; a live preview with Edit mode, where you change text in place or leave comments your agent applies; a responses table with filters, sorting and Excel / CSV / JSON export; schedule, response-limit and **Published** settings that take effect on a deployed server without a redeploy; a gallery of the reference themes. Turn on a public read-only Studio for demos.
 - **Designed, not defaulted** — like open-slide, themes are references: five starters (`classic`, `editorial`, `terminal`, `brutalist`, `conversational`) and your own in `themes/` are what an agent reads to write each form its own look in `forms/<id>/theme/`, with only the tokens, CSS and components that form uses. Studio previews every theme, and **Adjust** fine-tunes a form's colors, fonts and shape.
 - **Agent-native** — built-in skills (`create-form` proposes visual directions before writing, `create-theme` turns your design system into a theme, `form-authoring`, `current-form`, `apply-comments` turns notes left in Studio into edits) and a `current.json` cursor so "this form" means what you're looking at.
-- **Deploy it your way** — `open-form start` on any Node host (guides for Docker and Railway), the whole project on Vercel with Postgres, a route handler in your Next.js app, or a one-snippet embed on another site.
+- **Deploy it your way** — `open-form start` on any Node host ([Docker](https://open-form.build/docs/deploy/docker), [Railway](https://open-form.build/docs/deploy/railway)), the whole project on [Vercel](https://open-form.build/docs/deploy/vercel) with Postgres (`open-form init --vercel` sets it up), a route handler in your [Next.js](https://open-form.build/docs/deploy/nextjs) app, or a one-snippet [embed](https://open-form.build/docs/deploy/embed) on another site.
 - **Repo owns the artifact, runtime data stays yours** — questions, logic and policy live in git; responses live in `.open-form/` and never do.
 
 ## Repo layout
