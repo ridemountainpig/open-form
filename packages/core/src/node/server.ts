@@ -180,6 +180,23 @@ export function pageHeaders(
   };
 }
 
+export type PageRoute = { redirect: string } | { page: 'studio' | 'form'; status: number };
+
+/** Which page shell a path gets. Studio (and the theme previews it frames) only when it's enabled. */
+export function pageRoute(pathname: string, opts: { studio: boolean }): PageRoute {
+  if (
+    pathname === '/' ||
+    pathname === '/studio' ||
+    pathname.startsWith('/studio/') ||
+    pathname.startsWith('/theme-preview/')
+  ) {
+    if (!opts.studio) return { page: 'form', status: 404 };
+    if (pathname === '/') return { redirect: '/studio' };
+    return { page: 'studio', status: 200 };
+  }
+  return { page: 'form', status: pathname.startsWith('/f/') ? 200 : 404 };
+}
+
 /** Production server: the built app, the API, and SQLite (or Postgres). No other services. */
 export async function startServer(opts: StartServerOptions): Promise<StartedServer> {
   const root = path.resolve(opts.root);
@@ -276,27 +293,14 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
         return;
       }
 
-      // Studio, and the theme previews its Themes pages frame.
-      if (
-        pathname === '/' ||
-        pathname === '/studio' ||
-        pathname.startsWith('/studio/') ||
-        pathname.startsWith('/theme-preview/')
-      ) {
-        if (!adminEnabled && !publicStudio) {
-          sendIndex(req, res, 'form', 404);
-          return;
-        }
-        if (pathname === '/') {
-          res.statusCode = 302;
-          res.setHeader('location', '/studio');
-          res.end();
-          return;
-        }
-        sendIndex(req, res, 'studio');
+      const route = pageRoute(pathname, { studio: adminEnabled || publicStudio });
+      if ('redirect' in route) {
+        res.statusCode = 302;
+        res.setHeader('location', route.redirect);
+        res.end();
         return;
       }
-      sendIndex(req, res, 'form', pathname.startsWith('/f/') ? 200 : 404);
+      sendIndex(req, res, route.page, route.status);
     } catch (err) {
       console.error('[open-form]', err);
       if (!res.headersSent) res.statusCode = 500;

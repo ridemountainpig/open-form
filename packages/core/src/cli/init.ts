@@ -57,12 +57,57 @@ export type InitFlags = {
   database?: Database;
   /** Written to `.env`, never to a file that is committed. */
   databaseUrl?: string;
+  /** Adds `api/index.ts` and `vercel.json`, to deploy the whole project to Vercel. Needs Postgres. */
+  vercel?: boolean;
 };
 
 export const DATABASES = ['sqlite', 'postgres'] as const;
 export type Database = (typeof DATABASES)[number];
 
 const DATABASE_URL_EXAMPLE = 'postgres://user:password@host:5432/dbname';
+
+const VERCEL_FILES: Record<string, string> = {
+  'api/index.ts': `import { createOpenFormApp } from '${PACKAGE_NAME}/vercel';
+
+export default createOpenFormApp();
+`,
+  'vercel.json': `${JSON.stringify(
+    {
+      $schema: 'https://openapi.vercel.sh/vercel.json',
+      framework: null,
+      buildCommand: 'open-form build',
+      outputDirectory: 'dist/client',
+      functions: { 'api/index.ts': { includeFiles: 'dist/**' } },
+      routes: [
+        { src: '/(index\\.html)?', dest: '/api' },
+        { handle: 'filesystem' },
+        { src: '/(.*)', dest: '/api' },
+      ],
+    },
+    null,
+    2,
+  )}\n`,
+};
+
+/** `api/index.ts` and `vercel.json`, never replacing a file that's already there. */
+async function writeVercelFiles(target: string, kept: string[]): Promise<void> {
+  for (const [name, source] of Object.entries(VERCEL_FILES)) {
+    const file = path.join(target, name);
+    if (await pathExists(file)) {
+      kept.push(name);
+      continue;
+    }
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, source);
+  }
+  if (kept.includes('tsconfig.json')) return;
+  const tsconfigPath = path.join(target, 'tsconfig.json');
+  const tsconfig = await readFile(tsconfigPath, 'utf8');
+  await writeFile(
+    tsconfigPath,
+    tsconfig.replace(/("include":\s*\[[^\]]*?)\s*\]/, '$1, "api/**/*"]'),
+  );
+}
 
 function pgVersion(): string {
   try {
@@ -140,15 +185,16 @@ async function isNonEmpty(dir: string): Promise<boolean> {
 }
 
 /** Adds what's missing to an existing .gitignore instead of replacing it. */
-async function writeGitignore(target: string): Promise<void> {
+async function writeGitignore(target: string, vercel = false): Promise<void> {
   const file = path.join(target, '.gitignore');
   const existing = existsSync(file) ? await readFile(file, 'utf8') : '';
+  const lines = vercel ? [...GITIGNORE, '', '# Vercel CLI', '.vercel'] : GITIGNORE;
   if (!existing) {
-    await writeFile(file, `${GITIGNORE.join('\n')}\n`);
+    await writeFile(file, `${lines.join('\n')}\n`);
     return;
   }
   const have = new Set(existing.split(/\r?\n/).map((line) => line.trim()));
-  const missing = GITIGNORE.filter((line) => line && !line.startsWith('#') && !have.has(line));
+  const missing = lines.filter((line) => line && !line.startsWith('#') && !have.has(line));
   if (missing.length === 0) return;
   const separator = existing.endsWith('\n') ? '' : '\n';
   await writeFile(file, `${existing}${separator}\n# Open Form\n${missing.join('\n')}\n`);
@@ -248,7 +294,8 @@ export async function scaffold(target: string, flags: InitFlags = {}): Promise<S
     await writeFile(configPath, source.replace("timeZone: 'UTC'", `timeZone: '${zone}'`));
   }
 
-  await writeGitignore(target);
+  await writeGitignore(target, flags.vercel);
+  if (flags.vercel) await writeVercelFiles(target, kept);
   let databaseUrl: ScaffoldResult['databaseUrl'];
   if (flags.database === 'postgres') {
     await setEnv(path.join(target, '.env.example'), 'OPEN_FORM_DATABASE_URL', DATABASE_URL_EXAMPLE);
@@ -395,7 +442,10 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
     }
   }
 
-  let database = flags.database;
+  if (flags.vercel && flags.database === 'sqlite') {
+    throw new Error('--vercel needs --database postgres: Vercel has no disk for SQLite.');
+  }
+  let database = flags.database ?? (flags.vercel ? 'postgres' : undefined);
   if (!database && interactive) {
     database = unwrap<Database>(
       await p.select({
@@ -421,6 +471,15 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
       }),
     );
   }
+  let vercel = flags.vercel;
+  if (vercel === undefined && database === 'postgres' && interactive) {
+    vercel = unwrap<boolean>(
+      await p.confirm({
+        message: `Deploy to Vercel? ${chalk.dim('(adds api/index.ts and vercel.json)')}`,
+        initialValue: false,
+      }),
+    );
+  }
   const urlProblem = database === 'postgres' && databaseUrl && databaseUrlProblem(databaseUrl);
   if (urlProblem) throw new Error(`OPEN_FORM_DATABASE_URL: ${urlProblem}`);
 
@@ -429,7 +488,7 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
     kept,
     pkg,
     databaseUrl: savedUrl,
-  } = await scaffold(target, { ...flags, pm, database, databaseUrl });
+  } = await scaffold(target, { ...flags, pm, database, databaseUrl, vercel });
   p.log.step(`Created workspace in ${chalk.dim(path.relative(process.cwd(), target) || '.')}`);
   if (kept.length > 0) p.log.info(`Kept your existing ${kept.join(', ')}`);
   if (database === 'postgres') {
@@ -475,5 +534,16 @@ export async function init(dirArg: string | undefined, flags: InitFlags): Promis
     dev,
   ];
   p.note(next.map((line) => chalk.cyan(line)).join('\n'), 'Next steps');
+  if (vercel) {
+    p.note(
+      [
+        `Set ${chalk.bold('OPEN_FORM_SECRET')} and ${chalk.bold('OPEN_FORM_ADMIN_PASSWORD')} in the Vercel project, and`,
+        `${chalk.bold('OPEN_FORM_DATABASE_URL')} unless a Marketplace database (Neon) set ${chalk.bold('POSTGRES_URL')}.`,
+        'Then push, or run `vercel deploy`.',
+        chalk.dim('https://open-form.build/docs/deploy/vercel'),
+      ].join('\n'),
+      'Deploy to Vercel',
+    );
+  }
   p.outro(`Then ask your agent: ${chalk.italic('“Create a registration form for our meetup”')}`);
 }

@@ -154,8 +154,8 @@ form's rate limit or lock everyone out of Studio sign-in. Forms work either way,
 HTTPS included. Set it only when proxies you control sit in front of the server.
 `open-form start` also reads `OPEN_FORM_TRUST_PROXY` (`true`, `false` or a
 number) when the config doesn't set it. The [Next.js](/docs/deploy/nextjs)
-route defaults to `1` instead, since it expects Vercel or a reverse proxy in
-front.
+route and the [Vercel](/docs/deploy/vercel) function default to `1` instead,
+since they expect Vercel or a reverse proxy in front.
 
 ### Keep the database on a volume
 

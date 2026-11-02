@@ -16,7 +16,7 @@ pnpm start      # serve forms + API + SQLite
 
 ## Deploying
 
-`open-form start` needs a persistent disk for `.open-form/` (VPS, Docker, Railway / Fly.io with a volume), or responses in [Postgres](https://open-form.build/docs/deploy/postgres) (`OPEN_FORM_DATABASE_URL`, plus the `pg` package). Step-by-step guides: [Docker](https://open-form.build/docs/deploy/docker), [Railway](https://open-form.build/docs/deploy/railway), [Vercel](https://open-form.build/docs/deploy/vercel). It reads these variables from the environment, or from a `.env` file in this folder (the environment wins).
+`open-form start` needs a persistent disk for `.open-form/` (VPS, Docker, Railway / Fly.io with a volume), or responses in [Postgres](https://open-form.build/docs/deploy/postgres) (`OPEN_FORM_DATABASE_URL`, plus the `pg` package). Step-by-step guides: [Docker](https://open-form.build/docs/deploy/docker), [Railway](https://open-form.build/docs/deploy/railway). On [Vercel](https://open-form.build/docs/deploy/vercel) the project runs as a function instead of `open-form start`, with responses in Postgres. It reads these variables from the environment, or from a `.env` file in this folder (the environment wins).
 
 | Variable | Purpose |
 | --- | --- |

@@ -35,6 +35,7 @@ them in `.agents/skills/` and turns each `.claude/skills/<name>` into a link, as
 | `-n, --name <name>` | folder name | The `package.json` name, lowercased and made npm-safe. Without it, an existing `package.json` keeps its name. |
 | `--pm <pm>` | auto-detected | Package manager: `pnpm`, `npm`, `yarn` or `bun`. |
 | `--database <database>` | asks; `sqlite` without a terminal | Where responses are stored: `sqlite` or `postgres`. |
+| `--vercel` | asks after Postgres; off without a terminal | Add `api/index.ts` and `vercel.json` to deploy the whole project to [Vercel](/docs/deploy/vercel). Implies `--database postgres`. |
 | `--no-install` | off | Skip installing dependencies. |
 | `--no-git` | off | Skip `git init` and the initial commit. |
 
@@ -69,6 +70,7 @@ my-forms/
 ├── package.json
 ├── tsconfig.json
 ├── .env, .env.example       # --database postgres: the connection string, a placeholder
+├── api/, vercel.json        # --vercel: the Vercel Function and its routes
 └── .gitignore               # node_modules, dist, .open-form/, .env*, exported responses
 ```
 
@@ -80,6 +82,13 @@ my-forms/
   git), never into a committed file; leave it empty to add it later. Without
   a terminal, init takes it from `OPEN_FORM_DATABASE_URL` in the environment,
   if set. A `.env` that already sets it is left alone.
+- **Vercel** — after Postgres, an interactive run asks whether you'll deploy
+  to Vercel (no by default). Yes, or `--vercel`, writes `api/index.ts` and
+  `vercel.json` as in [Vercel](/docs/deploy/vercel), adds `api/**/*` to
+  `tsconfig.json` and `.vercel` to `.gitignore`, and ends with the environment
+  variables to set in the Vercel project. Files you already have are kept.
+  `--vercel` with `--database sqlite` stops with an error: Vercel has no disk
+  for SQLite.
 - **Time zone** — init writes your computer's time zone into
   `open-form.config.ts` as `timeZone` (falling back to `UTC`), so form open and
   close dates mean the same in dev and in production. Change it if your forms
