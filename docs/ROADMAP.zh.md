@@ -340,7 +340,7 @@
 - ✅ `open-form init` 詢問資料庫並把連線字串只存進 `.env`；`open-form check` 遇到寫進 `open-form.config.ts` 的密碼會失敗；`open-form db status`
 - ✅ 指南：Postgres、Vercel（Neon、Supabase）；CI 對 Postgres 跑合約測試與 e2e smoke
 - ✅ 整個專案部署到 Vercel（`@open-form-build/core/vercel`）：一個 function 負責 API 與頁面殼，`dist/client` 以靜態檔案提供
-- ⬜ `open-form db copy`：把既有 SQLite 搬到 Postgres，保留回覆編號
+- ✅ `open-form db copy`：把既有 SQLite 搬到 Postgres，保留回覆編號
 - ⬜ 大型表單：常用篩選運算子下推到 SQL
 - ⬜ Turso / libSQL adapter（不採用 Drizzle：查詢維持手寫）
 

@@ -340,7 +340,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 - ✅ `open-form init` asks for the database and keeps the connection string in `.env`; `open-form check` fails on a password written into `open-form.config.ts`; `open-form db status`
 - ✅ Guides: Postgres, Vercel (Neon, Supabase); CI runs the contract tests and the e2e smoke against Postgres
 - ✅ A whole project on Vercel (`@open-form-build/core/vercel`): one function for the API and the page shells, `dist/client` served as static files
-- ⬜ `open-form db copy` to move an existing SQLite database to Postgres, keeping response numbers
+- ✅ `open-form db copy` to move an existing SQLite database to Postgres, keeping response numbers
 - ⬜ Push common filter operators down to SQL for large forms
 - ⬜ Turso / libSQL adapter (decided against Drizzle: the queries stay hand-written)
 

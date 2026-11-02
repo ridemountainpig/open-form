@@ -155,6 +155,7 @@ along with the ones its methods use: `StoredSubmission`, `CreateSubmissionInput`
 | `hitRateLimit(key, windowMs, now?)` | Increment a fixed-window counter and return the count. |
 | `revokeSession(id, expiresAt, now?)` / `isSessionRevoked(id)` | Record a signed-out Studio session until `expiresAt` (epoch ms), and check for one. Expired entries may be dropped. |
 | `info()` | Optional. `{ engine, location?, schemaVersion }` for [`open-form db status`](/docs/cli/db). |
+| `dump()` / `restore(dump)` | Optional, for [`open-form db copy`](/docs/cli/db#db-copy). `dump` returns a `StorageDump`: form versions, responses with their unique keys, response counters, Studio overrides and unexpired signed-out sessions. `restore` writes one in a single transaction, keeping ids and numbers, and throws if the database already has responses, response numbers or overrides. |
 | `close()` | Release the connection. |
 
 An adapter that can't run Studio's filters inside its database can read a

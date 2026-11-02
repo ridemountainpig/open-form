@@ -1,5 +1,6 @@
 import { ADD, PACKAGE_MANAGERS } from '../cli/package-managers.ts';
 import type { FormOverrides, FormSchema, FormValues } from '../schema/index.ts';
+import { countersFor, planVersions, RESTORE_NOT_EMPTY } from '../storage/dump.ts';
 import type {
   CreateSubmissionResult,
   FormVersionRecord,
@@ -542,6 +543,136 @@ export async function createPostgresStorage(opts: PostgresStorageOptions): Promi
         id,
       ]);
       return rows.length > 0;
+    },
+
+    async dump() {
+      // One snapshot, so a response submitted mid-dump can't leave the counters behind.
+      const [versions, submissions, counters, overrides, revoked] = await transaction(
+        async (tx) => {
+          await tx.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+          return [
+            await tx.query(`SELECT * FROM ${t('form_versions')} ORDER BY created_at`),
+            await tx.query(`SELECT * FROM ${t('submissions')} ORDER BY form_id, number`),
+            await tx.query(`SELECT * FROM ${t('form_counters')}`),
+            await tx.query(`SELECT * FROM ${t('form_overrides')}`),
+            await tx.query(`SELECT * FROM ${t('revoked_sessions')} WHERE expires_at > $1`, [
+              Date.now(),
+            ]),
+          ];
+        },
+      );
+      const rows = submissions.rows.map((row) => ({
+        ...toSubmission(row),
+        uniqueKey: (row.unique_key as string | null) ?? null,
+        updatedAt: row.updated_at as string,
+      }));
+      return {
+        formVersions: versions.rows.map(toVersion),
+        submissions: rows,
+        counters: countersFor(
+          rows,
+          Object.fromEntries(counters.rows.map((row) => [row.form_id, Number(row.last_number)])),
+        ),
+        overrides: Object.fromEntries(
+          overrides.rows.map((row) => [row.form_id as string, toOverrides(row)]),
+        ),
+        revokedSessions: Object.fromEntries(
+          revoked.rows.map((row) => [row.id as string, Number(row.expires_at)]),
+        ),
+      };
+    },
+
+    async restore(dump) {
+      await transaction(async (tx) => {
+        // Responses submitted mid-copy wait for it, then land after the copied ones.
+        await tx.query(
+          `LOCK TABLE ${t('submissions')}, ${t('form_counters')}, ${t('form_overrides')}
+           IN SHARE ROW EXCLUSIVE MODE`,
+        );
+        const { rows } = await tx.query(
+          `SELECT EXISTS (SELECT 1 FROM ${t('submissions')})
+             OR EXISTS (SELECT 1 FROM ${t('form_overrides')})
+             OR EXISTS (SELECT 1 FROM ${t('form_counters')} WHERE last_number > 0) AS taken`,
+        );
+        if (rows[0]?.taken) throw new Error(RESTORE_NOT_EMPTY);
+        const existing = await tx.query(`SELECT * FROM ${t('form_versions')}`);
+        const plan = planVersions(dump, existing.rows.map(toVersion));
+        const insert = async (table: string, columns: string[], values: unknown[][]) => {
+          // Well under Postgres's 65535 parameters per statement.
+          for (let start = 0; start < values.length; start += 500) {
+            const chunk = values.slice(start, start + 500);
+            const params = chunk.flat();
+            const tuples = chunk.map(
+              (_, row) =>
+                `(${columns.map((_, col) => `$${row * columns.length + col + 1}`).join(', ')})`,
+            );
+            await tx.query(
+              `INSERT INTO ${t(table)} (${columns.join(', ')}) VALUES ${tuples.join(', ')}`,
+              params,
+            );
+          }
+        };
+        await insert(
+          'form_versions',
+          ['id', 'form_id', 'version', 'schema', 'created_at'],
+          plan.insert.map((v) => [
+            v.id,
+            v.formId,
+            v.version,
+            JSON.stringify(v.schema),
+            v.createdAt,
+          ]),
+        );
+        await insert(
+          'submissions',
+          [
+            'id',
+            'form_id',
+            'number',
+            'form_version_id',
+            'data',
+            'visitor_hash',
+            'locale',
+            'unique_key',
+            'created_at',
+            'updated_at',
+          ],
+          dump.submissions.map((row) => [
+            row.id,
+            row.formId,
+            row.number,
+            plan.idFor(row.formVersionId),
+            JSON.stringify(row.data),
+            row.visitorHash,
+            row.locale ?? null,
+            row.uniqueKey,
+            row.createdAt,
+            row.updatedAt,
+          ]),
+        );
+        await tx.query(`DELETE FROM ${t('form_counters')}`);
+        await insert(
+          'form_counters',
+          ['form_id', 'last_number'],
+          Object.entries(countersFor(dump.submissions, dump.counters)),
+        );
+        await insert(
+          'form_overrides',
+          ['form_id', 'data', 'updated_at'],
+          Object.entries(dump.overrides).map(([formId, { updatedAt, ...overrides }]) => [
+            formId,
+            JSON.stringify(overrides),
+            updatedAt,
+          ]),
+        );
+        for (const [id, expiresAt] of Object.entries(dump.revokedSessions)) {
+          await tx.query(
+            `INSERT INTO ${t('revoked_sessions')} (id, expires_at) VALUES ($1, $2)
+             ON CONFLICT (id) DO NOTHING`,
+            [id, expiresAt],
+          );
+        }
+      });
     },
 
     async info() {

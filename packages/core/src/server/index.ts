@@ -18,9 +18,11 @@ export {
 export type {
   CreateSubmissionInput,
   CreateSubmissionResult,
+  DumpedSubmission,
   FormVersionRecord,
   ListSubmissionsOptions,
   StorageAdapter,
+  StorageDump,
   StorageInfo,
   StoredOverrides,
   StoredSubmission,

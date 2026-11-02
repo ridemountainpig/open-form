@@ -69,6 +69,24 @@ export type StorageInfo = {
   schemaVersion: number;
 };
 
+/** A stored response as `dump` and `restore` carry it: everything the table keeps. */
+export type DumpedSubmission = StoredSubmission & { uniqueKey: string | null; updatedAt: string };
+
+/**
+ * What a database holds that's worth moving, for `open-form db copy`. Rate-limit
+ * windows are left behind; they expire within minutes anyway.
+ */
+export type StorageDump = {
+  formVersions: FormVersionRecord[];
+  /** Oldest first within each form. */
+  submissions: DumpedSubmission[];
+  /** formId → the last response number handed out, deleted responses included. */
+  counters: Record<string, number>;
+  overrides: Record<string, StoredOverrides>;
+  /** Signed-out Studio sessions that haven't expired: id → `expiresAt` (epoch ms). */
+  revokedSessions: Record<string, number>;
+};
+
 export type SubmissionPage = {
   items: StoredSubmission[];
   total: number;
@@ -113,6 +131,14 @@ export type StorageAdapter = {
   /** Ends a Studio session before it expires (sign-out); kept until `expiresAt` (epoch ms). */
   revokeSession(id: string, expiresAt: number, now?: number): Promise<void>;
   isSessionRevoked(id: string): Promise<boolean>;
+  /** Optional, for `open-form db copy`: everything in `StorageDump`. */
+  dump?(): Promise<StorageDump>;
+  /**
+   * Optional, for `open-form db copy`: writes a dump as one transaction, keeping ids,
+   * numbers and timestamps. Refuses when the database already has responses, response
+   * numbers or Studio settings; form versions it already has are reused.
+   */
+  restore?(dump: StorageDump): Promise<void>;
   /** Optional: what `open-form db status` reports. */
   info?(): Promise<StorageInfo>;
   close(): Promise<void>;

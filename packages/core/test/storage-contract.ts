@@ -259,6 +259,73 @@ export function storageContract(name: string, open: () => Promise<StorageAdapter
       await storage.close();
     });
 
+    it('copies everything worth keeping into an empty store', async () => {
+      const source = await open();
+      const version = await source.ensureFormVersion('f', 'v1', { id: 'f', pages: [], fields: [] });
+      await source.createSubmission({
+        formId: 'f',
+        formVersionId: version.id,
+        data: { email: 'amy@example.com', b: 2, a: 1 },
+        uniqueKey: 'email:amy@example.com',
+        locale: 'zh-TW',
+      });
+      const dropped = await submit(source, { email: 'ben@example.com' });
+      await source.deleteSubmission('f', dropped.id);
+      await submit(source, { name: 'Cleo' }, 'other');
+      await source.setFormOverrides('f', { submissions: { closed: true } });
+      await source.revokeSession('signed-out', Date.now() + 60_000);
+      const dump = await source.dump?.();
+      if (!dump) throw new Error('no dump');
+
+      const target = await open();
+      // A dev server pointed at the target may already have recorded the version.
+      await target.ensureFormVersion('f', 'v1', { id: 'f', pages: [], fields: [] });
+      await target.restore?.(dump);
+
+      for (const formId of ['f', 'other']) {
+        expect((await target.listSubmissions(formId)).items).toEqual(
+          (await source.listSubmissions(formId)).items.map((row) => ({
+            ...row,
+            formVersionId: expect.any(String),
+          })),
+        );
+      }
+      const [copied] = (await target.listSubmissions('f')).items;
+      expect(Object.keys(copied?.data ?? {})).toEqual(['email', 'b', 'a']);
+      expect(await target.getFormVersion(copied?.formVersionId ?? '')).toMatchObject({
+        formId: 'f',
+        version: 'v1',
+      });
+      expect(await target.getFormOverrides('f')).toEqual(await source.getFormOverrides('f'));
+      expect(await target.isSessionRevoked('signed-out')).toBe(true);
+      // Numbering carries on past the deleted #2, and the unique key still holds.
+      expect((await submit(target, { name: 'Dee' })).number).toBe(3);
+      const again = await target.createSubmission({
+        formId: 'f',
+        formVersionId: copied?.formVersionId ?? '',
+        data: {},
+        uniqueKey: 'email:amy@example.com',
+      });
+      expect(again).toEqual({ ok: false, reason: 'duplicate' });
+      await source.close();
+      await target.close();
+    });
+
+    it('copies nothing into a store that already has responses', async () => {
+      const source = await open();
+      await submit(source, { name: 'Amy' });
+      const dump = await source.dump?.();
+      if (!dump) throw new Error('no dump');
+      const target = await open();
+      await submit(target, { name: 'Ben' });
+      await expect(target.restore?.(dump)).rejects.toThrow('already has responses');
+      expect((await target.listSubmissions('f')).items.map((row) => row.data)).toEqual([
+        { name: 'Ben' },
+      ]);
+      await source.close();
+      await target.close();
+    });
+
     it('counts rate limit hits per key and window', async () => {
       const storage = await open();
       expect(await storage.hitRateLimit('k', 1_000, 10)).toBe(1);
