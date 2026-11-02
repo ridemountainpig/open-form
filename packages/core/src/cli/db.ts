@@ -147,7 +147,7 @@ export async function copyDatabase(
     await storage.restore(dump);
     const counts = await storage.countsByForm();
     for (const [formId, n] of Object.entries(responses)) {
-      if (counts[formId] !== n) {
+      if ((counts[formId] ?? 0) < n) {
         throw new Error(`Copied ${counts[formId] ?? 0} of ${n} responses to ${formId}.`);
       }
     }
