@@ -9,7 +9,7 @@ import {
   toWebRequest,
 } from '../node/http.ts';
 import { resolveDatabasePath, resolveSecret } from '../node/secret.ts';
-import { openStorage, resolveStorage } from '../node/storage.ts';
+import { openFiles, openStorage, resolveFiles, resolveStorage } from '../node/storage.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import {
   type AdminAuth,
@@ -124,11 +124,22 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
         return (await gate.check(request)) !== null;
       };
 
+      // A bucket that can't be opened (missing keys) shouldn't stop the rest of dev.
+      const devFiles = () => {
+        try {
+          return openFiles(resolveFiles(paths.userCwd, config));
+        } catch (err) {
+          server.config.logger.warn(`[open-form] File uploads are off: ${(err as Error).message}`);
+          return undefined;
+        }
+      };
+
       const getHandler = () => {
         handler ??= (async () => {
           return createOpenFormHandler({
             registry: createDevRegistry(server, paths),
             storage: await getStorage(),
+            files: devFiles(),
             config,
             secret,
             exposeErrors: true,

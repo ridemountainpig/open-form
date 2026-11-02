@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { type InlineConfig, normalizePath } from 'vite';
 import { DATA_DIR, resolveDatabasePath, secretPath } from '../node/secret.ts';
+import { resolveFiles } from '../node/storage.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import { apiPlugin } from './api-plugin.ts';
 import { formsPlugin } from './forms-plugin.ts';
@@ -24,7 +25,17 @@ const globEscape = (file: string) => normalizePath(file).replace(/[*?[\]{}()!+@\
  * the whole project, which holds the responses database and the signing secret.
  * Setting `deny` replaces Vite's own list, so that list is repeated first.
  */
-export function devServerDeny(databaseFile: string): string[] {
+/** The uploads folder, when files stay on this disk and outside `.open-form/`. */
+function localFilesDir(root: string, config: OpenFormConfig): string | undefined {
+  try {
+    const target = resolveFiles(root, config);
+    return target.kind === 'local' ? target.dir : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function devServerDeny(databaseFile: string, filesDir?: string): string[] {
   return [
     '.env',
     '.env.*',
@@ -44,6 +55,8 @@ export function devServerDeny(databaseFile: string): string[] {
     // A custom `storage.path` / OPEN_FORM_DB, with its -wal / -shm / -journal files and secret.
     `${globEscape(databaseFile)}*`,
     globEscape(secretPath(databaseFile)),
+    // A custom `files.path` / OPEN_FORM_FILES_DIR: respondents' uploads.
+    ...(filesDir ? [`${globEscape(filesDir)}/**`] : []),
   ];
 }
 
@@ -120,7 +133,10 @@ export async function createViteConfig(opts: CreateViteConfigOptions): Promise<I
       ...(config.allowedHosts !== undefined ? { allowedHosts: config.allowedHosts } : {}),
       fs: {
         allow: [PKG_ROOT, userCwd, paths.formsRoot, paths.themesRoot],
-        deny: devServerDeny(resolveDatabasePath(userCwd, config.storage?.path)),
+        deny: devServerDeny(
+          resolveDatabasePath(userCwd, config.storage?.path),
+          localFilesDir(userCwd, config),
+        ),
       },
     },
     build: {

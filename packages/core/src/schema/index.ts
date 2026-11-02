@@ -44,6 +44,28 @@ export type { PaletteReport } from './contrast.ts';
 export { CONTRAST_CHECKS, contrastReport, effectivePalettes } from './contrast.ts';
 export type { ConditionNames } from './describe.ts';
 export { describeCondition, explainCondition, schemaNames } from './describe.ts';
+export type { FileEntry, FileKind, StoredFile } from './files.ts';
+export {
+  acceptAttribute,
+  acceptedKinds,
+  acceptProblem,
+  acceptSummary,
+  coerceFileEntries,
+  DEFAULT_MAX_FILE_SIZE,
+  FILE_KINDS,
+  fileExtension,
+  fileKindOf,
+  fileKindOfType,
+  formatFileSize,
+  isStoredFile,
+  MAX_FILE_SIZE,
+  MAX_FILES,
+  parseFileSize,
+  SNIFF_BYTES,
+  safeFileName,
+  sniffFile,
+  storedFiles,
+} from './files.ts';
 export { hashString, schemaVersion, stableStringify } from './hash.ts';
 export type { Translation, TranslationCoverage, Translations } from './i18n.ts';
 export {

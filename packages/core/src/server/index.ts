@@ -19,8 +19,10 @@ export type {
   CreateSubmissionInput,
   CreateSubmissionResult,
   DumpedSubmission,
+  FileStore,
   FormVersionRecord,
   ListSubmissionsOptions,
+  S3FileStoreOptions,
   StorageAdapter,
   StorageDump,
   StorageInfo,
@@ -28,7 +30,13 @@ export type {
   StoredSubmission,
   SubmissionPage,
 } from '../storage/index.ts';
-export { createMemoryStorage, pageSubmissions } from '../storage/index.ts';
+export {
+  createMemoryFileStore,
+  createMemoryStorage,
+  createS3FileStore,
+  pageSubmissions,
+  parseS3Url,
+} from '../storage/index.ts';
 export type { AdminAuth, AdminGate, SessionRevocations } from './admin.ts';
 export {
   ADMIN_PASSWORD_MIN_LENGTH,

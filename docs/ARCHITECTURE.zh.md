@@ -349,7 +349,7 @@ form_versions    (id, form_id, version, schema JSON, created_at)            UNIQ
 submissions      (id, form_id, number, form_version_id, data JSON, visitor_hash,
                   unique_key, created_at, updated_at, locale)                UNIQUE(form_id, unique_key)
 submission_files (id, submission_id, field_name, storage_key, filename,
-                  mime_type, size, created_at)                               -- File Upload 階段才啟用
+                  mime_type, size, created_at)                               -- 不使用：檔案資訊存在答案裡（見下方「上傳」）
 rate_limits      (key_hash, window_start, count, expires_at)                 PRIMARY KEY(key_hash, window_start)
 form_overrides   (form_id, data JSON, updated_at)                            PRIMARY KEY(form_id)
 form_counters    (form_id, last_number)                                      PRIMARY KEY(form_id)
@@ -384,6 +384,17 @@ meta             (key, value)                                                -- 
 **部署注意**：SQLite 適合有 persistent volume 的環境（VPS、Docker、Railway + Volume、Fly.io + Volume）。Serverless（Vercel 類）不適合本機 SQLite，改用 Postgres（`OPEN_FORM_DATABASE_URL`），可以透過 Vercel function 部署整個專案，或經由 Next.js route。
 
 ---
+
+### 上傳
+
+`<FileInput>` 的答案是 `{ id, name, size, type }` 陣列，直接存在答案裡，所以每個 adapter、匯出、搜尋和 `db copy` 都不需要額外的表（`submission_files` 維持不用）。檔案內容放在 `FileStore`（`storage/files.ts`），選法跟資料庫一樣：`OPEN_FORM_FILES_URL`／`files.url` → S3 相容 bucket（`storage/s3.ts`，用 Web Crypto 做 SigV4，不用 SDK），否則是磁碟上的資料夾（`node/files.ts`）：`OPEN_FORM_FILES_DIR`、`files.path`，或 SQLite 檔旁的 `uploads/`。Vercel function 只會開 bucket。
+
+1. `POST /api/forms/:id/uploads` `{ field, name, size, type }`：表單須開放中，欄位須是接受該大小與型別（依檔名）的 file 欄位；每位訪客 10 分鐘 60 次。server 產生隨機 file id，簽一個 token `{ form, field, fileId, size, name, expires: +24h }`，並回傳要 PUT 的位置：簽了 `content-length` 的 bucket presigned URL（檔案不經過 function），或自己的 `PUT /api/forms/:id/uploads/:token`，串流寫到 `tmp/<fileId>`，超過簽章大小就停。
+2. 送出時，每個顯示中的 file 欄位只接受 token（瀏覽器送來的 `id` 一律拒絕：它可能指向別份回覆的檔案）。逐一檢查簽章、表單、欄位、期限；實際大小須等於簽章大小；用開頭 4 KB 判斷型別（`sniffFile`，與瀏覽器共用），且須是欄位接受的型別。通過後變成 `{ id, name, size, type }`，再跟其他答案一樣跑 `validateSubmission`。隱藏欄位的檔案會被丟掉。
+3. 回覆存好後，`tmp/<fileId>` 移到 `<formId>/<fileId>`。移動失敗（同一個 token 被領兩次）就刪掉這份回覆和已移動的檔案，回 422。
+4. 超過 24 小時沒被領取的 `tmp/` 檔案，最多每小時在新上傳的背景清一次。
+
+下載是公開唯讀 Studio 也不開放的 admin 路由：`GET …/submissions/:sid/files/:fileId` 在該回覆的答案裡找到檔案，磁碟就串流回傳，bucket 就轉址到 60 秒有效的 presigned GET，一律 `Content-Disposition: attachment`、`nosniff`、`CSP: sandbox`。刪除回覆會刪它的檔案；刪除表單會刪 `<formId>/`。
 
 ## 9. Dev / Build / Start
 

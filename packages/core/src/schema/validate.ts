@@ -1,4 +1,12 @@
 import { evaluateAll, isFilled, ownValue } from './conditions.ts';
+import {
+  acceptedKinds,
+  coerceFileEntries,
+  DEFAULT_MAX_FILE_SIZE,
+  fileKindOf,
+  fileKindOfType,
+  formatFileSize,
+} from './files.ts';
 import { format, formatDate, getMessages, type Messages } from './messages.ts';
 import { cleanPhone, isInternationalPhone, phoneInCountries } from './phone.ts';
 import { isStandardSchema, type StandardSchemaV1 } from './standard-schema.ts';
@@ -82,6 +90,8 @@ export function coerceValue(
       );
       return [...new Set(picked.map(String))].filter((v) => v !== '');
     }
+    case 'file':
+      return coerceFileEntries(raw);
     default:
       return raw;
   }
@@ -242,11 +252,37 @@ export function validateField(
       }
       return undefined;
     }
+    case 'file':
+      return fileProblem(field, value, messages);
     case 'custom':
       return nestedTooDeep(value) ? messages.invalidValue : undefined;
     default:
       return undefined;
   }
+}
+
+function fileProblem(field: FieldSchema, value: unknown, messages: Messages): string | undefined {
+  if (!Array.isArray(value)) return messages.invalidValue;
+  const maxFiles = field.maxFiles ?? 1;
+  if (value.length > maxFiles) return format(messages.maxFiles, { n: maxFiles });
+  const maxSize = field.maxSize ?? DEFAULT_MAX_FILE_SIZE;
+  const kinds = acceptedKinds(field.accept);
+  for (const entry of value as Array<Record<string, unknown>>) {
+    if (entry.status === 'uploading') return messages.fileUploading;
+    if (entry.status === 'failed') return messages.fileUploadFailed;
+    const stored = typeof entry.id === 'string';
+    if ((!stored && typeof entry.token !== 'string') || typeof entry.name !== 'string') {
+      return messages.invalidValue;
+    }
+    if (typeof entry.size !== 'number' || entry.size < 0) return messages.invalidValue;
+    if (entry.size > maxSize) {
+      return format(messages.fileTooLarge, { n: formatFileSize(maxSize, messages.locale) });
+    }
+    const type = typeof entry.type === 'string' ? entry.type : '';
+    const kind = stored ? fileKindOfType(type) : fileKindOf(entry.name, type);
+    if (!kind || !kinds.includes(kind)) return messages.fileType;
+  }
+  return undefined;
 }
 
 export async function runCustomValidator(

@@ -313,10 +313,12 @@
 - ✅ 數字是數字、`<DateInput>` 是日期、「Submitted at」轉成表單時區的日期時間（欄名標出時區）；粗體標題列、凍結、篩選、欄寬依內容
 - ✅ 文字一律是 inline string，Excel 不會當公式執行，所以不需要 CSV 的 `'` 跳脫；XML 不允許的控制字元會被移除
 
-## v0.5 — Uploads
+## v0.5 — Uploads ✅
 
-- ⬜ `<File>`：存在本機 `.open-form/uploads/`、`submission_files`
-- ⬜ 上傳安全：大小／型別限制（依內容判斷，不信任副檔名）、儲存檔名由 server 產生、下載需 admin 授權且一律 `Content-Disposition: attachment`
+- ✅ `<FileInput>`（`accept`、`maxSize`、`maxFiles`）：選檔後立刻上傳，有進度、拖放與移除；送出時只帶已簽章的 token
+- ✅ 上傳安全：前後端都依檔案開頭的位元組判斷型別（不只看副檔名），不接受 HTML／SVG／執行檔，儲存 key 由 server 產生、檔名只供顯示，token 綁定表單、欄位與檔案且只能領取一次，每位訪客 10 分鐘 60 次，沒被領取的上傳 24 小時後清除
+- ✅ 儲存：資料庫旁的 `.open-form/uploads/`（`0700`／`0600`），或 S3 相容 bucket（`OPEN_FORM_FILES_URL`；R2、S3、Supabase Storage、B2），瀏覽器用 presigned PUT 直接上傳，以 Web Crypto 簽章、不用 SDK，所以 Vercel 也能用
+- ✅ Studio：回覆抽屜顯示檔案縮圖與下載（需登入，一律 `Content-Disposition: attachment`），可依檔案篩選與搜尋；CSV／Excel 列出檔名；刪除回覆或表單會一併刪除檔案
 
 ## v0.6 — Protection & analytics
 
@@ -344,9 +346,9 @@
 - ⬜ 大型表單：常用篩選運算子下推到 SQL
 - ⬜ Turso / libSQL adapter（不採用 Drizzle：查詢維持手寫）
 
-### Step 2 — S3-compatible 檔案儲存 ⬜
+### Step 2 — S3-compatible 檔案儲存 ✅
 
-- ⬜ `<File>` 的 S3-compatible adapter（S3、R2、MinIO），作為本機 `.open-form/uploads/` 之外的選項
+- ✅ 隨 v0.5 推出：`OPEN_FORM_FILES_URL`（S3、R2、Supabase Storage、B2），作為本機 `.open-form/uploads/` 之外的選項
 
 ### Step 3 — Google Sheets ⬜
 

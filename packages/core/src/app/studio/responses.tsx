@@ -8,6 +8,7 @@ import {
   Copy,
   Download,
   Inbox,
+  Paperclip,
   Search,
   Trash2,
   X,
@@ -24,13 +25,20 @@ import {
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { isLocale, LOCALE_NAMES } from '../../schema/index.ts';
+import {
+  formatFileSize,
+  isLocale,
+  LOCALE_NAMES,
+  type StoredFile,
+  storedFiles,
+} from '../../schema/index.ts';
 import {
   ApiError,
   deleteSubmission,
   deleteSubmissions,
   EXPORT_FORMATS,
   exportPath,
+  fileUrl,
   formPath,
   type SubmissionDetail,
   type SubmissionPage,
@@ -803,7 +811,7 @@ function ResponseDrawer({
   const current = submission?.id === responseId ? submission : undefined;
   const fields = data?.schema?.fields ?? [];
   const seen = new Set<string>();
-  const rows: Array<{ key: string; label: string; value: string }> = [];
+  const rows: Array<{ key: string; label: string; value: string; files?: StoredFile[] }> = [];
   for (const field of fields) {
     if (seen.has(field.name) || !submission || !(field.name in submission.data)) continue;
     seen.add(field.name);
@@ -811,6 +819,7 @@ function ResponseDrawer({
       key: field.name,
       label: field.label ?? field.name,
       value: formatValue(submission.data[field.name], field, yesNo),
+      files: field.type === 'file' ? storedFiles(submission.data[field.name]) : undefined,
     });
   }
   for (const [key, value] of Object.entries(submission?.data ?? {})) {
@@ -942,9 +951,19 @@ function ResponseDrawer({
                     />
                   )}
                 </dt>
-                <dd className="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap">
-                  {row.value || <span className="text-zinc-400">—</span>}
-                </dd>
+                {row.files?.length && submission ? (
+                  <dd className="mt-1.5">
+                    <FileList
+                      files={row.files}
+                      url={(file) => fileUrl(formId, submission.id, file.id)}
+                      readOnly={readOnly}
+                    />
+                  </dd>
+                ) : (
+                  <dd className="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap">
+                    {row.value || <span className="text-zinc-400">—</span>}
+                  </dd>
+                )}
               </div>
             ))}
           </dl>
@@ -963,6 +982,71 @@ function ResponseDrawer({
         </div>
       </div>
       {confirmDialog}
+    </div>
+  );
+}
+
+// Browsers draw these; HEIC and the rest just get a download.
+const PREVIEWABLE = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']);
+
+function FileList({
+  files,
+  url,
+  readOnly,
+}: {
+  files: StoredFile[];
+  url(file: StoredFile): string;
+  readOnly: boolean;
+}) {
+  const t = useT();
+  return (
+    <div className="space-y-2">
+      <ul className="space-y-1.5">
+        {files.map((file) => (
+          <li key={file.id}>
+            {readOnly ? (
+              <span className="flex items-center gap-2 rounded-md border border-zinc-200 px-2.5 py-2 text-sm dark:border-zinc-800">
+                <Paperclip className="size-4 shrink-0 text-zinc-400" />
+                <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
+                  {formatFileSize(file.size, t.locale)}
+                </span>
+              </span>
+            ) : (
+              <a
+                href={url(file)}
+                download={file.name}
+                aria-label={t('responses.download', { name: file.name })}
+                className="group/file flex items-center gap-2.5 rounded-md border border-zinc-200 px-2.5 py-2 text-sm hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-zinc-900 dark:border-zinc-800 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/60 dark:focus-visible:outline-zinc-100"
+              >
+                {PREVIEWABLE.has(file.type) ? (
+                  <img
+                    src={url(file)}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.visibility = 'hidden';
+                    }}
+                    className="size-10 shrink-0 rounded object-cover bg-zinc-100 dark:bg-zinc-800"
+                  />
+                ) : (
+                  <span className="grid size-10 shrink-0 place-items-center rounded bg-zinc-100 text-zinc-500 dark:bg-zinc-800">
+                    <Paperclip className="size-4" />
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{file.name}</span>
+                  <span className="block text-xs text-zinc-500 tabular-nums">
+                    {formatFileSize(file.size, t.locale)}
+                  </span>
+                </span>
+                <Download className="size-4 shrink-0 text-zinc-400 group-hover/file:text-zinc-600 dark:group-hover/file:text-zinc-300" />
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+      {readOnly && <p className="text-xs text-zinc-500">{t('responses.filesPrivate')}</p>}
     </div>
   );
 }

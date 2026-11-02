@@ -1,4 +1,4 @@
-import type { FieldSchema, FormSchema } from '../../schema/index.ts';
+import { type FieldSchema, type FormSchema, storedFiles } from '../../schema/index.ts';
 
 export function fieldIndex(schema: FormSchema | null | undefined): Map<string, FieldSchema> {
   const map = new Map<string, FieldSchema>();
@@ -13,6 +13,8 @@ export function formatValue(
   yesNo: readonly [string, string] = ['Yes', 'No'],
 ): string {
   if (value === undefined || value === null || value === '') return '';
+  const files = storedFiles(value);
+  if (files.length > 0) return files.map((file) => file.name).join(', ');
   const label = (v: unknown) =>
     field?.options?.find((o) => o.value === String(v))?.label ?? String(v);
   if (Array.isArray(value)) return value.map(label).join(', ');

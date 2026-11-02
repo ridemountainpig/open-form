@@ -90,7 +90,7 @@ Open Form keeps its tables in their own schema, `open_form`, away from your
 app's tables in `public`. It creates the schema on first start, then the same
 tables as SQLite: `submissions`, `form_versions`, `form_counters`,
 `form_overrides`, `rate_limits`, `revoked_sessions` and `meta`, plus
-`submission_files`, which is reserved for file uploads and unused today. Answers are stored as `json`, so they come back with their fields in
+`submission_files`, which is unused: uploaded files' details are kept in each answer. Answers are stored as `json`, so they come back with their fields in
 the order the respondent's form sent them, and you can query them:
 
 ```sql

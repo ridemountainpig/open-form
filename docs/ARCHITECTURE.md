@@ -350,7 +350,7 @@ form_versions    (id, form_id, version, schema JSON, created_at)            UNIQ
 submissions      (id, form_id, number, form_version_id, data JSON, visitor_hash,
                   unique_key, created_at, updated_at, locale)                UNIQUE(form_id, unique_key)
 submission_files (id, submission_id, field_name, storage_key, filename,
-                  mime_type, size, created_at)                               -- enabled in the File Upload phase
+                  mime_type, size, created_at)                               -- unused: file details live in the answer (Uploads below)
 rate_limits      (key_hash, window_start, count, expires_at)                 PRIMARY KEY(key_hash, window_start)
 form_overrides   (form_id, data JSON, updated_at)                            PRIMARY KEY(form_id)
 form_counters    (form_id, last_number)                                      PRIMARY KEY(form_id)
@@ -385,6 +385,17 @@ meta             (key, value)                                                -- 
 **Deployment note**: SQLite suits environments with a persistent volume (VPS, Docker, Railway + Volume, Fly.io + Volume). Serverless platforms (Vercel and the like) aren't suited to local SQLite; they use Postgres (`OPEN_FORM_DATABASE_URL`), either as a whole project through the Vercel function or through the Next.js route.
 
 ---
+
+### Uploads
+
+`<FileInput>` answers are lists of `{ id, name, size, type }` kept in the answer itself, so every adapter, export, search and `db copy` handles them with no extra table (`submission_files` stays unused). The bytes live in a `FileStore` (`storage/files.ts`), chosen like the database: `OPEN_FORM_FILES_URL` / `files.url` → an S3-compatible bucket (`storage/s3.ts`, SigV4 on Web Crypto, no SDK), else a folder on disk (`node/files.ts`): `OPEN_FORM_FILES_DIR`, `files.path`, or `uploads/` beside the SQLite file. The Vercel function only opens a bucket.
+
+1. `POST /api/forms/:id/uploads` `{ field, name, size, type }`: the form must be open, the field a file field that takes that size and kind (by name); 60 per visitor per 10 minutes. The server picks a random file id and signs a token `{ form, field, fileId, size, name, expires: +24h }`, and answers where to PUT the bytes: a presigned bucket URL with `content-length` signed (the browser never passes through the function), or its own `PUT /api/forms/:id/uploads/:token`, which streams to `tmp/<fileId>` and stops at the signed size.
+2. On submit, each visible file field's entries must be tokens (a stored `id` from the browser is refused: it would point at another response's file). For each: signature, form, field, expiry; the stored size must equal the signed one; the first 4 KB decide the kind (`sniffFile`, shared with the browser), among the kinds the field accepts. Entries become `{ id, name, size, type }` and run through `validateSubmission` like any answer. Hidden fields' files are dropped.
+3. After the response is stored, `tmp/<fileId>` moves to `<formId>/<fileId>`. A move that fails (the token was claimed twice) deletes the response and its moved files and answers 422.
+4. Unclaimed `tmp/` files older than 24 hours are swept at most hourly, in the background of a new upload.
+
+Downloads are an admin route that a public read-only Studio doesn't open: `GET …/submissions/:sid/files/:fileId` finds the file in that response's answers, then streams it (disk) or redirects to a 60-second presigned GET (bucket), always with `Content-Disposition: attachment`, `nosniff` and `CSP: sandbox`. Deleting a response deletes its files; deleting a form deletes `<formId>/`.
 
 ## 9. Dev / Build / Start
 

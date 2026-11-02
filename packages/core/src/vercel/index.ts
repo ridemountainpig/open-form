@@ -11,7 +11,14 @@ import {
   pageRoute,
   type ServerEntry,
 } from '../node/server.ts';
-import { openStorage, POSTGRES_RE, resolveStorage, type StorageTarget } from '../node/storage.ts';
+import {
+  openFiles,
+  openStorage,
+  POSTGRES_RE,
+  resolveFiles,
+  resolveStorage,
+  type StorageTarget,
+} from '../node/storage.ts';
 import { type OpenFormConfig, studioProblem } from '../schema/index.ts';
 import {
   adminPasswordProblem,
@@ -19,6 +26,7 @@ import {
   type OpenFormHandler,
   type StorageAdapter,
 } from '../server/index.ts';
+import type { FileStore } from '../storage/files.ts';
 
 export type OpenFormAppOptions = {
   /** Project root: where `open-form.config.ts` and `dist/` live. Default `process.cwd()`. */
@@ -27,6 +35,8 @@ export type OpenFormAppOptions = {
   outDir?: string;
   /** Default: Postgres at `OPEN_FORM_DATABASE_URL` or `storage.url`. */
   storage?: StorageAdapter;
+  /** Default: the bucket at `OPEN_FORM_FILES_URL` or `files.url`; functions have no disk to keep files on. */
+  files?: FileStore;
   /** Default: `OPEN_FORM_SECRET`. */
   secret?: string;
   /** Keep webhook deliveries alive after the response: `waitUntil` from `@vercel/functions`. */
@@ -117,9 +127,13 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
       }
     }
 
+    let files = opts.files;
+    const filesTarget = resolveFiles(root, config);
+    if (!files && filesTarget.kind === 's3') files = openFiles(filesTarget);
     const handler = createOpenFormHandler({
       registry: createEntryRegistry(entry),
       storage,
+      files,
       config,
       secret,
       adminAuth: adminPassword ? { password: adminPassword } : undefined,

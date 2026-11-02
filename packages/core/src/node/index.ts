@@ -1,3 +1,4 @@
+export { createLocalFileStore } from './files.ts';
 export type { NodeRequestOptions } from './http.ts';
 export {
   clientAddress,
@@ -24,11 +25,14 @@ export {
   pageRoute,
   startServer,
 } from './server.ts';
-export type { StorageTarget } from './storage.ts';
+export type { FileTarget, StorageTarget } from './storage.ts';
 export {
+  describeFiles,
   describeStorage,
+  openFiles,
   openStorage,
   redactUrl,
+  resolveFiles,
   resolveStorage,
   storageExists,
 } from './storage.ts';

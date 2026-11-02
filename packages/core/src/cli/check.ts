@@ -5,9 +5,11 @@ import { createServer, mergeConfig, type ViteDevServer } from 'vite';
 import { importsOwnTheme } from '../editing/form-theme.ts';
 import { parseSource, walk } from '../editing/loc-tags.ts';
 import {
+  DEFAULT_MAX_FILE_SIZE,
   describeCondition,
   type FieldSchema,
   type FormConfig,
+  formatFileSize,
   formLocales,
   formTimeZone,
   isWallClockDate,
@@ -221,6 +223,15 @@ function fieldLine(field: FieldSchema, pageWhen: number): string {
     field.required ? 'required' : '',
     field.options ? `${field.options.length} options` : '',
     field.hasCustomValidator ? 'custom validator' : '',
+    field.type === 'file'
+      ? [
+          field.accept?.join(' '),
+          `≤ ${formatFileSize(field.maxSize ?? DEFAULT_MAX_FILE_SIZE)}`,
+          (field.maxFiles ?? 1) > 1 ? `up to ${field.maxFiles} files` : '',
+        ]
+          .filter(Boolean)
+          .join(', ')
+      : '',
   ].filter(Boolean);
   const own = field.when.slice(pageWhen);
   const condition = own.length

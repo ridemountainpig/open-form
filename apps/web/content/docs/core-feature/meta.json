@@ -1,4 +1,12 @@
 {
   "title": "Core features",
-  "pages": ["studio", "edit-mode", "themes", "submissions", "languages", "responses"]
+  "pages": [
+    "studio",
+    "edit-mode",
+    "themes",
+    "submissions",
+    "languages",
+    "file-uploads",
+    "responses"
+  ]
 }

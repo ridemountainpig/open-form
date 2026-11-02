@@ -4,6 +4,7 @@ import {
   type FormSchema,
   isLocale,
   LOCALE_NAMES,
+  storedFiles,
   wallClock,
 } from '../schema/index.ts';
 import type { StoredSubmission } from '../storage/index.ts';
@@ -57,6 +58,9 @@ export function responseColumns(
 export function formatCell(value: unknown): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  // Uploaded files by name; Studio has the files themselves.
+  const files = storedFiles(value);
+  if (files.length > 0) return files.map((file) => file.name).join('; ');
   if (Array.isArray(value)) return value.map(formatCell).join('; ');
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);

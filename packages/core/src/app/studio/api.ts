@@ -191,6 +191,10 @@ export function useResource<T>(
 
 export const formPath = (id: string) => `/api/forms/${encodeURIComponent(id)}`;
 
+/** A response's uploaded file; the server always sends it as a download. */
+export const fileUrl = (formId: string, submissionId: string, fileId: string) =>
+  `${formPath(formId)}/submissions/${encodeURIComponent(submissionId)}/files/${encodeURIComponent(fileId)}`;
+
 export const EXPORT_FORMATS = [
   { format: 'xlsx', label: 'Excel' },
   { format: 'csv', label: 'CSV' },

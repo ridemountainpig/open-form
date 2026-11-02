@@ -114,6 +114,9 @@ function toDefinition(opts: UseFieldOptions): FieldDefinition {
     'maxSelected',
     'international',
     'countries',
+    'accept',
+    'maxSize',
+    'maxFiles',
   ] as const;
   for (const key of keys) {
     const value = opts[key];

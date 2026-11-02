@@ -28,7 +28,8 @@ Every `open-form` command and the Next.js route pick the first of:
 ├── open-form.db      responses, form versions, rate limits, Studio overrides, signed-out sessions
 ├── open-form.db-wal
 ├── open-form.db-shm
-└── secret            signs timing tokens, Studio sessions and visitor hashes
+├── secret            signs timing tokens, Studio sessions and visitor hashes
+└── uploads/          files from <FileInput>, unless they go to a bucket
 ```
 
 The database path is, in order: `OPEN_FORM_DB`, then `storage.path` in
@@ -77,7 +78,7 @@ Studio sessions, open form pages and `uniqueBy: 'device'` keep working.
 | `form_overrides` | Schedule, time zone and **Published** changes saved in Studio on a running server, per form. |
 | `rate_limits` | Fixed-window counters for submissions and Studio sign-ins, keyed by hashed IPs (IPv6 by /64). |
 | `revoked_sessions` | Studio sessions ended by signing out, kept until they would have expired. |
-| `submission_files` | Reserved for file uploads; unused today. |
+| `submission_files` | Unused: [uploaded files](/docs/core-feature/file-uploads)' details are kept in each answer, their bytes in `uploads/` or a bucket. |
 | `meta` | The applied migration version. |
 
 Migrations run in order when the database opens. Every response records the

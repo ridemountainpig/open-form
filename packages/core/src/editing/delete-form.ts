@@ -1,6 +1,7 @@
 import { lstat, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { FORM_ID_RE } from '../server/index.ts';
+import type { FileStore } from '../storage/files.ts';
 import type { StorageAdapter } from '../storage/index.ts';
 import { assignForm, editManifest, foldersPath } from './folders.ts';
 
@@ -20,11 +21,14 @@ export async function deleteForm(opts: {
   formsRoot: string;
   id: string;
   storage?: StorageAdapter;
+  /** Its responses' uploaded files go with them. */
+  files?: FileStore;
 }): Promise<DeleteFormResult> {
-  const { formsRoot, id, storage } = opts;
+  const { formsRoot, id, storage, files } = opts;
   if (!FORM_ID_RE.test(id)) throw new Error(`Invalid form id "${id}".`);
 
   const responses = storage ? await storage.deleteForm(id) : 0;
+  await files?.deletePrefix(`${id}/`);
   await editManifest(foldersPath(formsRoot), (manifest) => ({
     manifest: manifest.assignments[id] ? assignForm(manifest, id, null) : manifest,
     result: null,

@@ -6,6 +6,7 @@ import { deleteForm } from '../editing/delete-form.ts';
 import { writeScheduleChanges } from '../editing/form-config.ts';
 import { wireFormTheme } from '../editing/form-theme.ts';
 import { writeFormTheme } from '../editing/theme-files.ts';
+import { openFiles, resolveFiles } from '../node/storage.ts';
 import { formTimeZone, isPublished, type OpenFormConfig, scheduleEdit } from '../schema/index.ts';
 import type { StorageAdapter } from '../storage/index.ts';
 import { createDevRegistry } from './api-plugin.ts';
@@ -77,6 +78,7 @@ export function studioFormsMiddleware(ctx: Context) {
       formsRoot: ctx.paths.formsRoot,
       id,
       storage: await ctx.getStorage(),
+      files: openFiles(resolveFiles(ctx.paths.userCwd, ctx.config)),
     });
   }
 

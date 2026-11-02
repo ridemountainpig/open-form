@@ -133,7 +133,8 @@ publish `3000:3000` and leave `OPEN_FORM_TRUST_PROXY` out. See
 
 ## The volume
 
-The volume holds `open-form.db`, its `-wal` and `-shm` files, and `secret`.
+The volume holds `open-form.db`, its `-wal` and `-shm` files, `secret`, and
+`uploads/` with the files respondents uploaded.
 Set `OPEN_FORM_SECRET` instead to keep the secret off the volume, so a copy of
 the volume doesn't carry it; see [Production](/docs/deploy/production).
 

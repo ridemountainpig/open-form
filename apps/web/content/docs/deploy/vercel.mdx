@@ -159,6 +159,7 @@ In the Vercel project's **Settings → Environment Variables**:
 | --- | --- |
 | `OPEN_FORM_DATABASE_URL` | The connection string from the last step. Leave it out when the Marketplace set `POSTGRES_URL` or `DATABASE_URL` for you; when it's set, it wins. |
 | `OPEN_FORM_SECRET` | At least 16 random characters, the same on every deploy. Functions can't write the generated secret file. |
+| `OPEN_FORM_FILES_URL`, `OPEN_FORM_FILES_ACCESS_KEY_ID`, `OPEN_FORM_FILES_SECRET_ACCESS_KEY` | Only for forms with a `<FileInput>`: an S3-compatible bucket such as Cloudflare R2, since functions can't keep files ([File uploads](/docs/core-feature/file-uploads#an-s3-compatible-bucket)). |
 | `OPEN_FORM_ADMIN_PASSWORD` | Turns on Studio and the admin API. At least 16 characters with at least 8 different ones, not one word or pattern repeated; a passphrase of a few words works. Without it, `/studio` answers 404 unless `studio.public` is `'read-only'`. |
 
 Generate the secret with:

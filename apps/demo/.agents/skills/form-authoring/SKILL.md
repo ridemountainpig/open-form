@@ -96,6 +96,7 @@ Shared props: `name` (required), `label`, `description` (help text under the lab
 | `<CheckboxGroup>` | string[] | `options`, `minSelected`, `maxSelected`, `variant` |
 | `<Checkbox>` | boolean | children = inline text. `required` means it must be checked (terms, consent). |
 | `<Rating>` | number | `min` (default 1), `max` (default 5), `lowLabel`, `highLabel`. Use `min={0} max={10}` for NPS. |
+| `<FileInput>` | `{ id, name, size, type }[]` | `accept` (`['pdf', 'docx']`, `['image/*']`; default every supported kind), `maxSize` (`'5MB'`; default 10 MB, at most 100 MB), `maxFiles` (default 1, at most 20). |
 | `<Matrix>` | one string per row | `columns` (shared answers, like `options`), `rows={[{ name, label, required? }]}`, `label`, `required`. Each row is its own single-choice field: own `name`, export column, `<When field>`. |
 
 Labels, descriptions and option labels are plain strings. A question that needs code, a formula or an image between its label and its options (a programming quiz) is a custom field: `useField` + `FieldShell` (*Custom fields*), rendering the snippet in a `<pre><code>` styled with a monospace stack, with the choices below it.
@@ -107,6 +108,8 @@ Use `<Matrix>` when three or more questions share the same answers (rate each pa
 `options` accepts `['A', 'B']` or `[{ value: 'a', label: 'A' }]`. Use value/label pairs when labels may change later or are long — the stored value stays stable. Options must be known when the form renders (the server checks answers against them), so an empty list fails `check`.
 
 For phone numbers people may enter from more than one country, or that you'll call or text later, give `<Tel>` a `defaultCountry` (ISO code: `'TW'`, `'US'`). Respondents pick a country and type the number as they would at home (`0912-345-678`); it's stored as one international number. `countries` limits the picker and the accepted numbers to those countries' calling codes (regions sharing one, like the US and Canada on `+1`, can't be told apart), and `defaultCountry` must be one of them.
+
+For files (a CV, receipts, photos) use `<FileInput>`, never a custom field with base64: each file uploads as soon as it's picked and the server checks its real kind from its bytes. Set `accept` to what the form needs (`['pdf', 'docx']` for a CV, `['image/*']` for photos) and a `maxSize` that fits it (`'5MB'` for documents). Supported: jpg, png, gif, webp, heic, avif, pdf, docx, xlsx, pptx, txt, csv, md, zip, mp3, m4a, wav, mp4, mov; HTML, SVG and executables can't be uploaded. Files are kept on the server's disk (`.open-form/uploads/`) by default; a project deployed to Vercel, or to several instances, needs an S3-compatible bucket (`OPEN_FORM_FILES_URL`, plus the bucket's CORS allowing PUT from the form's site). When you add a `<FileInput>` to a project that deploys to Vercel (it has `vercel.json` or `api/index.ts`), tell the user at hand-off that uploads need the bucket.
 
 Use `autoComplete` on personal fields (`name`, `given-name`, `family-name`, `organization`, `street-address`, `postal-code`, `country-name`). `Email`, `Tel`, `Url` set it automatically.
 
@@ -219,7 +222,6 @@ Some requests sound like ordinary form features but have no built-in support. Wh
 
 | The brief asks for | Why it doesn't work | What to offer |
 | --- | --- | --- |
-| **File upload** (CV, photo, receipt) | There is no file field yet (planned), and a submission body is capped at 256 KB. | A `<Url>` field for a shared link (Google Drive, Dropbox, a portfolio), with a `description` saying the link must be viewable. Never base64 a file into a custom field. |
 | **A quiz that scores itself**, shows correct answers or stores a score | Everything in the form's code ships to the browser: correct answers written in the form can be read from the page source. Responses store the raw answers only, never a computed score. | For practice or fun quizzes, scoring in `<Success>` is fine; say the answers are visible to anyone who looks. For anything that counts, collect the answers only, score them after exporting the responses, and limit retakes with `uniqueBy`: `'email'` needs a required `<Email name="email">` on a step everyone sees (blank or hidden answers aren't limited); `'device'` needs no field but is only a cookie. |
 | **Repeating groups** ("name and diet for each guest", "add another item") | There is no repeater; every field is declared up front. | Ask for a count with a `RadioGroup` of `'0'`…`'N'` (a sensible maximum the user confirms), then one set of fields per position, each in its own `<When>` gated on the counts that include it: with up to 3 guests, `guest1Name` inside `<When field="guests" in={['1', '2', '3']}>`, `guest2Name` inside `in={['2', '3']}`, `guest3Name` inside `in={['3']}`. Lowering the count drops the hidden answers on the server. |
 | **Email to the respondent** (confirmation, receipt) | The form doesn't send email. | A `webhooks` entry in `open-form.config.ts` to their email tool or Zapier, plus success copy that says what to expect. |
@@ -464,6 +466,7 @@ Built-in fields are behavior only; their markup comes from replaceable component
 | `ChoiceGroup` | RadioGroup, CheckboxGroup | `field`, `options`, `multiple`, `selected: string[]`, `onToggle(value, checked)`, `variant` |
 | `Checkbox` | Checkbox | `field`, `checked`, `onChange(boolean)`, `children` (inline text), `markRequired` |
 | `Rating` | Rating | `field`, `scores`, `value`, `onChange(number)`, `lowLabel`, `highLabel` |
+| `FileInput` | FileInput | `field`, `files` (`{ key, name, size, status, progress?, error? }[]`), `accept`, `multiple`, `canAdd`, `hint`, `notice`, `onAdd(File[])`, `onRemove(key)`, `labels`. Keep a real `<input type="file">` with `field.controlProps` and `field.ref`. |
 | `Matrix` | Matrix frame | `label`, `description`, `required`, `columns`, `children` (the rows) |
 | `MatrixRow` | one Matrix row | `field` (the row's), `columns`, `value`, `onChange(string)`, `markRequired` |
 

@@ -127,6 +127,17 @@ export type OpenFormConfig = {
      */
     url?: string;
   };
+  /** Where `<FileInput>` uploads go. Default: `.open-form/uploads/` on this machine's disk. */
+  files?: {
+    /** A folder on disk, relative to the project root. Default `.open-form/uploads`. */
+    path?: string;
+    /**
+     * An S3-compatible bucket, `s3://bucket?endpoint=https://…`, read from the
+     * environment (`url: process.env.FILES_URL`). `OPEN_FORM_FILES_URL` wins over it.
+     * The keys come from `OPEN_FORM_FILES_ACCESS_KEY_ID` / `OPEN_FORM_FILES_SECRET_ACCESS_KEY`.
+     */
+    url?: string;
+  };
   /** Defaults applied to every form; each form's own `protection` wins. */
   protection?: ProtectionConfig;
   /**

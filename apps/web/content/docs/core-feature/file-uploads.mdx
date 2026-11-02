@@ -1,0 +1,176 @@
+---
+title: File uploads
+seoTitle: "File uploads in forms: résumés, photos and documents"
+description: "Take files with <FileInput>: which kinds and sizes, how each file is checked, where the bytes are kept on a disk or an S3-compatible bucket, and how Studio shows them."
+---
+
+`<FileInput>` takes files: a résumé, receipts, photos for an entry. Each file
+starts uploading as soon as it's picked or dropped, so pressing Submit only
+sends small tokens for the files, never the files themselves.
+
+```tsx
+import { FileInput } from '@open-form-build/core';
+
+<FileInput name="resume" label="Résumé" accept={['pdf', 'docx']} maxSize="5MB" required />
+<FileInput name="photos" label="Photos of the venue" accept={['image/*']} maxFiles={5} />
+```
+
+## Props
+
+<TypeTable
+  type={{
+    accept: {
+      type: 'string[]',
+      default: 'every supported kind',
+      description: "Kinds the field takes: extensions ('pdf', '.docx') or MIME types ('application/pdf', 'image/*'). A kind Open Form doesn't support fails when the form loads.",
+    },
+    maxSize: {
+      type: 'number | string',
+      default: "'10MB'",
+      description: "The largest file: bytes, or '500KB', '5MB'. At most 100 MB. Units are 1024-based.",
+    },
+    maxFiles: {
+      type: 'number',
+      default: '1',
+      description: 'How many files the answer may hold, 1 to 20. With 1, a new pick replaces the old file.',
+    },
+  }}
+/>
+
+`name`, `label`, `description`, `required` and `validate` work as on
+[every field](/docs/components/fields#shared-props). The answer is stored as a
+list of files, each with its name, size and type:
+
+```json
+{ "resume": [{ "id": "mxK9yPyc…", "name": "cv.pdf", "size": 183204, "type": "application/pdf" }] }
+```
+
+`<When field="resume" filled>` and `empty` work on file fields. The hint under
+the drop area lists the accepted kinds and the size limit in the form's
+language.
+
+## Supported kinds
+
+| Kind | Extensions |
+| --- | --- |
+| Images | `jpg` `jpeg` `png` `gif` `webp` `heic` `heif` `avif` |
+| Documents | `pdf` `docx` `xlsx` `pptx` `txt` `csv` `md` |
+| Archives | `zip` |
+| Audio and video | `mp3` `m4a` `wav` `mp4` `m4v` `mov` |
+
+Anything a browser could run or render as a page (HTML, SVG, scripts,
+executables) isn't on the list, so it can't be uploaded under any name.
+
+## How a file is checked
+
+1. **In the browser**, when it's picked: the size, the kind its name says, and
+   its first bytes. A wrong file is turned away at once, with the reason under
+   the field, and never uploaded.
+2. **When the upload is asked for**, the server checks the form is open, the
+   field takes that kind and size, and the visitor isn't over 60 uploads in 10
+   minutes. It answers with where to send the bytes and a signed token for the
+   file, valid 24 hours.
+3. **When the response is submitted**, the server reads the file's first bytes
+   again and decides its kind from them, never from the name or the type the
+   browser reported. A JPEG saved as `photo.png` is stored as the JPEG it is;
+   a `.pdf` that isn't a PDF is refused. Word, Excel, PowerPoint and text files
+   look like other files from their first bytes, so they're only taken under
+   their own extension.
+
+The browser never names a stored file: it only hands back tokens the server
+signed, each for one file, one field and one form, and each claimed once.
+File names are kept for display only: folders, control characters and
+right-to-left tricks are removed, and the bytes are stored under a random key
+the server picks. Files from a field the answers hide are dropped, like any
+hidden answer.
+
+Uploads no response claimed (a form left half-filled, a bot) are cleared after
+24 hours.
+
+## Where files are kept
+
+| Setup | Files go to | Set |
+| --- | --- | --- |
+| `open-form dev`, `open-form start` on a server or VPS | `.open-form/uploads/` on the disk | Nothing |
+| Railway, Fly, Docker | The same folder, on the [volume](/docs/deploy/railway#attach-a-volume) that keeps the database | Nothing |
+| Several instances, or an app that keeps nothing on disk | An S3-compatible bucket | `OPEN_FORM_FILES_URL` and its keys |
+| [Vercel](/docs/deploy/vercel) | An S3-compatible bucket | `OPEN_FORM_FILES_URL` and its keys |
+
+On one machine with a persistent disk, the default is the simplest: files sit
+next to the database in `.open-form/`, the folder is readable only by the user
+running the server (`0700`, files `0600`), and backing up the volume backs up
+both. When `OPEN_FORM_DB` or `storage.path` moves the database, the files
+follow it to `uploads/` beside it. `files.path` or `OPEN_FORM_FILES_DIR` puts
+them in another folder.
+
+### An S3-compatible bucket
+
+Cloudflare R2, AWS S3, Supabase Storage, Backblaze B2 and other services that
+speak the S3 API all work. The browser uploads straight to the bucket with a
+short-lived signed URL, so files never pass through your server or function,
+and Vercel's 4.5 MB request limit doesn't apply.
+
+| Variable | Value |
+| --- | --- |
+| `OPEN_FORM_FILES_URL` | `s3://<bucket>?endpoint=<https endpoint>`, plus `&region=<region>` where the service needs one. A path after the bucket keeps files under a prefix: `s3://shared/forms`. Leave out `endpoint` for AWS S3 and give `region`. |
+| `OPEN_FORM_FILES_ACCESS_KEY_ID` | An access key that can read, write, list and delete in the bucket. |
+| `OPEN_FORM_FILES_SECRET_ACCESS_KEY` | Its secret. |
+
+```bash title=".env"
+# Cloudflare R2: no charge for downloads
+OPEN_FORM_FILES_URL="s3://forms-uploads?endpoint=https://<account-id>.r2.cloudflarestorage.com"
+OPEN_FORM_FILES_ACCESS_KEY_ID="…"
+OPEN_FORM_FILES_SECRET_ACCESS_KEY="…"
+```
+
+Keep the bucket private: Studio downloads through signed links that last a
+minute. Then allow uploads from your forms' site in the bucket's CORS settings:
+
+```json title="CORS policy"
+[
+  {
+    "AllowedOrigins": ["https://forms.example.com"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Add every site that shows your forms, including those in
+[`embed.origins`](/docs/deploy/embed), and `http://localhost:3000` if you use
+the bucket in development. On Vercel without `OPEN_FORM_FILES_URL`, forms with
+a `<FileInput>` still load, but uploads answer `503` and the respondent sees
+that the file didn't upload.
+
+## In Studio and exports
+
+A response's drawer lists its files with their size, a thumbnail for photos,
+and a download link. Downloads always arrive as attachments, never opened in
+the page, and only for a signed-in Studio: a
+[public read-only Studio](/docs/core-feature/studio) shows the file names
+only. Filters on a file field are **is filled** and **is empty**, and search
+finds file names.
+
+CSV and Excel exports list each answer's file names, separated by `;`; JSON
+exports carry the file list as stored. [Webhooks](/docs/deploy/webhooks)
+carry the same list, without download links.
+
+Deleting a response in Studio deletes its files, and `open-form delete <form>`
+deletes every file of that form.
+
+## Moving to Postgres or a bucket
+
+[`open-form db copy`](/docs/cli/db#db-copy) copies each response's file list
+with it, not the files. They stay where they are, so a move from SQLite to
+Postgres on the same server needs nothing more. To move the files to a bucket
+too, copy `.open-form/uploads/` into it, without its `tmp/` folder. The keys
+are the same in both, `<form id>/<file id>`:
+
+```bash
+aws s3 sync .open-form/uploads s3://forms-uploads --exclude "tmp/*" \
+  --endpoint-url https://<account-id>.r2.cloudflarestorage.com
+```
+
+Photos can carry where they were taken in their metadata. Open Form stores
+files as they arrive, so tell respondents if that matters for your form.

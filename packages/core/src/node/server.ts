@@ -21,7 +21,14 @@ import {
   toWebRequest,
 } from './http.ts';
 import { resolveDatabasePath, resolveSecret } from './secret.ts';
-import { describeStorage, openStorage, resolveStorage } from './storage.ts';
+import {
+  describeFiles,
+  describeStorage,
+  openFiles,
+  openStorage,
+  resolveFiles,
+  resolveStorage,
+} from './storage.ts';
 
 /** What `open-form build` emits at `dist/server/entry.js`. */
 export type ServerEntry = {
@@ -48,6 +55,8 @@ export type StartedServer = {
   forms: string[];
   /** Where responses go, password hidden: `SQLite .open-form/open-form.db`, `Postgres postgres://…`. */
   storage: string;
+  /** Where uploaded files go, e.g. `disk .open-form/uploads`. */
+  files: string;
   close(): Promise<void>;
 };
 
@@ -217,6 +226,8 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   const databasePath = resolveDatabasePath(root, config.storage?.path);
   const storageTarget = resolveStorage(root, config);
   const storage = await openStorage(storageTarget);
+  const filesTarget = resolveFiles(root, config);
+  const files = openFiles(filesTarget);
   const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
   const adminEnabled = Boolean(adminPassword);
   const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
@@ -231,6 +242,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   const handler: OpenFormHandler = createOpenFormHandler({
     registry,
     storage,
+    files,
     config,
     secret: resolveSecret(root, databasePath),
     adminAuth: adminPassword ? { password: adminPassword } : undefined,
@@ -324,6 +336,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     publicStudio,
     forms: entry.formIds,
     storage: describeStorage(storageTarget, root),
+    files: describeFiles(filesTarget, root),
     async close() {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await storage.close();

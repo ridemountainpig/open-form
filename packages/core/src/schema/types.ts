@@ -14,6 +14,7 @@ export type FieldType =
   | 'checkbox'
   | 'checkbox-group'
   | 'date'
+  | 'file'
   | 'custom';
 
 export type FieldOption = {
@@ -64,6 +65,12 @@ export type FieldConstraints = {
   international?: boolean;
   /** Tel fields: the countries (ISO 3166-1 alpha-2) whose numbers are accepted. Implies `international`. */
   countries?: string[];
+  /** File fields: the kinds taken, as extensions (`'pdf'`) or MIME types (`'image/*'`). Default: every supported kind. */
+  accept?: string[];
+  /** File fields: the largest file taken, in bytes. Default 10 MB. */
+  maxSize?: number;
+  /** File fields: how many files the answer may hold. Default 1. */
+  maxFiles?: number;
 };
 
 export type FieldSchema = FieldConstraints & {

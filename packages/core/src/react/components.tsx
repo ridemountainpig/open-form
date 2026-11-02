@@ -129,6 +129,40 @@ export type RatingUIProps = {
   highLabel?: string;
 };
 
+export type FileItemUI = {
+  key: string;
+  name: string;
+  /** Formatted, e.g. `"2.4 MB"`. */
+  size: string;
+  status: 'uploading' | 'done' | 'failed';
+  /** 0–100 while uploading. */
+  progress?: number;
+  /** Why it failed, localized. */
+  error?: string;
+};
+
+export type FileInputUIProps = {
+  field: FieldApi;
+  files: FileItemUI[];
+  /** For `<input accept>`: `".pdf,.docx"`. */
+  accept: string;
+  multiple: boolean;
+  /** Whether another file fits (`maxFiles`). */
+  canAdd: boolean;
+  /** Kinds and size limit, localized: `"PDF, DOCX · Up to 10 MB"`. */
+  hint: string;
+  /** Why the last picked files were turned away (too large, wrong kind, too many). */
+  notice?: string;
+  onAdd(files: File[]): void;
+  onRemove(key: string): void;
+  labels: {
+    choose: string;
+    drop: string;
+    remove(name: string): string;
+    progress(percent: number): string;
+  };
+};
+
 // Form chrome. The framework renders the step itself (focus, scope) and the
 // error live region, and hands them to `Layout` as ready-made regions.
 
@@ -217,6 +251,7 @@ export type FormComponents = {
   ChoiceGroup: ComponentType<ChoiceGroupUIProps>;
   Checkbox: ComponentType<CheckboxUIProps>;
   Rating: ComponentType<RatingUIProps>;
+  FileInput: ComponentType<FileInputUIProps>;
   Matrix: ComponentType<MatrixUIProps>;
   MatrixRow: ComponentType<MatrixRowUIProps>;
 };
@@ -474,6 +509,96 @@ function DefaultRating({ field, scores, value, onChange, lowLabel, highLabel }: 
         </div>
       )}
     </>
+  );
+}
+
+function DefaultFileInput({
+  field,
+  files,
+  accept,
+  multiple,
+  canAdd,
+  hint,
+  notice,
+  onAdd,
+  onRemove,
+  labels,
+}: FileInputUIProps) {
+  const [dragging, setDragging] = useState(false);
+  const pick = (list: FileList | null) => {
+    if (list?.length) onAdd(Array.from(list));
+  };
+  return (
+    <div className="of-file">
+      <label
+        className="of-file-drop"
+        data-dragging={dragging || undefined}
+        data-disabled={!canAdd || undefined}
+        onDragOver={(e) => {
+          if (!canAdd) return;
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          if (canAdd) pick(e.dataTransfer.files);
+        }}
+      >
+        <input
+          {...field.controlProps}
+          ref={field.ref}
+          className="of-file-input"
+          type="file"
+          accept={accept}
+          multiple={multiple}
+          disabled={!canAdd}
+          onChange={(e) => {
+            pick(e.target.files);
+            e.target.value = '';
+          }}
+        />
+        <span className="of-file-prompt">
+          <span className="of-file-choose">{labels.choose}</span> {labels.drop}
+        </span>
+        <span className="of-file-hint">{hint}</span>
+      </label>
+      {notice && (
+        <p className="of-error" role="alert">
+          {notice}
+        </p>
+      )}
+      {files.length > 0 && (
+        <ul className="of-file-list">
+          {files.map((file) => (
+            <li key={file.key} className="of-file-item" data-status={file.status}>
+              <span className="of-file-name">{file.name}</span>
+              <span className="of-file-meta" aria-live="polite">
+                {file.status === 'uploading'
+                  ? labels.progress(file.progress ?? 0)
+                  : (file.error ?? file.size)}
+              </span>
+              {file.status === 'uploading' && (
+                <span
+                  className="of-file-progress"
+                  style={{ '--of-file-progress': `${file.progress ?? 0}%` } as object}
+                  aria-hidden="true"
+                />
+              )}
+              <button
+                type="button"
+                className="of-file-remove"
+                aria-label={labels.remove(file.name)}
+                onClick={() => onRemove(file.key)}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -805,6 +930,7 @@ export const defaultComponents: FormComponents = {
   ChoiceGroup: DefaultChoiceGroup,
   Checkbox: DefaultCheckbox,
   Rating: DefaultRating,
+  FileInput: DefaultFileInput,
   Matrix: DefaultMatrix,
   MatrixRow: DefaultMatrixRow,
 };

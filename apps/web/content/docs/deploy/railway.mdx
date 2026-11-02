@@ -40,7 +40,9 @@ Open the command palette (`⌘K`) or right-click the project canvas, add a
 ```
 
 Railpack puts the workspace in `/app`, so this is its `.open-form/` folder: the
-database and the generated secret both land on the volume. Railway mounts
+database, the generated secret and [uploaded files](/docs/core-feature/file-uploads)
+all land on the volume. With responses in Postgres, keep the volume for forms
+that take files, or send files to a bucket instead. Railway mounts
 volumes when the service starts, not during the build.
 
 </Step>

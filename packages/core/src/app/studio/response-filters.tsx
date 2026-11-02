@@ -11,6 +11,7 @@ import {
   Link,
   ListChecks,
   ListFilter,
+  Paperclip,
   Phone,
   Plus,
   Search,
@@ -51,7 +52,7 @@ export const EMPTY_FILTER: FilterDraft = { match: 'all', rules: [] };
 /** The table's sort; no `field` sorts by submission time. */
 export type ColumnSort = { field?: string; direction: 'asc' | 'desc' };
 
-type Kind = 'text' | 'number' | 'select' | 'multi' | 'checkbox' | 'date' | 'submitted';
+type Kind = 'text' | 'number' | 'select' | 'multi' | 'checkbox' | 'date' | 'file' | 'submitted';
 
 function kindOf(property: FilterProperty): Kind {
   if (property.field === undefined) return 'submitted';
@@ -68,6 +69,8 @@ function kindOf(property: FilterProperty): Kind {
       return 'checkbox';
     case 'date':
       return 'date';
+    case 'file':
+      return 'file';
     default:
       return 'text';
   }
@@ -80,6 +83,7 @@ const OPS: Record<Kind, ResponseFilterOp[]> = {
   multi: ['anyOf', 'allOf', 'noneOf', 'empty', 'notEmpty'],
   checkbox: ['checked', 'unchecked'],
   date: ['on', 'before', 'after', 'onOrBefore', 'onOrAfter', 'between', 'empty', 'notEmpty'],
+  file: ['notEmpty', 'empty'],
   submitted: ['pastDays', 'on', 'before', 'after', 'onOrBefore', 'onOrAfter', 'between'],
 };
 
@@ -112,6 +116,7 @@ const ICONS: Partial<Record<FieldType, ReactNode>> = {
   checkbox: <SquareCheck />,
   'checkbox-group': <ListChecks />,
   date: <Calendar />,
+  file: <Paperclip />,
   custom: <Shapes />,
 };
 

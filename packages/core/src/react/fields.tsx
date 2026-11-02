@@ -1,19 +1,34 @@
-import { isValidElement, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { isValidElement, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  acceptAttribute,
+  acceptedKinds,
+  acceptProblem,
+  acceptSummary,
   type CustomValidator,
   composePhone,
+  DEFAULT_MAX_FILE_SIZE,
   dialCode,
   type FieldOption,
+  type FileEntry,
+  fileKindOf,
+  format,
+  formatFileSize,
   hasCountryCode,
   isPhoneCountry,
+  MAX_FILE_SIZE,
+  MAX_FILES,
   PHONE_COUNTRIES,
   type PhoneCountry,
+  parseFileSize,
+  SNIFF_BYTES,
+  sniffFile,
   splitPhone,
 } from '../schema/index.ts';
 import { type TextInputUIProps, useFormComponents } from './components.tsx';
-import { useFormContext } from './context.ts';
+import { useFormContext, useRuntime } from './context.ts';
 import { useTranslate, useTranslatedNode } from './i18n.tsx';
 import { normalizeOptions, type OptionInput, translateOptions } from './options.ts';
+import { UploadError, uploadFile } from './upload.ts';
 import { type FieldApi, useField } from './use-field.ts';
 
 // Built-in fields are behavior only: they wire a value into the form with
@@ -547,5 +562,220 @@ function MatrixRowField({
       onChange={field.setValue}
       markRequired={markRequired && field.required}
     />
+  );
+}
+
+export type FileInputProps = BaseProps & {
+  /** The kinds taken: extensions (`['pdf', 'docx']`) or MIME types (`['image/*']`). Default: every supported kind. */
+  accept?: readonly string[];
+  /** The largest file taken: `'5MB'`, `'500KB'` or bytes. Default 10 MB, at most 100 MB. */
+  maxSize?: number | string;
+  /** How many files the answer may hold. Default 1. */
+  maxFiles?: number;
+};
+
+function fileInputProblem(
+  name: string,
+  props: Pick<FileInputProps, 'accept' | 'maxSize' | 'maxFiles'>,
+  maxSize: number | undefined,
+) {
+  const accept = acceptProblem(props.accept);
+  if (accept) return `<FileInput name="${name}">: ${accept}`;
+  if (props.maxSize !== undefined && maxSize === undefined) {
+    return `<FileInput name="${name}">: \`maxSize\` ${JSON.stringify(props.maxSize)} isn't a size. Use bytes or a string such as "5MB".`;
+  }
+  if (maxSize !== undefined && maxSize > MAX_FILE_SIZE) {
+    return `<FileInput name="${name}">: \`maxSize\` can be at most 100MB.`;
+  }
+  const max = props.maxFiles;
+  if (max !== undefined && (!Number.isInteger(max) || max < 1 || max > MAX_FILES)) {
+    return `<FileInput name="${name}">: \`maxFiles\` must be a whole number from 1 to ${MAX_FILES}.`;
+  }
+  return undefined;
+}
+
+function fileEntries(value: unknown): FileEntry[] {
+  return Array.isArray(value) ? (value as FileEntry[]) : [];
+}
+
+const keyOf = (entry: FileEntry) => ('key' in entry ? entry.key : entry.token);
+
+/**
+ * Files the respondent picks or drops. Each starts uploading at once, so the
+ * submission only carries the server's tokens for them.
+ */
+export function FileInput({ accept, maxSize, maxFiles = 1, ...props }: FileInputProps) {
+  const bytes = maxSize === undefined ? undefined : parseFileSize(maxSize);
+  const problem = fileInputProblem(props.name, { accept, maxSize, maxFiles }, bytes);
+  if (problem) throw new Error(problem);
+  const field = useField({
+    ...props,
+    type: 'file',
+    accept: accept && [...accept],
+    maxSize: bytes,
+    maxFiles,
+  });
+  const { store, messages } = useFormContext('FileInput');
+  const runtime = useRuntime();
+  const { Field, FileInput: FileInputUI } = useFormComponents();
+  const [progress, setProgress] = useState<Record<string, number>>({});
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  // Why picked files were turned away; they never joined the answer, so it isn't the field's error.
+  const [notice, setNotice] = useState<string>();
+  const uploads = useRef(new Map<string, AbortController>());
+  const { name } = props;
+  const limit = bytes ?? DEFAULT_MAX_FILE_SIZE;
+
+  const current = () => fileEntries(store.getState().values[name]);
+  const update = (change: (entries: FileEntry[]) => FileEntry[]) =>
+    field.setValue(change(current()));
+
+  // A restored draft can hold uploads that never finished or have since expired.
+  const { setValue } = field;
+  useEffect(() => {
+    const entries = fileEntries(store.getState().values[name]);
+    const kept = entries.filter(
+      (entry) => 'token' in entry && (!entry.expires || entry.expires > Date.now() + 60_000),
+    );
+    if (kept.length !== entries.length) setValue(kept);
+  }, [name, setValue, store]);
+
+  useEffect(() => {
+    const pending = uploads.current;
+    return () => {
+      for (const controller of pending.values()) controller.abort();
+    };
+  }, []);
+
+  const fail = (key: string, message: string) => {
+    setProblems((p) => ({ ...p, [key]: message }));
+    update((entries) =>
+      entries.map((entry) =>
+        keyOf(entry) === key && 'key' in entry ? { ...entry, status: 'failed' as const } : entry,
+      ),
+    );
+  };
+
+  const start = async (file: File, key: string) => {
+    const endpoint = runtime.endpoint;
+    if (!endpoint) return fail(key, messages.fileUploadFailed);
+    const controller = new AbortController();
+    uploads.current.set(key, controller);
+    try {
+      const result = await uploadFile({
+        endpoint,
+        field: name,
+        file,
+        locale: messages.locale,
+        signal: controller.signal,
+        onProgress: (percent) => setProgress((p) => ({ ...p, [key]: percent })),
+      });
+      update((entries) =>
+        entries.map((entry) =>
+          keyOf(entry) === key
+            ? {
+                token: result.token,
+                name: file.name,
+                size: file.size,
+                type: result.type,
+                expires: result.expires,
+              }
+            : entry,
+        ),
+      );
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
+      fail(key, (err instanceof UploadError && err.message) || messages.fileUploadFailed);
+    } finally {
+      uploads.current.delete(key);
+    }
+  };
+
+  // The same checks the server makes, first bytes included, so a wrong file is
+  // turned away at once instead of after its upload.
+  const problemWith = async (file: File): Promise<string | undefined> => {
+    if (file.size > limit) {
+      return format(messages.fileTooLarge, { n: formatFileSize(limit, messages.locale) });
+    }
+    const kind = fileKindOf(file.name, file.type);
+    if (!kind || !acceptedKinds(accept).includes(kind)) return messages.fileType;
+    try {
+      const head = new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer());
+      if (!sniffFile(file.name, head, accept)) return messages.fileType;
+    } catch {}
+    return undefined;
+  };
+
+  const onAdd = async (picked: File[]) => {
+    const room = maxFiles === 1 ? 1 : Math.max(0, maxFiles - current().length);
+    const added: Array<{ file: File; entry: FileEntry & { key: string } }> = [];
+    let rejected: string | undefined;
+    for (const file of picked.slice(0, room)) {
+      const problem = await problemWith(file);
+      if (problem) {
+        rejected ??= problem;
+        continue;
+      }
+      const key = `local-${Math.random().toString(36).slice(2)}`;
+      added.push({
+        file,
+        entry: { status: 'uploading', key, name: file.name, size: file.size, type: file.type },
+      });
+    }
+    if (picked.length > room && maxFiles > 1)
+      rejected ??= format(messages.maxFiles, { n: maxFiles });
+    if (added.length > 0) {
+      // One file at most: a new pick replaces the old one.
+      if (maxFiles === 1) {
+        for (const entry of current()) onRemove(keyOf(entry));
+        field.setValue(added.map((a) => a.entry));
+      } else {
+        update((entries) => [...entries, ...added.map((a) => a.entry)]);
+      }
+      for (const { file, entry } of added) void start(file, entry.key);
+    }
+    setNotice(rejected);
+  };
+
+  const onRemove = (key: string) => {
+    uploads.current.get(key)?.abort();
+    uploads.current.delete(key);
+    update((entries) => entries.filter((entry) => keyOf(entry) !== key));
+  };
+
+  const entries = fileEntries(field.value);
+  const summary = acceptSummary(accept);
+  const sizeHint = format(messages.fileLimit, { n: formatFileSize(limit, messages.locale) });
+  return (
+    <Field field={field}>
+      <FileInputUI
+        field={field}
+        accept={acceptAttribute(accept)}
+        multiple={maxFiles > 1}
+        canAdd={maxFiles === 1 || entries.length < maxFiles}
+        hint={summary ? `${summary} · ${sizeHint}` : sizeHint}
+        notice={notice}
+        files={entries.map((entry) => {
+          const key = keyOf(entry);
+          const status = 'status' in entry ? entry.status : 'done';
+          return {
+            key,
+            name: entry.name,
+            size: formatFileSize(entry.size, messages.locale),
+            status,
+            progress: status === 'uploading' ? (progress[key] ?? 0) : undefined,
+            error: status === 'failed' ? problems[key] || messages.fileUploadFailed : undefined,
+          };
+        })}
+        onAdd={onAdd}
+        onRemove={onRemove}
+        labels={{
+          choose: messages.fileChoose,
+          drop: messages.fileDrop,
+          remove: (file) => format(messages.fileRemove, { name: file }),
+          progress: (percent) => format(messages.fileProgress, { n: percent }),
+        }}
+      />
+    </Field>
   );
 }

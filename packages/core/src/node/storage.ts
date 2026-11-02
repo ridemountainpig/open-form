@@ -1,7 +1,10 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { OpenFormConfig } from '../schema/index.ts';
+import type { FileStore } from '../storage/files.ts';
 import type { StorageAdapter } from '../storage/index.ts';
+import { createS3FileStore, parseS3Url } from '../storage/s3.ts';
+import { createLocalFileStore } from './files.ts';
 import { resolveDatabasePath } from './secret.ts';
 
 export type StorageTarget =
@@ -83,4 +86,58 @@ export function redactUrl(url: string): string {
   } catch {
     return '[invalid connection string]';
   }
+}
+
+export type FileTarget =
+  | { kind: 'local'; dir: string; source: 'OPEN_FORM_FILES_DIR' | 'files.path' | 'default' }
+  | { kind: 's3'; url: string; source: 'OPEN_FORM_FILES_URL' | 'files.url' };
+
+/**
+ * Where uploaded files go: `OPEN_FORM_FILES_URL`, else `files.url` (an
+ * S3-compatible bucket), else a folder on disk: `OPEN_FORM_FILES_DIR`,
+ * `files.path` or `uploads/` next to the SQLite database (`.open-form/uploads`).
+ */
+export function resolveFiles(projectRoot: string, config: OpenFormConfig = {}): FileTarget {
+  const fromEnv = process.env.OPEN_FORM_FILES_URL?.trim();
+  const configured = config.files?.url?.trim();
+  const url = fromEnv || configured;
+  if (url) {
+    const source = fromEnv ? 'OPEN_FORM_FILES_URL' : 'files.url';
+    try {
+      parseS3Url(url);
+    } catch (err) {
+      throw new Error(`${source}: ${(err as Error).message}`);
+    }
+    return { kind: 's3', url, source };
+  }
+  const dirEnv = process.env.OPEN_FORM_FILES_DIR?.trim();
+  const source = dirEnv ? 'OPEN_FORM_FILES_DIR' : config.files?.path ? 'files.path' : 'default';
+  // By default the files follow the database (and its secret), so one volume keeps all three.
+  const beside = path.join(
+    path.dirname(resolveDatabasePath(projectRoot, config.storage?.path)),
+    'uploads',
+  );
+  const dir = path.resolve(projectRoot, dirEnv || config.files?.path || beside);
+  return { kind: 'local', dir, source };
+}
+
+export function openFiles(target: FileTarget): FileStore {
+  if (target.kind === 'local') return createLocalFileStore({ dir: target.dir });
+  const accessKeyId = process.env.OPEN_FORM_FILES_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.OPEN_FORM_FILES_SECRET_ACCESS_KEY?.trim();
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error(
+      `${target.source} points at a bucket, but OPEN_FORM_FILES_ACCESS_KEY_ID and OPEN_FORM_FILES_SECRET_ACCESS_KEY aren't both set.`,
+    );
+  }
+  return createS3FileStore({ ...parseS3Url(target.url), accessKeyId, secretAccessKey });
+}
+
+/** For logs and terminals. */
+export function describeFiles(target: FileTarget, projectRoot?: string): string {
+  if (target.kind === 's3') {
+    const { bucket, endpoint, prefix } = parseS3Url(target.url);
+    return `S3 ${bucket}${prefix ? `/${prefix}` : ''}${endpoint ? ` (${new URL(endpoint).host})` : ''}`;
+  }
+  return `disk ${projectRoot ? path.relative(projectRoot, target.dir) || target.dir : target.dir}`;
 }

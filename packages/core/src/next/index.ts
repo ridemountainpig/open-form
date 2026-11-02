@@ -4,7 +4,13 @@ import { pathToFileURL } from 'node:url';
 import { forwardedAddress } from '../node/http.ts';
 import { resolveDatabasePath, resolveSecret, secretPath } from '../node/secret.ts';
 import { createEntryRegistry, type ServerEntry } from '../node/server.ts';
-import { openStorage, resolveStorage, type StorageTarget } from '../node/storage.ts';
+import {
+  openFiles,
+  openStorage,
+  resolveFiles,
+  resolveStorage,
+  type StorageTarget,
+} from '../node/storage.ts';
 import type { OpenFormConfig } from '../schema/index.ts';
 import {
   type AdminAuth,
@@ -13,6 +19,7 @@ import {
   type OpenFormHandler,
   type StorageAdapter,
 } from '../server/index.ts';
+import type { FileStore } from '../storage/files.ts';
 
 export type OpenFormRouteOptions = {
   /** Project root: where `forms/`, `open-form.config.ts` and `dist/` live. Default `process.cwd()`. */
@@ -24,6 +31,11 @@ export type OpenFormRouteOptions = {
    * `OPEN_FORM_DB`, `storage.path` or `.open-form/open-form.db`, which needs a persistent disk.
    */
   storage?: StorageAdapter;
+  /**
+   * Default: the bucket at `OPEN_FORM_FILES_URL` or `files.url`; else, except on
+   * Vercel, `.open-form/uploads/` on disk, which needs a persistent disk.
+   */
+  files?: FileStore;
   /** Default: `OPEN_FORM_SECRET`, else a `secret` file generated next to the database. */
   secret?: string;
   /**
@@ -138,6 +150,7 @@ export function createOpenFormRoute(opts: OpenFormRouteOptions = {}): OpenFormRo
   };
 
   let storage: Promise<StorageAdapter> | undefined;
+  let files: FileStore | null | undefined;
   let secret: string | undefined;
   let warnedProxy = false;
   const createHandler = async ({ entry }: Loaded): Promise<OpenFormHandler> => {
@@ -166,9 +179,15 @@ export function createOpenFormRoute(opts: OpenFormRouteOptions = {}): OpenFormRo
           throw err;
         });
     secret ??= opts.secret ?? defaultSecret(root, databasePath);
+    if (files === undefined) {
+      const target = resolveFiles(root, config);
+      files =
+        opts.files ?? (target.kind === 's3' || !process.env.VERCEL ? openFiles(target) : null);
+    }
     return createOpenFormHandler({
       registry,
       storage: await storage,
+      files: files ?? undefined,
       config,
       secret,
       basePath: opts.basePath,

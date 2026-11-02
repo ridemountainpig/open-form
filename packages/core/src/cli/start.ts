@@ -31,6 +31,7 @@ export async function start(flags: StartFlags = {}): Promise<void> {
           : chalk.dim('disabled — set OPEN_FORM_ADMIN_PASSWORD to enable'),
     ],
     ['Storage', chalk.dim(started.storage)],
+    ['Files', chalk.dim(started.files)],
   ]);
   process.stdout.write('\n');
 

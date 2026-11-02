@@ -5,7 +5,13 @@ import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { deleteForm } from '../editing/delete-form.ts';
 import { findReferenceTheme, writeFormTheme } from '../editing/theme-files.ts';
-import { openStorage, resolveStorage, storageExists } from '../node/storage.ts';
+import {
+  openFiles,
+  openStorage,
+  resolveFiles,
+  resolveStorage,
+  storageExists,
+} from '../node/storage.ts';
 import { isLocale, LOCALES, type Locale, pickTokens, type Theme } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
 import { exportFormResponses, FORM_ID_RE } from '../server/index.ts';
@@ -155,7 +161,7 @@ export async function deleteFormCommand(id: string, flags: DeleteFlags = {}): Pr
       }
     }
 
-    await deleteForm({ formsRoot, id, storage });
+    await deleteForm({ formsRoot, id, storage, files: openFiles(resolveFiles(userCwd, config)) });
     process.stdout.write(`\n  ${chalk.green(glyph.check)} Deleted ${what}\n\n`);
   } finally {
     await storage?.close();

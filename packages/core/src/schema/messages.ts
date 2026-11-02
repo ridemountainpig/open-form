@@ -26,6 +26,12 @@ export type Messages = {
   invalidValue: string;
   minSelected: string;
   maxSelected: string;
+  fileTooLarge: string;
+  fileType: string;
+  maxFiles: string;
+  fileUploading: string;
+  fileUploadFailed: string;
+  fileExpired: string;
 
   next: string;
   back: string;
@@ -63,6 +69,11 @@ export type Messages = {
   notFoundMessage: string;
   draftRestored: string;
   draftDiscard: string;
+  fileChoose: string;
+  fileDrop: string;
+  fileLimit: string;
+  fileRemove: string;
+  fileProgress: string;
 };
 
 const en: Messages = {
@@ -88,6 +99,12 @@ const en: Messages = {
   invalidValue: 'Enter a valid value.',
   minSelected: 'Select at least {n}.',
   maxSelected: 'Select at most {n}.',
+  fileTooLarge: 'Files must be {n} or smaller.',
+  fileType: 'This kind of file isn’t accepted here.',
+  maxFiles: 'Too many files: the limit is {n}.',
+  fileUploading: 'Wait for the upload to finish.',
+  fileUploadFailed: 'This file didn’t upload. Remove it and try again.',
+  fileExpired: 'This upload expired. Remove the file and add it again.',
 
   next: 'Next',
   back: 'Back',
@@ -127,6 +144,11 @@ const en: Messages = {
   notFoundMessage: 'The link may be mistyped, or this form is no longer available.',
   draftRestored: 'We restored the answers you left unfinished.',
   draftDiscard: 'Start over',
+  fileChoose: 'Choose a file',
+  fileDrop: 'or drop it here',
+  fileLimit: 'Up to {n}',
+  fileRemove: 'Remove {name}',
+  fileProgress: 'Uploading… {n}%',
 };
 
 const zhTW: Messages = {
@@ -152,6 +174,12 @@ const zhTW: Messages = {
   invalidValue: '請輸入有效的值。',
   minSelected: '請至少選擇 {n} 項。',
   maxSelected: '最多選擇 {n} 項。',
+  fileTooLarge: '檔案不能超過 {n}。',
+  fileType: '這裡不接受這種檔案。',
+  maxFiles: '最多只能上傳 {n} 個檔案。',
+  fileUploading: '請等待檔案上傳完成。',
+  fileUploadFailed: '這個檔案沒有上傳成功，請移除後再試一次。',
+  fileExpired: '上傳已過期，請移除檔案後重新加入。',
 
   next: '下一步',
   back: '上一步',
@@ -189,6 +217,11 @@ const zhTW: Messages = {
   notFoundMessage: '連結可能有誤，或這份表單已不再公開。',
   draftRestored: '已還原你上次未完成的回答。',
   draftDiscard: '重新開始',
+  fileChoose: '選擇檔案',
+  fileDrop: '或拖曳到這裡',
+  fileLimit: '最大 {n}',
+  fileRemove: '移除 {name}',
+  fileProgress: '上傳中… {n}%',
 };
 
 // Mainland conventions: 您, 提交, 邮箱.
@@ -215,6 +248,12 @@ const zhCN: Messages = {
   invalidValue: '请输入有效的值。',
   minSelected: '请至少选择 {n} 项。',
   maxSelected: '最多选择 {n} 项。',
+  fileTooLarge: '文件不能超过 {n}。',
+  fileType: '这里不接受这种文件。',
+  maxFiles: '最多只能上传 {n} 个文件。',
+  fileUploading: '请等待文件上传完成。',
+  fileUploadFailed: '这个文件没有上传成功，请移除后重试。',
+  fileExpired: '上传已过期，请移除文件后重新添加。',
 
   next: '下一步',
   back: '上一步',
@@ -252,6 +291,11 @@ const zhCN: Messages = {
   notFoundMessage: '链接可能有误，或这份表单已不再公开。',
   draftRestored: '已恢复您上次未完成的回答。',
   draftDiscard: '重新开始',
+  fileChoose: '选择文件',
+  fileDrop: '或拖放到这里',
+  fileLimit: '最大 {n}',
+  fileRemove: '移除 {name}',
+  fileProgress: '上传中… {n}%',
 };
 
 // Polite form (です・ます), the norm for forms addressed to the public.
@@ -278,6 +322,12 @@ const ja: Messages = {
   invalidValue: '有効な値を入力してください。',
   minSelected: '{n}個以上選択してください。',
   maxSelected: '選択できるのは{n}個までです。',
+  fileTooLarge: 'ファイルは {n} 以下にしてください。',
+  fileType: 'この種類のファイルは受け付けていません。',
+  maxFiles: 'ファイルは {n} 件までです。',
+  fileUploading: 'アップロードが終わるまでお待ちください。',
+  fileUploadFailed: 'このファイルはアップロードできませんでした。削除してもう一度お試しください。',
+  fileExpired: 'アップロードの有効期限が切れました。ファイルを削除して、もう一度追加してください。',
 
   next: '次へ',
   back: '戻る',
@@ -318,6 +368,11 @@ const ja: Messages = {
   notFoundMessage: 'リンクが間違っているか、このフォームは公開を終了しています。',
   draftRestored: '前回途中まで入力した回答を復元しました。',
   draftDiscard: '最初からやり直す',
+  fileChoose: 'ファイルを選択',
+  fileDrop: 'またはここにドロップ',
+  fileLimit: '最大 {n}',
+  fileRemove: '{name} を削除',
+  fileProgress: 'アップロード中… {n}%',
 };
 
 const CATALOG: Record<Locale, Messages> = { en, 'zh-TW': zhTW, 'zh-CN': zhCN, ja };

@@ -16,6 +16,9 @@ the admin routes.
 | --- | --- | --- | --- |
 | `GET` | `/api/forms/:id` | Public | Form status and a timing token |
 | `POST` | `/api/forms/:id/submissions` | Public | Submit a response |
+| `POST` | `/api/forms/:id/uploads` | Public | Ask to upload a file: `{ field, name, size, type }` → `{ token, expires, type, upload: { url, headers } }`. PUT the bytes to `upload.url`, then submit `[{ token, name, size, type }]` as the field's answer ([File uploads](/docs/core-feature/file-uploads)) |
+| `PUT` | `/api/forms/:id/uploads/:token` | Public | The file's bytes, when files are kept on the server's disk |
+| `GET` | `/api/forms/:id/submissions/:sid/files/:fileId` | Admin | Download a response's file, always as an attachment. Closed to a public read-only Studio |
 | `GET` | `/api/forms` | Admin | Every form with response counts and status |
 | `GET` | `/api/forms/:id/schema` | Admin | Schema, config, effective schedule and status |
 | `GET` | `/api/forms/:id/submissions` | Admin | Responses, paged: `limit` (default 50, max 500) and `offset` as whole numbers, `q`, and Studio's `filter` and `sort` as JSON (see [below](#listing-responses)) |
@@ -230,6 +233,7 @@ export const handler = createOpenFormHandler({
   type={{
     registry: { type: 'FormRegistry', required: true, description: 'Lists forms and loads their schema, config and validators.' },
     storage: { type: 'StorageAdapter', required: true, description: 'Where responses, versions and rate limits live.' },
+    files: { type: 'FileStore', description: 'Where <FileInput> uploads go: createLocalFileStore({ dir }) from @open-form-build/core/node, or createS3FileStore({ bucket, endpoint, accessKeyId, secretAccessKey }). Without it, uploads answer 503.' },
     secret: { type: 'string', required: true, description: 'Signs timing tokens and Studio session cookies, and hashes visitor ids and IPs. At least 16 characters; shorter throws. Keep it stable and private.' },
     config: { type: 'OpenFormConfig', description: 'The project config: protection defaults, time zone, webhooks, embed.' },
     basePath: { type: 'string', default: "'/api'", description: 'Path prefix the handler is mounted under.' },

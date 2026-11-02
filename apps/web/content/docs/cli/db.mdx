@@ -58,7 +58,9 @@ each form's response numbering (the next response to a form whose newest was
 #87 is #88, even if #87 was deleted), the unique keys behind `uniqueBy`, Studio's
 settings (schedule, time zone, response caps, closed, published) and signed-out
 Studio sessions. Rate-limit counters stay behind; they reset within minutes
-anyway.
+anyway. Uploaded files stay where they are: each response's file list comes
+across, and the files keep working as long as the server reads the same
+uploads folder or bucket ([moving them](/docs/core-feature/file-uploads#moving-to-postgres-or-a-bucket)).
 
 - **One transaction.** Either everything is copied or nothing is. Responses
   submitted to Postgres while it runs wait for it, then land after the copied

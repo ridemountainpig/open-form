@@ -1,9 +1,17 @@
 import {
+  acceptedKinds,
   applyOverrides,
   type CustomValidator,
+  coerceFileEntries,
+  coerceValues,
+  DEFAULT_MAX_FILE_SIZE,
+  type FieldSchema,
   type FormConfig,
   type FormSchema,
   type FormValues,
+  fileKindOf,
+  format,
+  formatFileSize,
   formLocales,
   formTimeZone,
   getMessages,
@@ -17,19 +25,33 @@ import {
   type ResponseFilter,
   type ResponseSort,
   resolveProtection,
+  resolveVisibleFields,
+  SNIFF_BYTES,
+  type StoredFile,
+  safeFileName,
   scheduleEdit,
   scheduleOf,
+  sniffFile,
+  storedFiles,
   submissionWindow,
   translationCoverage,
   validateSubmission,
   type WindowStatus,
 } from '../schema/index.ts';
-import type { CreateSubmissionResult, StorageAdapter, StoredOverrides } from '../storage/index.ts';
+import { type FileStore, FileTooLargeError, PENDING_PREFIX } from '../storage/files.ts';
+import type {
+  CreateSubmissionResult,
+  StorageAdapter,
+  StoredOverrides,
+  StoredSubmission,
+} from '../storage/index.ts';
+import { attachmentDisposition } from '../storage/s3.ts';
 import { isLoopbackHost, rateLimitSubject } from './address.ts';
 import { type AdminAuth, createAdminGate, sentOverHttps } from './admin.ts';
 import { checkTimingToken, createSigner, issueTimingToken, type Signer } from './crypto.ts';
 import { responseColumns } from './export.ts';
 import { EXPORT_CONTENT_TYPES, exportFormResponses, schemaHistory } from './form-export.ts';
+import { issueUploadToken, newFileId, readUploadToken } from './uploads.ts';
 import { createWebhookSender } from './webhooks.ts';
 
 export type FormDefinition = {
@@ -58,6 +80,11 @@ export type FormRegistry = {
 export type OpenFormHandlerOptions = {
   registry: FormRegistry;
   storage: StorageAdapter;
+  /**
+   * Where uploaded files' bytes go (`<FileInput>`). Without it, forms with file
+   * fields can't be answered: uploads answer 503.
+   */
+  files?: FileStore;
   /** Signs timing tokens and hashes visitor ids / IPs. Keep it stable and private. */
   secret: string;
   config?: OpenFormConfig;
@@ -95,6 +122,12 @@ const DEFAULT_MAX_BODY = 256 * 1024;
 const SIGN_IN_MAX = 10;
 const SIGN_IN_WINDOW_MS = 10 * 60_000;
 const MAX_BULK_DELETE = 500;
+/** How long an upload may wait for its response, and the token that vouches for it lasts. */
+const UPLOAD_TTL_MS = 24 * 60 * 60_000;
+const UPLOAD_URL_SECONDS = 15 * 60;
+const UPLOAD_RATE_MAX = 60;
+const UPLOAD_RATE_WINDOW_MS = 10 * 60_000;
+const SWEEP_EVERY_MS = 60 * 60_000;
 
 class HttpError extends Error {
   constructor(
@@ -267,6 +300,8 @@ type Route = {
   admin: boolean;
   /** Public form route other sites may call (`embed.origins`). */
   cors?: boolean;
+  /** Admin route a public read-only Studio still keeps closed (respondents' files). */
+  private?: boolean;
   handle: (ctx: RouteContext, params: string[]) => Promise<Response>;
 };
 
@@ -436,6 +471,223 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     return { state: 'open' } as const;
   }
 
+  const files = opts.files;
+  let lastSweep = 0;
+  let warnedNoFiles = false;
+
+  function requireFiles(messages: Messages): FileStore {
+    if (files) return files;
+    if (!warnedNoFiles) {
+      warnedNoFiles = true;
+      console.warn(
+        '[open-form] A respondent tried to upload a file, but this server has no file storage. Set OPEN_FORM_FILES_URL to an S3-compatible bucket, or run on a disk that persists.',
+      );
+    }
+    throw new HttpError(503, 'uploads_unavailable', messages.fileUploadFailed);
+  }
+
+  /** The file field respondents see under `name`, else the first one by that name. */
+  function fileField(def: FormDefinition, name: unknown, values?: FormValues): FieldSchema {
+    const fields = def.schema.fields.filter((f) => f.name === name && f.type === 'file');
+    const shown = values ? resolveVisibleFields(def.schema, values).fields : [];
+    const field = fields.find((f) => shown.includes(f)) ?? fields[0];
+    if (!field) throw new HttpError(400, 'bad_request', 'No file field by that name.');
+    return field;
+  }
+
+  // Unclaimed uploads (abandoned forms, bots) are cleared at most once an hour,
+  // in the background of a new one.
+  function sweepLater(store: FileStore, now: number) {
+    if (!store.sweep || now - lastSweep < SWEEP_EVERY_MS) return;
+    lastSweep = now;
+    const swept = store.sweep(UPLOAD_TTL_MS, now).catch((err) => {
+      console.error('[open-form] Clearing unclaimed uploads failed:', withoutMessage(err));
+    });
+    opts.waitUntil?.(swept);
+  }
+
+  /** Body `{ field, name, size, type }`: where to send the bytes, and the token that vouches for them. */
+  async function createUpload({ request, url, now }: RouteContext, [id]: string[]) {
+    assertSameOrigin(request, embedOrigins);
+    const { def, overrides } = await loadPublicForm(id as string);
+    const body = await readJson(request, 8 * 1024);
+    const messages = messagesFor(def, body.locale);
+    if (windowOf(def, overrides, now).status !== 'open') {
+      const policy = policyOf(def, overrides);
+      throw new HttpError(410, 'closed', policy?.closedMessage ?? messages.closedMessage);
+    }
+    const store = requireFiles(messages);
+    const field = fileField(def, body.field);
+    const name = safeFileName(typeof body.name === 'string' ? body.name : '');
+    const size = Number(body.size);
+    const maxSize = field.maxSize ?? DEFAULT_MAX_FILE_SIZE;
+    if (!Number.isSafeInteger(size) || size < 0) {
+      throw new HttpError(400, 'bad_request', 'size must be a whole number of bytes.');
+    }
+    if (size > maxSize) {
+      throw new HttpError(
+        413,
+        'too_large',
+        format(messages.fileTooLarge, { n: formatFileSize(maxSize, messages.locale) }),
+      );
+    }
+    const kind = fileKindOf(name, typeof body.type === 'string' ? body.type : undefined);
+    if (!kind || !acceptedKinds(field.accept).includes(kind)) {
+      throw new HttpError(415, 'file_type', messages.fileType);
+    }
+
+    const address = rateLimitSubject(opts.clientAddress?.(request) ?? 'unknown');
+    const rateKey = (await signer.sign(`upload:${def.id}:${address}`)).slice(0, 32);
+    if ((await storage.hitRateLimit(rateKey, UPLOAD_RATE_WINDOW_MS, now)) > UPLOAD_RATE_MAX) {
+      throw new HttpError(429, 'rate_limited', messages.rateLimited);
+    }
+
+    const fileId = newFileId();
+    const expires = now + UPLOAD_TTL_MS;
+    const token = await issueUploadToken(signer, {
+      formId: def.id,
+      field: field.name,
+      fileId,
+      size,
+      name,
+      expires,
+    });
+    const target = await store.uploadTarget(
+      PENDING_PREFIX + fileId,
+      { size, type: kind.type },
+      UPLOAD_URL_SECONDS,
+    );
+    sweepLater(store, now);
+    const ownUrl = `${basePath}/forms/${encodeURIComponent(def.id)}/uploads/${token}`;
+    return json(
+      {
+        token,
+        expires,
+        type: kind.type,
+        upload: target ?? { url: new URL(ownUrl, url).pathname, headers: {} },
+      },
+      201,
+    );
+  }
+
+  /** The bytes of an upload, for stores the browser can't reach itself (the local disk). */
+  async function receiveUpload({ request, now }: RouteContext, [id, token]: string[]) {
+    assertSameOrigin(request, embedOrigins);
+    const { def } = await loadPublicForm(id as string);
+    const messages = messagesFor(def);
+    const store = requireFiles(messages);
+    const check = await readUploadToken(signer, token, now);
+    if (!check.ok || check.claim.formId !== def.id) {
+      throw new HttpError(check.ok ? 403 : 400, 'invalid_token', messages.fileExpired);
+    }
+    if (!store.write) throw new HttpError(405, 'method_not_allowed', 'Upload to the bucket URL.');
+    const key = PENDING_PREFIX + check.claim.fileId;
+    if (await store.stat(key)) throw new HttpError(409, 'conflict', 'Already uploaded.');
+    const { size } = check.claim;
+    if (Number(request.headers.get('content-length') ?? 0) > size) {
+      throw new HttpError(413, 'too_large', messages.fileUploadFailed);
+    }
+    let written: number;
+    try {
+      written = await store.write(key, request.body ?? new ReadableStream(), size);
+    } catch (err) {
+      if (err instanceof FileTooLargeError) {
+        throw new HttpError(413, 'too_large', messages.fileUploadFailed);
+      }
+      throw err;
+    }
+    if (written !== size) {
+      await store.delete([key]);
+      throw new HttpError(400, 'incomplete', messages.fileUploadFailed);
+    }
+    return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
+  }
+
+  /**
+   * Swaps each visible file field's upload tokens for the files they vouch
+   * for, judged by the bytes that arrived. Files from fields the answers hide
+   * are left for the sweep. Resolves the files to move once the response is stored.
+   */
+  async function claimFiles(
+    def: FormDefinition,
+    data: FormValues,
+    messages: Messages,
+    now: number,
+  ): Promise<Array<{ from: string; to: string }>> {
+    const names = [
+      ...new Set(def.schema.fields.filter((f) => f.type === 'file').map((f) => f.name)),
+    ];
+    if (names.length === 0) return [];
+    const visible = resolveVisibleFields(def.schema, coerceValues(def.schema, data));
+    const moves: Array<{ from: string; to: string }> = [];
+    const errors: Record<string, string> = {};
+    for (const name of names) {
+      if (!(name in data)) continue;
+      const field = visible.fields.find((f) => f.name === name && f.type === 'file');
+      if (!field) {
+        delete data[name];
+        continue;
+      }
+      const entries = coerceFileEntries(data[name]);
+      if (entries.length === 0) continue;
+      const store = requireFiles(messages);
+      const claimed: StoredFile[] = [];
+      for (const entry of entries) {
+        // Only tokens: a stored file's id from the browser would point at someone else's file.
+        if (!('token' in entry)) {
+          errors[name] =
+            'status' in entry && entry.status === 'uploading'
+              ? messages.fileUploading
+              : messages.fileUploadFailed;
+          break;
+        }
+        const check = await readUploadToken(signer, entry.token, now);
+        if (!check.ok || check.claim.formId !== def.id || check.claim.field !== name) {
+          errors[name] =
+            check.ok || check.reason === 'invalid'
+              ? messages.fileUploadFailed
+              : messages.fileExpired;
+          break;
+        }
+        const { claim } = check;
+        const key = PENDING_PREFIX + claim.fileId;
+        const [info, head] = await Promise.all([store.stat(key), store.readHead(key, SNIFF_BYTES)]);
+        if (!info || !head || info.size !== claim.size) {
+          errors[name] = messages.fileUploadFailed;
+          break;
+        }
+        const kind = sniffFile(claim.name, head, field.accept);
+        if (!kind) {
+          errors[name] = messages.fileType;
+          break;
+        }
+        claimed.push({ id: claim.fileId, name: claim.name, size: info.size, type: kind.type });
+        moves.push({ from: key, to: `${def.id}/${claim.fileId}` });
+      }
+      data[name] = claimed;
+    }
+    if (Object.keys(errors).length > 0) {
+      throw new HttpError(422, 'invalid', messages.fixErrors, { errors });
+    }
+    return moves;
+  }
+
+  /** The keys of a response's files. */
+  function fileKeys(submission: StoredSubmission): string[] {
+    return Object.values(submission.data).flatMap((value) =>
+      storedFiles(value).map((file) => `${submission.formId}/${file.id}`),
+    );
+  }
+
+  async function deleteFiles(keys: string[]) {
+    if (!files || keys.length === 0) return;
+    try {
+      await files.delete(keys);
+    } catch (err) {
+      console.error("[open-form] Deleting a response's files failed:", withoutMessage(err));
+    }
+  }
+
   async function getForm({ request, now }: RouteContext, [id]: string[]) {
     const { def, overrides } = await loadPublicForm(id as string);
     const status = await availability(def, overrides, request, now);
@@ -473,11 +725,12 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       if (check !== 'ok') throw new HttpError(400, 'invalid_token', messages.genericError);
     }
 
-    const data = (
-      typeof body.data === 'object' && body.data !== null && !Array.isArray(body.data)
+    const data = {
+      ...((typeof body.data === 'object' && body.data !== null && !Array.isArray(body.data)
         ? body.data
-        : {}
-    ) as FormValues;
+        : {}) as FormValues),
+    };
+    const moves = await claimFiles(def, data, messages, now);
     const result = await validateSubmission(def.schema, data, {
       messages,
       validators: def.validators,
@@ -541,6 +794,27 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     );
     if (!created.ok) return respond(created);
     const { submission } = created;
+    if (moves.length > 0) {
+      const store = files as FileStore;
+      try {
+        for (const move of moves) {
+          if (!(await store.move(move.from, move.to)))
+            throw new Error('An upload was claimed twice.');
+        }
+      } catch (err) {
+        // Without its files the response would be incomplete: take it back.
+        await storage.deleteSubmission(def.id, submission.id);
+        await deleteFiles(moves.map((move) => move.to));
+        console.error("[open-form] Storing a response's files failed:", withoutMessage(err));
+        throw new HttpError(422, 'invalid', messages.fixErrors, {
+          errors: Object.fromEntries(
+            Object.entries(submission.data)
+              .filter(([, value]) => storedFiles(value).length > 0)
+              .map(([name]) => [name, messages.fileUploadFailed]),
+          ),
+        });
+      }
+    }
     const delivered = webhooks.send(def.id, {
       type: 'submission.created',
       timestamp: submission.createdAt,
@@ -696,8 +970,10 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
 
   async function deleteSubmission({ request }: RouteContext, [id, sid]: string[]) {
     assertSameOrigin(request);
+    const existing = await storage.getSubmission(id as string, sid as string);
     const deleted = await storage.deleteSubmission(id as string, sid as string);
     if (!deleted) throw new HttpError(404, 'not_found', 'Response not found.');
+    if (existing) await deleteFiles(fileKeys(existing));
     return json({ ok: true });
   }
 
@@ -715,7 +991,11 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     }
     let deleted = 0;
     for (const sid of new Set(ids as string[])) {
-      if (await storage.deleteSubmission(id as string, sid)) deleted++;
+      const existing = await storage.getSubmission(id as string, sid);
+      if (await storage.deleteSubmission(id as string, sid)) {
+        deleted++;
+        if (existing) await deleteFiles(fileKeys(existing));
+      }
     }
     return json({ deleted });
   }
@@ -740,6 +1020,36 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
         'content-type': EXPORT_CONTENT_TYPES[format],
         'content-disposition': `attachment; filename="${id}-responses-${date}.${format}"`,
         'cache-control': 'no-store',
+      },
+    });
+  }
+
+  /** A response's file, for Studio: always as an attachment, never run or rendered as a page. */
+  async function downloadFile(_ctx: RouteContext, [id, sid, fileId]: string[]) {
+    const submission = await storage.getSubmission(id as string, sid as string);
+    const file = submission
+      ? Object.values(submission.data)
+          .flatMap((value) => storedFiles(value))
+          .find((f) => f.id === fileId)
+      : undefined;
+    if (!submission || !file || !files) throw new HttpError(404, 'not_found', 'File not found.');
+    const found = await files.download(`${submission.formId}/${file.id}`, file);
+    if (!found) throw new HttpError(404, 'not_found', 'File not found.');
+    const headers: Record<string, string> = {
+      'cache-control': 'private, no-store',
+      'x-content-type-options': 'nosniff',
+      'content-security-policy': "default-src 'none'; sandbox",
+      'cross-origin-resource-policy': 'same-origin',
+    };
+    if ('redirect' in found) {
+      return new Response(null, { status: 302, headers: { ...headers, location: found.redirect } });
+    }
+    return new Response(found.body, {
+      headers: {
+        ...headers,
+        'content-type': file.type,
+        'content-length': String(found.size),
+        'content-disposition': attachmentDisposition(file.name),
       },
     });
   }
@@ -818,6 +1128,27 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       handle: submit,
     },
     {
+      method: 'POST',
+      pattern: new RegExp(`^/forms/${SEG}/uploads$`),
+      admin: false,
+      cors: true,
+      handle: createUpload,
+    },
+    {
+      method: 'PUT',
+      pattern: new RegExp(`^/forms/${SEG}/uploads/${SEG}$`),
+      admin: false,
+      cors: true,
+      handle: receiveUpload,
+    },
+    {
+      method: 'GET',
+      pattern: new RegExp(`^/forms/${SEG}/submissions/${SEG}/files/${SEG}$`),
+      admin: true,
+      private: true,
+      handle: downloadFile,
+    },
+    {
       method: 'GET',
       pattern: new RegExp(`^/forms/${SEG}/schema$`),
       admin: true,
@@ -883,7 +1214,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
         status: 204,
         headers: {
           ...cors,
-          'access-control-allow-methods': 'GET, POST',
+          'access-control-allow-methods': 'GET, POST, PUT',
           'access-control-allow-headers': `content-type, ${VISITOR_HEADER}`,
           'access-control-max-age': '600',
         },
@@ -910,7 +1241,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     async function dispatch(route: Route, match: RegExpExecArray): Promise<Response> {
       try {
         // Studio's GET routes only read, so they're the ones a public Studio opens.
-        const open = publicRead && request.method === 'GET';
+        const open = publicRead && request.method === 'GET' && !route.private;
         if (route.admin && !open && !gate) {
           return json({ error: 'not_found', message: 'Not found.' }, 404);
         }

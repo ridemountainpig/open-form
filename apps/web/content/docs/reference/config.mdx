@@ -60,6 +60,11 @@ loads `.env` itself.
       default: "{ path: '.open-form/open-form.db' }",
       description: 'path: SQLite file, relative to the project root; OPEN_FORM_DB overrides it. url: a Postgres connection string, read from process.env and never written here; OPEN_FORM_DATABASE_URL overrides it, and either one wins over path.',
     },
+    files: {
+      type: '{ path?: string; url?: string }',
+      default: "{ path: 'uploads/ next to the SQLite database' }",
+      description: 'Where <FileInput> uploads go. path: a folder on disk, relative to the project root, by default uploads/ beside the database (.open-form/uploads); OPEN_FORM_FILES_DIR overrides it. url: an S3-compatible bucket, s3://<bucket>?endpoint=…, read from process.env; OPEN_FORM_FILES_URL overrides it, and either one wins over path. See File uploads.',
+    },
     protection: {
       type: 'ProtectionConfig',
       default: "{ honeypot: true, minimumCompletionTime: '2s', rateLimit: { max: 10, window: '10m' } }",
@@ -164,7 +169,8 @@ export default defineConfig({ storage: { path: '/data/open-form.db' } });
 ```
 
 Or leave the config alone and set `OPEN_FORM_DB=/data/open-form.db` on the
-server. The generated secret follows the database to `/data/secret`. To keep it
+server. The generated secret follows the database to `/data/secret`, and
+[uploaded files](/docs/core-feature/file-uploads) to `/data/uploads/`. To keep it
 off the volume, so a copy of the volume doesn't carry it, set `OPEN_FORM_SECRET`
 in your platform's secret settings instead:
 

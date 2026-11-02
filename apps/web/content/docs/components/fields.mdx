@@ -71,6 +71,7 @@ skipping see no answer, so put answers they need from the start in
 | `<CheckboxGroup>` | string[] | `options`, `minSelected`, `maxSelected`, `variant` |
 | `<Checkbox>` | boolean | Children are the text beside the box |
 | `<Rating>` | number | `min` (default `1`), `max` (default `5`), `lowLabel`, `highLabel` |
+| `<FileInput>` | A list of files: `{ id, name, size, type }[]` | `accept`, `maxSize` (default `'10MB'`), `maxFiles` (default `1`) ([File uploads](/docs/core-feature/file-uploads)) |
 | `<Matrix>` | One string per row | `rows`, `columns`, `label`, `description`, `required` ([Matrix](#matrix)) |
 
 Text answers are trimmed before they're validated and stored, and a blank
