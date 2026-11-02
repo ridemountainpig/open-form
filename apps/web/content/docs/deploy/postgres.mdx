@@ -16,8 +16,9 @@ Percent-encode special characters in the user name and password, such as `#`
 as `%23` and `@` as `%40`. Open Form refuses a connection string it can't read
 rather than guess which part is the host.
 
-`open-form dev`, `start`, `list`, `responses export`, `delete` and the
-[Next.js route](/docs/deploy/nextjs) all use it. Nothing else changes: Studio,
+`open-form dev`, `start`, `list`, `responses export`, `delete`, the
+[Vercel function](/docs/deploy/vercel) and the [Next.js route](/docs/deploy/nextjs)
+all use it. Nothing else changes: Studio,
 filters, exports, webhooks and response numbers work the same as on SQLite.
 
 <Steps>
@@ -58,7 +59,9 @@ environment wins over `.env`.
 
 `OPEN_FORM_DATABASE_URL` wins over `storage.url`. Open Form doesn't read
 `DATABASE_URL` on its own, because in many apps it points at the app's own
-database.
+database. The one exception is the [Vercel function](/docs/deploy/vercel):
+there, when nothing else picks a database, it uses the `POSTGRES_URL` or
+`DATABASE_URL` that a Vercel Marketplace database sets.
 
 </Step>
 <Step>
@@ -128,7 +131,8 @@ certificate. A connection string without `sslmode` gets
   ship the file with the function as shown in
   [Vercel](/docs/deploy/vercel).
 - `sslmode=no-verify`: encrypt without checking who answers. Use it only on a
-  network you trust.
+  network you trust, or for a test against a provider whose certificate can't
+  be verified, like Railway's Postgres, which signs its own.
 - `sslmode=disable`: no encryption. Open Form logs a warning when the host
   isn't local.
 

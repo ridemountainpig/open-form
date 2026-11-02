@@ -10,6 +10,7 @@ export default defineConfig({
     'node/index': 'src/node/index.ts',
     'vite/index': 'src/vite/index.ts',
     'next/index': 'src/next/index.ts',
+    'vercel/index': 'src/vercel/index.ts',
     'cli/bin': 'src/cli/bin.ts',
   },
   format: 'esm',

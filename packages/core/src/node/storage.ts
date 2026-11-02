@@ -13,10 +13,10 @@ export type StorageTarget =
   | {
       kind: 'postgres';
       url: string;
-      source: 'OPEN_FORM_DATABASE_URL' | 'storage.url';
+      source: 'OPEN_FORM_DATABASE_URL' | 'storage.url' | 'POSTGRES_URL' | 'DATABASE_URL';
     };
 
-const POSTGRES_RE = /^postgres(?:ql)?:\/\//i;
+export const POSTGRES_RE = /^postgres(?:ql)?:\/\//i;
 
 /**
  * Where responses live: `OPEN_FORM_DATABASE_URL`, else `storage.url`, else SQLite
