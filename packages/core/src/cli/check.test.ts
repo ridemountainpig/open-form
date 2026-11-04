@@ -37,6 +37,14 @@ describe('turnstileWarnings', () => {
     expect(turnstileWarnings({}, on, { OPEN_FORM_TURNSTILE_SECRET: 'x' })).toEqual([]);
     expect(turnstileWarnings({}, {}, {})).toEqual([]);
   });
+
+  it('reports a project protection.turnstile the server would refuse at startup', () => {
+    const bad = { protection: { turnstile: { siteKey: '' } } };
+    const env = { OPEN_FORM_TURNSTILE_SECRET: 'x' };
+    expect(turnstileWarnings({}, bad, env)).toEqual([
+      'protection: turnstile needs a siteKey from the Cloudflare dashboard, or `false`.',
+    ]);
+  });
 });
 
 describe('uniqueWarnings', () => {
