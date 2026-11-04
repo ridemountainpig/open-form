@@ -319,6 +319,12 @@ export function createS3FileStore(opts: S3FileStoreOptions): FileStore {
       const signed = await sign('GET', url, { expiresInSeconds: 60 });
       return { redirect: signed.url.toString() };
     },
+    async read(key) {
+      const res = await send('GET', objectUrl(key));
+      if (res.status === 404) return null;
+      if (!res.ok || !res.body) return fail(res, 'read');
+      return res.body;
+    },
     delete: remove,
     async deletePrefix(keyPrefix) {
       await remove((await list(keyPrefix)).map((item) => item.key));

@@ -152,6 +152,13 @@ the page, and only for a signed-in Studio: a
 only. Filters on a file field are **is filled** and **is empty**, and search
 finds file names.
 
+**Export → Uploaded files** downloads the files of the responses the table
+shows (or **All**) as one ZIP. Each file is named after its response number,
+`12-cv.pdf`, so it matches the `#` column of the CSV and Excel exports; a form
+with several file fields gets a folder for each, `resume/12-cv.pdf`. The ZIP is
+built as it downloads, so a large one starts at once, and it needs a signed-in
+Studio like single downloads.
+
 CSV and Excel exports list each answer's file names, separated by `;`; JSON
 exports carry the file list as stored. [Webhooks](/docs/deploy/webhooks)
 carry the same list, without download links.

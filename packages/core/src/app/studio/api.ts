@@ -213,6 +213,15 @@ export const exportPath = (
   return `${formPath(id)}/export?${params}`;
 };
 
+/** Every uploaded file of the responses `narrow` matches, as one ZIP. */
+export const filesZipPath = (id: string, narrow?: { q?: string; filter?: string }) => {
+  const params = new URLSearchParams();
+  if (narrow?.q) params.set('q', narrow.q);
+  if (narrow?.filter) params.set('filter', narrow.filter);
+  const query = params.toString();
+  return `${formPath(id)}/files${query ? `?${query}` : ''}`;
+};
+
 export function deleteSubmission(formId: string, submissionId: string) {
   return request<{ ok: true }>(
     `${formPath(formId)}/submissions/${encodeURIComponent(submissionId)}`,

@@ -97,6 +97,10 @@ export function createLocalFileStore(opts: { dir: string }): FileStore {
         return null;
       }
     },
+    async read(key) {
+      const found = await this.download(key, { name: '', type: '' });
+      return found && 'body' in found ? found.body : null;
+    },
     async delete(keys) {
       for (const key of keys) await rm(fileOf(key), { force: true });
     },

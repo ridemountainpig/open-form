@@ -1,6 +1,7 @@
 import { DEFAULT_TIME_ZONE, wallClock } from '../schema/index.ts';
 import type { StoredSubmission } from '../storage/index.ts';
 import { type ExportColumn, formatCell, localeName } from './export.ts';
+import { crc32 } from './zip.ts';
 
 export const XLSX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -246,22 +247,6 @@ const STYLES = [
 ].join('');
 
 type ZipEntry = { name: string; data: Uint8Array<ArrayBuffer> };
-
-const CRC_TABLE = (() => {
-  const table = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    table[n] = c >>> 0;
-  }
-  return table;
-})();
-
-function crc32(data: Uint8Array): number {
-  let crc = 0xffffffff;
-  for (const byte of data) crc = (CRC_TABLE[(crc ^ byte) & 0xff] as number) ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
-}
 
 async function deflateRaw(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   const stream = new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'));

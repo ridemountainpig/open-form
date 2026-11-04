@@ -33,6 +33,8 @@ export type FileStore = {
     key: string,
     file: { name: string; type: string },
   ): Promise<{ body: ReadableStream<Uint8Array>; size: number } | { redirect: string } | null>;
+  /** The file's bytes, for the server itself (a ZIP of a form's files). Null when it's gone. */
+  read(key: string): Promise<ReadableStream<Uint8Array> | null>;
   delete(keys: readonly string[]): Promise<void>;
   /** Removes every file whose key starts with `prefix` (a form's files: `<formId>/`). */
   deletePrefix(prefix: string): Promise<void>;
@@ -101,6 +103,10 @@ export function createMemoryFileStore(): FileStore & { files: Map<string, Uint8A
     async download(key) {
       const bytes = files.get(key);
       return bytes ? { body: stream(bytes), size: bytes.byteLength } : null;
+    },
+    async read(key) {
+      const bytes = files.get(key);
+      return bytes ? stream(bytes) : null;
     },
     async delete(keys) {
       for (const key of keys) files.delete(key);

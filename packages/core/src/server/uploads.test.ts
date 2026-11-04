@@ -4,6 +4,7 @@ import { createSqliteStorage } from '../sqlite/index.ts';
 import { createMemoryFileStore } from '../storage/files.ts';
 import type { StorageAdapter } from '../storage/index.ts';
 import { createOpenFormHandler, type OpenFormHandler } from './handler.ts';
+import { crc32 } from './zip.ts';
 
 const ORIGIN = 'http://localhost:3000';
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]);
@@ -240,4 +241,56 @@ describe('uploads', () => {
     await files.sweep?.(24 * 60 * 60_000, Date.now() + 25 * 60 * 60_000);
     expect(files.files.size).toBe(0);
   });
+
+  it('zips every file of the matching responses, named by response number', async () => {
+    const first = await upload('resume', 'cv.pdf', PDF);
+    await submit({ name: 'Alex', resume: [first] });
+    const second = await upload('resume', 'cv.pdf', PDF);
+    const photo = await upload('photos', 'a.png', PNG);
+    await submit({ name: 'Sam', resume: [second], photos: [photo] });
+
+    const url = `${ORIGIN}/api/forms/apply/files`;
+    handler = make({ publicStudio: true });
+    expect((await handler(new Request(url))).status).toBe(401);
+    const res = await handler(new Request(url, { headers: { 'x-admin': '1' } }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('application/zip');
+    const entries = unzip(new Uint8Array(await res.arrayBuffer()));
+    expect(entries.map((e) => e.name)).toEqual([
+      'resume/1-cv.pdf',
+      'resume/2-cv.pdf',
+      'photos/2-a.png',
+    ]);
+    expect(entries[2]?.data).toEqual(PNG);
+
+    const narrowed = await handler(new Request(`${url}?q=Alex`, { headers: { 'x-admin': '1' } }));
+    expect(unzip(new Uint8Array(await narrowed.arrayBuffer())).map((e) => e.name)).toEqual([
+      '1-cv.pdf',
+    ]);
+  });
 });
+
+/** Reads a stored-only ZIP through its central directory, checking each CRC. */
+function unzip(bytes: Uint8Array) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const end = bytes.length - 22;
+  expect(view.getUint32(end, true)).toBe(0x06054b50);
+  const count = view.getUint16(end + 10, true);
+  let at = view.getUint32(end + 16, true);
+  const entries: Array<{ name: string; data: Uint8Array }> = [];
+  for (let i = 0; i < count; i++) {
+    expect(view.getUint32(at, true)).toBe(0x02014b50);
+    const crc = view.getUint32(at + 16, true);
+    const size = view.getUint32(at + 20, true);
+    const nameLength = view.getUint16(at + 28, true);
+    const offset = view.getUint32(at + 42, true);
+    const name = new TextDecoder().decode(bytes.slice(at + 46, at + 46 + nameLength));
+    const localName = view.getUint16(offset + 26, true);
+    const start = offset + 30 + localName + view.getUint16(offset + 28, true);
+    const data = bytes.slice(start, start + size);
+    expect(crc32(data)).toBe(crc);
+    entries.push({ name, data });
+    at += 46 + nameLength + view.getUint16(at + 30, true) + view.getUint16(at + 32, true);
+  }
+  return entries;
+}

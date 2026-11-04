@@ -53,6 +53,7 @@ import { responseColumns } from './export.ts';
 import { EXPORT_CONTENT_TYPES, exportFormResponses, schemaHistory } from './form-export.ts';
 import { issueUploadToken, newFileId, readUploadToken } from './uploads.ts';
 import { createWebhookSender } from './webhooks.ts';
+import { zipStream } from './zip.ts';
 
 export type FormDefinition = {
   id: string;
@@ -1024,6 +1025,38 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     });
   }
 
+  /** Every file of the responses Studio's search and filters match, as one ZIP. */
+  async function downloadFiles({ url, now }: RouteContext, [id]: string[]) {
+    if (!FORM_ID_RE.test(id as string)) throw new HttpError(404, 'not_found', 'Form not found.');
+    if (!files) throw new HttpError(404, 'not_found', 'This server keeps no files.');
+    const store = files;
+    const { items } = await storage.listSubmissions(id as string, {
+      order: 'asc',
+      search: url.searchParams.get('q') || undefined,
+      filter: filterParam(url),
+      now,
+    });
+    const found = items.flatMap((item) =>
+      Object.entries(item.data).flatMap(([field, value]) =>
+        storedFiles(value).map((file) => ({ number: item.number, field, file })),
+      ),
+    );
+    const folders = new Set(found.map((f) => f.field)).size > 1;
+    const entries = found.map(({ number, field, file }) => ({
+      name: `${folders ? `${field.replace(/[\\/]/g, '_')}/` : ''}${number}-${file.name}`,
+      open: () => store.read(`${id}/${file.id}`),
+    }));
+    const date = new Date(now).toISOString().slice(0, 10);
+    return new Response(zipStream(entries), {
+      headers: {
+        'content-type': 'application/zip',
+        'content-disposition': `attachment; filename="${id}-files-${date}.zip"`,
+        'cache-control': 'private, no-store',
+        'x-content-type-options': 'nosniff',
+      },
+    });
+  }
+
   /** A response's file, for Studio: always as an attachment, never run or rendered as a page. */
   async function downloadFile(_ctx: RouteContext, [id, sid, fileId]: string[]) {
     const submission = await storage.getSubmission(id as string, sid as string);
@@ -1189,6 +1222,13 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       pattern: new RegExp(`^/forms/${SEG}/submissions/${SEG}$`),
       admin: true,
       handle: deleteSubmission,
+    },
+    {
+      method: 'GET',
+      pattern: new RegExp(`^/forms/${SEG}/files$`),
+      admin: true,
+      private: true,
+      handle: downloadFiles,
     },
     {
       method: 'GET',

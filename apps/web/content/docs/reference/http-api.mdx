@@ -28,6 +28,7 @@ the admin routes.
 | `PUT` | `/api/forms/:id/overrides` | Admin | Save Studio's schedule, time zone and Published changes |
 | `DELETE` | `/api/forms/:id/overrides` | Admin | Go back to the settings in code |
 | `GET` | `/api/forms/:id/export` | Admin | Download responses: `format=csv`, `xlsx` or `json` |
+| `GET` | `/api/forms/:id/files` | Admin | Every uploaded file as one ZIP; `q` and `filter` narrow it like the export. Closed to a public read-only Studio |
 | `GET` | `/api/studio/folders` | Admin | Studio's form folders, from `forms/.folders.json` (as of the build in production) |
 | `GET` | `/api/studio/session` | Open | Whether this browser is signed in to Studio |
 | `POST` | `/api/studio/session` | Open | Sign in with `{ password }` |

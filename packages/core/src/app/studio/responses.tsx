@@ -38,6 +38,7 @@ import {
   deleteSubmissions,
   EXPORT_FORMATS,
   exportPath,
+  filesZipPath,
   fileUrl,
   formPath,
   type SubmissionDetail,
@@ -415,6 +416,7 @@ export function Responses() {
             count={info?.responses}
             matching={narrowed && page.data ? total : undefined}
             narrow={{ q: search, filter }}
+            files={!readOnly && allColumns.some((c) => c.type === 'file')}
           />
         </div>
       </div>
@@ -1061,12 +1063,15 @@ function ExportMenu({
   count,
   matching,
   narrow,
+  files,
 }: {
   formId: string;
   count: number | undefined;
   /** How many responses the search and filters match; undefined when nothing narrows them. */
   matching: number | undefined;
   narrow: { q: string; filter: string };
+  /** Offers a ZIP of the uploaded files; Studio's read-only view can't download them. */
+  files: boolean;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -1148,6 +1153,22 @@ function ExportMenu({
               </span>
             </a>
           ))}
+          {files && (
+            <a
+              role="menuitem"
+              href={filesZipPath(formId, narrowed ? narrow : undefined)}
+              download
+              onClick={close}
+              className="flex flex-col rounded-md px-2 py-1.5 outline-none hover:bg-zinc-100 focus-visible:bg-zinc-100 dark:hover:bg-zinc-800 dark:focus-visible:bg-zinc-800"
+            >
+              <span className="text-[13px] font-medium text-zinc-800 dark:text-zinc-100">
+                {t('responses.exportFiles')}
+              </span>
+              <span className="text-[12px] text-zinc-500 dark:text-zinc-400">
+                {t('responses.exportHint.files')}
+              </span>
+            </a>
+          )}
         </div>
       </Popover>
     </div>
