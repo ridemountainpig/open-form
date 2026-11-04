@@ -103,6 +103,31 @@ describe('createOpenFormApp', () => {
     expect((await fetch(new Request(`${ORIGIN}/api/forms`))).status).toBe(404);
   });
 
+  it('verifies Turnstile with OPEN_FORM_TURNSTILE_SECRET', async () => {
+    writeBuild("{ protection: { turnstile: { siteKey: '1x00000000000000000000AA' } } }");
+    const submit = async () => {
+      const { fetch } = app();
+      const info = (await (await fetch(new Request(`${ORIGIN}/api/forms/rsvp`))).json()) as {
+        token: string;
+      };
+      return fetch(
+        new Request(`${ORIGIN}/api/forms/rsvp/submissions`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: ORIGIN },
+          body: JSON.stringify({ data: { email: 'amy@example.com' }, token: info.token }),
+        }),
+      );
+    };
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv('OPEN_FORM_TURNSTILE_SECRET', '');
+    expect((await submit()).status).toBe(503);
+    vi.stubEnv('OPEN_FORM_TURNSTILE_SECRET', 'turnstile-secret');
+    const res = await submit();
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe('human_check');
+  });
+
   it('refuses page requests that are not GET or HEAD', async () => {
     writeBuild();
     const res = await app().fetch(new Request(`${ORIGIN}/f/rsvp`, { method: 'POST' }));
