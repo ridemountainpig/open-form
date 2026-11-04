@@ -749,7 +749,8 @@ function InteractiveForm({
         }),
       });
       const body = (await res.json().catch(() => ({}))) as SubmitResponse;
-      if (!res.ok && turnstile) turnstileRef.current?.reset();
+      // The server checks answers before spending the token, so a 422 leaves it valid.
+      if (!res.ok && turnstile && res.status !== 422) turnstileRef.current?.reset();
       if (res.ok) {
         store.setState({ status: 'success', submissionId: body.id });
         runtime.onSubmitted?.({ id: body.id });
