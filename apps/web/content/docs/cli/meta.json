@@ -11,6 +11,7 @@
     "delete",
     "list",
     "responses-export",
+    "db",
     "theme",
     "comments",
     "sync-skills"

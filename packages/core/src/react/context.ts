@@ -98,7 +98,8 @@ export type RegisteredField = {
   getValidator(): CustomValidator | undefined;
   /** The field's own `defaultValue`, applied when it mounts without an answer. */
   getDefault(): unknown;
-  focus(): void;
+  /** The element that takes focus when the field is invalid. */
+  element(): HTMLElement | null;
 };
 
 export type FormContextValue = {

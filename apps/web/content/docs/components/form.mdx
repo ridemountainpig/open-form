@@ -188,6 +188,12 @@ is shown in.
 Put it directly inside `<Form>`. One placed inside the last `<Page>` is found
 too.
 
+When Next or Submit finds unanswered or invalid fields, the form scrolls the
+first one on the page into the middle of the screen and focuses it, with its
+label and error in view. A field the server rejects is brought back the same
+way, on its own step. The scroll is instant for visitors who prefer reduced
+motion.
+
 ## `<Success>`
 
 Replaces the thank-you screen shown after a successful submission.

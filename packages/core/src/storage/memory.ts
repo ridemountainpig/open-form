@@ -1,9 +1,6 @@
-import {
-  compareResponseSortKeys,
-  type FormSchema,
-  responseFilterTest,
-  responseSortKey,
-} from '../schema/index.ts';
+import type { FormSchema } from '../schema/index.ts';
+import { countersFor, planVersions, RESTORE_NOT_EMPTY } from './dump.ts';
+import { pageSubmissions } from './list.ts';
 import type {
   CreateSubmissionInput,
   CreateSubmissionResult,
@@ -14,7 +11,7 @@ import type {
   StoredSubmission,
 } from './types.ts';
 
-type Row = StoredSubmission & { uniqueKey: string | null };
+type Row = StoredSubmission & { uniqueKey: string | null; updatedAt?: string };
 
 function answerMatches(value: unknown, needle: string): boolean {
   if (typeof value === 'string' || typeof value === 'number') {
@@ -35,7 +32,7 @@ export function createMemoryStorage(): StorageAdapter {
   const counters = new Map<string, number>();
   const revoked = new Map<string, number>();
 
-  const strip = ({ uniqueKey: _unused, ...rest }: Row): StoredSubmission => rest;
+  const strip = ({ uniqueKey: _key, updatedAt: _updated, ...rest }: Row): StoredSubmission => rest;
   const ofForm = (formId: string) => submissions.filter((s) => s.formId === formId);
 
   return {
@@ -94,23 +91,8 @@ export function createMemoryStorage(): StorageAdapter {
       const needle = opts.search?.toLowerCase();
       let rows = ofForm(formId);
       if (needle) rows = rows.filter((s) => answerMatches(s.data, needle));
-      if (opts.filter) rows = rows.filter(responseFilterTest(opts.filter, opts.now));
-      const direction = opts.sort?.direction ?? opts.order ?? 'desc';
-      if (opts.sort?.field !== undefined) {
-        const key = responseSortKey(opts.sort);
-        const keyed = rows.map((row) => ({ row, key: key(row.data) }));
-        keyed.sort(
-          (a, b) => compareResponseSortKeys(a.key, b.key, direction) || b.row.number - a.row.number,
-        );
-        rows = keyed.map(({ row }) => row);
-      } else {
-        rows = [...rows].sort((a, b) =>
-          direction === 'asc' ? a.number - b.number : b.number - a.number,
-        );
-      }
-      const offset = opts.offset ?? 0;
-      const items = rows.slice(offset, opts.limit === undefined ? undefined : offset + opts.limit);
-      return { items: items.map(strip), total: rows.length };
+      const page = pageSubmissions(rows, opts);
+      return { items: page.items.map(strip), total: page.total };
     },
     async countSubmissions(formId) {
       return ofForm(formId).length;
@@ -172,6 +154,34 @@ export function createMemoryStorage(): StorageAdapter {
     },
     async isSessionRevoked(id) {
       return revoked.has(id);
+    },
+    async dump() {
+      const now = Date.now();
+      return structuredClone({
+        formVersions: [...versions.values()],
+        submissions: [...submissions]
+          .sort((a, b) => a.formId.localeCompare(b.formId) || a.number - b.number)
+          .map((row) => ({ ...row, updatedAt: row.updatedAt ?? row.createdAt })),
+        counters: countersFor(submissions, Object.fromEntries(counters)),
+        overrides: Object.fromEntries(overrides),
+        revokedSessions: Object.fromEntries([...revoked].filter(([, at]) => at > now)),
+      });
+    },
+    async restore(dump) {
+      if (submissions.length > 0 || overrides.size > 0 || [...counters.values()].some(Boolean)) {
+        throw new Error(RESTORE_NOT_EMPTY);
+      }
+      const copy = structuredClone(dump);
+      const plan = planVersions(copy, [...versions.values()]);
+      for (const version of plan.insert) versions.set(version.id, version);
+      for (const row of copy.submissions) {
+        submissions.push({ ...row, formVersionId: plan.idFor(row.formVersionId) });
+      }
+      for (const [formId, last] of Object.entries(countersFor(copy.submissions, copy.counters))) {
+        counters.set(formId, last);
+      }
+      for (const [formId, stored] of Object.entries(copy.overrides)) overrides.set(formId, stored);
+      for (const [id, at] of Object.entries(copy.revokedSessions)) revoked.set(id, at);
     },
     async close() {},
   };

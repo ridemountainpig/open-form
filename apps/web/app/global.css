@@ -73,6 +73,17 @@ html > body[data-scroll-locked] {
   color: var(--color-fd-foreground);
 }
 
+/* Callouts set text-sm on a 20px line, shorter than an inline code chip, so chips on
+   neighbouring lines touched. A taller line and a slimmer chip keep them apart. */
+.of-callout {
+  line-height: 1.75;
+}
+
+.of-callout :not(pre) > code {
+  padding-block: 0.0625rem;
+  line-height: 1.4;
+}
+
 .prose img {
   border: 1px solid var(--color-fd-border);
   border-radius: 0.5rem;

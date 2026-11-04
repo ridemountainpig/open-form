@@ -54,6 +54,10 @@ verifies a form before anyone opens it, and it works whether or not
   per language, the missing strings (the first eight here, all of them in
   `--json`), and up to three "not seen" entries.
 - **Errors** — a form that fails to load prints the exact error.
+- **Secrets in the config** — an error when `open-form.config.ts` holds a URL
+  with a password, such as a Postgres connection string in `storage.url`. The
+  file is committed; read the value from `process.env` and keep it in `.env`.
+  The password itself is never printed, and `check` exits with code `1`.
 
 "Not seen" means a translation key that didn't appear when the form rendered
 with no answers. Text shown only for certain answers, or returned by

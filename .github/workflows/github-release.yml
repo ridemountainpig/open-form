@@ -1,0 +1,66 @@
+name: GitHub Release
+
+# Run by hand after `pnpm release` and `git push --follow-tags`. Publishes one
+# GitHub Release per version, from that version's section of the core CHANGELOG.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to announce, e.g. 0.3.0 (empty: the version in packages/core/package.json)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency: ${{ github.workflow }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          current=$(node -p "require('./packages/core/package.json').version")
+          version=${INPUT_VERSION:-$current}
+          version=${version#v}
+          tag="@open-form-build/core@$version"
+
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --silent 2>/dev/null; then
+            echo "::error::Tag $tag isn't on GitHub. Publish with \`pnpm release\`, then \`git push --follow-tags\`."
+            exit 1
+          fi
+
+          awk -v heading="## $version" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' packages/core/CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::packages/core/CHANGELOG.md has no \"## $version\" section."
+            exit 1
+          fi
+          cat >> notes.md <<EOF
+
+          ### Packages
+
+          - [\`@open-form-build/core@$version\`](https://www.npmjs.com/package/@open-form-build/core/v/$version)
+          - [\`@open-form-build/cli@$version\`](https://www.npmjs.com/package/@open-form-build/cli/v/$version)
+          - [\`create-open-form@$version\`](https://www.npmjs.com/package/create-open-form/v/$version)
+          EOF
+
+          latest=false
+          [ "$version" = "$current" ] && latest=true
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "v$version" --notes-file notes.md --latest="$latest"
+          else
+            gh release create "$tag" --verify-tag --title "v$version" --notes-file notes.md --latest="$latest"
+          fi

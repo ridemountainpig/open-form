@@ -3,7 +3,7 @@ title: Responses & export
 description: Where responses are stored, how to browse them in Studio, and how to get them out.
 ---
 
-Responses are stored in SQLite, in a file inside your project:
+By default responses are stored in SQLite, in a file inside your project:
 
 ```text
 .open-form/
@@ -17,6 +17,12 @@ Change the path with `storage.path` in `open-form.config.ts` or the `OPEN_FORM_D
 environment variable; the `secret` file moves with the database. Setting
 `OPEN_FORM_SECRET` replaces it.
 
+Set `OPEN_FORM_DATABASE_URL` (or `storage.url`) and responses go to
+[Postgres](/docs/deploy/postgres) instead: the dev server, `open-form start`,
+Studio and every command below read and write there, and nothing is written to
+`.open-form/open-form.db`. Studio, search, filters, export and response numbers
+work the same on both.
+
 ## Runtime data stays out of git
 
 Your repo holds the questions, logic and policy. `.open-form/` holds the answers,
@@ -26,8 +32,12 @@ personal data.
 - The `.open-form/` directory is created `0700` and the database files `0600`.
 - The dev server refuses to serve anything inside `.open-form/` (or a custom
   database path), so the file can't be downloaded past Studio's sign-in.
-- Deleting a response really erases it. SQLite's `secure_delete` is on and the
-  write-ahead log is truncated afterwards, so no copy stays behind in either file.
+- On SQLite, deleting a response really erases it. SQLite's `secure_delete` is
+  on and the write-ahead log is truncated afterwards, so no copy stays behind in
+  either file. On Postgres a deleted response disappears from every query at
+  once, but the old row stays on disk until `VACUUM` reclaims it, and backups
+  keep it as long as your provider does (see
+  [Deleting responses](/docs/deploy/postgres#deleting-responses)).
 - Export files written with `-o` are readable by you only (`0600`). Name them
   `responses*.csv`, `.xlsx` or `.json`: the `.gitignore` that `open-form init`
   writes keeps those out of git at the workspace root, and the dev server refuses

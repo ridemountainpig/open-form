@@ -18,14 +18,17 @@ export {
 export type {
   CreateSubmissionInput,
   CreateSubmissionResult,
+  DumpedSubmission,
   FormVersionRecord,
   ListSubmissionsOptions,
   StorageAdapter,
+  StorageDump,
+  StorageInfo,
   StoredOverrides,
   StoredSubmission,
   SubmissionPage,
 } from '../storage/index.ts';
-export { createMemoryStorage } from '../storage/index.ts';
+export { createMemoryStorage, pageSubmissions } from '../storage/index.ts';
 export type { AdminAuth, AdminGate, SessionRevocations } from './admin.ts';
 export {
   ADMIN_PASSWORD_MIN_LENGTH,

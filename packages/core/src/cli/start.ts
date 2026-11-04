@@ -30,6 +30,7 @@ export async function start(flags: StartFlags = {}): Promise<void> {
           ? chalk.cyan(`${started.url}/studio`)
           : chalk.dim('disabled — set OPEN_FORM_ADMIN_PASSWORD to enable'),
     ],
+    ['Storage', chalk.dim(started.storage)],
   ]);
   process.stdout.write('\n');
 

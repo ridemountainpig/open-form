@@ -19,11 +19,12 @@ meetup    Developer Meetup      87         forms/meetup/index.tsx
 | --- | --- |
 | `ID` | The folder name, served at `/f/<id>`. |
 | `TITLE` | The `title` from `defineForm()`, read from the source without loading the form. |
-| `RESPONSES` | The count in this workspace's database: `OPEN_FORM_DB`, else `storage.path` in `open-form.config.ts`, else `.open-form/open-form.db`. `0` before the first submission. |
+| `RESPONSES` | The count in this workspace's database: Postgres at `OPEN_FORM_DATABASE_URL` or `storage.url`, else SQLite at `OPEN_FORM_DB`, `storage.path` or `.open-form/open-form.db` ([which database](/docs/reference/storage#which-database)). `0` before the first submission. |
 | `SOURCE` | The form's entry file. |
 
-`list` takes no flags and doesn't start a server. Counts come from the local
-database only — a deployed server keeps its own.
+`list` takes no flags and doesn't start a server. Counts come from the database
+this workspace points at: a local SQLite file is separate from a deployed
+server's, while a shared Postgres connection string reads the same responses.
 
 To see the schema each form derives, use [`open-form check`](/docs/cli/check).
 To get the responses themselves, use

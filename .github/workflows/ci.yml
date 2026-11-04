@@ -40,3 +40,35 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:e2e
+
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: open_form
+          POSTGRES_PASSWORD: open_form_ci
+          POSTGRES_DB: open_form
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      OPEN_FORM_TEST_POSTGRES_URL: postgres://open_form:open_form_ci@localhost:5432/open_form
+      E2E_POSTGRES_URL: postgres://open_form:open_form_ci@localhost:5432/open_form
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run packages/core/src/postgres packages/core/src/node
+      - run: pnpm --filter @open-form-build/core build
+      - run: node packages/core/e2e/smoke.mjs

@@ -8,6 +8,12 @@ description: Mount the Open Form API in a Next.js app and render forms in your o
 Forms render in your own pages with `<FormHost>`, and validation still comes from
 the same form files on both sides.
 
+<Callout>
+  This page is for adding forms to a Next.js app you already have. To put a
+  whole Open Form project on Vercel, with its form pages and Studio, follow
+  [Vercel](/docs/deploy/vercel) instead: no Next.js needed.
+</Callout>
+
 Keep `forms/` (and optionally `open-form.config.ts`) at the root of the Next.js
 app. A form's look travels with it in `forms/<id>/theme/`:
 
@@ -142,8 +148,8 @@ after a rebuild, so `--watch` plus `next dev` picks up edits to forms and to
     },
     storage: {
       type: 'StorageAdapter',
-      default: 'SQLite at OPEN_FORM_DB, else storage.path in open-form.config.ts, else .open-form/open-form.db',
-      description: 'Where responses go. The default needs a persistent disk.',
+      default: 'Postgres at OPEN_FORM_DATABASE_URL or storage.url, else SQLite at OPEN_FORM_DB, storage.path or .open-form/open-form.db',
+      description: 'Where responses go. SQLite needs a persistent disk.',
     },
     secret: {
       type: 'string',
@@ -176,9 +182,9 @@ If you mount the route somewhere else, set `basePath` to match and pass the same
 path to `<FormHost api>`.
 
 Like `open-form start`, the route reads `OPEN_FORM_ADMIN_PASSWORD`,
-`OPEN_FORM_SECRET`, `OPEN_FORM_DB`, `OPEN_FORM_WEBHOOK_SECRET` and
-`OPEN_FORM_TURNSTILE_SECRET`; `<FormHost>` shows the Turnstile check when the
-form uses it. It ignores
+`OPEN_FORM_SECRET`, `OPEN_FORM_DATABASE_URL`, `OPEN_FORM_DB`,
+`OPEN_FORM_WEBHOOK_SECRET` and `OPEN_FORM_TURNSTILE_SECRET`; `<FormHost>` shows
+the Turnstile check when the form uses it. It ignores
 `OPEN_FORM_TRUST_PROXY`; pass `trustProxy` instead. It also ignores
 `OPEN_FORM_SECURE_COOKIES` and has no option in its place: cookies are marked
 `Secure` when the request URL or the page's `Origin` is `https://`.
@@ -224,9 +230,11 @@ form uses it. It ignores
 ## Storage, admin and Vercel
 
 - **Storage.** Responses go to SQLite in `.open-form/` by default, which needs a
-  persistent disk. On a serverless platform pass `storage` with an adapter that
-  persists; see [Storage](/docs/reference/storage). Keep `.open-form/` and `dist/`
-  out of git.
+  persistent disk. On a serverless platform set `OPEN_FORM_DATABASE_URL` to a
+  [Postgres](/docs/deploy/postgres) database and install `pg`; create one as in
+  [Vercel](/docs/deploy/vercel#create-the-database). With Supabase's
+  certificate, add `'./supabase-ca.crt'` to the `outputFileTracingIncludes`
+  entry. Keep `.open-form/` and `dist/` out of git.
 - **Secret.** Without `OPEN_FORM_SECRET`, the route generates one into a
   `secret` file next to the database (`.open-form/secret` by default).
   Serverless functions can't write there, so on Vercel and other read-only
@@ -267,6 +275,7 @@ export const { GET, POST, PUT, DELETE, OPTIONS } = createOpenFormRoute({
 ## What's next
 
 <Cards>
+  <Card title="Vercel" href="/docs/deploy/vercel" />
   <Card title="Production" href="/docs/deploy/production" />
   <Card title="Webhooks" href="/docs/deploy/webhooks" />
   <Card title="HTTP API" href="/docs/reference/http-api" />

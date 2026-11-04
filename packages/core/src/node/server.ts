@@ -12,7 +12,6 @@ import {
   type FormRegistry,
   type OpenFormHandler,
 } from '../server/index.ts';
-import { createSqliteStorage } from '../sqlite/index.ts';
 import {
   clientAddress,
   parseTrustProxy,
@@ -22,6 +21,7 @@ import {
   toWebRequest,
 } from './http.ts';
 import { resolveDatabasePath, resolveSecret } from './secret.ts';
+import { describeStorage, openStorage, resolveStorage } from './storage.ts';
 
 /** What `open-form build` emits at `dist/server/entry.js`. */
 export type ServerEntry = {
@@ -46,6 +46,8 @@ export type StartedServer = {
   /** `studio.public: 'read-only'`: anyone can read Studio without signing in. */
   publicStudio: boolean;
   forms: string[];
+  /** Where responses go, password hidden: `SQLite .open-form/open-form.db`, `Postgres postgres://…`. */
+  storage: string;
   close(): Promise<void>;
 };
 
@@ -178,7 +180,24 @@ export function pageHeaders(
   };
 }
 
-/** Production server: the built app, the API, and SQLite. No other services. */
+export type PageRoute = { redirect: string } | { page: 'studio' | 'form'; status: number };
+
+/** Which page shell a path gets. Studio (and the theme previews it frames) only when it's enabled. */
+export function pageRoute(pathname: string, opts: { studio: boolean }): PageRoute {
+  if (
+    pathname === '/' ||
+    pathname === '/studio' ||
+    pathname.startsWith('/studio/') ||
+    pathname.startsWith('/theme-preview/')
+  ) {
+    if (!opts.studio) return { page: 'form', status: 404 };
+    if (pathname === '/') return { redirect: '/studio' };
+    return { page: 'studio', status: 200 };
+  }
+  return { page: 'form', status: pathname.startsWith('/f/') ? 200 : 404 };
+}
+
+/** Production server: the built app, the API, and SQLite (or Postgres). No other services. */
 export async function startServer(opts: StartServerOptions): Promise<StartedServer> {
   const root = path.resolve(opts.root);
   const outDir = path.resolve(root, opts.outDir ?? 'dist');
@@ -196,7 +215,8 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
   for (const id of entry.formIds) await registry.load(id);
 
   const databasePath = resolveDatabasePath(root, config.storage?.path);
-  const storage = await createSqliteStorage({ path: databasePath });
+  const storageTarget = resolveStorage(root, config);
+  const storage = await openStorage(storageTarget);
   const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
   const adminEnabled = Boolean(adminPassword);
   const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
@@ -274,27 +294,14 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
         return;
       }
 
-      // Studio, and the theme previews its Themes pages frame.
-      if (
-        pathname === '/' ||
-        pathname === '/studio' ||
-        pathname.startsWith('/studio/') ||
-        pathname.startsWith('/theme-preview/')
-      ) {
-        if (!adminEnabled && !publicStudio) {
-          sendIndex(req, res, 'form', 404);
-          return;
-        }
-        if (pathname === '/') {
-          res.statusCode = 302;
-          res.setHeader('location', '/studio');
-          res.end();
-          return;
-        }
-        sendIndex(req, res, 'studio');
+      const route = pageRoute(pathname, { studio: adminEnabled || publicStudio });
+      if ('redirect' in route) {
+        res.statusCode = 302;
+        res.setHeader('location', route.redirect);
+        res.end();
         return;
       }
-      sendIndex(req, res, 'form', pathname.startsWith('/f/') ? 200 : 404);
+      sendIndex(req, res, route.page, route.status);
     } catch (err) {
       console.error('[open-form]', err);
       if (!res.headersSent) res.statusCode = 500;
@@ -317,6 +324,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     adminEnabled,
     publicStudio,
     forms: entry.formIds,
+    storage: describeStorage(storageTarget, root),
     async close() {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await storage.close();
