@@ -42,6 +42,19 @@ dist/
 
 Run [`open-form start`](/docs/cli/start) to serve it.
 
+## Checks before building
+
+The build stops before it starts when the environment (or `.env`) holds a
+setting the server would refuse, so a deployment fails instead of the live
+site:
+
+- `OPEN_FORM_ADMIN_PASSWORD` that breaks the
+  [password rules](/docs/deploy/production).
+- `OPEN_FORM_SECRET` under 16 characters.
+- On Vercel, in a project with a `vercel.json`: no `OPEN_FORM_SECRET`, or no
+  Postgres database (`OPEN_FORM_DATABASE_URL`, or the `POSTGRES_URL` /
+  `DATABASE_URL` a Marketplace database sets). See [Vercel](/docs/deploy/vercel).
+
 ## Static files
 
 Files in the workspace's `public/` folder — a favicon, an image you link to by

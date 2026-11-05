@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { assertReplaceable, BUILD_MARKER, unloadableThemes } from './build.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { assertReplaceable, BUILD_MARKER, deployProblems, unloadableThemes } from './build.ts';
 
 let root: string;
 
@@ -68,4 +68,48 @@ describe('unloadableThemes', () => {
       process.env.NODE_ENV = nodeEnv;
     }
   }, 30_000);
+});
+
+describe('deployProblems', () => {
+  beforeEach(() => {
+    for (const name of [
+      'VERCEL',
+      'OPEN_FORM_ADMIN_PASSWORD',
+      'OPEN_FORM_SECRET',
+      'OPEN_FORM_DATABASE_URL',
+      'OPEN_FORM_DB',
+      'POSTGRES_URL',
+      'DATABASE_URL',
+    ]) {
+      vi.stubEnv(name, '');
+    }
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('checks only what is set outside Vercel', () => {
+    expect(deployProblems(root, {})).toEqual([]);
+    vi.stubEnv('OPEN_FORM_ADMIN_PASSWORD', 'short');
+    vi.stubEnv('OPEN_FORM_SECRET', 'tiny');
+    expect(deployProblems(root, {})).toEqual([
+      expect.stringMatching(/^OPEN_FORM_ADMIN_PASSWORD: /),
+      expect.stringMatching(/^OPEN_FORM_SECRET: /),
+    ]);
+    vi.stubEnv('OPEN_FORM_ADMIN_PASSWORD', 'purple elephant dances quietly');
+    vi.stubEnv('OPEN_FORM_SECRET', '0123456789abcdef');
+    expect(deployProblems(root, {})).toEqual([]);
+  });
+
+  it('asks for a secret and Postgres in a project deployed with the Vercel Function', () => {
+    vi.stubEnv('VERCEL', '1');
+    expect(deployProblems(root, {})).toEqual([]);
+    put('vercel.json');
+    expect(deployProblems(root, {})).toEqual([
+      expect.stringMatching(/OPEN_FORM_SECRET isn't set/),
+      expect.stringMatching(/No Postgres database/),
+    ]);
+    expect(deployProblems(root, {}, { serverOnly: true })).toEqual([]);
+    vi.stubEnv('OPEN_FORM_SECRET', '0123456789abcdef');
+    vi.stubEnv('POSTGRES_URL', 'postgres://neon@ep-x-pooler.neon.tech/neondb');
+    expect(deployProblems(root, {})).toEqual([]);
+  });
 });

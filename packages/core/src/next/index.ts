@@ -8,6 +8,7 @@ import { openStorage, resolveStorage, type StorageTarget } from '../node/storage
 import type { OpenFormConfig } from '../schema/index.ts';
 import {
   type AdminAuth,
+  adminPasswordProblem,
   createOpenFormHandler,
   type FormRegistry,
   type OpenFormHandler,
@@ -142,7 +143,15 @@ export function createOpenFormRoute(opts: OpenFormRouteOptions = {}): OpenFormRo
   let warnedProxy = false;
   const createHandler = async ({ entry }: Loaded): Promise<OpenFormHandler> => {
     const config: OpenFormConfig = entry.config ?? {};
-    const adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
+    let adminPassword = process.env.OPEN_FORM_ADMIN_PASSWORD || undefined;
+    const passwordProblem = adminPassword && adminPasswordProblem(adminPassword);
+    // A bad admin password turns the admin API off, not the forms respondents are filling in.
+    if (passwordProblem && !opts.adminAuth) {
+      console.error(
+        `[open-form] The admin API is off. OPEN_FORM_ADMIN_PASSWORD: ${passwordProblem}`,
+      );
+      adminPassword = undefined;
+    }
     const trustProxy = opts.trustProxy ?? config.trustProxy ?? 1;
     // Route handlers never see the socket, so only the deployment knows whether
     // the last X-Forwarded-For entry came from a proxy or from the client.
