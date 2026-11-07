@@ -84,8 +84,8 @@ When sources disagree, ask which wins.
   3. Any other licensed font: copy the `.woff2` into `themes/<id>/fonts/` and declare `@font-face` in the theme CSS.
   Never link `fonts.googleapis.com` from a theme: every respondent's browser would then contact Google, a privacy problem under the GDPR. Use 2 instead.
   Use 2 or 3 only when the font is central to the brand (display headings, a distinctive wordmark-like face) or the user asks.
-- **If `theme font` fails** with an HTTP status or a "not found", the request itself is the problem: check the family's exact name on Google Fonts and the weights you asked for. If it fails with `fetch failed` or a timeout, the network is blocking it: it needs `fonts.google.com` (the catalog), `fonts.googleapis.com` (the CSS) and `fonts.gstatic.com` (the files). Don't retry the same command. Check which hosts answer (`curl -sI` each of `https://fonts.google.com/metadata/fonts`, `https://fonts.googleapis.com/css2?family=Inter` and `https://fonts.gstatic.com`):
-  - **`fonts.googleapis.com` and `fonts.gstatic.com` both answer, only the catalog doesn't** (common behind a sandbox proxy): install the family by hand as option 3. This writes the same files `theme font` would, header included, so `create --theme` still brings the font into new forms:
+- **If `theme font` fails** with an HTTP status or a "not found", the request itself is the problem: check the family's exact name on Google Fonts and the weights you asked for. If it fails with `Couldn't reach …`, `fetch failed` or a timeout, the network is blocking it: it needs `fonts.google.com` (the catalog), `fonts.googleapis.com` (the CSS) and `fonts.gstatic.com` (the files). Don't retry the same command. Check which hosts answer (`curl -sI` each of `https://fonts.google.com/metadata/fonts`, `https://fonts.googleapis.com/css2?family=Inter` and `https://fonts.gstatic.com`):
+  - **`fonts.googleapis.com` and `fonts.gstatic.com` both answer, only the catalog doesn't** (common behind a sandbox proxy): install the family by hand as option 3. This writes the same files `theme font` would, header included, so forms that copy the font from the theme and `open-form check` read it the same way:
 
     ```bash
     set -euo pipefail   # run as a script (bash font.sh): it stops at the first failed download, before writing the CSS
@@ -164,7 +164,7 @@ Every color token gets a row — `primary`, `primaryForeground`, `background`, `
 
 *Typography*: name the CJK fonts too, and say which Latin-only treatments (uppercase, italic, letter-spacing) are kept to `:lang(en)`.
 
-*Signature ideas*: two or three form-specific elements that fit the theme (*Design guidelines → Look* in `form-authoring`), each with where it lives in this theme's layout (`aside` beside the card, in a split panel, at the bottom of a custom layout, or the success screen when the layout has no `aside`) and how to style it. The starters' THEME.md files show the shape.
+*Signature ideas*: two or three form-specific elements that fit the theme (*Design guidelines → Look* in `form-authoring`), each with where it lives in this theme's layout (`aside` beside the card, in a split panel, at the bottom of a custom layout, or the success screen when the layout has no `aside`) and how to style it. For example: "A seats-left badge in the `aside`, counting down from `maxResponses`; mono, `--of-primary` on `--of-surface`."
 
 ## Step 7 — Check it
 

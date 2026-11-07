@@ -28,7 +28,7 @@ themes/<theme-id>/          ← optional reference themes for new forms; forms n
 
 ```tsx
 import { defineForm, Email, Form, Page, Select, Submit, Text, When } from '@open-form-build/core';
-import theme from './theme/index.tsx'; // its own look, written after the terminal reference
+import theme from './theme/index.tsx'; // its own look, written for this form
 
 export const config = defineForm({
   title: 'Developer Meetup Registration',
@@ -102,7 +102,7 @@ Labels, descriptions and option labels are plain strings. A question that needs 
 
 Use `<Matrix>` when three or more questions share the same answers (rate each part of a course); it's a grid on wide forms and a card per row on phones. Write row labels that read on their own — they're the export column headings.
 
-`variant` on choices is a hint: built-in themes may render choices their own way (e.g. `terminal` always lists them).
+`variant` on choices is a hint: a form's theme may render choices its own way (a terminal-style `ChoiceGroup` might always list them).
 
 `options` accepts `['A', 'B']` or `[{ value: 'a', label: 'A' }]`. Use value/label pairs when labels may change later or are long — the stored value stays stable. Options must be known when the form renders (the server checks answers against them), so an empty list fails `check`.
 
@@ -452,7 +452,7 @@ Built-in fields are behavior only; their markup comes from replaceable component
 | `MatrixRow` | one Matrix row | `field` (the row's), `columns`, `value`, `onChange(string)`, `markRequired` |
 
 ```tsx
-// forms/<id>/theme/index.tsx — after the editorial reference
+// forms/<id>/theme/index.tsx — an editorial split look
 import { defineTheme, type TextInputUIProps } from '@open-form-build/core';
 import './editorial.css';
 
@@ -618,8 +618,8 @@ function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
 - **One component, every state it can get.** Branch on `state` for what differs; fall back to `title` / `message` for the rest, so a state you didn't plan for still reads right.
 - **Say what happens next**, using only facts the user gave: the next date, where to follow, who to contact. Never invent a link, date or address — leave it out or ask.
 - **Copy**: keep the policy messages in `config.submissions` (Studio and the server use them too) and put only extra lines in the component. Wrap your own text in `<T>` / `useTranslate()` so translations and `check` cover it.
-- **Markup**: one `<h1>` on the screen. The default card shows only the `Notice`, so it takes the `<h1>` (and `eyebrow` names the form); layouts that keep the header on the closed screen — `SplitLayout`, and themes like `terminal` — already show the form's title as the `<h1>`, so use `<h2>` and skip `eyebrow`. Reuse `of-eyebrow` / `of-title` / `of-description` (or the theme's classes), or prefixed classes built on `var(--of-*)` tokens, so it follows the theme and dark mode. No fields or buttons that submit — the form isn't there.
-- A theme can have one (`defineTheme({ components: { Notice } })`). A reference's (e.g. `terminal`'s, with its `tm-*` classes) is a starting point: build the form's from its markup and classes, in the form's theme or passed in `<Form components>` — that wins.
+- **Markup**: one `<h1>` on the screen. The default card shows only the `Notice`, so it takes the `<h1>` (and `eyebrow` names the form); layouts that keep the header on the closed screen — `SplitLayout`, and custom layouts with a header, such as a terminal window — already show the form's title as the `<h1>`, so use `<h2>` and skip `eyebrow`. Reuse `of-eyebrow` / `of-title` / `of-description` (or the theme's classes), or prefixed classes built on `var(--of-*)` tokens, so it follows the theme and dark mode. No fields or buttons that submit — the form isn't there.
+- A theme can have one (`defineTheme({ components: { Notice } })`). A reference's (with its prefixed classes, e.g. `tm-*`) is a starting point: build the form's from its markup and classes, in the form's theme or passed in `<Form components>` — that wins.
 - **Preview**: in Studio's Preview, *When closed* (under the steps) shows each screen — *Closed* always, plus *Not open yet* while `opensAt` is still ahead, *Full* when the form has `maxResponses`, and *Already responded* with `uniqueBy: 'device'`. It doesn't change the live form, and it updates as you edit.
 
 `useFormNav()` gives any component the navigation state: `position`, `total`, `steps` (`title`, `state: 'done' | 'current' | 'upcoming'`, `reachable`), `isFirst`, `isLast`, `submitting`, `error`, and actions `next()` (validate + advance or submit), `back()`, `goTo(position)` (visited steps only; jumping ahead checks the steps in between). `useFormMessages()` returns the built-in strings in the form's locale.
@@ -745,7 +745,7 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 2. Required fields are minimal and correct; conditional fields use `<When>`, not ternaries. Anything the brief asked for that Open Form can't do (*What Open Form can't do*) was raised with the user, and the workaround is listed at hand-off.
 3. Policy matches the request (limits, dates, uniqueness, language).
 4. No hand-rolled state, fetch, validation or styling outside the theme / form CSS.
-5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the reference's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, the agreed color scheme set in the tokens (`dark`, `dark: false` or `colorScheme`; *Light and dark*), and no uppercase, small-caps or italic styling on Chinese or Japanese text.
+5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the direction's voice (the reference's `THEME.md` tone, when there is one), and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, the agreed color scheme set in the tokens (`dark`, `dark: false` or `colorScheme`; *Light and dark*), and no uppercase, small-caps or italic styling on Chinese or Japanese text.
 6. Custom components spread `field.controlProps`, attach `field.ref`, keep native inputs and a visible focus style.
 7. `open-form check <id>` passes and its output (steps, fields, conditions, required flags, policy) matches your plan; the `typecheck` script passes.
 8. Closed screens: `closedMessage` (plus `fullMessage` / `duplicateMessage` where they apply) is in the form's voice, and a custom `Notice` handles every `state` the form can reach and invents no facts.
