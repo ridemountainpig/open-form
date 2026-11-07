@@ -1,0 +1,311 @@
+.of-root[data-of-theme="microprogram-careers"] {
+  --mp-bar: var(--of-primary);
+  --mp-bar-fg: var(--of-primary-fg);
+  --mp-band: var(--of-muted);
+  --mp-band-fg: var(--of-surface);
+  padding: 0;
+  font-size: 15px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="microprogram-careers"]:not([data-scheme]) {
+    --mp-bar: color-mix(in srgb, var(--of-primary) 70%, black);
+    --mp-bar-fg: var(--of-fg);
+    --mp-band: color-mix(in srgb, var(--of-surface) 55%, var(--of-border));
+    --mp-band-fg: var(--of-fg);
+  }
+}
+.of-root[data-of-theme="microprogram-careers"][data-scheme="dark"] {
+  --mp-bar: color-mix(in srgb, var(--of-primary) 70%, black);
+  --mp-bar-fg: var(--of-fg);
+  --mp-band: color-mix(in srgb, var(--of-surface) 55%, var(--of-border));
+  --mp-band-fg: var(--of-fg);
+}
+
+[data-of-theme="microprogram-careers"] .mp-site {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Red bar with the wordmark */
+[data-of-theme="microprogram-careers"] .mp-bar {
+  background: var(--mp-bar);
+  color: var(--mp-bar-fg);
+}
+[data-of-theme="microprogram-careers"] .mp-bar-inner,
+[data-of-theme="microprogram-careers"] .mp-band-inner,
+[data-of-theme="microprogram-careers"] .mp-crumb,
+[data-of-theme="microprogram-careers"] .mp-main,
+[data-of-theme="microprogram-careers"] .mp-foot {
+  width: min(1120px, 100% - 40px);
+  margin-inline: auto;
+}
+[data-of-theme="microprogram-careers"] .mp-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+}
+[data-of-theme="microprogram-careers"] .mp-wordmark {
+  display: inline-flex;
+  flex-direction: column;
+  font-family: "Quicksand", var(--of-font);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+}
+[data-of-theme="microprogram-careers"] .mp-wordmark span:last-child {
+  padding-left: 0.95em;
+}
+[data-of-theme="microprogram-careers"] .mp-bar-nav {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 6px 0;
+  border-bottom: 2px solid currentColor;
+}
+
+/* Gray title band */
+[data-of-theme="microprogram-careers"] .mp-band {
+  background: var(--mp-band);
+  color: var(--mp-band-fg);
+}
+[data-of-theme="microprogram-careers"] .mp-band-inner {
+  padding: 44px 0 40px;
+  text-align: center;
+}
+[data-of-theme="microprogram-careers"] .mp-band .of-header {
+  margin: 0;
+}
+[data-of-theme="microprogram-careers"] .mp-band .of-title,
+[data-of-theme="microprogram-careers"] .mp-band-title {
+  margin: 0;
+  color: inherit;
+  font-family: var(--of-font);
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+[data-of-theme="microprogram-careers"] .mp-band .of-description {
+  margin: 12px auto 0;
+  max-width: 34em;
+  color: inherit;
+  opacity: 0.92;
+  font-size: 16px;
+}
+
+[data-of-theme="microprogram-careers"] .mp-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 0;
+  padding: 12px 0;
+  font-size: 13px;
+  color: var(--of-muted);
+}
+[data-of-theme="microprogram-careers"] .mp-crumb-here {
+  color: var(--of-fg);
+  font-weight: 700;
+}
+
+/* Rail · sheet · notes */
+[data-of-theme="microprogram-careers"] .mp-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 640px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+  padding: 16px 0 72px;
+}
+[data-of-theme="microprogram-careers"] .mp-main-single {
+  grid-template-columns: minmax(0, 680px);
+  justify-content: center;
+}
+
+[data-of-theme="microprogram-careers"] .mp-rail {
+  position: sticky;
+  top: 24px;
+}
+[data-of-theme="microprogram-careers"] .mp-rail ol {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  display: grid;
+  gap: 4px;
+}
+[data-of-theme="microprogram-careers"] .mp-rail li {
+  position: relative;
+}
+[data-of-theme="microprogram-careers"] .mp-rail li + li::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: -14px;
+  height: 20px;
+  border-left: 2px solid var(--of-border);
+}
+[data-of-theme="microprogram-careers"] .mp-rail button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 16px;
+  color: var(--of-muted);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--of-radius);
+}
+[data-of-theme="microprogram-careers"] .mp-rail button:disabled {
+  cursor: default;
+}
+[data-of-theme="microprogram-careers"] .mp-rail button:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 2px;
+}
+[data-of-theme="microprogram-careers"] .mp-rail-dot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin-left: 3px;
+  border-radius: 50%;
+  border: 2px solid var(--of-border);
+  background: var(--of-surface);
+  font-family: "Quicksand", var(--of-font);
+  font-weight: 700;
+}
+[data-of-theme="microprogram-careers"] .mp-rail li[data-state="done"] .mp-rail-dot {
+  border-color: color-mix(in srgb, var(--of-primary) 45%, var(--of-surface));
+  color: var(--of-primary);
+}
+[data-of-theme="microprogram-careers"] .mp-rail li[data-state="current"] button {
+  color: var(--of-fg);
+  font-weight: 700;
+}
+[data-of-theme="microprogram-careers"] .mp-rail li[data-state="current"] .mp-rail-dot {
+  background: var(--of-primary);
+  border-color: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="microprogram-careers"] .mp-sheet {
+  background: var(--of-surface);
+  border-top: 4px solid var(--of-primary);
+  padding: clamp(24px, 4vw, 44px);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+[data-of-theme="microprogram-careers"] .mp-phone-progress {
+  display: none;
+}
+
+[data-of-theme="microprogram-careers"] .of-page-title {
+  font-family: var(--of-font);
+  font-size: 22px;
+  font-weight: 700;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--of-border);
+}
+[data-of-theme="microprogram-careers"] .of-label,
+[data-of-theme="microprogram-careers"] .of-field > legend {
+  font-weight: 700;
+}
+[data-of-theme="microprogram-careers"]
+  .of-choices[data-variant="cards"]
+  .of-choice:has(input:checked) {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 6%, var(--of-surface));
+}
+[data-of-theme="microprogram-careers"] .of-nav .of-button {
+  min-width: 140px;
+}
+[data-of-theme="microprogram-careers"] .of-button-primary {
+  letter-spacing: 0.06em;
+}
+
+[data-of-theme="microprogram-careers"] .mp-aside {
+  position: sticky;
+  top: 24px;
+}
+
+/* Footer band */
+[data-of-theme="microprogram-careers"] .mp-site > .mp-foot {
+  width: 100%;
+  padding: 28px max(20px, calc((100% - 1120px) / 2));
+  background: var(--mp-band);
+  color: var(--mp-band-fg);
+  font-size: 13px;
+}
+[data-of-theme="microprogram-careers"] .mp-foot p:not(.mp-foot-slogan) {
+  margin: 0;
+}
+[data-of-theme="microprogram-careers"] .mp-foot-slogan {
+  font-family: "Quicksand", var(--of-font);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+/* End screens keep the band and the sheet; the sheet stays centered. */
+[data-of-theme="microprogram-careers"] .mp-site[data-state="success"] .mp-main,
+[data-of-theme="microprogram-careers"] .mp-site[data-state="unavailable"] .mp-main {
+  grid-template-columns: minmax(0, 680px);
+  justify-content: center;
+}
+
+@media (max-width: 1080px) {
+  [data-of-theme="microprogram-careers"] .mp-main {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  [data-of-theme="microprogram-careers"] .mp-aside {
+    position: static;
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 760px) {
+  [data-of-theme="microprogram-careers"] .mp-bar-inner {
+    min-height: 56px;
+  }
+  [data-of-theme="microprogram-careers"] .mp-wordmark {
+    font-size: 19px;
+  }
+  [data-of-theme="microprogram-careers"] .mp-band-inner {
+    padding: 20px 0 18px;
+  }
+  [data-of-theme="microprogram-careers"] .mp-band .of-description {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  [data-of-theme="microprogram-careers"] .mp-crumb {
+    display: none;
+  }
+  [data-of-theme="microprogram-careers"] .mp-main {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: 16px;
+    padding: 0 0 40px;
+  }
+  [data-of-theme="microprogram-careers"] .mp-rail {
+    display: none;
+  }
+  [data-of-theme="microprogram-careers"] .mp-phone-progress {
+    display: block;
+  }
+  [data-of-theme="microprogram-careers"] .mp-sheet {
+    padding: 20px 20px 28px;
+    box-shadow: none;
+  }
+  [data-of-theme="microprogram-careers"] .mp-aside {
+    grid-column: auto;
+    padding: 0 20px;
+  }
+}

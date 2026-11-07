@@ -423,7 +423,7 @@ export default defineTheme({
 });
 ```
 
-Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google). For "make it look like our product", use the `create-theme` skill.
+Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google): its Latin faces and, for a CJK family, every CJK slice, but no Cyrillic, Greek or other scripts, which no Open Form language is written in. For "make it look like our product", use the `create-theme` skill.
 
 ### Light and dark
 

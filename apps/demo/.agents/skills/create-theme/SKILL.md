@@ -94,7 +94,7 @@ When sources disagree, ask which wins.
 - **Fonts** — the product's `next/font` / `geist` package isn't available to forms (they're a different app). Options, in order:
   1. A system stack with the brand font first: `'"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif'` — the brand font shows only where installed.
   Always end with `var(--of-cjk)` (or `var(--of-cjk-serif)` for serif stacks) before the generic family, never a specific CJK font: the runtime fills it with Traditional Chinese, Simplified Chinese or Japanese fonts to match the form's `locale`, since the same characters are drawn differently in each.
-  2. A Google Fonts family: `open-form theme font <id> <Family>` (e.g. `theme font acme Inter`) downloads every face into `themes/<id>/fonts/`, writes `fonts/<slug>.css` (woff2 split by `unicode-range`) and imports it from the theme, then prints the `font` value to use. CJK families take 10–20 MB on disk, and each form started from the theme gets its own copy (respondents only download the slices a page uses) — tell the user. `create --theme` brings the fonts the tokens name into the new form.
+  2. A Google Fonts family: `open-form theme font <id> <Family>` (e.g. `theme font acme Inter`) downloads the faces forms can use into `themes/<id>/fonts/`, writes `fonts/<slug>.css` (woff2 split by `unicode-range`) and imports it from the theme, then prints the `font` value to use. Forms are written in Latin and CJK scripts, so it keeps `latin`, `latin-ext` and `vietnamese` (names respondents type) and every slice of a CJK family, and skips Cyrillic, Greek and other scripts: a respondent typing those gets a system font. CJK families take 10–20 MB on disk, and each form started from the theme gets its own copy (respondents only download the slices a page uses) — tell the user. `create --theme` brings only the fonts the tokens name into the new form.
   3. Any other licensed font: copy the `.woff2` into `themes/<id>/fonts/` and declare `@font-face` in the theme CSS.
   Never link `fonts.googleapis.com` from a theme: every respondent's browser would then contact Google, a privacy problem under the GDPR. Use 2 instead.
   Use 2 or 3 only when the font is central to the brand (display headings, a distinctive wordmark-like face) or the user asks.
@@ -106,13 +106,16 @@ When sources disagree, ask which wins.
     dir=themes/<id>/fonts; slug=fraunces; family='Fraunces'   # a form's own look: forms/<form>/theme/fonts
     mkdir -p "$dir/$slug"
     curl -fsS -A 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' \
-      "https://fonts.googleapis.com/css2?family=Fraunces:wght@100..900&display=swap" -o "$dir/$slug.src.css"
+      "https://fonts.googleapis.com/css2?family=Fraunces:wght@100..900&display=swap" -o "$dir/$slug.all.css"
+    # keep what `theme font` keeps: the Latin faces, and a CJK family's slices (they have no subset comment)
+    awk 'BEGIN { RS = "}" } /@font-face/ && (!/\/\* [a-z0-9-]+ \*\// || /\/\* (latin|latin-ext|vietnamese) \*\//) { printf "%s}", $0 }' \
+      "$dir/$slug.all.css" > "$dir/$slug.src.css"
     grep -o 'https://fonts.gstatic.com/[^)]*' "$dir/$slug.src.css" | sort -u | while read -r url; do
       curl -fsS "$url" -o "$dir/$slug/$(basename "$url")"
     done
     { printf '/*\n * %s from Google Fonts, served from this folder.\n * open-form font: "%s", ui-serif, Georgia, var(--of-cjk-serif), serif\n */\n' "$family" "$family"
       sed -E "s#url\(https://fonts.gstatic.com/[^)]*/([^/)]+)\)#url(./$slug/\1)#g" "$dir/$slug.src.css"; } > "$dir/$slug.css"
-    rm -- "${dir:?}/${slug:?}.src.css"
+    rm -- "${dir:?}/${slug:?}.all.css" "${dir:?}/${slug:?}.src.css"
     ```
 
     Then `import './fonts/<slug>.css';` in the theme and use the stack from the header as `font` or `headingFont`. Use a sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif`) or a monospace one (`ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace`) to match the family. A CJK family's CSS lists a hundred or more slices; download them all, since browsers fetch only the ones a page uses.

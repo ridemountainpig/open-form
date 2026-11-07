@@ -1,0 +1,203 @@
+/* DNA ring: the key question, after the careers page's core-competency diagram. */
+.mpf-root .mp-dna {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "s0 ring s1"
+    "s2 ring s3";
+  gap: 14px 16px;
+  align-items: stretch;
+  margin-top: 6px;
+}
+.mpf-root .mp-dna > .mp-ring {
+  grid-area: ring;
+  align-self: center;
+}
+.mpf-root .mp-dna-opt[data-slot="0"] {
+  grid-area: s0;
+}
+.mpf-root .mp-dna-opt[data-slot="1"] {
+  grid-area: s1;
+}
+.mpf-root .mp-dna-opt[data-slot="2"] {
+  grid-area: s2;
+}
+.mpf-root .mp-dna-opt[data-slot="3"] {
+  grid-area: s3;
+}
+
+.mpf-root .mp-ring {
+  --mp-q0: color-mix(in srgb, var(--of-primary) 16%, var(--of-surface));
+  --mp-q1: color-mix(in srgb, var(--of-primary) 26%, var(--of-surface));
+  --mp-q2: color-mix(in srgb, var(--of-primary) 20%, var(--of-surface));
+  --mp-q3: color-mix(in srgb, var(--of-primary) 32%, var(--of-surface));
+  position: relative;
+  width: 132px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* quadrants clockwise from the top: top-right (1), bottom-right (3), bottom-left (2), top-left (0) */
+  background: conic-gradient(
+    var(--mp-q1) 0 90deg,
+    var(--mp-q3) 90deg 180deg,
+    var(--mp-q2) 180deg 270deg,
+    var(--mp-q0) 270deg 360deg
+  );
+  transition: background 0.2s ease;
+}
+.mpf-root .mp-ring[data-chosen="0"] {
+  --mp-q0: var(--of-primary);
+}
+.mpf-root .mp-ring[data-chosen="1"] {
+  --mp-q1: var(--of-primary);
+}
+.mpf-root .mp-ring[data-chosen="2"] {
+  --mp-q2: var(--of-primary);
+}
+.mpf-root .mp-ring[data-chosen="3"] {
+  --mp-q3: var(--of-primary);
+}
+.mpf-root .mp-ring-core {
+  position: absolute;
+  inset: 26%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--of-surface);
+  font-family: "Quicksand", var(--of-font);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--of-fg);
+}
+
+.mpf-root .mp-dna-opt {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--of-control);
+  border-radius: var(--of-radius);
+  background: var(--of-input);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+.mpf-root .mp-dna-opt:hover {
+  border-color: var(--of-primary);
+}
+.mpf-root .mp-dna-opt[data-checked] {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 7%, var(--of-surface));
+}
+.mpf-root .mp-dna-opt:has(.mp-dna-input:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 2px;
+}
+.mpf-root .mp-dna-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.mpf-root .mp-dna-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--of-control);
+  color: var(--of-primary);
+  background: var(--of-surface);
+}
+.mpf-root .mp-dna-opt[data-checked] .mp-dna-icon {
+  background: var(--of-primary);
+  border-color: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+.mpf-root .mp-dna-text {
+  display: grid;
+  gap: 4px;
+}
+.mpf-root .mp-dna-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+.mpf-root .mp-dna-blurb {
+  color: var(--of-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* Notes beside the sheet */
+.mpf-root .mp-notes {
+  padding: 4px 0 0 20px;
+  border-left: 3px solid var(--of-primary);
+  font-size: 14px;
+  color: var(--of-muted);
+  line-height: 1.65;
+}
+.mpf-root .mp-notes h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: var(--of-fg);
+}
+.mpf-root .mp-notes p {
+  margin: 0 0 12px;
+}
+.mpf-root .mp-notes strong {
+  color: var(--of-fg);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* Success echo */
+.mpf-root .mp-echo {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  text-align: left;
+}
+.mpf-root .mp-ring-small {
+  flex: none;
+  width: 104px;
+}
+.mpf-root .mp-echo p {
+  margin: 0 0 6px;
+  color: var(--of-muted);
+}
+.mpf-root .mp-echo .mp-echo-lead {
+  color: var(--of-fg);
+  font-weight: 700;
+  font-size: 17px;
+}
+.mpf-root .mp-echo strong {
+  color: var(--of-primary);
+}
+
+@media (max-width: 760px) {
+  .mpf-root .mp-dna {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "ring" "s0" "s1" "s2" "s3";
+  }
+  .mpf-root .mp-dna > .mp-ring {
+    width: 96px;
+    justify-self: center;
+  }
+  .mpf-root .mp-dna-opt {
+    padding: 12px;
+  }
+  .mpf-root .mp-notes {
+    margin-top: 8px;
+  }
+  .mpf-root .mp-echo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
