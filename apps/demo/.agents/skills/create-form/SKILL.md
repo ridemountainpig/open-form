@@ -40,7 +40,7 @@ If the purpose or the core questions are unclear, ask about them first, in a que
 
 **Size the directions to the form's moment** (`form-authoring` → *Composition*): a quick operational form (a QR card, an internal sign-up, under a minute) gets a plain column in all three, differing in world, palette and signature control; invitations, event registrations, applications and campaigns get full compositions.
 
-Ask the user — with a multiple-choice question tool if you have one — to pick from **three directions tailored to this form and audience**. Each option combines a look (a project theme, or one designed for this form), a **composition** (how the page is arranged around the questions: `form-authoring` → *Design guidelines → Composition*), a vibe with concrete visual cues and — when the form has one — its **signature element**: the one piece of UI that belongs to this form's purpose (*Design guidelines → Look* in `form-authoring`). When the direction comes from a project theme, start from the *Signature ideas* in its THEME.md, which say what fits that theme and where it goes in its layout, and fit them to this form. Never bare labels like "modern" or "clean"; "theme X" alone gives a form that looks like every other form in theme X.
+Ask the user — with a multiple-choice question tool if you have one — to pick from **three directions tailored to this form and audience**. Each option combines a look (a project theme, or one designed for this form), a **composition** (how the page is arranged around the questions: `form-authoring` → *Design guidelines → Composition*), a vibe with concrete visual cues and — when the form has one — its **signature element**: the one piece of UI that belongs to this form's purpose (*Design guidelines → Look* in `form-authoring`). When the direction comes from a project theme, start from the *Signature ideas* in its THEME.md when it has one, which say what fits that theme and where it goes in its layout, and fit them to this form. Never bare labels like "modern" or "clean"; "theme X" alone gives a form that looks like every other form in theme X.
 
 Each direction is one of:
 
@@ -83,7 +83,7 @@ Kebab-case, short, descriptive: `meetup-registration`, `customer-feedback`, `bet
 
 ## Step 4 — Plan the structure for that direction
 
-With a reference, re-read its `THEME.md` (a single-file `themes/<id>.ts` has none; read the file) — its **Copy tone** and **Do / Don't** sections constrain the plan. Without one, decide the copy tone and a few do / don'ts for the direction yourself, in the same terms.
+With a reference that has a `THEME.md`, re-read it — its **Copy tone** and **Do / Don't** sections constrain the plan. Without one (no reference, or a single-file `themes/<id>.ts`), decide the copy tone and a few do / don'ts for the direction yourself, in the same terms.
 
 - **Conversational / `FocusLayout`**: one question per `<Page>`, no page titles (the label is the question), mostly single-choice questions, branch with `<When>` around pages.
 - **Single page**: up to ~7 fields — the default for short forms in any theme.
