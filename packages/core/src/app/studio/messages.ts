@@ -320,7 +320,7 @@ const en = {
   'themes.useBody':
     'Have your agent write a form’s own look, reading this theme. No form imports it, so changes here won’t reach one.',
   'themes.usePrompt':
-    'Create a new Open Form form that takes its look from the “{id}” theme: <describe the form>\nFollow the create-form skill: start it with `open-form create <form-id>`, then write the form’s own tokens, CSS and components in its theme/ folder, reading the theme’s THEME.md and files in themes/{id}/.',
+    'Create a new Open Form form that takes its look from the “{id}” theme: <describe the form>\nFollow the create-form skill: start it with `open-form create <form-id>`, then write the form’s own tokens, CSS and components in its theme/ folder, reading the theme’s files in themes/ (its THEME.md first, if it has one).',
   'themes.noDoc':
     'No THEME.md yet. Agents read it to know when to use this theme and how to write forms in it.',
   'themes.askForDoc': 'Copy prompt to write it',
@@ -936,7 +936,7 @@ const zhTW: Dictionary = {
   'themes.useBody':
     '請 agent 參考這個主題，為表單寫出它自己的外觀。表單不會 import 它，這裡的變更也不會影響任何表單。',
   'themes.usePrompt':
-    '建立一張外觀取自「{id}」主題的新 Open Form 表單：<描述這張表單>\n請依照 create-form skill：用 `open-form create <form-id>` 建立，再參考 themes/{id}/ 的 THEME.md 和檔案，在表單的 theme/ 寫出它自己的 token、CSS 和元件。',
+    '建立一張外觀取自「{id}」主題的新 Open Form 表單：<描述這張表單>\n請依照 create-form skill：用 `open-form create <form-id>` 建立，再參考 themes/ 裡這個主題的檔案（有 THEME.md 的話先讀），在表單的 theme/ 寫出它自己的 token、CSS 和元件。',
   'themes.noDoc': '還沒有 THEME.md。agent 會讀它，才知道什麼時候用這個主題、怎麼用它寫表單。',
   'themes.askForDoc': '複製請 agent 撰寫的指令',
   'themes.docPrompt':
@@ -1537,7 +1537,7 @@ const zhCN: Dictionary = {
   'themes.useBody':
     '请 agent 参考这个主题，为表单写出它自己的外观。表单不会 import 它，这里的改动也不会影响任何表单。',
   'themes.usePrompt':
-    '创建一个外观取自“{id}”主题的新 Open Form 表单：<描述这个表单>\n请按照 create-form skill：用 `open-form create <form-id>` 创建，再参考 themes/{id}/ 的 THEME.md 和文件，在表单的 theme/ 写出它自己的 token、CSS 和组件。',
+    '创建一个外观取自“{id}”主题的新 Open Form 表单：<描述这个表单>\n请按照 create-form skill：用 `open-form create <form-id>` 创建，再参考 themes/ 里这个主题的文件（有 THEME.md 的话先读），在表单的 theme/ 写出它自己的 token、CSS 和组件。',
   'themes.noDoc': '还没有 THEME.md。agent 会读取它，才知道什么时候用这个主题、怎么用它写表单。',
   'themes.askForDoc': '复制让 agent 撰写的指令',
   'themes.docPrompt':
@@ -2152,7 +2152,7 @@ const ja: Dictionary = {
   'themes.useBody':
     'このテーマを参考に、エージェントがフォーム自身の見た目を書きます。どのフォームもこれを import しないので、ここでの変更は反映されません。',
   'themes.usePrompt':
-    '「{id}」テーマの見た目を取り入れた新しい Open Form フォームを作成してください：<フォームの説明>\ncreate-form スキルに従い、`open-form create <form-id>` で作成してから、themes/{id}/ の THEME.md とファイルを参考に、フォームの theme/ に自身のトークン、CSS、コンポーネントを書いてください。',
+    '「{id}」テーマの見た目を取り入れた新しい Open Form フォームを作成してください：<フォームの説明>\ncreate-form スキルに従い、`open-form create <form-id>` で作成してから、themes/ にあるこのテーマのファイル（THEME.md があれば最初に）を参考に、フォームの theme/ に自身のトークン、CSS、コンポーネントを書いてください。',
   'themes.noDoc':
     'THEME.md がまだありません。エージェントはこれを読んで、このテーマをいつ・どう使うかを判断します。',
   'themes.askForDoc': '作成を頼むプロンプトをコピー',
