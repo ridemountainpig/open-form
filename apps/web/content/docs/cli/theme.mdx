@@ -1,23 +1,12 @@
 ---
 title: open-form theme
-description: List reference themes, check contrast, add a starter, and add Google Fonts.
+description: Check a theme's contrast and add Google Fonts to a theme or a form's own look.
 ---
 
-Themes in your project's `themes/` folder are references for new forms: a form
-starts from one's tokens with
-[`open-form create <id> --theme <theme>`](/docs/cli/create), and its own look
-lives in `forms/<id>/theme/`. See [Themes](/docs/core-feature/themes).
-`open-form theme` has four subcommands.
-
-## theme list
-
-```npm
-npx open-form theme list
-```
-
-Lists the project's themes with the one-line description from each `THEME.md`,
-and how to start a form from one. Then it lists the starters: `brutalist`,
-`classic`, `conversational`, `editorial` and `terminal`.
+Themes in your project's `themes/` folder are references for new forms, and
+each form's own look lives in `forms/<id>/theme/`. See
+[Themes](/docs/core-feature/themes). `open-form theme` has two subcommands,
+for either kind.
 
 ## theme check
 
@@ -53,24 +42,6 @@ token's lightness and keeping its hue.
 | --- | --- | --- |
 | `--form` | off | `<id>` is a form id: check that form's own theme in `forms/<id>/theme/`. |
 | `--json` | off | Machine-readable output. |
-
-## theme add
-
-```npm
-npx open-form theme add editorial
-npx open-form theme add editorial --as brand
-```
-
-Copies a starter's whole folder into `themes/<name>/`: its tokens, `THEME.md`,
-and any components and CSS it has. It's a reference to adapt into your own
-look; new forms start from its tokens with `create --theme`, and agents read
-the rest while writing a form's look. Editing it later never changes an
-existing form.
-
-| Flag | Default | Description |
-| --- | --- | --- |
-| `--as <name>` | the starter's id | Save it under a new kebab-case id. `[data-of-theme="<starter>"]` selectors and the name and heading in `THEME.md` are renamed to match; file names and class names stay as they are. |
-| `-f, --force` | off | Replace an existing theme with that id. |
 
 ## theme font
 

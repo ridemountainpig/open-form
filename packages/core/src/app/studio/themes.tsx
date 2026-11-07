@@ -3,7 +3,6 @@ import {
   Check,
   ChevronRight,
   ClipboardCopy,
-  Copy,
   Monitor,
   Palette,
   Plus,
@@ -59,7 +58,7 @@ import {
 
 // Studio's Themes pages are read-only, under dev and in production alike: a theme
 // in themes/ is a reference your agent reads, and changes go through the agent
-// (the create-theme skill) or `open-form theme add`.
+// (the create-theme skill).
 
 function useCopy(): [boolean, (text: string) => void] {
   const [copied, setCopied] = useState(false);
@@ -77,32 +76,7 @@ function useCopy(): [boolean, (text: string) => void] {
   return [copied, copy];
 }
 
-/** A shell command with a copy button beside it. */
-function Command({ text }: { text: string }) {
-  const t = useT();
-  const [copied, copy] = useCopy();
-  return (
-    <div className="flex min-w-0 items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 py-1 pr-1 pl-2.5 dark:border-zinc-800 dark:bg-zinc-900">
-      <code
-        className="min-w-0 flex-1 truncate font-mono text-[12px] text-zinc-700 dark:text-zinc-300"
-        title={text}
-      >
-        {text}
-      </code>
-      <button
-        type="button"
-        aria-label={copied ? t('themes.copied') : t('themes.copyCommand')}
-        title={copied ? t('themes.copied') : t('themes.copyCommand')}
-        onClick={() => copy(text)}
-        className="focus-ring grid size-6 shrink-0 place-items-center rounded text-zinc-400 transition-colors hover:bg-zinc-200/70 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 [&_svg]:size-3.5"
-      >
-        {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-      </button>
-    </div>
-  );
-}
-
-/** New themes come from the agent or a starter; Studio only hands over the words. */
+/** New themes come from the agent; Studio only hands over the words. */
 function NewTheme() {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -137,15 +111,6 @@ function NewTheme() {
           {copied ? <Check aria-hidden /> : <ClipboardCopy aria-hidden />}
           {copied ? t('design.copied') : t('design.copyPrompt')}
         </Button>
-        <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
-          <p className="text-[12.5px] font-medium text-zinc-800 dark:text-zinc-200">
-            {t('themes.fromStarter')}
-          </p>
-          <p className="mt-0.5 mb-2 text-[11.5px] leading-relaxed text-zinc-500">
-            {t('themes.fromStarterHint')}
-          </p>
-          <Command text="open-form theme add <starter>" />
-        </div>
       </Popover>
     </div>
   );
@@ -176,9 +141,6 @@ export function ThemeGallery() {
               <Kbd>/create-theme</Kbd>
               {t('themes.emptyAfter')}
             </p>
-            <div className="mt-4 w-full max-w-xs text-left">
-              <Command text="open-form theme add <starter>" />
-            </div>
           </div>
         </div>
       )}
@@ -313,13 +275,7 @@ export function ThemeDetailPage() {
       )}
       <ThemePreview frame={frame} themeId={info.id} tokens={tokens} failed={failed !== undefined} />
       {failed === undefined && (
-        <ThemeTokensSection
-          id={info.id}
-          name={info.name}
-          tokens={tokens}
-          fonts={fonts}
-          layout={info.layout}
-        />
+        <ThemeTokensSection name={info.name} tokens={tokens} fonts={fonts} layout={info.layout} />
       )}
       <ThemeGuide info={info} />
     </div>
@@ -554,13 +510,11 @@ function Spec({
 }
 
 function ThemeTokensSection({
-  id,
   name,
   tokens,
   fonts,
   layout,
 }: {
-  id: string;
   name: string;
   tokens?: ThemeTokens;
   fonts: ReadonlyMap<string, string>;
@@ -569,18 +523,7 @@ function ThemeTokensSection({
   const t = useT();
   return (
     <section className="mt-10">
-      <SectionTitle
-        title={t('themes.tokens')}
-        hint={
-          <>
-            {t('themes.tokensBefore')}
-            <code className="font-mono text-[0.92em] text-zinc-700 dark:text-zinc-300">
-              --theme {id}
-            </code>
-            {t('themes.tokensAfter')}
-          </>
-        }
-      />
+      <SectionTitle title={t('themes.tokens')} hint={t('themes.tokensHint')} />
       {tokens ? (
         <div className="grid gap-4 @4xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <ColorSpec tokens={tokens} name={name} />
@@ -1009,10 +952,7 @@ function UseIt({ id }: { id: string }) {
       <p className="mt-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
         {t('themes.useBody')}
       </p>
-      <div className="mt-3">
-        <Command text={`open-form create <form> --theme ${id}`} />
-      </div>
-      <Button className="mt-2 w-full" onClick={() => copy(t('themes.usePrompt', { id }))}>
+      <Button className="mt-3 w-full" onClick={() => copy(t('themes.usePrompt', { id }))}>
         {copied ? <Check aria-hidden /> : <ClipboardCopy aria-hidden />}
         {copied ? t('design.copied') : t('design.copyPrompt')}
       </Button>

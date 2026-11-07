@@ -3,8 +3,8 @@ import { FONT_CATEGORIES, searchGoogleFonts } from '../editing/google-fonts.ts';
 import { StudioError, send } from './studio-http.ts';
 
 // Dev-only search of the Google Fonts catalog for the font picker in a form's
-// Adjust panel. Reference themes in themes/ are read-only in Studio: agents and
-// `open-form theme add` change them.
+// Adjust panel. Reference themes in themes/ are read-only in Studio: agents change
+// them.
 //
 //   GET  /api/studio/fonts    ?q=&category=&cjk=1 → matching families
 

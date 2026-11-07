@@ -26,7 +26,7 @@ No accent color — contrast comes from ink on paper. Add a single accent only i
 
 ## Tokens
 
-What `open-form create <form> --theme editorial` writes into the form's `theme/index.ts`.
+The tokens a form copies into its `theme/index.ts`.
 
 | Token | Light | Dark |
 | --- | --- | --- |

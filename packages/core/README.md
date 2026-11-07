@@ -125,7 +125,7 @@ App Router route handlers can't render the forms to learn their fields, so the r
 
 ## CLI
 
-`open-form init | dev | build [--server-only] [--watch] | start | create <id> [--theme] | delete <id> | list | check [id] | comments [id] | responses export <id> | theme list|check|add|font | sync:skills`
+`open-form init | dev | build [--server-only] [--watch] | start | create <id> | delete <id> | list | check [id] | comments [id] | responses export <id> | theme check|font | sync:skills`
 
 Every command except `init` loads `.env` from the current folder when there is one; variables already set in the environment win.
 

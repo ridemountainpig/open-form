@@ -1,7 +1,7 @@
 ---
 title: Themes
-seoTitle: "Form themes: starters, tokens and fonts"
-description: Five starters and your own references to start from. Each form's look is written for it, with only what it uses.
+seoTitle: "Form themes: references, tokens and fonts"
+description: Your own reference themes to start from. Each form's look is written for it, with only what it uses.
 ---
 
 A theme is a visual identity for forms: **tokens** (colors, fonts, radius,
@@ -10,9 +10,10 @@ people and agents when to use it.
 
 **Themes are references, and each form owns its look.** As in open-slide, the
 themes in your project's `themes/` folder are what you and your agent read when
-making a form. No form imports one or copies it whole: a new form starts from a
-theme's tokens, and the rest of its look is written for it in its own `theme/`
-folder, with only the parts that form uses.
+making a form. No form imports one or copies it whole: your agent copies a
+theme's tokens into the new form and writes the rest of its look in the form's
+own `theme/` folder, with only the parts that form uses. Without a reference,
+the agent designs the look for that form.
 
 ```text
 themes/
@@ -29,24 +30,23 @@ forms/
 ```
 
 Every form made with [`open-form create`](/docs/cli/create) has a
-`theme/index.ts`. Empty, `defineTheme({})` is the plain base look, which the
-`classic` starter spells out token by token. A form without a `theme/` folder at
-all gets the same look.
+`theme/index.ts`. Empty, `defineTheme({})` is the plain base look. A form
+without a `theme/` folder at all gets the same look.
 
 ## Starting a form from a theme
 
 ```npm
-npx open-form create meetup --theme terminal
+npx open-form create meetup
 ```
 
-`--theme` takes the theme from `themes/` when the project has one with that id,
-and otherwise the starter of that name. It writes the theme's **tokens** into
-the new form's `theme/index.ts`: colors and the dark palette, fonts, radius,
-width, spacing, color scheme. Web fonts those tokens name come along into
-`theme/fonts/`. The theme's CSS and components stay with the reference, and so
-do fonts only its CSS uses. `create` prints where the ones the theme imports
-from `fonts/` are, so you can copy one in when you borrow that CSS; for a font
-the CSS declares with its own `@font-face`, copy the files its `url()`s name.
+`create` writes the form and an empty `theme/index.ts`. Your agent then fills
+in the **tokens**: colors and the dark palette, fonts, radius, width, spacing,
+color scheme, taken from a reference in `themes/` or designed for the form.
+Web fonts those tokens name go into the form's `theme/fonts/`, copied from the
+reference's `fonts/` or downloaded with
+[`open-form theme font <form> <Family> --form`](/docs/cli/theme#theme-font).
+The reference's CSS and components stay with it; the agent borrows only the
+pieces the form uses.
 
 ```ts title="forms/meetup/theme/index.ts"
 import { defineTheme } from '@open-form-build/core';
@@ -102,8 +102,8 @@ look:
 So a form in the `terminal` look carries the window, the ASCII progress bar and
 the `❯` input lines as components, and draws its `? ` prompts, `( )` marks and
 `register ↵` button in CSS. A field type it doesn't use, such as a `Select`,
-isn't in its theme at all (`open-form check` warns when one is), and the
-starters' later improvements never have to be copied into it.
+isn't in its theme at all (`open-form check` warns when one is), and a
+reference's later changes never have to be copied into it.
 
 ## Changing a form's look
 
@@ -117,39 +117,19 @@ Editing or deleting a theme in `themes/` never changes a form.
 - **A form stands on its own.** `open-form check` warns when a form imports from
   `themes/` or from another form's folder.
 - **Component classes are global.** Classes a form took from a reference, such
-  as the terminal starter's `.tm-*`, aren't scoped to the form. If you embed
+  as a terminal theme's `.tm-*`, aren't scoped to the form. If you embed
   several forms on one page and two of them style the same class differently,
   rename the prefix in one of them.
 
-## References and starters
+## References
 
 `themes/` holds the references your agent reads when it creates a form: the
-project's brand theme, a starter you've adapted, a look made with
+project's brand theme, or a look made with
 [`/create-theme`](/docs/skills/create-theme). A new workspace starts with an
-empty `themes/`. No form renders from it: a production build carries the
-references only for Studio's read-only Themes pages.
-
-Open Form ships five starters. Start a form from one, or add one to `themes/`
-to adapt it first, the same way shadcn/ui components work.
-
-| Starter | Feel | Layout | Good for |
-| --- | --- | --- | --- |
-| `classic` | Clean neutral card, every token spelled out | card | Product forms, internal requests, a safe default |
-| `editorial` | Serif magazine, underline inputs, ink panel | `SplitLayout` | Agencies, B2B sales, applications, premium brands |
-| `terminal` | Monospace CLI session, green on black, `? prompts` | terminal window | Developer events, devtools, hackathons, beta access |
-| `brutalist` | Loud yellow, thick borders, hard shadows | card | Launches, waitlists, campaigns |
-| `conversational` | One question per screen, rounded, soft violet, letter keys | `FocusLayout` | Surveys, NPS, quizzes, onboarding, RSVPs |
-
-```npm
-npx open-form theme list                      # the project's themes, then the starters
-npx open-form theme add editorial --as brand  # → themes/brand/, a reference to adapt
-npx open-form create meetup --theme brand     # a new form from brand's tokens
-```
-
-`theme add --as` renames the starter's copy: the `data-of-theme` selectors in its
-CSS and the title in its `THEME.md` follow the new id, and `--force` replaces a
-theme that already has that id. Changing a reference affects only forms you
-start from it later.
+empty `themes/`, and Open Form ships no built-in themes: a form without a
+reference gets a look designed for it. No form renders from `themes/`: a
+production build carries the references only for Studio's read-only Themes
+pages. Changing a reference affects only forms your agent writes from it later.
 
 ## Tokens and components
 
@@ -185,19 +165,18 @@ page.
 thumbnail of a sample form in each theme, its name and one-line description, and
 a badge on themes without a `THEME.md`. It's part of the production build too,
 so a deployed Studio shows the same gallery. **New theme** turns a description
-into a prompt to copy to your agent, and shows the `open-form theme add <starter>`
-command for starting from a starter.
+into a prompt to copy to your agent.
 
 A theme's page opens with a large preview of the sample form: switch the color
 scheme and the device, and jump to any page or the done screen. Below it,
-**Tokens** lays out what a form started with `--theme <id>` copies: the palette
+**Tokens** lays out what a form written from it copies: the palette
 in each scheme with a contrast verdict (**Details** opens every pair and its
 ratio), type samples, and shape (radius, width,
 spacing and frame) drawn in the theme's own colors. Then comes its `THEME.md`,
 with an outline of its sections to jump between, beside two cards:
 
-- **Use it in a form**: the `open-form create <form> --theme` command and a
-  prompt for your agent to start a new form in this theme.
+- **Use it in a form**: a prompt for your agent to start a new form in this
+  theme.
 - **Change this theme**: describe the change and copy it as a prompt. Your agent
   edits the tokens, CSS, components and `THEME.md` and keeps contrast passing.
 
@@ -279,9 +258,9 @@ token: keep the hue, change the lightness.
 
 Ask your agent to run [`/create-theme`](/docs/skills/create-theme). It reads your
 repo's design system (Tailwind, CSS variables, shadcn, fonts), screenshots or a
-description, starts from the closest starter, writes tokens, CSS, components and
-`THEME.md` into `themes/<id>/`, and keeps `theme check` passing. New forms then
-start from it with `create --theme`.
+description, writes tokens, CSS, components and `THEME.md` into
+`themes/<id>/`, and keeps `theme check` passing. New forms then take their look
+from it.
 
 ```text
 /create-theme make it look like our product

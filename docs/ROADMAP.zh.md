@@ -297,6 +297,7 @@
 - ✅ Agent 從參考主題寫出表單其餘的外觀，只拿表單會渲染的部分：token → 寫在 runtime 自己 class 上的 CSS → 只有 CSS 做不到的結構或行為才寫元件；skills、模板與文件都這樣寫，每個範本的 `THEME.md` 列出所有 token，以及哪些部分是 CSS、哪些是元件
 - ✅ Studio：表單的預覽多了「調整」模式，可以調整表單自己的顏色、字型與形狀，即時預覽（`runtime.themeDraft`），存回 `forms/<id>/theme/index.ts`；沒有外觀檔的表單會看到「建立外觀檔」
 - ✅ Demo：`contact`、`developer-meetup`、`feedback` 瘦身成只剩用得到的部分，外觀不變；`apps/demo/themes/` 的參考主題與範本重新同步
+- ✅ 跟 open-slide 一樣不內建主題：5 個範本搬到 `apps/demo/themes/`，拿掉 `create --theme`、`theme add` 與 `theme list`。表單的外觀由 agent 設計，或從專案 `themes/` 裡的參考主題寫出（`create-theme`）
 
 ### 收件時間 ✅
 

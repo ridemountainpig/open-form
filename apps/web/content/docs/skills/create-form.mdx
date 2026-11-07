@@ -43,9 +43,9 @@ code in a shop, gets a higher `protection.rateLimit`.
 
 It first lists a handful of things respondents know from this moment (for a
 café's feedback card: the stamp card, the receipt, the chalkboard menu), drops
-the most literal one, and builds each direction from a different item. It runs
-`open-form theme list`, reads the candidates' `THEME.md` (the project's
-references in `themes/` and the starters) as bases to adapt, and offers three
+the most literal one, and builds each direction from a different item. It reads the
+`THEME.md` of any references in the project's `themes/` as bases to adapt, and
+offers three
 directions tailored to the form and audience, steering clear of the looks
 generated pages fall into by default (cream with a serif and terracotta, black
 with one neon accent, `#` and `→` as decoration). Each is a theme plus a composition and concrete cues —
@@ -69,10 +69,11 @@ open, it asks in the same question. A brand theme in
 `themes/` is the recommended option. If you already named the look, it skips
 the question.
 
-A project theme or a starter can be followed closely, or adapted for this form —
-recolored, with other fonts or another layout — since the form's look is written
-for it. A new look goes through [`/create-theme`](/docs/skills/create-theme)
-first, which adds it to `themes/`.
+A project theme can be followed closely, or adapted for this form — recolored,
+with other fonts or another layout — since the form's look is written for it.
+Without one, the direction is designed for this form, in its own `theme/`. A
+look that should carry over to more forms goes through
+[`/create-theme`](/docs/skills/create-theme) first, which adds it to `themes/`.
 
 </Step>
 <Step>
@@ -107,13 +108,14 @@ the form's look, saying what to do next with only facts you gave.
 </Step>
 <Step>
 
-### Scaffold it from the theme
+### Scaffold it
 
-[`open-form create <id> --theme <theme>`](/docs/cli/create) writes a starter
-`forms/<id>/index.tsx` and `forms/<id>/theme/index.ts` with the chosen theme's
-tokens, already wired up. Only the tokens and the web fonts they name come in;
-the theme's CSS and components stay with the reference. From then on the form
-owns its look: changing the theme in `themes/` never changes it.
+[`open-form create <id>`](/docs/cli/create) writes a starter
+`forms/<id>/index.tsx` and an empty `forms/<id>/theme/index.ts`, already wired
+up. The agent fills in the tokens for the chosen direction, copied from the
+reference when there is one, along with the fonts they name. The reference's CSS
+and components stay with it. From then on the form owns its look: changing a
+theme in `themes/` never changes it.
 
 </Step>
 <Step>

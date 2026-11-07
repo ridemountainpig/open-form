@@ -3,7 +3,7 @@
 // With E2E_POSTGRES_URL, the workspace stores its responses in that Postgres database instead.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const PKG = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BIN = path.join(PKG, 'bin.js');
 const CREATE = path.resolve(PKG, '../create-open-form/index.js');
+const DEMO_THEMES = path.resolve(PKG, '../../apps/demo/themes');
 // Outside the monorepo, or pnpm would install into this repo's workspace instead.
 const SCRATCH = mkdtempSync(path.join(os.tmpdir(), 'open-form-e2e-'));
 const WS = path.join(SCRATCH, 'workspace');
@@ -103,21 +104,19 @@ try {
   }
 
   step('create + list');
-  cli(['create', 'waitlist', '--title', 'Beta waitlist', '--theme', 'editorial']);
+  cli(['create', 'waitlist', '--title', 'Beta waitlist']);
   assert.ok(existsSync(path.join(WS, 'forms/waitlist/index.tsx')));
-  // A reference lends its tokens, never its CSS or components.
-  const look = readFileSync(path.join(WS, 'forms/waitlist/theme/index.ts'), 'utf8');
-  assert.match(look, /primary: '#/);
-  assert.doesNotMatch(look, /\.css|components/);
   assert.deepEqual(readdirSync(path.join(WS, 'forms/waitlist/theme')), ['index.ts']);
   const list = cli(['list']);
   assert.match(list, /waitlist/);
   assert.match(list, /Beta waitlist/);
 
-  step('theme add');
+  step('reference theme');
   // With a reference in themes/, `build` loads it in Vite SSR first; the production
   // build after that must still compile for production.
-  cli(['theme', 'add', 'editorial']);
+  cpSync(path.join(DEMO_THEMES, 'editorial'), path.join(WS, 'themes/editorial'), {
+    recursive: true,
+  });
   assert.ok(existsSync(path.join(WS, 'themes/editorial/THEME.md')));
 
   step('build');
