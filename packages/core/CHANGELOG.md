@@ -1,5 +1,20 @@
 # @open-form-build/core
 
+## 0.4.0
+
+### Minor Changes
+
+- daee6ce: Adds `open-form db copy` to move a SQLite database into Postgres, keeping response numbers and Studio settings.
+- 4c0e340: Stores responses in Postgres when `OPEN_FORM_DATABASE_URL` (or `storage.url`) is set: `@open-form-build/core/postgres`, `open-form init --database postgres`, `open-form db status`, and `open-form check` fails on a password written into `open-form.config.ts`.
+- e772be4: Deploys a whole Open Form project to Vercel: `createOpenFormApp()` from `@open-form-build/core/vercel` serves the API, form pages and Studio from one function, with responses in Postgres. `open-form init --vercel` adds the function and `vercel.json` to a new project. On Vercel, a database added from the Marketplace (`POSTGRES_URL` or `DATABASE_URL`) is used when `OPEN_FORM_DATABASE_URL` isn't set.
+
+### Patch Changes
+
+- 07f5612: Catches a bad admin password or secret, and on Vercel a missing secret or database, when `open-form build` runs, so the deployment fails instead of the site. An admin password that breaks the rules at run time now turns only Studio off on Vercel (and the admin API in Next.js), and forms keep taking responses.
+- 8e5f589: `open-form theme font` and Studio's Google Fonts picker download only the Latin subsets and CJK slices Open Form's languages use, `create --theme` no longer copies fonts its tokens don't name (it prints where they are instead), and `open-form check` flags font files a form never loads.
+- 617dfb0: Next and Submit now scroll the first unanswered or invalid field on the page into the middle of the screen and focus it (instantly for reduced motion), and custom fields without `field.ref` are found through `controlProps`.
+- 1e16b0d: The `create-form` skill settles each form's color scheme (follows the device, light only or dark only) with the visual direction, and checks the form in dark mode before handing off; `form-authoring` explains how to write a dark palette and dark-mode CSS.
+
 ## 0.3.0
 
 ### Minor Changes
