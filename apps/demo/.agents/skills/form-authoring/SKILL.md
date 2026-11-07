@@ -353,7 +353,7 @@ import './meetup.css';
 <Form theme={theme}>…</Form>
 ```
 
-`open-form create` writes `theme/index.ts` for every new form: `defineTheme({})` is the runtime's default look (the `classic` starter's), and `--theme <reference>` starts it from that reference's tokens. It belongs to the form: edit its tokens, CSS and components freely — no other form uses it — and Studio's preview has **Adjust** for its colors, fonts and shape. A form without one gets the default look; Adjust offers to create it, or write it and add the import yourself. The form's root gets `data-of-theme="<form-id>"`, so its CSS is scoped to the form id; renaming the form's folder means updating those selectors. Never import from `themes/` — `open-form check` warns about it, and about imports from another form's folder.
+`open-form create` writes `theme/index.ts` for every new form: `defineTheme({})` is the runtime's default look: write the form's tokens into it, from a reference in `themes/` or designed for the form. It belongs to the form: edit its tokens, CSS and components freely — no other form uses it — and Studio's preview has **Adjust** for its colors, fonts and shape. A form without one gets the default look; Adjust offers to create it, or write it and add the import yourself. The form's root gets `data-of-theme="<form-id>"`, so its CSS is scoped to the form id; renaming the form's folder means updating those selectors. Never import from `themes/` — `open-form check` warns about it, and about imports from another form's folder.
 
 **Only what the form uses, in this order** — move to the next step only when the one before can't give the look:
 
@@ -369,25 +369,9 @@ When CSS restyles the runtime's markup, out-rank its rules instead of relying on
 
 ### Themes in `themes/` are references
 
-The project's `themes/` and the **starters** Open Form ships are references, like open-slide's themes: read them to choose a direction, then write the form's look from one — never import or copy one wholesale. Each has a `THEME.md` (the recipe: palette and tokens, typography, which parts are CSS and which are components, signature ideas, copy tone, do/don'ts) and a working `index.tsx` and CSS that Studio previews and you borrow pieces from. Editing or deleting a theme in `themes/` never changes a form. Studio → Themes is a read-only gallery of these references, in production builds too; a reference changes only when its files do, and that affects only forms created from it later.
+The project's `themes/` holds references, like open-slide's themes: read them to choose a direction, then write the form's look from one — never import or copy one wholesale. A new project has none; the `create-theme` skill makes one when a look should carry over to more forms, and otherwise the form's look is designed for it in its own `theme/`. Each reference has a `THEME.md` (the recipe: palette and tokens, typography, which parts are CSS and which are components, signature ideas, copy tone, do/don'ts) and a working `index.tsx` and CSS that Studio previews and you borrow pieces from. Editing or deleting a theme in `themes/` never changes a form. Studio → Themes is a read-only gallery of these references, in production builds too; a reference changes only when its files do, and that affects only forms created from it later.
 
-| Theme | Feel | Layout | Good for |
-| --- | --- | --- | --- |
-| `classic` | Clean neutral card, every token explicit — the plain look, ready to brand | card | Product forms, internal requests, safe default |
-| `editorial` | Serif magazine, underline inputs, ink panel | `SplitLayout` | Agencies, B2B sales, applications, premium brands |
-| `terminal` | Monospace CLI session, green on black, `? prompts` | terminal window | Developer events, devtools, hackathons, beta access |
-| `brutalist` | Loud yellow, thick borders, hard shadows | card | Launches, waitlists, campaigns, creator products |
-| `conversational` | One question per screen, rounded, soft violet, letter keys | `FocusLayout` | Surveys, NPS, quizzes, onboarding, RSVPs |
-
-```bash
-open-form theme list                         # the project's themes, then the starters
-open-form create <id> --theme terminal       # a new form whose theme/index.ts starts from terminal's tokens
-open-form theme add editorial --as brand     # starter → themes/brand/, a reference to adapt
-```
-
-`theme add --as` renames only the `[data-of-theme="<starter>"]` selectors and THEME.md's name; file names and class prefixes stay the starter's (`themes/brand/editorial.css`, `.ed-…`).
-
-`create --theme` takes the reference's tokens and the web fonts they name, never its CSS or components: take those piece by piece, as above, from its `index.tsx` and CSS — the project's in `themes/<id>/`, starters' in `node_modules/@open-form-build/core/themes/<id>/`. Read its `THEME.md` first and follow its copy guidance.
+From a reference, copy its tokens into the form's `theme/index.ts`, and the fonts they name from its `fonts/` into the form's `theme/fonts/`. Take its CSS and components piece by piece, as above, from its `index.tsx` and CSS in `themes/<id>/`. Read its `THEME.md` first and follow its copy guidance.
 
 ### Theme anatomy
 
@@ -423,7 +407,7 @@ export default defineTheme({
 });
 ```
 
-Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google). For "make it look like our product", use the `create-theme` skill.
+Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google): its Latin faces and, for a CJK family, every CJK slice, but no Cyrillic, Greek or other scripts, which no Open Form language is written in. For "make it look like our product", use the `create-theme` skill.
 
 ### Light and dark
 
@@ -719,7 +703,7 @@ The answer fields stay in **one column**: people read and fill a single column f
 
 **Match the ambition to the moment.** Quick operational forms — a QR feedback card on a café table, an internal sign-up, a bug report — are filled in within a minute by people who want to be done: keep a plain column (the centered card, or a full-bleed column on the form's own background), put the one signature on the key question, and spend the rest on copy. Invitations, event registrations, applications and campaigns are moments people remember and share, and they earn a full composition.
 
-**One question per screen is a choice about the questions**, not the theme or the field count: a five-question NPS is one per screen even though five fields would fit on one page. It fits forms where each answer needs a moment's thought — an NPS survey, a quiz, a short reflective survey — and people know it from Typeform: `FocusLayout` gives Enter to continue and big type, and a custom `ChoiceGroup` can add letter keys (the `conversational` starter has one). Data entry stays together (*Questions*): splitting name, email and phone into three screens is the thing people dislike most about one-question forms.
+**One question per screen is a choice about the questions**, not the theme or the field count: a five-question NPS is one per screen even though five fields would fit on one page. It fits forms where each answer needs a moment's thought — an NPS survey, a quiz, a short reflective survey — and people know it from Typeform: `FocusLayout` gives Enter to continue and big type, and a custom `ChoiceGroup` can add letter keys. Data entry stays together (*Questions*): splitting name, email and phone into three screens is the thing people dislike most about one-question forms.
 
 Pick the composition from the form's subject and the moment: a concert sign-up can be a poster, a scholarship application a document, a workshop booking a form with a sticky summary. `width`, `.of-root`'s padding and background, and the `Layout` are all part of the form's own theme. On phones, every composition collapses to the single column with a compact visual band above it.
 - **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. Use the person's answers (`useFormValues()` in a component inside `<Success>`; `title` is a plain string, so the personal line goes in the children): "3 seats are held for you — see you on Nov 15" beats a generic thank-you. Add what they need next from facts the user gave: for an event with a date, `success.calendar` (see *Event forms*; don't hand-write Google Calendar links), the venue's map link, what to prepare. `<Success>` echoes the signature element (*Look*). Closed screens: see *Closed screens*.
@@ -736,7 +720,7 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 | Writing API routes, SQL, Express handlers | `config.submissions` / `protection` |
 | `fetch()` to Slack/Zapier in `onSubmit` or a validator | `webhooks` in `open-form.config.ts` |
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
-| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (`open-form create <id> --theme terminal`) + `<Form theme={theme}>`, with the CSS and components it needs written there |
+| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (written by `open-form create <id>`) + `<Form theme={theme}>`, with the tokens, CSS and components it needs written there |
 | Copying a reference theme's whole folder into the form | Only what the form renders: tokens, then CSS on the runtime's classes, then components that need their own markup or behavior |
 | CSS grid / flex to arrange fields | `<Row>`, `<Page>`; grid and flex belong in the `Layout`, around the field column |
 | Every form a centered card at the default width | A composition chosen for the form (*Composition*) |

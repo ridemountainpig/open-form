@@ -25,7 +25,7 @@ Any mix of:
   inputs and buttons.
 - **Images** — screenshots, a mood board, a brand guide.
 - **A description** — "dark, neon, arcade", "calm clinic", "Swiss poster".
-- **A starter to adapt** — "editorial, but with our colors".
+- **A project theme to adapt** — "like our brand theme, but for events".
 
 If the source isn't clear, it asks once. When sources disagree, it asks which
 one wins. From images or a description, it gives the theme one distinctive move
@@ -59,19 +59,7 @@ avoid `var()` and `color-mix()`, which the contrast check can't read.
 
 ## What it writes
 
-The agent starts from the closest starter, under the new id:
-
-```npm
-npx open-form theme add classic --as acme
-```
-
-`classic` for product UI, `editorial` for premium serif, `terminal` for
-developer tools, `brutalist` for loud campaigns, `conversational` for one
-question per screen. `--as` renames the `[data-of-theme]` selectors and the
-name in `THEME.md`; file names and class prefixes stay the starter's, so
-`theme add editorial --as acme` gives `themes/acme/editorial.css` with `.ed-…`
-classes.
-
+The agent writes a folder, `themes/<id>/`, from scratch for the theme's move.
 Then it goes only as deep as the look needs:
 
 1. **Tokens** — colors, fonts, radius, spacing, width and layout. Most product
@@ -154,13 +142,9 @@ you it hasn't seen the theme.
 ## Applying it
 
 The new theme is a reference, so creating it changes no form, and no form ever
-imports it. A new form starts from its tokens:
-
-```npm
-npx open-form create waitlist --theme acme
-```
-
-Then the agent writes the rest of that form's look in its own `theme/` folder,
+imports it. For a new form, the agent runs `open-form create <form>`, copies the
+theme's tokens and the fonts they name into the form's `theme/`, then writes the
+rest of that form's look in its own `theme/` folder,
 taking from the reference only the CSS and components the form uses. For a form
 that already exists, it sets the tokens in the form's `theme/` and keeps what the
 form already has, looking at it first. "Our forms" or "everything" means doing

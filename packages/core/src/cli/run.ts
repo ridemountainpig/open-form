@@ -92,7 +92,6 @@ export async function run(argv: string[]): Promise<void> {
     .description('Create a new form from the starter')
     .argument('<id>', 'kebab-case form id, e.g. event-registration')
     .option('-t, --title <title>', 'form title')
-    .option('--theme <theme>', "start the form's look from a theme's tokens (themes/ or a starter)")
     .option('--locale <locale>', 'the language the form is written in, e.g. zh-TW')
     .action(async (id: string, flags) => {
       const { createForm } = await import('./commands.ts');
@@ -168,14 +167,7 @@ export async function run(argv: string[]): Promise<void> {
 
   const theme = program
     .command('theme')
-    .description('Browse the reference themes forms take their looks from');
-  theme
-    .command('list')
-    .description("List the project's themes and the starters")
-    .action(async () => {
-      const { listThemes } = await import('./theme.ts');
-      await listThemes();
-    });
+    .description("Check and add fonts to themes and forms' own looks");
   theme
     .command('check')
     .description("Check a theme's color contrast (light and dark)")
@@ -185,16 +177,6 @@ export async function run(argv: string[]): Promise<void> {
     .action(async (id: string, flags: { json?: boolean; form?: boolean }) => {
       const { themeCheckCommand } = await import('./theme.ts');
       await themeCheckCommand(id, flags);
-    });
-  theme
-    .command('add')
-    .description('Copy a starter theme into themes/, to adapt as a reference for new forms')
-    .argument('<starter>', 'starter theme, e.g. editorial (see `theme list`)')
-    .option('--as <name>', 'save it under a new id, e.g. brand')
-    .option('-f, --force', 'replace a theme with that id')
-    .action(async (starter: string, flags: { as?: string; force?: boolean }) => {
-      const { addCommand } = await import('./theme.ts');
-      await addCommand(starter, flags);
     });
   theme
     .command('font')

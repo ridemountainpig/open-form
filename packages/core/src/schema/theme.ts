@@ -98,7 +98,7 @@ export function themeToCss(theme: Theme | undefined, selector: string): string {
   return css;
 }
 
-/** The plain look's palette (what the `classic` starter spells out), for tooling that needs concrete defaults. */
+/** The plain look's palette, for tooling that needs concrete defaults. */
 export const DEFAULT_COLORS: { light: Required<ThemeColors>; dark: Required<ThemeColors> } = {
   light: {
     primary: '#4f46e5',

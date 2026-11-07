@@ -56,7 +56,6 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
-    "themes",
     "skills",
     "template",
     "!**/.open-form",

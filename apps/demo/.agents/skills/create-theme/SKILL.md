@@ -5,7 +5,7 @@ description: Use when the user wants a new look for their forms — "make it loo
 
 # Create a theme
 
-A theme is a reusable visual identity for forms: **tokens** (colors, type, radius, spacing), optional **CSS** and **components**, and a **THEME.md** that tells future agents how to write forms in it. Themes in `themes/` are **references**, like open-slide's: an agent reads one while writing a form's look, and no form imports or copies it. A form takes the tokens (`open-form create <form> --theme <id>`) and writes the rest of its look for itself in `forms/<form>/theme/`, so changing a theme later never changes an existing form. The theme's `index.tsx` and CSS are a working reference — Studio previews them and agents borrow from them — and THEME.md is the recipe. The technical contract is in `form-authoring` (*Themes* and *Layouts and chrome*) — read it first.
+A theme is a reusable visual identity for forms: **tokens** (colors, type, radius, spacing), optional **CSS** and **components**, and a **THEME.md** that tells future agents how to write forms in it. Themes in `themes/` are **references**, like open-slide's: an agent reads one while writing a form's look, and no form imports or copies it. A form copies the tokens and writes the rest of its look for itself in `forms/<form>/theme/`, so changing a theme later never changes an existing form. The theme's `index.tsx` and CSS are a working reference — Studio previews them and agents borrow from them — and THEME.md is the recipe. The technical contract is in `form-authoring` (*Themes* and *Layouts and chrome*) — read it first.
 
 You write under `themes/<id>/` — plus a form's own look when the theme is for that form (Step 8).
 
@@ -18,7 +18,7 @@ A theme can come from any mix of:
 - **The repo's design system** — "make it look like our product". Most common; look before asking.
 - **Images** — screenshots, a mood board, a brand guide (open and look at them).
 - **A description** — "dark, neon, arcade", "calm clinic", "Swiss poster".
-- **A starter to adapt** — "editorial but with our colors".
+- **A project theme to adapt** — "like our brand theme, but for events".
 
 If the request doesn't make the source clear, ask once — a multi-select question, with a question tool if you have one.
 
@@ -57,34 +57,20 @@ Colors may be pasted as-is: every token is a CSS color, so `oklch(…)`, `hsl(�
 
 Name dominant colors, the type personality (serif / grotesk / mono / rounded, weight), density, corner style, borders vs. shadows, decorative motifs. Resolve vague words into decisions before writing.
 
-Give the theme **one distinctive move** — a display heading font, a textured brand panel, an unusual control shape (underlines, pills, chunky blocks), a composition that isn't a centered card (a full-page poster, a document sheet, a hero beside the questions: `form-authoring` → *Design guidelines → Composition*) — and keep everything else quiet. A theme that's only "clean and modern" ends up as `classic` with a new primary color, and a theme that is only a new card style ends up looking like every other form: decide the composition along with the colors and type.
+Give the theme **one distinctive move** — a display heading font, a textured brand panel, an unusual control shape (underlines, pills, chunky blocks), a composition that isn't a centered card (a full-page poster, a document sheet, a hero beside the questions: `form-authoring` → *Design guidelines → Composition*) — and keep everything else quiet. A theme that's only "clean and modern" ends up as the runtime's default look with a new primary color, and a theme that is only a new card style ends up looking like every other form: decide the composition along with the colors and type.
 
 Take the move from the audience's world (the objects, documents and places they know from this moment), not from what generated pages default to: cream with a serif and terracotta, black with one neon accent, newspaper hairlines, `#` and `→` as decoration (`form-authoring` → *Design guidelines → Look* lists them). Use one of those only when the brand is that.
 
 When sources disagree, ask which wins.
 
-## Step 3 — Pick an id, a starting point and a depth
+## Step 3 — Pick an id and a depth
 
-- **Id**: kebab-case, short — `acme`, `ledgerly`, `clinic-calm`, `arcade-neon`. Check `open-form theme list` for ids already in `themes/`.
-- **Start from the closest starter** — always a folder:
-
-  ```bash
-  open-form theme add <closest> --as <id>     # → themes/<id>/
-  ```
-
-  Only the `[data-of-theme="<starter>"]` selectors and THEME.md's name and heading become `<id>`. File names and class prefixes stay the starter's: `theme add editorial --as acme` gives `themes/acme/editorial.css` with `.ed-…` classes. Rename them if you want your own, updating the CSS import with them.
-
-  | Target feel | Start from |
-  | --- | --- |
-  | Product UI, SaaS, shadcn-style | `classic` |
-  | Premium, serif, editorial, split panel | `editorial` |
-  | Developer, mono, dark | `terminal` |
-  | Loud, chunky, campaign | `brutalist` |
-  | Survey, one question per screen, soft | `conversational` |
+- **Id**: kebab-case, short — `acme`, `ledgerly`, `clinic-calm`, `arcade-neon`. Check `themes/` for ids already taken.
+- **Always a folder**: `themes/<id>/index.ts` (`index.tsx` once it has components), with its CSS, `fonts/` and `THEME.md` beside it. Write it from scratch for this theme's move; when the project already has a theme close to the target, read it for structure, but don't copy its look.
 
 - **Depth** — use the lightest level that reaches the look:
   1. **Tokens** — colors, fonts, `radius`, `buttonRadius`, `spacing`, `width`, `layout`, `components.Layout` (a built-in one). Covers most product themes (pill buttons are just `buttonRadius`).
-  2. **Tokens + CSS** — `import './<id>.css';` at the top of `index.ts` (or the starter's CSS file, if it came with one), for chrome details tokens can't express: button weight / shadow, header treatment, card border, pill choices, glyphs drawn with `::before`. Scope every rule to `[data-of-theme="<id>"]`; a form writing its look from it scopes the same rules to its own id.
+  2. **Tokens + CSS** — `import './<id>.css';` at the top of `index.ts`, for chrome details tokens can't express: button weight / shadow, header treatment, card border, pill choices, glyphs drawn with `::before`. Scope every rule to `[data-of-theme="<id>"]`; a form writing its look from it scopes the same rules to its own id.
   3. **Full** — custom components (`themes/<id>/index.tsx`) only where the look needs markup or behavior the runtime's doesn't have: a branded window, a custom `Layout` for a composition the built-in ones don't give (a poster, a document sheet, a hero with the form beside it; see the example in `form-authoring` → *Layouts and chrome*), a wrapper for an animated underline, keyboard shortcuts. A form takes such a piece only when it uses it, so keep each one small and self-contained.
 
 ## Step 4 — Write tokens
@@ -94,7 +80,7 @@ When sources disagree, ask which wins.
 - **Fonts** — the product's `next/font` / `geist` package isn't available to forms (they're a different app). Options, in order:
   1. A system stack with the brand font first: `'"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif'` — the brand font shows only where installed.
   Always end with `var(--of-cjk)` (or `var(--of-cjk-serif)` for serif stacks) before the generic family, never a specific CJK font: the runtime fills it with Traditional Chinese, Simplified Chinese or Japanese fonts to match the form's `locale`, since the same characters are drawn differently in each.
-  2. A Google Fonts family: `open-form theme font <id> <Family>` (e.g. `theme font acme Inter`) downloads every face into `themes/<id>/fonts/`, writes `fonts/<slug>.css` (woff2 split by `unicode-range`) and imports it from the theme, then prints the `font` value to use. CJK families take 10–20 MB on disk, and each form started from the theme gets its own copy (respondents only download the slices a page uses) — tell the user. `create --theme` brings the fonts the tokens name into the new form.
+  2. A Google Fonts family: `open-form theme font <id> <Family>` (e.g. `theme font acme Inter`) downloads the faces forms can use into `themes/<id>/fonts/`, writes `fonts/<slug>.css` (woff2 split by `unicode-range`) and imports it from the theme, then prints the `font` value to use. Forms are written in Latin and CJK scripts, so it keeps `latin`, `latin-ext` and `vietnamese` (names respondents type) and every slice of a CJK family, and skips Cyrillic, Greek and other scripts: a respondent typing those gets a system font. CJK families take 10–20 MB on disk, and each form started from the theme gets its own copy (respondents only download the slices a page uses) — tell the user.
   3. Any other licensed font: copy the `.woff2` into `themes/<id>/fonts/` and declare `@font-face` in the theme CSS.
   Never link `fonts.googleapis.com` from a theme: every respondent's browser would then contact Google, a privacy problem under the GDPR. Use 2 instead.
   Use 2 or 3 only when the font is central to the brand (display headings, a distinctive wordmark-like face) or the user asks.
@@ -106,13 +92,16 @@ When sources disagree, ask which wins.
     dir=themes/<id>/fonts; slug=fraunces; family='Fraunces'   # a form's own look: forms/<form>/theme/fonts
     mkdir -p "$dir/$slug"
     curl -fsS -A 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' \
-      "https://fonts.googleapis.com/css2?family=Fraunces:wght@100..900&display=swap" -o "$dir/$slug.src.css"
+      "https://fonts.googleapis.com/css2?family=Fraunces:wght@100..900&display=swap" -o "$dir/$slug.all.css"
+    # keep what `theme font` keeps: the Latin faces, and a CJK family's slices (they have no subset comment)
+    awk 'BEGIN { RS = "}" } /@font-face/ && (!/\/\* [a-z0-9-]+ \*\// || /\/\* (latin|latin-ext|vietnamese) \*\//) { printf "%s}", $0 }' \
+      "$dir/$slug.all.css" > "$dir/$slug.src.css"
     grep -o 'https://fonts.gstatic.com/[^)]*' "$dir/$slug.src.css" | sort -u | while read -r url; do
       curl -fsS "$url" -o "$dir/$slug/$(basename "$url")"
     done
     { printf '/*\n * %s from Google Fonts, served from this folder.\n * open-form font: "%s", ui-serif, Georgia, var(--of-cjk-serif), serif\n */\n' "$family" "$family"
       sed -E "s#url\(https://fonts.gstatic.com/[^)]*/([^/)]+)\)#url(./$slug/\1)#g" "$dir/$slug.src.css"; } > "$dir/$slug.css"
-    rm -- "${dir:?}/${slug:?}.src.css"
+    rm -- "${dir:?}/${slug:?}.all.css" "${dir:?}/${slug:?}.src.css"
     ```
 
     Then `import './fonts/<slug>.css';` in the theme and use the stack from the header as `font` or `headingFont`. Use a sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif`) or a monospace one (`ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace`) to match the family. A CJK family's CSS lists a hundred or more slices; download them all, since browsers fetch only the ones a page uses.
@@ -133,7 +122,7 @@ Follow `form-authoring` → *Themes* → *Components*:
 
 ## Step 6 — Write `themes/<id>/THEME.md`
 
-Same shape as the starters', so `create-form` can compare themes. Studio shows it as the theme's page — `description` under the name in the gallery, the body beside the live palette, type and shape — so write it for a person choosing a theme, not only for agents:
+Same shape for every theme, so `create-form` can compare them. Studio shows it as the theme's page — `description` under the name in the gallery, the body beside the live palette, type and shape — so write it for a person choosing a theme, not only for agents:
 
 ````markdown
 ---
@@ -194,7 +183,7 @@ Studio's Themes pages are read-only (in production builds too): changes to a ref
 
 ## Step 8 — Use it in a form and hand off
 
-- When the theme is for a new form, start it with `open-form create <form> --theme <id>` (the tokens, wired up), then write the rest of the form's look as `create-form` → Step 5 describes: only the CSS and components that form uses, taken from this theme. For a form that already exists, write the same into its `forms/<form>/theme/` — set its tokens there, keep what the form already has, and look at it first. Run `open-form check <form>`, then look at the form as `create-form` → Step 6 → *Look at it* describes: `/f/<form>` on desktop and phone width, every step through Studio's Preview, a validation error. When the form has translations, check the language picker covers nothing at phone (~390px) and tablet (~600px) width too (Step 5). A test submission is stored for real — delete it under Responses.
+- When the theme is for a new form, start it with `open-form create <form>`, copy this theme's tokens (and the fonts they name) into the form's `theme/index.ts`, then write the rest of the form's look as `create-form` → Step 5 describes: only the CSS and components that form uses, taken from this theme. For a form that already exists, write the same into its `forms/<form>/theme/` — set its tokens there, keep what the form already has, and look at it first. Run `open-form check <form>`, then look at the form as `create-form` → Step 6 → *Look at it* describes: `/f/<form>` on desktop and phone width, every step through Studio's Preview, a validation error. When the form has translations, check the language picker covers nothing at phone (~390px) and tablet (~600px) width too (Step 5). A test submission is stored for real — delete it under Responses.
 - Changing `themes/<id>/` later doesn't update any form. To bring a change to one, make it in that form's own look.
 - "Our forms" / "everything" means writing the look into each form the user means; there's no project-wide theme.
 - Tell the user: the theme id and folder, where the tokens came from, any contrast adjustments (original → new), which forms now use it, and that `themes/<id>/` is theirs to edit — as the reference for new forms.

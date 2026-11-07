@@ -8,8 +8,7 @@ A theme's `index.ts` — `index.tsx` when it adds components — default-exports
 `defineTheme({...})`. It lives in one of two places:
 
 - `forms/<id>/theme/` — the form's own look, written by
-  [`open-form create`](/docs/cli/create) (from a reference's tokens with
-  `--theme`) and then by you or your agent. The form imports it from
+  [`open-form create`](/docs/cli/create) and then by you or your agent. The form imports it from
   `./theme/index.ts`, or `index.tsx` once it adds components, and passes it to
   [`<Form theme>`](/docs/components/form#theme). Only that form uses it.
 - `themes/<id>/` — a reference for new forms, with a `THEME.md` beside it that
@@ -138,7 +137,7 @@ and custom fields so every theme and dark mode keeps working.
 | `--of-gap` | `24px` |
 | `--of-width` | `640px` |
 | `--of-aside-width` | `340px` |
-| `--of-primary` … `--of-success` | The built-in palette, the same as the `classic` starter's |
+| `--of-primary` … `--of-success` | The built-in palette |
 | `--of-ring` | `primary` at 24%, for soft focus halos |
 | `--of-hover-border`, `--of-hover-control` | Hover shades of `border` and `control` |
 | `--of-ease` | The runtime's easing curve |

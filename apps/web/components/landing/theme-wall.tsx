@@ -106,11 +106,11 @@ export function ThemeWall() {
         <SectionHeading
           number="05"
           label="Looks"
-          title="Same questions, five starting looks."
+          title="Same questions, five looks."
           lead={
             <>
-              Each form's look is written for it from a theme, so restyling one never changes
-              another. Start from a starter, or have{' '}
+              Your agent writes each form its own look, so restyling one never changes another.
+              Describe the mood, or have{' '}
               <span className="font-[family-name:var(--font-mono)] text-[14px] text-[color:var(--color-text)]">
                 /create-theme
               </span>{' '}
@@ -121,7 +121,7 @@ export function ThemeWall() {
 
         <div
           role="tablist"
-          aria-label="Starter theme"
+          aria-label="Theme"
           onKeyDown={onKeyDown}
           data-reveal
           className="-mx-6 flex gap-2.5 overflow-x-auto px-6 pt-1 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible sm:px-0"

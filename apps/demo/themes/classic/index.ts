@@ -1,8 +1,7 @@
 import { defineTheme } from '@open-form-build/core';
 
-// Classic: the plain look with every token written out. Add it with
-// `open-form theme add classic --as brand` to start a brand theme from familiar
-// ground. See THEME.md.
+// Classic: the plain look with every token written out, a familiar starting
+// point for a brand theme. See THEME.md.
 
 export default defineTheme({
   font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif',
