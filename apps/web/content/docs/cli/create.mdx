@@ -38,6 +38,10 @@ folder name and the public URL. `create` stops if `forms/<id>` already exists.
 
 ## The starter
 
+The starter's description, labels and button are written in the form's
+language: `--locale`, else the project's `locale`, else English. With
+`--locale zh-TW` the fields read 姓名, 電子郵件 and 留言, and the button 送出.
+
 ```tsx title="forms/event-registration/index.tsx"
 import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
 import theme from './theme/index.ts';

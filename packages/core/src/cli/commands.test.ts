@@ -41,4 +41,19 @@ describe('componentName', () => {
     expect(starterForm('cafe', '咖啡', 'zh-TW')).toContain("  locale: 'zh-TW',\n});");
     expect(starterForm('cafe', `Amy's "cafe"`)).toContain(`  title: 'Amy\\'s "cafe"',`);
   });
+
+  it("writes the sample questions in the form's language", () => {
+    expect(starterForm('cafe', 'Cafe')).toContain('<Text name="name" label="Name"');
+    const zh = starterForm('cafe', '咖啡', 'zh-TW');
+    expect(zh).toContain("  description: '簡單介紹一下你自己。',");
+    expect(zh).toContain('<Text name="name" label="姓名"');
+    expect(zh).toContain('<Email name="email" label="電子郵件"');
+    expect(zh).toContain('<Submit>送出</Submit>');
+    expect(starterForm('cafe', 'カフェ', 'ja')).toContain('<Submit>送信</Submit>');
+    expect(starterForm('cafe', '咖啡', 'zh-CN')).toContain('label="电子邮箱"');
+    expect(starterForm('cafe', 'Cafe', 'en')).toContain('<Submit>Send</Submit>');
+    const inherited = starterForm('cafe', '咖啡', undefined, 'zh-TW');
+    expect(inherited).not.toContain('locale');
+    expect(inherited).toContain('<Submit>送出</Submit>');
+  });
 });

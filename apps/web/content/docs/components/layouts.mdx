@@ -141,6 +141,48 @@ function Centered({ state, header, progress, content, alert, actions }: LayoutUI
 A custom `Nav` or `Button` must keep `type="submit"` on the primary button so
 Enter still advances.
 
+## Screen headings — `ScreenHeadingContext`
+
+A screen has one `<h1>`. The built-in `Success` and `Notice` take it, unless
+the layout keeps the form's header, and its `<h1>`, on the thank-you and closed
+screens, as `SplitLayout` does. `ScreenHeadingContext` holds the level those
+screens should use: `'h1'` by default, `'h2'` under such a layout. A custom
+`Success` or `Notice` reads it instead of hard-coding a tag, so it stays right
+in any layout:
+
+```tsx
+import { useContext } from 'react';
+import { ScreenHeadingContext, type SuccessUIProps } from '@open-form-build/core';
+
+function Thanks({ title, children }: SuccessUIProps) {
+  const Heading = useContext(ScreenHeadingContext);
+  return (
+    <div className="thanks">
+      <Heading className="of-title">{title}</Heading>
+      {children}
+    </div>
+  );
+}
+```
+
+A custom `Layout` that renders `header` on the `success` or `unavailable`
+screen wraps `content` in `<ScreenHeadingContext.Provider value="h2">`:
+
+```tsx
+import { type LayoutUIProps, ScreenHeadingContext } from '@open-form-build/core';
+
+function Poster({ header, content, alert, actions }: LayoutUIProps) {
+  return (
+    <div className="poster">
+      {header}
+      <ScreenHeadingContext.Provider value="h2">{content}</ScreenHeadingContext.Provider>
+      {alert}
+      {actions}
+    </div>
+  );
+}
+```
+
 On a translated form, the language picker (`.of-lang`) sits 12px inside the
 top-right corner of `.of-root` and is 32px tall. The built-in layouts start
 below it. A custom `Layout`, or CSS that changes `.of-root`'s padding, has to
@@ -188,10 +230,10 @@ function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
 Branch on `state` for what differs and fall back to `title` and `message`, so
 a state you didn't plan for still reads right. Keep policy messages in
 `config.submissions`, where Studio and the server use them too. Render one
-`<h1>`: `ScreenHeadingContext` is `'h2'` inside layouts that keep the header,
-and its `<h1>`, on the closed and thank-you screens, like `SplitLayout`, so
-use it for the title and skip `eyebrow` there. A custom `Layout` that does the
-same wraps `content` in `<ScreenHeadingContext.Provider value="h2">`. Studio's Preview shows every closed screen the form can reach.
+`<h1>`: take the title's level from
+[`ScreenHeadingContext`](#screen-headings--screenheadingcontext), and skip
+`eyebrow` when it is `'h2'`, since the header already names the form. Studio's
+Preview shows every closed screen the form can reach.
 
 <Cards>
   <Card title="Themes" href="/docs/core-feature/themes" />
