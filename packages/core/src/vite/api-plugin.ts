@@ -134,6 +134,8 @@ export function apiPlugin(opts: ApiPluginOptions): Plugin {
             exposeErrors: true,
             adminAuth,
             webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
+            turnstileSecret: process.env.OPEN_FORM_TURNSTILE_SECRET || undefined,
+            turnstileTestKeys: true,
             clientAddress: (request) => {
               const req = sockets.get(request);
               return req ? clientAddress(req, { trustProxy: config.trustProxy }) : undefined;
