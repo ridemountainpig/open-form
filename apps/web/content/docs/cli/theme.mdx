@@ -86,8 +86,11 @@ folder next to the theme's file — `themes/<id>/fonts/`, or
 single-file theme, `themes/<id>.ts`, uses a shared `themes/fonts/`. Then it
 prints the value to use for `font` or `headingFont`. The form serves the files
 itself, so respondents never contact Google. Variable families get their whole
-weight range; static ones get weights 400 to 700. Adding the same family again
-replaces its files.
+weight range; static ones get weights 400 to 700. Only the Latin subsets
+(`latin`, `latin-ext`, `vietnamese`) and a CJK family's slices are downloaded,
+not Cyrillic, Greek or other scripts, which no Open Form language is written in
+(see [Web fonts](/docs/core-feature/themes#web-fonts)). Adding the same family
+again replaces its files.
 
 It needs to reach `fonts.google.com`, `fonts.googleapis.com` and
 `fonts.gstatic.com`. Behind a proxy set in `HTTPS_PROXY`, run it with
