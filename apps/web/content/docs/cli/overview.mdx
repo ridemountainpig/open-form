@@ -37,13 +37,13 @@ package manager.
 | [`build`](/docs/cli/build) | Build for production. |
 | [`start`](/docs/cli/start) | Serve the production build: forms, API, storage. |
 | [`check [id]`](/docs/cli/check) | Load forms like the server does and print their schema, or the error. |
-| [`create <id>`](/docs/cli/create) | Create a new form from the starter, with its own `theme/index.ts`, optionally from a theme's tokens (`--theme`). |
+| [`create <id>`](/docs/cli/create) | Create a new form from the starter, with its own `theme/index.ts`. |
 | [`delete <id>`](/docs/cli/delete) | Delete a form, its files and every response. |
 | [`list`](/docs/cli/list) | List forms and their response counts. |
 | [`responses export <formId>`](/docs/cli/responses-export) | Export responses as CSV, Excel or JSON. |
 | [`db status`](/docs/cli/db) | Show which database stores responses, and check that it answers. |
 | [`db copy`](/docs/cli/db#db-copy) | Copy the SQLite database into Postgres, response numbers included. |
-| [`theme list\|check\|add\|font`](/docs/cli/theme) | List reference themes, check contrast, add a starter to `themes/`, download a Google Fonts family. |
+| [`theme check\|font`](/docs/cli/theme) | Check a theme's contrast, download a Google Fonts family. |
 | [`comments [id]`](/docs/cli/comments) | List review comments left in Studio. |
 | [`sync:skills`](/docs/cli/sync-skills) | Update the agent skills in `.agents/skills/`. |
 

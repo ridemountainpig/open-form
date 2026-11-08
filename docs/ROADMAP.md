@@ -297,6 +297,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 - ✅ Agents write the rest of a form's look from the reference, only what the form renders: tokens → CSS on the runtime's own classes → components only for markup or behavior CSS can't give; the skills, the template and the docs say so, and each starter's `THEME.md` lists every token and which parts are CSS or components
 - ✅ Studio: the form's Preview has an **Adjust** mode for its own colors, fonts and shape, with a live preview (`runtime.themeDraft`), saving to `forms/<id>/theme/index.ts`; a form without one gets **Create look file**
 - ✅ Demo: `contact`, `developer-meetup` and `feedback` slimmed to what they use, looking the same; the reference themes in `apps/demo/themes/` re-synced with the starters
+- ✅ No built-in themes, like open-slide: the five starters moved to `apps/demo/themes/`, and `create --theme`, `theme add` and `theme list` are gone. The agent designs a form's look, or writes it from a reference in the project's `themes/` (`create-theme`)
 
 ### Submission window ✅
 

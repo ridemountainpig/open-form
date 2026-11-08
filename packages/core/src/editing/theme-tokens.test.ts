@@ -106,12 +106,15 @@ describe('validatePatch', () => {
   });
 });
 
-describe('starter themes', () => {
-  it('can be edited once added to a project', async () => {
+describe('the demo themes', () => {
+  it('can be edited by the token writer', async () => {
     const { readFileSync } = await import('node:fs');
-    const { findStarterThemes } = await import('../vite/project.ts');
+    const path = await import('node:path');
+    const { findThemes, PKG_ROOT } = await import('../vite/project.ts');
     const { parse } = await import('@babel/parser');
-    for (const theme of findStarterThemes()) {
+    const themes = findThemes(path.join(PKG_ROOT, '../../apps/demo/themes'));
+    expect(themes.length).toBeGreaterThan(0);
+    for (const theme of themes) {
       const source = readFileSync(theme.file, 'utf8');
       const out = writeThemeTokens(source, {
         radius: '3px',

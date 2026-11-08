@@ -25,7 +25,7 @@ layout: default card (works with StepperLayout)
 
 ## Tokens
 
-What `open-form create <form> --theme brutalist` writes into the form's `theme/index.ts`. One palette only.
+The tokens a form copies into its `theme/index.ts`. One palette only.
 
 | Token | Value |
 | --- | --- |

@@ -4,9 +4,9 @@ import path from 'node:path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { deleteForm } from '../editing/delete-form.ts';
-import { findReferenceTheme, writeFormTheme } from '../editing/theme-files.ts';
+import { writeFormTheme } from '../editing/theme-files.ts';
 import { openStorage, resolveStorage, storageExists } from '../node/storage.ts';
-import { isLocale, LOCALES, type Locale, pickTokens, type Theme } from '../schema/index.ts';
+import { isLocale, LOCALES, type Locale } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
 import { exportFormResponses, FORM_ID_RE } from '../server/index.ts';
 import { createDevRegistry } from '../vite/api-plugin.ts';
@@ -66,7 +66,7 @@ export default function ${componentName(id)}() {
 
 export async function createForm(
   id: string,
-  opts: { title?: string; theme?: string; locale?: string } = {},
+  opts: { title?: string; locale?: string } = {},
 ): Promise<string> {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) {
     throw new Error(`Form ids are kebab-case (letters, digits, "-"): got "${id}".`);
@@ -79,48 +79,17 @@ export async function createForm(
   const { formsRoot } = projectPaths(userCwd, await loadUserConfig(userCwd));
   const dir = path.join(formsRoot, id);
   if (existsSync(dir)) throw new Error(`forms/${id} already exists.`);
-  const reference = opts.theme ? await findReferenceTheme(userCwd, opts.theme) : undefined;
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, 'index.tsx');
-  let themeLines = '';
   try {
     await writeFile(file, starterForm(id, opts.title ?? titleCase(id), locale));
-    if (reference) {
-      const tokens = await withSsrServer(userCwd, async (server) => {
-        const mod = (await server.ssrLoadModule(reference.file)) as { default?: Theme };
-        if (!mod.default) throw new Error(`${reference.file} has no default export.`);
-        return pickTokens(mod.default);
-      });
-      const result = await writeFormTheme(userCwd, id, { tokens, themeFile: reference.file });
-      const from =
-        reference.source === 'project' ? `themes/${opts.theme}` : `the ${opts.theme} starter`;
-      const doc =
-        reference.source === 'project'
-          ? `themes/${opts.theme}/THEME.md`
-          : `node_modules/@open-form-build/core/themes/${opts.theme}/THEME.md`;
-      const fonts = result.fonts.length ? ` and ${result.fonts.join(', ')}` : '';
-      const spare = result.spareFonts.length
-        ? `    ${chalk.dim(`Its other fonts stay where they are; if CSS this form borrows uses one, copy it into ${path.relative(userCwd, path.dirname(result.file))}/fonts/ and import its .css:`)}\n` +
-          result.spareFonts
-            .map(
-              (font) =>
-                `      ${font.family}: ${chalk.dim([font.css, font.folder && `${font.folder}/`].filter(Boolean).join(' and '))}\n`,
-            )
-            .join('')
-        : '';
-      themeLines =
-        `    ${chalk.dim(`Its look starts from ${from}'s tokens${fonts} in`)} ${path.relative(userCwd, result.file)}\n` +
-        spare +
-        `    ${chalk.dim('Write its styles and components for this form, reading')} ${doc}\n`;
-    } else {
-      await writeFormTheme(userCwd, id);
-    }
+    await writeFormTheme(userCwd, id);
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
     throw error;
   }
   const rel = path.relative(userCwd, file);
-  process.stdout.write(`\n  ${chalk.green(glyph.check)} Created ${chalk.bold(rel)}\n${themeLines}`);
+  process.stdout.write(`\n  ${chalk.green(glyph.check)} Created ${chalk.bold(rel)}\n`);
   process.stdout.write(`    ${chalk.dim('Preview at')} ${chalk.cyan(`/f/${id}`)}\n\n`);
   return file;
 }

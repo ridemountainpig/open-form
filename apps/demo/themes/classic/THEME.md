@@ -25,7 +25,7 @@ layout: default card
 
 ## Tokens
 
-What `open-form create <form> --theme classic` writes into the form's `theme/index.ts`.
+The tokens a form copies into its `theme/index.ts`.
 
 | Token | Light | Dark |
 | --- | --- | --- |
@@ -84,4 +84,4 @@ Plain and helpful, sentence case. Labels are nouns or short questions ("Work ema
 
 ## Customizing
 
-Add it under your brand's name (`open-form theme add classic --as brand`) and edit tokens first; add components only when the brand's controls look different.
+Copy it under your brand's name (`themes/brand/`) and edit tokens first; add components only when the brand's controls look different.

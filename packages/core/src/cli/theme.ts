@@ -1,12 +1,8 @@
-export { type AddThemeOptions, addStarterTheme } from '../editing/theme-files.ts';
-
 import chalk from 'chalk';
 import { addGoogleFont } from '../editing/google-fonts.ts';
-import { type AddThemeOptions, addStarterTheme, readThemeDoc } from '../editing/theme-files.ts';
 import { contrastReport, type OpenFormConfig, type Theme } from '../schema/index.ts';
 import {
   findForms,
-  findStarterThemes,
   formThemeFile,
   loadUserConfig,
   projectPaths,
@@ -14,19 +10,6 @@ import {
 } from '../vite/project.ts';
 import { withSsrServer } from './check.ts';
 import { glyph, table } from './ui.ts';
-
-export type ThemeRow = { id: string; description: string };
-
-/** The project's themes: references under themes/ for new forms. */
-export async function themeCatalog(projectRoot: string): Promise<ThemeRow[]> {
-  const { themesRoot } = projectPaths(projectRoot, await loadUserConfig(projectRoot));
-  return Promise.all(
-    resolveThemes(themesRoot).map(async (t) => ({
-      id: t.id,
-      description: (await readThemeDoc(t.file)).description,
-    })),
-  );
-}
 
 /**
  * The theme file a command works on: `themes/<id>`, or with `--form` the form's
@@ -45,60 +28,8 @@ function themeFileFor(projectRoot: string, config: OpenFormConfig, id: string, f
     return file;
   }
   const entry = resolveThemes(themesRoot).find((t) => t.id === id);
-  if (!entry) throw new Error(`No theme "${id}". Run \`open-form theme list\`.`);
+  if (!entry) throw new Error(`No theme "${id}". It isn't in themes/.`);
   return entry.file;
-}
-
-export async function starterCatalog(): Promise<Array<{ id: string; description: string }>> {
-  return Promise.all(
-    findStarterThemes().map(async (t) => ({
-      id: t.id,
-      description: (await readThemeDoc(t.file)).description,
-    })),
-  );
-}
-
-export async function listThemes(): Promise<void> {
-  const [rows, starters] = await Promise.all([themeCatalog(process.cwd()), starterCatalog()]);
-  const out: string[] = [''];
-  if (rows.length === 0) {
-    out.push(`  ${chalk.dim('No themes in themes/ yet.')}`);
-  } else {
-    out.push(
-      table(
-        ['THEME', 'DESCRIPTION'],
-        rows.map((r) => [chalk.bold(r.id), r.description || chalk.dim('no THEME.md')]),
-      ),
-    );
-  }
-  out.push(
-    `  ${chalk.dim('Themes are references: read one, then write the form its own look. To start from its tokens:')}`,
-    `  open-form create <form> --theme <theme>`,
-  );
-  out.push(
-    '',
-    `  ${chalk.bold('Starters')} ${chalk.dim('— references too; add one to themes/ to adapt:')}`,
-  );
-  out.push(
-    table(
-      ['STARTER', 'DESCRIPTION'],
-      starters.map((s) => [s.id, chalk.dim(s.description)]),
-    ),
-  );
-  out.push(`  open-form theme add <starter> ${chalk.dim('[--as <name>]')}`, '');
-  process.stdout.write(`${out.join('\n')}\n`);
-}
-
-export async function addCommand(starter: string, opts: AddThemeOptions): Promise<void> {
-  const { name, files } = await addStarterTheme(process.cwd(), starter, opts);
-  process.stdout.write(
-    `\n  ${chalk.green(glyph.check)} Added ${chalk.bold(`themes/${name}/`)} ${chalk.dim(`from the ${starter} starter`)}\n`,
-  );
-  for (const file of files) process.stdout.write(`    ${chalk.dim(file)}\n`);
-  process.stdout.write(
-    `\n  ${chalk.dim('It is yours — edit its tokens, components, CSS and THEME.md freely.')}\n` +
-      `  ${chalk.dim('Start a form from its tokens with')} open-form create <form> --theme ${name}\n\n`,
-  );
 }
 
 function formatBytes(bytes: number): string {
