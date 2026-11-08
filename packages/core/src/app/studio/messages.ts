@@ -295,7 +295,7 @@ const en = {
   'themes.emptyTitle': 'No themes yet',
   'themes.emptyBefore':
     'Themes are references for new forms: an agent reads one and writes each form its own look. Run ',
-  'themes.emptyAfter': ' with your agent to make one, or copy in a starter:',
+  'themes.emptyAfter': ' with your agent to make one.',
   'themes.referenceNote':
     'References for new forms. A form takes only what it needs into its own look, so changing or deleting a theme here never changes an existing form.',
   'themes.noDocBadge': 'No THEME.md',
@@ -319,19 +319,14 @@ const en = {
   'themes.spec.default': 'Default',
   'themes.useTitle': 'Use it in a form',
   'themes.useBody':
-    'Start a form from its tokens, then have your agent write the rest of that form’s look, reading this theme. No form imports it, so changes here won’t reach one.',
+    'Have your agent write a form’s own look, reading this theme. No form imports it, so changes here won’t reach one.',
   'themes.usePrompt':
-    'Create a new Open Form form that takes its look from the “{id}” theme: <describe the form>\nFollow the create-form skill: start it with `open-form create <form-id> --theme {id}`, then write the form’s own CSS and components, reading the theme’s THEME.md.',
+    'Create a new Open Form form that takes its look from the “{id}” theme: <describe the form>\nFollow the create-form skill: start it with `open-form create <form-id>`, then write the form’s own tokens, CSS and components in its theme/ folder, reading the theme’s files in themes/ (its THEME.md first, if it has one).',
   'themes.noDoc':
     'No THEME.md yet. Agents read it to know when to use this theme and how to write forms in it.',
   'themes.askForDoc': 'Copy prompt to write it',
   'themes.docPrompt':
     "Write THEME.md for the Open Form theme “{id}” ({file}): its mood, what it suits and when to avoid it, palette, typography, layout and components, copy tone, and do/don't. Follow the create-theme skill.",
-  'themes.fromStarter': 'Or start from a starter',
-  'themes.fromStarterHint':
-    'Copies one into themes/ for you or your agent to adapt; open-form theme list shows them all.',
-  'themes.copyCommand': 'Copy command',
-  'themes.copied': 'Copied',
   'themes.notFound': 'There’s no theme “{id}” in themes/.',
   'themes.loadFailed': 'Couldn’t load {file}: {error}',
   'themes.schemes.light': 'Light only',
@@ -341,9 +336,8 @@ const en = {
   'themes.useCtaHint': 'Copies a prompt for your agent',
   'themes.preview': 'Preview',
   'themes.tokens': 'Tokens',
-  'themes.tokensBefore': 'What a new form started with ',
-  'themes.tokensAfter':
-    ' copies into its own look. The theme’s CSS and components stay here, for your agent to borrow from.',
+  'themes.tokensHint':
+    'The values your agent copies into a form’s own look. The theme’s CSS and components stay here, for your agent to borrow from.',
   'themes.guide': 'Guide',
   'themes.onThisPage': 'On this page',
   'themes.changeTitle': 'Change this theme',
@@ -919,7 +913,7 @@ const zhTW: Dictionary = {
   'themes.emptyTitle': '還沒有主題',
   'themes.emptyBefore':
     '主題是建立新表單時的參考：agent 讀了主題之後，為每張表單寫出它自己的外觀。請 agent 執行 ',
-  'themes.emptyAfter': ' 建立主題，或複製一個範本進來：',
+  'themes.emptyAfter': ' 建立主題。',
   'themes.referenceNote':
     '建立新表單時的參考。表單只把需要的部分寫進自己的外觀，在這裡修改或刪除主題，都不會改變既有表單。',
   'themes.noDocBadge': '沒有 THEME.md',
@@ -942,18 +936,13 @@ const zhTW: Dictionary = {
   'themes.spec.default': '預設',
   'themes.useTitle': '用在表單上',
   'themes.useBody':
-    '用它的 token 建立表單，再請 agent 參考這個主題，為那張表單寫出其餘的外觀。表單不會 import 它，這裡的變更也不會影響任何表單。',
+    '請 agent 參考這個主題，為表單寫出它自己的外觀。表單不會 import 它，這裡的變更也不會影響任何表單。',
   'themes.usePrompt':
-    '建立一張外觀取自「{id}」主題的新 Open Form 表單：<描述這張表單>\n請依照 create-form skill：用 `open-form create <form-id> --theme {id}` 建立，再參考主題的 THEME.md，寫出表單自己的 CSS 和元件。',
+    '建立一張外觀取自「{id}」主題的新 Open Form 表單：<描述這張表單>\n請依照 create-form skill：用 `open-form create <form-id>` 建立，再參考 themes/ 裡這個主題的檔案（有 THEME.md 的話先讀），在表單的 theme/ 寫出它自己的 token、CSS 和元件。',
   'themes.noDoc': '還沒有 THEME.md。agent 會讀它，才知道什麼時候用這個主題、怎麼用它寫表單。',
   'themes.askForDoc': '複製請 agent 撰寫的指令',
   'themes.docPrompt':
     "幫 Open Form 主題「{id}」（{file}）寫 THEME.md：氛圍、適合與不適合的情境、配色、字體、版面與元件、文案語氣，以及 Do / Don't。請依照 create-theme skill。",
-  'themes.fromStarter': '或從範本開始',
-  'themes.fromStarterHint':
-    '把範本複製到 themes/，由你或 agent 調整；open-form theme list 會列出所有範本。',
-  'themes.copyCommand': '複製指令',
-  'themes.copied': '已複製',
   'themes.notFound': 'themes/ 裡沒有「{id}」這個主題。',
   'themes.loadFailed': '無法載入 {file}：{error}',
   'themes.schemes.light': '只有淺色',
@@ -963,9 +952,8 @@ const zhTW: Dictionary = {
   'themes.useCtaHint': '複製給 agent 的指令',
   'themes.preview': '預覽',
   'themes.tokens': 'Token',
-  'themes.tokensBefore': '用 ',
-  'themes.tokensAfter':
-    ' 建立的新表單，會把這些 token 複製進自己的外觀。主題的 CSS 和元件留在這裡，讓 agent 參考取用。',
+  'themes.tokensHint':
+    'agent 會把這些值複製進表單自己的外觀。主題的 CSS 和元件留在這裡，讓 agent 參考取用。',
   'themes.guide': '指南',
   'themes.onThisPage': '本頁內容',
   'themes.changeTitle': '修改這個主題',
@@ -1527,7 +1515,7 @@ const zhCN: Dictionary = {
   'themes.emptyTitle': '还没有主题',
   'themes.emptyBefore':
     '主题是创建新表单时的参考：agent 读了主题之后，为每个表单写出它自己的外观。请 agent 运行 ',
-  'themes.emptyAfter': ' 创建主题，或复制一个模板进来：',
+  'themes.emptyAfter': ' 创建主题。',
   'themes.referenceNote':
     '创建新表单时的参考。表单只把需要的部分写进自己的外观，在这里修改或删除主题，都不会改变已有表单。',
   'themes.noDocBadge': '没有 THEME.md',
@@ -1550,18 +1538,13 @@ const zhCN: Dictionary = {
   'themes.spec.default': '默认',
   'themes.useTitle': '用在表单上',
   'themes.useBody':
-    '用它的 token 创建表单，再请 agent 参考这个主题，为那个表单写出其余的外观。表单不会 import 它，这里的改动也不会影响任何表单。',
+    '请 agent 参考这个主题，为表单写出它自己的外观。表单不会 import 它，这里的改动也不会影响任何表单。',
   'themes.usePrompt':
-    '创建一个外观取自“{id}”主题的新 Open Form 表单：<描述这个表单>\n请按照 create-form skill：用 `open-form create <form-id> --theme {id}` 创建，再参考主题的 THEME.md，写出表单自己的 CSS 和组件。',
+    '创建一个外观取自“{id}”主题的新 Open Form 表单：<描述这个表单>\n请按照 create-form skill：用 `open-form create <form-id>` 创建，再参考 themes/ 里这个主题的文件（有 THEME.md 的话先读），在表单的 theme/ 写出它自己的 token、CSS 和组件。',
   'themes.noDoc': '还没有 THEME.md。agent 会读取它，才知道什么时候用这个主题、怎么用它写表单。',
   'themes.askForDoc': '复制让 agent 撰写的指令',
   'themes.docPrompt':
     "为 Open Form 主题“{id}”（{file}）编写 THEME.md：氛围、适合与不适合的场景、配色、字体、版式与组件、文案语气，以及 Do / Don't。请按照 create-theme skill。",
-  'themes.fromStarter': '或从模板开始',
-  'themes.fromStarterHint':
-    '把模板复制到 themes/，由你或 agent 调整；open-form theme list 会列出所有模板。',
-  'themes.copyCommand': '复制命令',
-  'themes.copied': '已复制',
   'themes.notFound': 'themes/ 里没有“{id}”这个主题。',
   'themes.loadFailed': '无法加载 {file}：{error}',
   'themes.schemes.light': '仅浅色',
@@ -1571,9 +1554,8 @@ const zhCN: Dictionary = {
   'themes.useCtaHint': '复制给 agent 的指令',
   'themes.preview': '预览',
   'themes.tokens': 'Token',
-  'themes.tokensBefore': '用 ',
-  'themes.tokensAfter':
-    ' 创建的新表单，会把这些 token 复制进自己的外观。主题的 CSS 和组件留在这里，供 agent 参考取用。',
+  'themes.tokensHint':
+    'agent 会把这些值复制进表单自己的外观。主题的 CSS 和组件留在这里，供 agent 参考取用。',
   'themes.guide': '指南',
   'themes.onThisPage': '本页内容',
   'themes.changeTitle': '修改这个主题',
@@ -2146,7 +2128,7 @@ const ja: Dictionary = {
   'themes.emptyTitle': 'テーマはまだありません',
   'themes.emptyBefore':
     'テーマは新しいフォームを作るときの参考です。エージェントがテーマを読み、フォームごとにその見た目を書きます。エージェントに ',
-  'themes.emptyAfter': ' を実行してもらってテーマを作るか、スターターをコピーしましょう：',
+  'themes.emptyAfter': ' を実行してもらってテーマを作りましょう。',
   'themes.referenceNote':
     '新しいフォームを作るときの参考です。フォームは必要な部分だけを自分の見た目に書くので、ここでテーマを変更・削除しても既存のフォームは変わりません。',
   'themes.noDocBadge': 'THEME.md なし',
@@ -2172,19 +2154,14 @@ const ja: Dictionary = {
   'themes.spec.default': 'デフォルト',
   'themes.useTitle': 'フォームで使う',
   'themes.useBody':
-    'トークンからフォームを作り、残りの見た目はこのテーマを参考にエージェントがそのフォーム用に書きます。どのフォームもこれを import しないので、ここでの変更は反映されません。',
+    'このテーマを参考に、エージェントがフォーム自身の見た目を書きます。どのフォームもこれを import しないので、ここでの変更は反映されません。',
   'themes.usePrompt':
-    '「{id}」テーマの見た目を取り入れた新しい Open Form フォームを作成してください：<フォームの説明>\ncreate-form スキルに従い、`open-form create <form-id> --theme {id}` で作成してから、テーマの THEME.md を参考にフォーム自身の CSS とコンポーネントを書いてください。',
+    '「{id}」テーマの見た目を取り入れた新しい Open Form フォームを作成してください：<フォームの説明>\ncreate-form スキルに従い、`open-form create <form-id>` で作成してから、themes/ にあるこのテーマのファイル（THEME.md があれば最初に）を参考に、フォームの theme/ に自身のトークン、CSS、コンポーネントを書いてください。',
   'themes.noDoc':
     'THEME.md がまだありません。エージェントはこれを読んで、このテーマをいつ・どう使うかを判断します。',
   'themes.askForDoc': '作成を頼むプロンプトをコピー',
   'themes.docPrompt':
     "Open Form テーマ「{id}」（{file}）の THEME.md を書いてください：雰囲気、向いている用途と避けるべき場面、配色、タイポグラフィ、レイアウトとコンポーネント、文章のトーン、Do / Don't。create-theme スキルに従ってください。",
-  'themes.fromStarter': 'またはスターターから始める',
-  'themes.fromStarterHint':
-    'スターターを themes/ にコピーし、あなたやエージェントが調整します。open-form theme list で一覧を表示できます。',
-  'themes.copyCommand': 'コマンドをコピー',
-  'themes.copied': 'コピーしました',
   'themes.notFound': 'themes/ に「{id}」というテーマはありません。',
   'themes.loadFailed': '{file} を読み込めませんでした：{error}',
   'themes.schemes.light': 'ライトのみ',
@@ -2194,9 +2171,8 @@ const ja: Dictionary = {
   'themes.useCtaHint': 'エージェント向けの指示をコピーします',
   'themes.preview': 'プレビュー',
   'themes.tokens': 'トークン',
-  'themes.tokensBefore': '',
-  'themes.tokensAfter':
-    ' で作った新しいフォームは、これらのトークンを自分の見た目にコピーします。テーマの CSS とコンポーネントはここに残り、エージェントが参考にします。',
+  'themes.tokensHint':
+    'エージェントがフォーム自身の見た目にコピーする値です。テーマの CSS とコンポーネントはここに残り、エージェントが参考にします。',
   'themes.guide': 'ガイド',
   'themes.onThisPage': 'このページの内容',
   'themes.changeTitle': 'このテーマを変更',

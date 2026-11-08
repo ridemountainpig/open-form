@@ -4,9 +4,9 @@ import path from 'node:path';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { deleteForm } from '../editing/delete-form.ts';
-import { findReferenceTheme, writeFormTheme } from '../editing/theme-files.ts';
+import { writeFormTheme } from '../editing/theme-files.ts';
 import { openStorage, resolveStorage, storageExists } from '../node/storage.ts';
-import { isLocale, LOCALES, type Locale, pickTokens, type Theme } from '../schema/index.ts';
+import { isLocale, LOCALES, type Locale } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
 import { exportFormResponses, FORM_ID_RE } from '../server/index.ts';
 import { createDevRegistry } from '../vite/api-plugin.ts';
@@ -42,22 +42,62 @@ function singleQuoted(text: string): string {
   return `'${JSON.stringify(text).slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 }
 
-export function starterForm(id: string, title: string, locale?: Locale): string {
+const STARTER_COPY: Record<
+  Locale,
+  { description: string; name: string; email: string; message: string; send: string }
+> = {
+  en: {
+    description: 'Tell us a little about yourself.',
+    name: 'Name',
+    email: 'Email',
+    message: 'Message',
+    send: 'Send',
+  },
+  'zh-TW': {
+    description: '簡單介紹一下你自己。',
+    name: '姓名',
+    email: '電子郵件',
+    message: '留言',
+    send: '送出',
+  },
+  'zh-CN': {
+    description: '简单介绍一下你自己。',
+    name: '姓名',
+    email: '电子邮箱',
+    message: '留言',
+    send: '提交',
+  },
+  ja: {
+    description: 'あなたについて少し教えてください。',
+    name: 'お名前',
+    email: 'メールアドレス',
+    message: 'メッセージ',
+    send: '送信',
+  },
+};
+
+export function starterForm(
+  id: string,
+  title: string,
+  locale?: Locale,
+  language: Locale = locale ?? 'en',
+): string {
+  const copy = STARTER_COPY[language];
   return `import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
 import theme from './theme/index.ts';
 
 export const config = defineForm({
   title: ${singleQuoted(title)},
-  description: 'Tell us a little about yourself.',${locale ? `\n  locale: '${locale}',` : ''}
+  description: ${singleQuoted(copy.description)},${locale ? `\n  locale: '${locale}',` : ''}
 });
 
 export default function ${componentName(id)}() {
   return (
     <Form theme={theme}>
-      <Text name="name" label="Name" required autoComplete="name" />
-      <Email name="email" label="Email" required />
-      <Textarea name="message" label="Message" maxLength={2000} />
-      <Submit>Send</Submit>
+      <Text name="name" label=${JSON.stringify(copy.name)} required autoComplete="name" />
+      <Email name="email" label=${JSON.stringify(copy.email)} required />
+      <Textarea name="message" label=${JSON.stringify(copy.message)} maxLength={2000} />
+      <Submit>${copy.send}</Submit>
     </Form>
   );
 }
@@ -66,7 +106,7 @@ export default function ${componentName(id)}() {
 
 export async function createForm(
   id: string,
-  opts: { title?: string; theme?: string; locale?: string } = {},
+  opts: { title?: string; locale?: string } = {},
 ): Promise<string> {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) {
     throw new Error(`Form ids are kebab-case (letters, digits, "-"): got "${id}".`);
@@ -76,45 +116,29 @@ export async function createForm(
     throw new Error(`Unknown locale "${locale}". Use one of: ${LOCALES.join(', ')}.`);
   }
   const userCwd = process.cwd();
-  const { formsRoot } = projectPaths(userCwd, await loadUserConfig(userCwd));
+  const userConfig = await loadUserConfig(userCwd);
+  const { formsRoot } = projectPaths(userCwd, userConfig);
   const dir = path.join(formsRoot, id);
   if (existsSync(dir)) throw new Error(`forms/${id} already exists.`);
-  const reference = opts.theme ? await findReferenceTheme(userCwd, opts.theme) : undefined;
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, 'index.tsx');
-  let themeLines = '';
   try {
-    await writeFile(file, starterForm(id, opts.title ?? titleCase(id), locale));
-    if (reference) {
-      const tokens = await withSsrServer(userCwd, async (server) => {
-        const mod = (await server.ssrLoadModule(reference.file)) as { default?: Theme };
-        if (!mod.default) throw new Error(`${reference.file} has no default export.`);
-        return pickTokens(mod.default);
-      });
-      const result = await writeFormTheme(userCwd, id, { tokens, themeFile: reference.file });
-      const from =
-        reference.source === 'project' ? `themes/${opts.theme}` : `the ${opts.theme} starter`;
-      const doc =
-        reference.source === 'project'
-          ? `themes/${opts.theme}/THEME.md`
-          : `node_modules/@open-form-build/core/themes/${opts.theme}/THEME.md`;
-      const fonts = result.fonts.length ? ` and ${result.fonts.join(', ')}` : '';
-      const spare = result.spareFonts.length
-        ? `    ${chalk.dim(`Also copied ${result.spareFonts.join(', ')} to theme/fonts/; import their .css if you use them`)}\n`
-        : '';
-      themeLines =
-        `    ${chalk.dim(`Its look starts from ${from}'s tokens${fonts} in`)} ${path.relative(userCwd, result.file)}\n` +
-        spare +
-        `    ${chalk.dim('Write its styles and components for this form, reading')} ${doc}\n`;
-    } else {
-      await writeFormTheme(userCwd, id);
-    }
+    await writeFile(
+      file,
+      starterForm(
+        id,
+        opts.title ?? titleCase(id),
+        locale,
+        locale ?? (isLocale(userConfig.locale) ? userConfig.locale : undefined),
+      ),
+    );
+    await writeFormTheme(userCwd, id);
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
     throw error;
   }
   const rel = path.relative(userCwd, file);
-  process.stdout.write(`\n  ${chalk.green(glyph.check)} Created ${chalk.bold(rel)}\n${themeLines}`);
+  process.stdout.write(`\n  ${chalk.green(glyph.check)} Created ${chalk.bold(rel)}\n`);
   process.stdout.write(`    ${chalk.dim('Preview at')} ${chalk.cyan(`/f/${id}`)}\n\n`);
   return file;
 }

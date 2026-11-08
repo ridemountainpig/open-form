@@ -30,8 +30,6 @@ export const PKG_ROOT = findPackageRoot(fileURLToPath(import.meta.url));
 export const SRC_ROOT = path.join(PKG_ROOT, 'src');
 export const APP_ROOT = path.join(SRC_ROOT, 'app');
 export const DEFINITION_MODULE = path.join(SRC_ROOT, 'react', 'definition.ts');
-/** Starter themes shipped with the package, copied into a project's `themes/` on request. */
-export const STARTER_THEMES_ROOT = path.join(PKG_ROOT, 'themes');
 
 export function readPackageVersion(): string {
   try {
@@ -93,10 +91,6 @@ export function formThemeFile(formsRoot: string, formId: string): string | null 
   if (!existsSync(dir) || !statSync(dir).isDirectory()) return null;
   const entry = readdirSync(dir).find((name) => ENTRY_RE.test(name));
   return entry ? path.join(dir, entry) : null;
-}
-
-export function findStarterThemes(): ThemeEntry[] {
-  return findThemes(STARTER_THEMES_ROOT);
 }
 
 /** The theme id a file belongs to: `themes/<id>.ts` or anything under `themes/<id>/`. */

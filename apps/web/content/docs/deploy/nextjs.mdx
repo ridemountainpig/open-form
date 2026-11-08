@@ -252,11 +252,13 @@ the Turnstile check when the form uses it. It ignores
   repeated; a passphrase of a few words works. To reuse your app's sign-in, pass
   an `authorize` check.
 - **Setup errors.** The route sets up the API on its first request. A secret
-  under 16 characters, an admin password that breaks the rules above, a webhook
-  secret that isn't base64, or an
-  invalid `webhooks` or `embed.origins` entry makes that fail, and then every
-  request fails with the error, public form routes included. Check the Next.js
-  server logs.
+  under 16 characters, a webhook secret that isn't base64, or an invalid
+  `webhooks` or `embed.origins` entry makes that fail, and then every request
+  fails with the error, public form routes included. Check the Next.js server
+  logs. An `OPEN_FORM_ADMIN_PASSWORD` that breaks the rules above only turns
+  the admin API off, with the reason in the logs; forms keep working.
+  `open-form build --server-only` also refuses to build with such a password
+  or secret.
 - **Vercel.** Pass `waitUntil: after` (from `next/server`) so
   [webhooks](/docs/deploy/webhooks) finish after the response is sent. Retries
   that come minutes later outlast the function and are lost.

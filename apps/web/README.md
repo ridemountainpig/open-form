@@ -8,7 +8,7 @@ pnpm dev:web    # from the repo root → http://localhost:3030
 
 | Path | What |
 | --- | --- |
-| `app/(home)`, `components/landing` | Landing page. The demos render real forms with the `@open-form-build/core` runtime and the starter themes (`@starters/*` → `packages/core/themes`), with `<Form onSubmit>` standing in for the API. |
+| `app/(home)`, `components/landing` | Landing page. The demos render real forms with the `@open-form-build/core` runtime and the demo themes (`@starters/*` → `apps/demo/themes`), with `<Form onSubmit>` standing in for the API. |
 | `content/docs` | Docs as MDX; `meta.json` files order the sidebar. |
 | `app/docs`, `app/api/search` | Docs layout, pages and search. |
 | `app/llms.txt`, `app/llms-full.txt`, `app/llms.mdx`, `proxy.ts` | Markdown for agents: `/llms.txt`, `/docs/<page>.mdx`, or any docs URL with `Accept: text/markdown`. |

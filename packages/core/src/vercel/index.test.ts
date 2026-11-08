@@ -134,10 +134,19 @@ describe('createOpenFormApp', () => {
     expect(res.status).toBe(405);
   });
 
-  it('rejects an admin password that breaks the rules', async () => {
+  it('turns only Studio off when the admin password breaks the rules', async () => {
     vi.stubEnv('OPEN_FORM_ADMIN_PASSWORD', 'short');
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     writeBuild();
-    await expect(get('/f/rsvp')).rejects.toThrow(/OPEN_FORM_ADMIN_PASSWORD/);
+    const { fetch } = app();
+    expect((await fetch(new Request(`${ORIGIN}/f/rsvp`))).status).toBe(200);
+    expect((await fetch(new Request(`${ORIGIN}/api/forms/rsvp`))).status).toBe(200);
+    expect((await fetch(new Request(`${ORIGIN}/api/forms`))).status).toBe(404);
+    const studio = await fetch(new Request(`${ORIGIN}/studio`));
+    expect(studio.status).toBe(503);
+    expect(await studio.text()).toMatch(/Studio is off.*OPEN_FORM_ADMIN_PASSWORD/s);
+    expect(logged).toHaveBeenCalledWith(expect.stringMatching(/OPEN_FORM_ADMIN_PASSWORD/));
+    logged.mockRestore();
   });
 });
 

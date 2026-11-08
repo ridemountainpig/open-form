@@ -231,14 +231,19 @@ Retries that come minutes later outlast the function and are lost.
 
 ## Setup errors
 
-The function sets itself up on its first request. A missing build, a SQLite
-database it can't open (no `OPEN_FORM_DATABASE_URL`, `POSTGRES_URL` or
-`DATABASE_URL`), a secret it can't
-create (no `OPEN_FORM_SECRET`), an admin password that breaks the rules above,
-or a database it can't connect to makes that fail. Every request then answers
-500, the public forms included, and the function logs (**Logs** in the Vercel
-project) give the reason. Fix the variable and deploy again; the next request
-retries.
+`open-form build` checks the variables before it builds. On Vercel it runs with
+the project's variables, so a missing `OPEN_FORM_SECRET`, no database, a
+secret under 16 characters or an admin password that breaks the rules above
+fails the deployment, with the reason at the end of the build log, and the
+last good deployment stays live.
+
+An admin password that's wrong at run time only turns Studio off: forms keep
+taking responses, and `/studio` says what to fix.
+
+Anything else the function can't set up on its first request, like a database
+it can't connect to, makes every request answer 500, the public forms
+included. The function logs (**Logs** in the Vercel project) give the reason.
+Fix the variable and deploy again.
 
 ## What's next
 
