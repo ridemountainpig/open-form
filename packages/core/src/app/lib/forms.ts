@@ -55,7 +55,10 @@ export function reportCurrent(payload: Record<string, unknown>): void {
     headers: { 'content-type': 'application/json' },
     credentials: 'same-origin',
     body: JSON.stringify(payload),
-  }).catch(() => {});
+  })
+    // An unread body keeps the request open, so the page never reaches network idle.
+    .then((res) => res.arrayBuffer())
+    .catch(() => {});
 }
 
 /**

@@ -42,22 +42,62 @@ function singleQuoted(text: string): string {
   return `'${JSON.stringify(text).slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 }
 
-export function starterForm(id: string, title: string, locale?: Locale): string {
+const STARTER_COPY: Record<
+  Locale,
+  { description: string; name: string; email: string; message: string; send: string }
+> = {
+  en: {
+    description: 'Tell us a little about yourself.',
+    name: 'Name',
+    email: 'Email',
+    message: 'Message',
+    send: 'Send',
+  },
+  'zh-TW': {
+    description: '簡單介紹一下你自己。',
+    name: '姓名',
+    email: '電子郵件',
+    message: '留言',
+    send: '送出',
+  },
+  'zh-CN': {
+    description: '简单介绍一下你自己。',
+    name: '姓名',
+    email: '电子邮箱',
+    message: '留言',
+    send: '提交',
+  },
+  ja: {
+    description: 'あなたについて少し教えてください。',
+    name: 'お名前',
+    email: 'メールアドレス',
+    message: 'メッセージ',
+    send: '送信',
+  },
+};
+
+export function starterForm(
+  id: string,
+  title: string,
+  locale?: Locale,
+  language: Locale = locale ?? 'en',
+): string {
+  const copy = STARTER_COPY[language];
   return `import { defineForm, Email, Form, Submit, Text, Textarea } from '@open-form-build/core';
 import theme from './theme/index.ts';
 
 export const config = defineForm({
   title: ${singleQuoted(title)},
-  description: 'Tell us a little about yourself.',${locale ? `\n  locale: '${locale}',` : ''}
+  description: ${singleQuoted(copy.description)},${locale ? `\n  locale: '${locale}',` : ''}
 });
 
 export default function ${componentName(id)}() {
   return (
     <Form theme={theme}>
-      <Text name="name" label="Name" required autoComplete="name" />
-      <Email name="email" label="Email" required />
-      <Textarea name="message" label="Message" maxLength={2000} />
-      <Submit>Send</Submit>
+      <Text name="name" label=${JSON.stringify(copy.name)} required autoComplete="name" />
+      <Email name="email" label=${JSON.stringify(copy.email)} required />
+      <Textarea name="message" label=${JSON.stringify(copy.message)} maxLength={2000} />
+      <Submit>${copy.send}</Submit>
     </Form>
   );
 }
@@ -76,13 +116,22 @@ export async function createForm(
     throw new Error(`Unknown locale "${locale}". Use one of: ${LOCALES.join(', ')}.`);
   }
   const userCwd = process.cwd();
-  const { formsRoot } = projectPaths(userCwd, await loadUserConfig(userCwd));
+  const userConfig = await loadUserConfig(userCwd);
+  const { formsRoot } = projectPaths(userCwd, userConfig);
   const dir = path.join(formsRoot, id);
   if (existsSync(dir)) throw new Error(`forms/${id} already exists.`);
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, 'index.tsx');
   try {
-    await writeFile(file, starterForm(id, opts.title ?? titleCase(id), locale));
+    await writeFile(
+      file,
+      starterForm(
+        id,
+        opts.title ?? titleCase(id),
+        locale,
+        locale ?? (isLocale(userConfig.locale) ? userConfig.locale : undefined),
+      ),
+    );
     await writeFormTheme(userCwd, id);
   } catch (error) {
     await rm(dir, { recursive: true, force: true });

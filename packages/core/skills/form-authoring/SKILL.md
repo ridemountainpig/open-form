@@ -284,7 +284,7 @@ defineForm({
 
 Only add what the user asked for; defaults are sensible.
 
-Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
+Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. Check the zone that applies against where the event or audience is: a project left on `'UTC'` (or a zone from another region) with a Taipei meetup reads `closesAt: '2026-10-31'` and wall-clock times eight hours off. Confirm the zone with the user before writing dates, then set the form's `timeZone` (`'Asia/Taipei'`) rather than trusting the project default. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
 
 People can also change `opensAt`, `closesAt`, `maxResponses`, `closed`, the form's `timeZone` and `published` in Studio (form → Settings). Under `open-form dev` that rewrites these keys in the form's code; on a deployed server it is stored in the database and wins over the code until someone restores it there — so if a deployed form ignores a date you changed in code, it was likely changed in Studio.
 
@@ -573,7 +573,7 @@ export default defineTheme({ /* tokens */ components: { Layout: Poster } });
 }
 ```
 
-Put `of-success` on the element around `content` on the success screen, as the built-in layouts do: the runtime's success styling hangs on it. `aside` is passed only while the form is being filled in (it is `null` on the success and closed screens), so a signature element that should stay on the end screens goes in `<Success>` or in the layout itself. A `position: sticky` panel stops sticking inside an ancestor with `overflow: hidden`; clip decorations with `overflow: clip` or on the decoration itself. `header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`, so render `header` only while `state === 'form'` (or give your `Success` / `Notice` an `<h2>`): one `<h1>` per screen. Keep the art side full on the end screens: the form's name as plain text (as in the example), its motifs, or the success screen's echo of the signature element. Half a page of empty background on the success screen reads as broken. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
+Put `of-success` on the element around `content` on the success screen, as the built-in layouts do: the runtime's success styling hangs on it. `aside` is passed only while the form is being filled in (it is `null` on the success and closed screens), so a signature element that should stay on the end screens goes in `<Success>` or in the layout itself. A `position: sticky` panel stops sticking inside an ancestor with `overflow: hidden`; clip decorations with `overflow: clip` or on the decoration itself. `header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`: one `<h1>` per screen. Either render `header` only while `state === 'form'`, or keep it and wrap `content` in `<ScreenHeadingContext.Provider value="h2">` so the end screens drop to `<h2>`, as `SplitLayout` does. A custom `Success` or `Notice` takes its title tag from `useContext(ScreenHeadingContext)` (`'h1' | 'h2'`) rather than hard-coding one, so it is right under any layout. Keep the art side full on the end screens: the form's name as plain text (as in the example), its motifs, or the success screen's echo of the signature element. Half a page of empty background on the success screen reads as broken. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
 
 On a form with translations the language picker (`.of-lang`) sits 12px inside the top-right corner of `.of-root`, 32px tall, over whatever the layout puts there. The built-in layouts start below it; a custom `Layout` (or form CSS that changes `.of-root`'s padding or pulls content to the top) must keep that corner clear at every width, phones included — no title, description, title bar or card edge under it. Reserve the room (`.of-root[data-of-theme="<id>"]:has(> .of-lang) { padding-top: clamp(56px, 6vw, 64px); }`) or move the picker into free space (`[data-of-theme="<id>"] .of-lang { top: …; right: …; }`).
 
@@ -595,20 +595,24 @@ With `uniqueBy: '<field>'` the duplicate is only found on submit, so `duplicateM
 `Notice` gets `state`, `eyebrow` (the form's title), `title` (the built-in "This form is closed" in the form's language) and `message` — all already translated. Render it in the Layout's closed frame (the card, Split's main column, Focus's screen):
 
 ```tsx
-import { Form, type NoticeUIProps, T } from '@open-form-build/core';
+import { Form, type NoticeUIProps, ScreenHeadingContext, T } from '@open-form-build/core';
 
 function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
   return (
-    <div className="meetup-closed">
-      {eyebrow && <p className="of-eyebrow">{eyebrow}</p>}
-      <h1 className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</h1>
-      <p className="of-description">{message}</p>
-      {state !== 'not-open' && (
-        <p className="meetup-next">
-          <T>Next meetup: Nov 27 — follow @taipeidev for the sign-up link.</T>
-        </p>
+    <ScreenHeadingContext.Consumer>
+      {(Heading) => (
+        <div className="meetup-closed">
+          {eyebrow && Heading === 'h1' && <p className="of-eyebrow">{eyebrow}</p>}
+          <Heading className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</Heading>
+          <p className="of-description">{message}</p>
+          {state !== 'not-open' && (
+            <p className="meetup-next">
+              <T>Next meetup: Nov 27 — follow @taipeidev for the sign-up link.</T>
+            </p>
+          )}
+        </div>
       )}
-    </div>
+    </ScreenHeadingContext.Consumer>
   );
 }
 
@@ -618,7 +622,7 @@ function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
 - **One component, every state it can get.** Branch on `state` for what differs; fall back to `title` / `message` for the rest, so a state you didn't plan for still reads right.
 - **Say what happens next**, using only facts the user gave: the next date, where to follow, who to contact. Never invent a link, date or address — leave it out or ask.
 - **Copy**: keep the policy messages in `config.submissions` (Studio and the server use them too) and put only extra lines in the component. Wrap your own text in `<T>` / `useTranslate()` so translations and `check` cover it.
-- **Markup**: one `<h1>` on the screen. The default card shows only the `Notice`, so it takes the `<h1>` (and `eyebrow` names the form); layouts that keep the header on the closed screen — `SplitLayout`, and custom layouts with a header, such as a terminal window — already show the form's title as the `<h1>`, so use `<h2>` and skip `eyebrow`. Reuse `of-eyebrow` / `of-title` / `of-description` (or the theme's classes), or prefixed classes built on `var(--of-*)` tokens, so it follows the theme and dark mode. No fields or buttons that submit — the form isn't there.
+- **Markup**: one `<h1>` on the screen. The default card shows only the `Notice`, so it takes the `<h1>` (and `eyebrow` names the form); layouts that keep the header on the closed screen — `SplitLayout`, and custom layouts with a header, such as a terminal window — already show the form's title as the `<h1>`. Take the tag from `ScreenHeadingContext` as in the example (`'h2'` under those layouts) and skip `eyebrow` when it is `'h2'`, instead of hard-coding either level. Reuse `of-eyebrow` / `of-title` / `of-description` (or the theme's classes), or prefixed classes built on `var(--of-*)` tokens, so it follows the theme and dark mode. No fields or buttons that submit — the form isn't there.
 - A theme can have one (`defineTheme({ components: { Notice } })`). A reference's (with its prefixed classes, e.g. `tm-*`) is a starting point: build the form's from its markup and classes, in the form's theme or passed in `<Form components>` — that wins.
 - **Preview**: in Studio's Preview, *When closed* (under the steps) shows each screen — *Closed* always, plus *Not open yet* while `opensAt` is still ahead, *Full* when the form has `maxResponses`, and *Already responded* with `uniqueBy: 'device'`. It doesn't change the live form, and it updates as you edit.
 
