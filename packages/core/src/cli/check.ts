@@ -13,6 +13,7 @@ import {
   formTimeZone,
   isWallClockDate,
   type OpenFormConfig,
+  resolveProtection,
   translationCoverage,
 } from '../schema/index.ts';
 import type { FormDefinition } from '../server/index.ts';
@@ -108,6 +109,7 @@ export async function checkForms(userCwd: string, only?: string): Promise<CheckR
             ...deadFontWarnings(path.join(paths.formsRoot, id), userCwd),
             ...policyWarnings(definition.config, config),
             ...uniqueWarnings(definition),
+            ...turnstileWarnings(definition.config, config),
             ...(theme && shownTheme && entry && !applied
               ? [unappliedThemeWarning(shownTheme, path.relative(userCwd, entry.file))]
               : []),
@@ -350,6 +352,24 @@ export function uniqueWarnings(definition: Pick<FormDefinition, 'schema' | 'conf
     ];
   }
   return [];
+}
+
+/** Without its secret the server refuses every response, so say so before deploying. */
+export function turnstileWarnings(
+  config: FormConfig,
+  project: OpenFormConfig,
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  let turnstile: unknown;
+  try {
+    turnstile = resolveProtection(project.protection, config.protection).turnstile;
+  } catch (err) {
+    return [`protection: ${err instanceof Error ? err.message : String(err)}`];
+  }
+  if (!turnstile || env.OPEN_FORM_TURNSTILE_SECRET) return [];
+  return [
+    'protection.turnstile is on but OPEN_FORM_TURNSTILE_SECRET is not set here. Set it wherever the server runs, or every response is refused (open-form dev uses the Cloudflare test keys instead).',
+  ];
 }
 
 function policyLine(config: FormConfig, timeZone: string): string | undefined {

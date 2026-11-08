@@ -10,6 +10,7 @@ import {
   checkForms,
   configSecretProblems,
   languageLines,
+  turnstileWarnings,
   uniqueWarnings,
   unusedComponentWarnings,
   withSsrServer,
@@ -25,6 +26,25 @@ const email = (extra: Partial<FieldSchema> = {}): FieldSchema => ({
 const form = (field: FieldSchema, uniqueBy = 'email') => ({
   schema: { id: 'f', pages: [{ index: 0, when: [] }], fields: [field] } as FormSchema,
   config: { submissions: { uniqueBy } },
+});
+
+describe('turnstileWarnings', () => {
+  const on = { protection: { turnstile: { siteKey: '0x4AAA' } } };
+  it('asks for the secret only when a form uses Turnstile', () => {
+    expect(turnstileWarnings({}, on, {})).toHaveLength(1);
+    expect(turnstileWarnings(on, {}, {})).toHaveLength(1);
+    expect(turnstileWarnings({ protection: { turnstile: false } }, on, {})).toEqual([]);
+    expect(turnstileWarnings({}, on, { OPEN_FORM_TURNSTILE_SECRET: 'x' })).toEqual([]);
+    expect(turnstileWarnings({}, {}, {})).toEqual([]);
+  });
+
+  it('reports a project protection.turnstile the server would refuse at startup', () => {
+    const bad = { protection: { turnstile: { siteKey: '' } } };
+    const env = { OPEN_FORM_TURNSTILE_SECRET: 'x' };
+    expect(turnstileWarnings({}, bad, env)).toEqual([
+      'protection: turnstile needs a siteKey from the Cloudflare dashboard, or `false`.',
+    ]);
+  });
 });
 
 describe('uniqueWarnings', () => {

@@ -62,8 +62,8 @@ loads `.env` itself.
     },
     protection: {
       type: 'ProtectionConfig',
-      default: "{ honeypot: true, minimumCompletionTime: '2s', rateLimit: { max: 10, window: '10m' } }",
-      description: 'Defaults for every form. Each form’s own protection keys win.',
+      default: "{ honeypot: true, minimumCompletionTime: '2s', rateLimit: { max: 10, window: '10m' }, turnstile: false }",
+      description: 'Defaults for every form. Each form’s own protection keys win. turnstile: { siteKey } turns on Cloudflare Turnstile and needs OPEN_FORM_TURNSTILE_SECRET.',
     },
     trustProxy: {
       type: 'boolean | number',

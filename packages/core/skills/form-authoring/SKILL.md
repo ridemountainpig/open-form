@@ -274,6 +274,7 @@ defineForm({
     honeypot: true,                // default true
     minimumCompletionTime: '2s',   // default '2s'; false to disable
     rateLimit: { max: 10, window: '10m' },  // valid submissions per IP (IPv6 /64) per form; false to disable
+    turnstile: { siteKey: '0x4AAA…' },      // Cloudflare Turnstile above Submit; off by default. The server needs OPEN_FORM_TURNSTILE_SECRET
   },
   success: { title: 'Thanks!', message: 'See you there.', redirect: 'https://…' },
   // event forms: success: { calendar: { start: '2026-11-15T19:00', end: '2026-11-15T21:00', location: '…' } } — see *Event forms*
@@ -282,7 +283,9 @@ defineForm({
 });
 ```
 
-Only add what the user asked for; defaults are sensible.
+Only add what the user asked for; defaults are sensible. Suggest `turnstile` when the user worries about bots or spam getting through; the site key is public, and the secret key goes in `OPEN_FORM_TURNSTILE_SECRET`, never in code.
+
+Everything under `forms/` ships to the browser, unpublished forms and `validate` functions included. Never put secrets there: no API keys, and no lists respondents shouldn't read, like valid promo or invite codes. Check those on your own server instead.
 
 Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. Check the zone that applies against where the event or audience is: a project left on `'UTC'` (or a zone from another region) with a Taipei meetup reads `closesAt: '2026-10-31'` and wall-clock times eight hours off. Confirm the zone with the user before writing dates, then set the form's `timeZone` (`'Asia/Taipei'`) rather than trusting the project default. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
 
