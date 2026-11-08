@@ -595,22 +595,24 @@ With `uniqueBy: '<field>'` the duplicate is only found on submit, so `duplicateM
 `Notice` gets `state`, `eyebrow` (the form's title), `title` (the built-in "This form is closed" in the form's language) and `message` — all already translated. Render it in the Layout's closed frame (the card, Split's main column, Focus's screen):
 
 ```tsx
-import { useContext } from 'react';
 import { Form, type NoticeUIProps, ScreenHeadingContext, T } from '@open-form-build/core';
 
 function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
-  const Heading = useContext(ScreenHeadingContext);
   return (
-    <div className="meetup-closed">
-      {eyebrow && Heading === 'h1' && <p className="of-eyebrow">{eyebrow}</p>}
-      <Heading className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</Heading>
-      <p className="of-description">{message}</p>
-      {state !== 'not-open' && (
-        <p className="meetup-next">
-          <T>Next meetup: Nov 27 — follow @taipeidev for the sign-up link.</T>
-        </p>
+    <ScreenHeadingContext.Consumer>
+      {(Heading) => (
+        <div className="meetup-closed">
+          {eyebrow && Heading === 'h1' && <p className="of-eyebrow">{eyebrow}</p>}
+          <Heading className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</Heading>
+          <p className="of-description">{message}</p>
+          {state !== 'not-open' && (
+            <p className="meetup-next">
+              <T>Next meetup: Nov 27 — follow @taipeidev for the sign-up link.</T>
+            </p>
+          )}
+        </div>
       )}
-    </div>
+    </ScreenHeadingContext.Consumer>
   );
 }
 

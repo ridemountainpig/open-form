@@ -171,10 +171,12 @@ screen wraps `content` in `<ScreenHeadingContext.Provider value="h2">`:
 ```tsx
 import { type LayoutUIProps, ScreenHeadingContext } from '@open-form-build/core';
 
-function Poster({ header, content, alert, actions }: LayoutUIProps) {
+function Poster({ banner, header, intro, content, alert, actions }: LayoutUIProps) {
   return (
     <div className="poster">
+      {banner}
       {header}
+      {intro}
       <ScreenHeadingContext.Provider value="h2">{content}</ScreenHeadingContext.Provider>
       {alert}
       {actions}
