@@ -28,7 +28,7 @@ themes/<theme-id>/          ← optional reference themes for new forms; forms n
 
 ```tsx
 import { defineForm, Email, Form, Page, Select, Submit, Text, When } from '@open-form-build/core';
-import theme from './theme/index.tsx'; // its own look, written after the terminal reference
+import theme from './theme/index.tsx'; // its own look, written for this form
 
 export const config = defineForm({
   title: 'Developer Meetup Registration',
@@ -102,7 +102,7 @@ Labels, descriptions and option labels are plain strings. A question that needs 
 
 Use `<Matrix>` when three or more questions share the same answers (rate each part of a course); it's a grid on wide forms and a card per row on phones. Write row labels that read on their own — they're the export column headings.
 
-`variant` on choices is a hint: built-in themes may render choices their own way (e.g. `terminal` always lists them).
+`variant` on choices is a hint: a form's theme may render choices its own way (a terminal-style `ChoiceGroup` might always list them).
 
 `options` accepts `['A', 'B']` or `[{ value: 'a', label: 'A' }]`. Use value/label pairs when labels may change later or are long — the stored value stays stable. Options must be known when the form renders (the server checks answers against them), so an empty list fails `check`.
 
@@ -284,7 +284,7 @@ defineForm({
 
 Only add what the user asked for; defaults are sensible.
 
-Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
+Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. Check the zone that applies against where the event or audience is: a project left on `'UTC'` (or a zone from another region) with a Taipei meetup reads `closesAt: '2026-10-31'` and wall-clock times eight hours off. Confirm the zone with the user before writing dates, then set the form's `timeZone` (`'Asia/Taipei'`) rather than trusting the project default. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
 
 People can also change `opensAt`, `closesAt`, `maxResponses`, `closed`, the form's `timeZone` and `published` in Studio (form → Settings). Under `open-form dev` that rewrites these keys in the form's code; on a deployed server it is stored in the database and wins over the code until someone restores it there — so if a deployed form ignores a date you changed in code, it was likely changed in Studio.
 
@@ -353,7 +353,7 @@ import './meetup.css';
 <Form theme={theme}>…</Form>
 ```
 
-`open-form create` writes `theme/index.ts` for every new form: `defineTheme({})` is the runtime's default look (the `classic` starter's), and `--theme <reference>` starts it from that reference's tokens. It belongs to the form: edit its tokens, CSS and components freely — no other form uses it — and Studio's preview has **Adjust** for its colors, fonts and shape. A form without one gets the default look; Adjust offers to create it, or write it and add the import yourself. The form's root gets `data-of-theme="<form-id>"`, so its CSS is scoped to the form id; renaming the form's folder means updating those selectors. Never import from `themes/` — `open-form check` warns about it, and about imports from another form's folder.
+`open-form create` writes `theme/index.ts` for every new form: `defineTheme({})` is the runtime's default look: write the form's tokens into it, from a reference in `themes/` or designed for the form. It belongs to the form: edit its tokens, CSS and components freely — no other form uses it — and Studio's preview has **Adjust** for its colors, fonts and shape. A form without one gets the default look; Adjust offers to create it, or write it and add the import yourself. The form's root gets `data-of-theme="<form-id>"`, so its CSS is scoped to the form id; renaming the form's folder means updating those selectors. Never import from `themes/` — `open-form check` warns about it, and about imports from another form's folder.
 
 **Only what the form uses, in this order** — move to the next step only when the one before can't give the look:
 
@@ -369,25 +369,9 @@ When CSS restyles the runtime's markup, out-rank its rules instead of relying on
 
 ### Themes in `themes/` are references
 
-The project's `themes/` and the **starters** Open Form ships are references, like open-slide's themes: read them to choose a direction, then write the form's look from one — never import or copy one wholesale. Each has a `THEME.md` (the recipe: palette and tokens, typography, which parts are CSS and which are components, signature ideas, copy tone, do/don'ts) and a working `index.tsx` and CSS that Studio previews and you borrow pieces from. Editing or deleting a theme in `themes/` never changes a form. Studio → Themes is a read-only gallery of these references, in production builds too; a reference changes only when its files do, and that affects only forms created from it later.
+The project's `themes/` holds references, like open-slide's themes: read them to choose a direction, then write the form's look from one — never import or copy one wholesale. A new project has none; the `create-theme` skill makes one when a look should carry over to more forms, and otherwise the form's look is designed for it in its own `theme/`. Each folder reference has a `THEME.md` (the recipe: palette and tokens, typography, which parts are CSS and which are components, signature ideas, copy tone, do/don'ts) and a working `index.tsx` and CSS that Studio previews and you borrow pieces from. Editing or deleting a theme in `themes/` never changes a form. Studio → Themes is a read-only gallery of these references, in production builds too; a reference changes only when its files do, and that affects only forms created from it later.
 
-| Theme | Feel | Layout | Good for |
-| --- | --- | --- | --- |
-| `classic` | Clean neutral card, every token explicit — the plain look, ready to brand | card | Product forms, internal requests, safe default |
-| `editorial` | Serif magazine, underline inputs, ink panel | `SplitLayout` | Agencies, B2B sales, applications, premium brands |
-| `terminal` | Monospace CLI session, green on black, `? prompts` | terminal window | Developer events, devtools, hackathons, beta access |
-| `brutalist` | Loud yellow, thick borders, hard shadows | card | Launches, waitlists, campaigns, creator products |
-| `conversational` | One question per screen, rounded, soft violet, letter keys | `FocusLayout` | Surveys, NPS, quizzes, onboarding, RSVPs |
-
-```bash
-open-form theme list                         # the project's themes, then the starters
-open-form create <id> --theme terminal       # a new form whose theme/index.ts starts from terminal's tokens
-open-form theme add editorial --as brand     # starter → themes/brand/, a reference to adapt
-```
-
-`theme add --as` renames only the `[data-of-theme="<starter>"]` selectors and THEME.md's name; file names and class prefixes stay the starter's (`themes/brand/editorial.css`, `.ed-…`).
-
-`create --theme` takes the reference's tokens and the web fonts they name, never its CSS or components: take those piece by piece, as above, from its `index.tsx` and CSS — the project's in `themes/<id>/`, starters' in `node_modules/@open-form-build/core/themes/<id>/`. Read its `THEME.md` first and follow its copy guidance.
+From a reference, copy its tokens into the form's `theme/index.ts`, and the fonts they name from its `fonts/` into the form's `theme/fonts/`. Take its CSS and components piece by piece, as above, from its `index.tsx` and CSS in `themes/<id>/`. Read its `THEME.md` first and follow its copy guidance. A single-file `themes/<id>.ts` is tokens only: read that file and copy its tokens.
 
 ### Theme anatomy
 
@@ -423,7 +407,7 @@ export default defineTheme({
 });
 ```
 
-Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google). For "make it look like our product", use the `create-theme` skill.
+Colors are any CSS color (`oklch(…)` and `hsl(…)` are fine). Setting `colors` also affects dark mode — always provide `dark` too (or `dark: false`). For a dark-only brand, set `colorScheme: 'dark'` and put the dark palette in `colors`. After any color change run `open-form theme check <form-id> --form` for a form's own look, or `theme check <theme-id>` for a theme in `themes/` (WCAG contrast, light and dark). `open-form theme font <form-id> <Family> --form` downloads a Google Fonts family into the form's `theme/fonts/` (respondents never contact Google): its Latin faces and, for a CJK family, every CJK slice, but no Cyrillic, Greek or other scripts, which no Open Form language is written in. For "make it look like our product", use the `create-theme` skill.
 
 ### Light and dark
 
@@ -468,7 +452,7 @@ Built-in fields are behavior only; their markup comes from replaceable component
 | `MatrixRow` | one Matrix row | `field` (the row's), `columns`, `value`, `onChange(string)`, `markRequired` |
 
 ```tsx
-// forms/<id>/theme/index.tsx — after the editorial reference
+// forms/<id>/theme/index.tsx — an editorial split look
 import { defineTheme, type TextInputUIProps } from '@open-form-build/core';
 import './editorial.css';
 
@@ -589,7 +573,7 @@ export default defineTheme({ /* tokens */ components: { Layout: Poster } });
 }
 ```
 
-Put `of-success` on the element around `content` on the success screen, as the built-in layouts do: the runtime's success styling hangs on it. `aside` is passed only while the form is being filled in (it is `null` on the success and closed screens), so a signature element that should stay on the end screens goes in `<Success>` or in the layout itself. A `position: sticky` panel stops sticking inside an ancestor with `overflow: hidden`; clip decorations with `overflow: clip` or on the decoration itself. `header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`, so render `header` only while `state === 'form'` (or give your `Success` / `Notice` an `<h2>`): one `<h1>` per screen. Keep the art side full on the end screens: the form's name as plain text (as in the example), its motifs, or the success screen's echo of the signature element. Half a page of empty background on the success screen reads as broken. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
+Put `of-success` on the element around `content` on the success screen, as the built-in layouts do: the runtime's success styling hangs on it. `aside` is passed only while the form is being filled in (it is `null` on the success and closed screens), so a signature element that should stay on the end screens goes in `<Success>` or in the layout itself. A `position: sticky` panel stops sticking inside an ancestor with `overflow: hidden`; clip decorations with `overflow: clip` or on the decoration itself. `header` is passed on every screen, but the built-in `Success` and `Notice` bring their own `<h1>`: one `<h1>` per screen. Either render `header` only while `state === 'form'`, or keep it and wrap `content` in `<ScreenHeadingContext.Provider value="h2">` so the end screens drop to `<h2>`, as `SplitLayout` does. A custom `Success` or `Notice` takes its title tag from `useContext(ScreenHeadingContext)` (`'h1' | 'h2'`) rather than hard-coding one, so it is right under any layout. Keep the art side full on the end screens: the form's name as plain text (as in the example), its motifs, or the success screen's echo of the signature element. Half a page of empty background on the success screen reads as broken. Every custom layout has to work on a phone: stack at a breakpoint, shrink the visual part to a band, and keep the first question on the first screen.
 
 On a form with translations the language picker (`.of-lang`) sits 12px inside the top-right corner of `.of-root`, 32px tall, over whatever the layout puts there. The built-in layouts start below it; a custom `Layout` (or form CSS that changes `.of-root`'s padding or pulls content to the top) must keep that corner clear at every width, phones included — no title, description, title bar or card edge under it. Reserve the room (`.of-root[data-of-theme="<id>"]:has(> .of-lang) { padding-top: clamp(56px, 6vw, 64px); }`) or move the picker into free space (`[data-of-theme="<id>"] .of-lang { top: …; right: …; }`).
 
@@ -611,13 +595,15 @@ With `uniqueBy: '<field>'` the duplicate is only found on submit, so `duplicateM
 `Notice` gets `state`, `eyebrow` (the form's title), `title` (the built-in "This form is closed" in the form's language) and `message` — all already translated. Render it in the Layout's closed frame (the card, Split's main column, Focus's screen):
 
 ```tsx
-import { Form, type NoticeUIProps, T } from '@open-form-build/core';
+import { useContext } from 'react';
+import { Form, type NoticeUIProps, ScreenHeadingContext, T } from '@open-form-build/core';
 
 function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
+  const Heading = useContext(ScreenHeadingContext);
   return (
     <div className="meetup-closed">
-      {eyebrow && <p className="of-eyebrow">{eyebrow}</p>}
-      <h1 className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</h1>
+      {eyebrow && Heading === 'h1' && <p className="of-eyebrow">{eyebrow}</p>}
+      <Heading className="of-title">{state === 'full' ? <T>All 100 seats are taken</T> : title}</Heading>
       <p className="of-description">{message}</p>
       {state !== 'not-open' && (
         <p className="meetup-next">
@@ -634,8 +620,8 @@ function MeetupClosed({ state, eyebrow, title, message }: NoticeUIProps) {
 - **One component, every state it can get.** Branch on `state` for what differs; fall back to `title` / `message` for the rest, so a state you didn't plan for still reads right.
 - **Say what happens next**, using only facts the user gave: the next date, where to follow, who to contact. Never invent a link, date or address — leave it out or ask.
 - **Copy**: keep the policy messages in `config.submissions` (Studio and the server use them too) and put only extra lines in the component. Wrap your own text in `<T>` / `useTranslate()` so translations and `check` cover it.
-- **Markup**: one `<h1>` on the screen. The default card shows only the `Notice`, so it takes the `<h1>` (and `eyebrow` names the form); layouts that keep the header on the closed screen — `SplitLayout`, and themes like `terminal` — already show the form's title as the `<h1>`, so use `<h2>` and skip `eyebrow`. Reuse `of-eyebrow` / `of-title` / `of-description` (or the theme's classes), or prefixed classes built on `var(--of-*)` tokens, so it follows the theme and dark mode. No fields or buttons that submit — the form isn't there.
-- A theme can have one (`defineTheme({ components: { Notice } })`). A reference's (e.g. `terminal`'s, with its `tm-*` classes) is a starting point: build the form's from its markup and classes, in the form's theme or passed in `<Form components>` — that wins.
+- **Markup**: one `<h1>` on the screen. The default card shows only the `Notice`, so it takes the `<h1>` (and `eyebrow` names the form); layouts that keep the header on the closed screen — `SplitLayout`, and custom layouts with a header, such as a terminal window — already show the form's title as the `<h1>`. Take the tag from `ScreenHeadingContext` as in the example (`'h2'` under those layouts) and skip `eyebrow` when it is `'h2'`, instead of hard-coding either level. Reuse `of-eyebrow` / `of-title` / `of-description` (or the theme's classes), or prefixed classes built on `var(--of-*)` tokens, so it follows the theme and dark mode. No fields or buttons that submit — the form isn't there.
+- A theme can have one (`defineTheme({ components: { Notice } })`). A reference's (with its prefixed classes, e.g. `tm-*`) is a starting point: build the form's from its markup and classes, in the form's theme or passed in `<Form components>` — that wins.
 - **Preview**: in Studio's Preview, *When closed* (under the steps) shows each screen — *Closed* always, plus *Not open yet* while `opensAt` is still ahead, *Full* when the form has `maxResponses`, and *Already responded* with `uniqueBy: 'device'`. It doesn't change the live form, and it updates as you edit.
 
 `useFormNav()` gives any component the navigation state: `position`, `total`, `steps` (`title`, `state: 'done' | 'current' | 'upcoming'`, `reachable`), `isFirst`, `isLast`, `submitting`, `error`, and actions `next()` (validate + advance or submit), `back()`, `goTo(position)` (visited steps only; jumping ahead checks the steps in between). `useFormMessages()` returns the built-in strings in the form's locale.
@@ -719,7 +705,7 @@ The answer fields stay in **one column**: people read and fill a single column f
 
 **Match the ambition to the moment.** Quick operational forms — a QR feedback card on a café table, an internal sign-up, a bug report — are filled in within a minute by people who want to be done: keep a plain column (the centered card, or a full-bleed column on the form's own background), put the one signature on the key question, and spend the rest on copy. Invitations, event registrations, applications and campaigns are moments people remember and share, and they earn a full composition.
 
-**One question per screen is a choice about the questions**, not the theme or the field count: a five-question NPS is one per screen even though five fields would fit on one page. It fits forms where each answer needs a moment's thought — an NPS survey, a quiz, a short reflective survey — and people know it from Typeform: `FocusLayout` gives Enter to continue and big type, and a custom `ChoiceGroup` can add letter keys (the `conversational` starter has one). Data entry stays together (*Questions*): splitting name, email and phone into three screens is the thing people dislike most about one-question forms.
+**One question per screen is a choice about the questions**, not the theme or the field count: a five-question NPS is one per screen even though five fields would fit on one page. It fits forms where each answer needs a moment's thought — an NPS survey, a quiz, a short reflective survey — and people know it from Typeform: `FocusLayout` gives Enter to continue and big type, and a custom `ChoiceGroup` can add letter keys. Data entry stays together (*Questions*): splitting name, email and phone into three screens is the thing people dislike most about one-question forms.
 
 Pick the composition from the form's subject and the moment: a concert sign-up can be a poster, a scholarship application a document, a workshop booking a form with a sticky summary. `width`, `.of-root`'s padding and background, and the `Layout` are all part of the form's own theme. On phones, every composition collapses to the single column with a compact visual band above it.
 - **Endings**: write `success` copy for this form — what happens next and when; a bare "Thanks!" wastes the moment. Use the person's answers (`useFormValues()` in a component inside `<Success>`; `title` is a plain string, so the personal line goes in the children): "3 seats are held for you — see you on Nov 15" beats a generic thank-you. Add what they need next from facts the user gave: for an event with a date, `success.calendar` (see *Event forms*; don't hand-write Google Calendar links), the venue's map link, what to prepare. `<Success>` echoes the signature element (*Look*). Closed screens: see *Closed screens*.
@@ -736,7 +722,7 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 | Writing API routes, SQL, Express handlers | `config.submissions` / `protection` |
 | `fetch()` to Slack/Zapier in `onSubmit` or a validator | `webhooks` in `open-form.config.ts` |
 | Hand-written `if (!email.includes('@'))` | `<Email>`; `validate` for real custom rules |
-| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (`open-form create <id> --theme terminal`) + `<Form theme={theme}>`, with the CSS and components it needs written there |
+| `theme: 'terminal'` in `defineForm`, or importing from `themes/` | The form's own `theme/index.ts` (written by `open-form create <id>`) + `<Form theme={theme}>`, with the tokens, CSS and components it needs written there |
 | Copying a reference theme's whole folder into the form | Only what the form renders: tokens, then CSS on the runtime's classes, then components that need their own markup or behavior |
 | CSS grid / flex to arrange fields | `<Row>`, `<Page>`; grid and flex belong in the `Layout`, around the field column |
 | Every form a centered card at the default width | A composition chosen for the form (*Composition*) |
@@ -761,7 +747,7 @@ Pick the composition from the form's subject and the moment: a concert sign-up c
 2. Required fields are minimal and correct; conditional fields use `<When>`, not ternaries. Anything the brief asked for that Open Form can't do (*What Open Form can't do*) was raised with the user, and the workaround is listed at hand-off.
 3. Policy matches the request (limits, dates, uniqueness, language).
 4. No hand-rolled state, fetch, validation or styling outside the theme / form CSS.
-5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the reference's `THEME.md` tone, and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, the agreed color scheme set in the tokens (`dark`, `dark: false` or `colorScheme`; *Light and dark*), and no uppercase, small-caps or italic styling on Chinese or Japanese text.
+5. The look was chosen, not defaulted: the form's own theme (`forms/<id>/theme/`, passed as `<Form theme>`, imported above the form's CSS) matches the agreed direction and holds only what this form renders (`check` names theme components the form never uses; remove them), nothing imports from `themes/`, the copy follows the direction's voice (the reference's `THEME.md` tone, when there is one), and conversational forms have one question per page. It follows *Design guidelines → Look*: each header fact once, at most one signature element (on the key question when it has a control to build on, echoed on the success screen), none of the AI-default looks unless asked, no new hues, success copy written for this form that uses the person's answers, a composition sized to the form's moment rather than the default card by habit, a step count and time in the description of multi-page forms, the agreed color scheme set in the tokens (`dark`, `dark: false` or `colorScheme`; *Light and dark*), and no uppercase, small-caps or italic styling on Chinese or Japanese text.
 6. Custom components spread `field.controlProps`, attach `field.ref`, keep native inputs and a visible focus style.
 7. `open-form check <id>` passes and its output (steps, fields, conditions, required flags, policy) matches your plan; the `typecheck` script passes.
 8. Closed screens: `closedMessage` (plus `fullMessage` / `duplicateMessage` where they apply) is in the form's voice, and a custom `Notice` handles every `state` the form can reach and invents no facts.

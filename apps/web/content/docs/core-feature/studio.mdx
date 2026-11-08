@@ -164,13 +164,12 @@ languages and translation coverage, webhooks, and the embed snippet. See
 what you and your agent start new forms from. Each theme's page previews it on a
 sample form (light or dark, desktop or phone, any step), lays out the tokens a
 new form copies (colors with their contrast checks, type and shape), and shows
-its `THEME.md` with an outline of its sections. Beside it are the
-`open-form create <form> --theme` command and an agent prompt for using the
-theme, and a box to describe a change and copy it as a prompt for your agent.
+its `THEME.md` with an outline of its sections. Beside it are an agent prompt
+for using the theme in a new form, and a box to describe a change and copy it as a prompt for your agent.
 
 Studio never writes a reference theme. Your agent changes one (the
 [`create-theme`](/docs/skills/create-theme) skill), and **New theme** copies a
-prompt for a new one or points to `open-form theme add <starter>`. A form's own
+prompt for a new one. A form's own
 look lives in `forms/<id>/theme/`; change it with **Adjust** in its preview, by
 hand or with your agent. The Themes pages are part of the production build too,
 so a deployed Studio shows them. See [Themes](/docs/core-feature/themes).

@@ -98,13 +98,13 @@ describe('forPackageManager', () => {
     const text = [
       'pnpm dev                    # Studio',
       'pnpm exec open-form list    # forms',
-      'pnpm exec open-form create <form> --theme <theme>   # a long one',
+      'pnpm exec open-form theme check <id> --form   # a long one',
     ].join('\n');
     expect(forPackageManager(text, 'bun')).toBe(
       [
         'bun run dev                 # Studio',
         'bunx open-form list         # forms',
-        'bunx open-form create <form> --theme <theme>   # a long one',
+        'bunx open-form theme check <id> --form   # a long one',
       ].join('\n'),
     );
     expect(forPackageManager(text, 'pnpm')).toBe(text);

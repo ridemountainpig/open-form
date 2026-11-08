@@ -91,15 +91,9 @@ export default function Meetup() {
 ```
 
 A form from `open-form create` starts with an empty `theme/index.ts`, the plain
-base look. Start one from a starter's tokens instead with `--theme`:
-
-```npm
-npx open-form create meetup --theme terminal
-```
-
-The starters are `classic`, `editorial`, `terminal`, `brutalist` and
-`conversational`. They're references: `/create-form` reads the chosen one and
-writes the rest of the form's look, taking only what that form uses. The look
+base look. `/create-form` proposes visual directions for the form and writes the
+chosen one there: its tokens, CSS and components, taking only what that form
+uses, and reading a reference theme from `themes/` when the project has one. The look
 is the form's to change, by hand, through your agent, or with **Adjust** in
 Studio's preview, and only that form changes with it. For a look of your own,
 ask your agent for one with `/create-theme`: it lands in `themes/` as a

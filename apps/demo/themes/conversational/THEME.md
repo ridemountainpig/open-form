@@ -25,7 +25,7 @@ layout: FocusLayout
 
 ## Tokens
 
-What `open-form create <form> --theme conversational` writes into the form's `theme/index.ts`.
+The tokens a form copies into its `theme/index.ts`.
 
 | Token | Light | Dark |
 | --- | --- | --- |

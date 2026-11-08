@@ -27,7 +27,7 @@ layout: terminal window
 
 ## Tokens
 
-What `open-form create <form> --theme terminal` writes into the form's `theme/index.ts`. One palette only.
+The tokens a form copies into its `theme/index.ts`. One palette only.
 
 | Token | Value |
 | --- | --- |
