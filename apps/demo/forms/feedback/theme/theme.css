@@ -176,13 +176,12 @@
   font-size: 0.9375rem;
 }
 
-/* Choices: rows with letter keys. */
+/* Choices: rows with letter keys, as wide as the column like every other answer. */
 
 .cv-choices,
 [data-of-theme="feedback"] .of-field > .cv-choices {
   display: grid;
   gap: 10px;
-  max-width: 480px;
   margin-top: 4px;
 }
 

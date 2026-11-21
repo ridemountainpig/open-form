@@ -8,7 +8,7 @@ import {
   type TextInputUIProps,
   useFormNav,
 } from '@open-form-build/core';
-import { useEffect, useRef } from 'react';
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef } from 'react';
 import './theme.css';
 
 // After the conversational reference: one question per screen, big friendly type,
@@ -95,14 +95,36 @@ function useAutoAdvance() {
   return { ref, advance };
 }
 
+// Arrow keys walk a radio group and pick as they go, so only a click, Space or a
+// shortcut key moves on; Enter confirms what the arrows landed on.
+function useArrowPicks() {
+  const arrowed = useRef(false);
+  return {
+    listeners: {
+      onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
+        arrowed.current = event.key.startsWith('Arrow');
+      },
+      onPointerDown: () => {
+        arrowed.current = false;
+      },
+    },
+    byArrow: () => {
+      const was = arrowed.current;
+      arrowed.current = false;
+      return was;
+    },
+  };
+}
+
 function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGroupUIProps) {
   const { ref, advance } = useAutoAdvance();
+  const arrows = useArrowPicks();
   const latest = useRef({ selected, onToggle });
   latest.current = { selected, onToggle };
 
-  const pick = (value: string, checked: boolean) => {
+  const pick = (value: string, checked: boolean, byArrow = false) => {
     latest.current.onToggle(value, checked);
-    if (!multiple && checked) advance();
+    if (!multiple && checked && !byArrow) advance();
   };
 
   useEffect(() => {
@@ -121,7 +143,7 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
   });
 
   return (
-    <div ref={ref} className="cv-choices" data-cv-keys="">
+    <div ref={ref} className="cv-choices" data-cv-keys="" {...arrows.listeners}>
       {options.map((option, index) => (
         <label key={option.value} className="cv-choice">
           <input
@@ -134,7 +156,7 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
             aria-describedby={field.controlProps['aria-describedby']}
             aria-keyshortcuts={LETTERS[index]}
             onBlur={field.onBlur}
-            onChange={(e) => pick(option.value, e.target.checked)}
+            onChange={(e) => pick(option.value, e.target.checked, arrows.byArrow())}
           />
           <span className="cv-key" aria-hidden="true">
             {LETTERS[index]}
@@ -149,10 +171,64 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
   );
 }
 
+// Number keys pick a score; on a scale that reaches 10, 1 waits a moment for a 0.
 function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingUIProps) {
   const { ref, advance } = useAutoAdvance();
+  const arrows = useArrowPicks();
+  const latest = useRef({ scores, onChange, advance });
+  latest.current = { scores, onChange, advance };
+  const typed = useRef<{ digits: string; timer?: ReturnType<typeof setTimeout> }>({ digits: '' });
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || isTyping(event.target)) return;
+      if (
+        !/^[0-9]$/.test(event.key) ||
+        document.querySelectorAll('[data-cv-digits]').length !== 1
+      ) {
+        return;
+      }
+      const { scores, onChange, advance } = latest.current;
+      const lookup = (digits: string) => ({
+        exact: scores.find((score) => String(score) === digits),
+        longer: scores.some((score) => {
+          const text = String(score);
+          return text.length > digits.length && text.startsWith(digits);
+        }),
+      });
+      clearTimeout(typed.current.timer);
+      let digits = typed.current.digits + event.key;
+      let found = lookup(digits);
+      if (found.exact === undefined && !found.longer) {
+        digits = event.key;
+        found = lookup(digits);
+      }
+      typed.current = { digits: '' };
+      if (found.exact === undefined && !found.longer) return;
+      event.preventDefault();
+      const { exact } = found;
+      if (exact !== undefined) onChange(exact);
+      if (!found.longer) {
+        advance();
+        return;
+      }
+      typed.current = {
+        digits,
+        timer: setTimeout(() => {
+          typed.current = { digits: '' };
+          if (exact !== undefined) advance();
+        }, 600),
+      };
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      clearTimeout(typed.current.timer);
+    };
+  }, []);
+
   return (
-    <div ref={ref}>
+    <div ref={ref} data-cv-digits="" {...arrows.listeners}>
       <div
         className="cv-rating"
         data-many={scores.length > 7 || undefined}
@@ -171,7 +247,7 @@ function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingU
               onBlur={field.onBlur}
               onChange={() => {
                 onChange(score);
-                advance();
+                if (!arrows.byArrow()) advance();
               }}
             />
             <span className="cv-rating-num">{score}</span>

@@ -248,6 +248,7 @@ To restyle what the runtime renders, use these classes, scoped to `[data-of-them
 | Field | `.of-field`, `.of-label`, `.of-required`, `.of-help`, `.of-error`, `.of-counter` |
 | Controls | `.of-input` (also `.of-textarea`, `.of-select`), `.of-choices[data-variant="cards"]`, `.of-choice` (`:has(input:checked)` when chosen), `.of-rating-item` |
 | Actions | `.of-nav`, `.of-button-primary`, `.of-button-secondary`, `.of-alert` |
+| Turnstile dialog | `.of-turnstile` (a `<dialog>`, only on screen when Cloudflare asks the respondent to tick a box), `.of-turnstile-title` |
 | Progress | `.of-progress`, `.of-progress-label`, `.of-progress-track`, `.of-progress-bar` |
 | Layouts | default: `.of-form` (the card), `.of-aside` · `SplitLayout`: `.of-split-brand` (the panel; its background is `--of-primary`), `.of-split-main` · `StepperLayout`: `.of-stepper-rail` · `FocusLayout`: `.of-focus` |
 | End screens | `.of-success`, `.of-notice`, `.of-calendar` (`.of-calendar-label`, `.of-calendar-link`) |
@@ -274,6 +275,7 @@ defineForm({
     honeypot: true,                // default true
     minimumCompletionTime: '2s',   // default '2s'; false to disable
     rateLimit: { max: 10, window: '10m' },  // valid submissions per IP (IPv6 /64) per form; false to disable
+    turnstile: { siteKey: '0x4AAA…' },      // Cloudflare Turnstile on submit, out of sight unless it needs a click; off by default. The server needs OPEN_FORM_TURNSTILE_SECRET
   },
   success: { title: 'Thanks!', message: 'See you there.', redirect: 'https://…' },
   // event forms: success: { calendar: { start: '2026-11-15T19:00', end: '2026-11-15T21:00', location: '…' } } — see *Event forms*
@@ -282,7 +284,9 @@ defineForm({
 });
 ```
 
-Only add what the user asked for; defaults are sensible.
+Only add what the user asked for; defaults are sensible. Suggest `turnstile` when the user worries about bots or spam getting through; the site key is public, and the secret key goes in `OPEN_FORM_TURNSTILE_SECRET`, never in code.
+
+Everything under `forms/` ships to the browser, unpublished forms and `validate` functions included. Never put secrets there: no API keys, and no lists respondents shouldn't read, like valid promo or invite codes. Check those on your own server instead.
 
 Dates are read in the form's `timeZone` (IANA, e.g. `'Asia/Taipei'`), else the project's `timeZone` in `open-form.config.ts`, else UTC — never the server's clock, so they mean the same in dev and in production. If the user gives a deadline and no `timeZone` is set anywhere, ask which zone they mean, or set the project's. Check the zone that applies against where the event or audience is: a project left on `'UTC'` (or a zone from another region) with a Taipei meetup reads `closesAt: '2026-10-31'` and wall-clock times eight hours off. Confirm the zone with the user before writing dates, then set the form's `timeZone` (`'Asia/Taipei'`) rather than trusting the project default. A timestamp with an offset (`'2026-10-31T18:00:00+09:00'`) ignores the zone.
 
@@ -512,7 +516,7 @@ Built-in layouts — pick one that fits the form, copy one as a starting point, 
 | *(default)* | A centered card. General purpose. |
 | `StepperLayout` | 3+ named steps (applications, onboarding): a clickable step list beside the questions. Give every `<Page>` a short `title`. |
 | `SplitLayout` | Brand-forward forms (sales, waitlists, events): a colored panel with the title, progress and `aside`, questions on the other side. |
-| `FocusLayout` | Conversational / Typeform-style surveys: one screen per step, large type, Enter to continue. Put **one question per `<Page>`** and leave page titles off — the field label is the question. It doesn't render `aside`. The form's `title` / `description` open on their own welcome screen with a Start button, so write them as an invitation ("產品回饋 — 幾個簡短的問題，大約一分鐘"). To show them above the first question instead: `Layout: (props) => <FocusLayout {...props} cover={false} />`. Enter advances from a `Textarea` too (Shift + Enter for a new line), so long answers still fit the flow. |
+| `FocusLayout` | Conversational / Typeform-style surveys: one screen per step, large type, Enter to continue. Put **one question per `<Page>`** and leave page titles off — the field label is the question. It doesn't render `aside`. The form's `title` / `description` open on their own welcome screen with a Start button, so write them as an invitation ("產品回饋 — 幾個簡短的問題，大約一分鐘"). To show them above the first question instead: `Layout: (props) => <FocusLayout {...props} cover={false} />`. Enter advances from anywhere on the step, a `Textarea` too (Shift + Enter for a new line there), so long answers still fit the flow; elsewhere Shift + Enter goes back. A step that opens with a text field focuses it on desktop. |
 
 Regions a `Layout` receives (`LayoutUIProps`): `state` (`'form' | 'success' | 'unavailable'`), `nav`, `header` (plus the raw `title` / `description`), `progress`, `intro`, `content` (the current step, or the Success / Notice screen), `alert` (live error region — always render it), `actions` (Back / Next / Submit), `aside`, `banner`. Render what you need, in any arrangement.
 
