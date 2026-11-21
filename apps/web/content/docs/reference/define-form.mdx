@@ -155,7 +155,7 @@ Submit button. `uniqueBy` must name a field in the form.
     turnstile: {
       type: '{ siteKey: string } | false',
       default: 'false',
-      description: 'A Cloudflare Turnstile check above the submit button. The server needs OPEN_FORM_TURNSTILE_SECRET. See Submissions & protection.',
+      description: 'A Cloudflare Turnstile check on submit, out of sight unless Cloudflare asks the respondent to tick a box, which opens in a dialog. The server needs OPEN_FORM_TURNSTILE_SECRET. See Submissions & protection.',
     },
   }}
 />

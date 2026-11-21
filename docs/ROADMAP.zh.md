@@ -321,9 +321,10 @@
 
 ## v0.6 — Protection & analytics
 
-### Step 1 — CAPTCHA ⬜
+### Step 1 — CAPTCHA 🚧
 
-- ⬜ Turnstile / hCaptcha（選用）
+- ✅ Cloudflare Turnstile（`protection.turnstile`）：由 server 驗證；平常看不到，Cloudflare 要求勾選時才以 dialog 開啟
+- ⬜ hCaptcha（選用）
 
 ### Step 2 — Analytics ⬜
 

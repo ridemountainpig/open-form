@@ -3,6 +3,7 @@ import { format } from '../schema/index.ts';
 import {
   defaultComponents,
   type LayoutUIProps,
+  NavOrderContext,
   ScreenHeadingContext,
   useFormComponents,
 } from './components.tsx';
@@ -10,6 +11,11 @@ import { useFormMessages } from './hooks.ts';
 
 // Ready-made layouts. Use one with `components: { Layout: SplitLayout }` in a
 // theme or on <Form>, or copy one as the starting point for your own.
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const TEXT_ENTRY =
+  'textarea, input:not([type="radio"], [type="checkbox"], [type="file"], [type="range"], [type="color"], [type="submit"], [type="button"], [type="reset"], [type="image"])';
 
 /** A brand panel (title, progress, aside) beside the questions. Stacks on small screens. */
 export function SplitLayout({
@@ -122,22 +128,57 @@ export function FocusLayout({
     );
   }, []);
 
-  // Enter moves on from a textarea too, like Typeform; Shift+Enter adds a line.
+  // Enter moves on from anywhere on the step, a textarea too, like Typeform
+  // (Shift+Enter adds a line there); everywhere else Shift+Enter goes back.
   // Phones have no Shift, so their Return key keeps making new lines.
+  const { isFirst, submitting, back } = nav;
   useEffect(() => {
     const el = root.current;
     if (!el || !inForm) return;
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (event.key !== 'Enter' || target?.tagName !== 'TEXTAREA') return;
-      if (event.isComposing || event.keyCode === 229 || event.shiftKey || event.altKey) return;
+      if (event.key !== 'Enter' || event.defaultPrevented || !target) return;
+      if (event.isComposing || event.keyCode === 229 || event.altKey) return;
+      if (target.closest('dialog, select, [contenteditable="true"]')) return;
+      const textarea = target.tagName === 'TEXTAREA';
       const shortcut = event.metaKey || event.ctrlKey;
-      if (!shortcut && window.matchMedia('(hover: none)').matches) return;
+      if (event.shiftKey) {
+        if (textarea || shortcut || isFirst || submitting) return;
+        event.preventDefault();
+        back();
+        return;
+      }
+      // Inputs and buttons already act on Enter; the step itself, focused after each move, doesn't.
+      if (!textarea && !target.matches('.of-step, .of-focus')) return;
+      if (textarea && !shortcut && window.matchMedia('(hover: none)').matches) return;
       event.preventDefault();
-      (target as HTMLTextAreaElement).form?.requestSubmit();
+      target.closest('form')?.requestSubmit();
     };
     el.addEventListener('keydown', onKey);
     return () => el.removeEventListener('keydown', onKey);
+  }, [inForm, isFirst, submitting, back]);
+
+  // A step that opens with a text field puts the cursor in it, so typing just
+  // works. Not on touch screens, where it would pop the keyboard over the question.
+  useEffect(() => {
+    const el = root.current;
+    if (!el || !inForm) return;
+    const onFocus = (event: FocusEvent) => {
+      const step = event.target as HTMLElement;
+      if (!step.matches('.of-step') || !window.matchMedia('(pointer: fine)').matches) return;
+      const first = step.querySelector<HTMLElement>(FOCUSABLE);
+      if (!first?.matches(TEXT_ENTRY)) return;
+      first.focus({ preventScroll: true });
+      if (first instanceof HTMLTextAreaElement || first instanceof HTMLInputElement) {
+        try {
+          first.setSelectionRange(first.value.length, first.value.length);
+        } catch {
+          // Email and number inputs have no caret position to set.
+        }
+      }
+    };
+    el.addEventListener('focusin', onFocus);
+    return () => el.removeEventListener('focusin', onFocus);
   }, [inForm]);
 
   useEffect(() => {
@@ -190,10 +231,11 @@ export function FocusLayout({
             {alert}
             {inForm ? (
               <div className="of-focus-actions">
-                {actions}
+                <NavOrderContext.Provider value="next-first">{actions}</NavOrderContext.Provider>
                 <p className="of-focus-hint">
                   {messages.pressEnter}
                   <span className="of-focus-newline"> · {messages.newline}</span>
+                  {!nav.isFirst && <span className="of-focus-back"> · {messages.goBack}</span>}
                 </p>
               </div>
             ) : (

@@ -75,7 +75,7 @@ import { firstOnPage, revealField, scrollBehavior } from './reveal.ts';
 import { type FormParts, partitionForm, type StepEntry } from './steps.ts';
 import { createFormStore, type FormStore, useStoreSelector } from './store.ts';
 import type { FormTheme } from './theme.ts';
-import { type TurnstileHandle, TurnstileWidget } from './turnstile.tsx';
+import { type TurnstileHandle, type TurnstileOutcome, TurnstileWidget } from './turnstile.tsx';
 import { visitorId } from './visitor.ts';
 
 export type FormProps = {
@@ -510,6 +510,7 @@ function InteractiveForm({
   const honeypotRef = useRef<HTMLInputElement>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
   const turnstileKey = runtime.endpoint && !props.onSubmit ? runtime.turnstile?.siteKey : undefined;
+  const [verifying, setVerifying] = useState(false);
   const focusAfterRender = useRef<FocusTarget | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const requestFocus = useCallback((target: FocusTarget) => {
@@ -729,11 +730,29 @@ function InteractiveForm({
         store.setState({ status: 'success' });
         return;
       }
-      const turnstile = turnstileKey ? turnstileRef.current?.token() : undefined;
-      if (turnstileKey && !turnstile) {
-        store.setState({ status: 'error' });
-        showError(messages.humanCheck);
-        return;
+      let turnstile: string | undefined;
+      if (turnstileKey) {
+        const widget = turnstileRef.current;
+        turnstile = widget?.token();
+        if (!turnstile) {
+          setVerifying(true);
+          let outcome: TurnstileOutcome = 'failed';
+          try {
+            if (widget) outcome = await widget.request();
+          } finally {
+            setVerifying(false);
+          }
+          if (outcome === 'cancelled') {
+            store.setState({ status: 'idle' });
+            return;
+          }
+          if (outcome === 'failed') {
+            store.setState({ status: 'error' });
+            showError(messages.humanCheck);
+            return;
+          }
+          turnstile = outcome.token;
+        }
       }
       const res = await fetch(runtime.endpoint, {
         method: 'POST',
@@ -1083,7 +1102,12 @@ function InteractiveForm({
         inForm ? (
           <>
             {turnstileKey && isLast && (
-              <TurnstileWidget ref={turnstileRef} siteKey={turnstileKey} locale={language.locale} />
+              <TurnstileWidget
+                ref={turnstileRef}
+                siteKey={turnstileKey}
+                locale={language.locale}
+                labels={{ title: messages.humanCheckTitle, cancel: messages.cancel }}
+              />
             )}
             <Nav
               nav={nav}
@@ -1092,7 +1116,11 @@ function InteractiveForm({
                   ? tr(parts.submit.props.children)
                   : (parts.submit?.props.children ?? messages.submit)
               }
-              labels={{ back: messages.back, next: messages.next, submitting: messages.submitting }}
+              labels={{
+                back: messages.back,
+                next: messages.next,
+                submitting: verifying ? messages.verifying : messages.submitting,
+              }}
             />
           </>
         ) : null

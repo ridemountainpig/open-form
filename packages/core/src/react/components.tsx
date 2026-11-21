@@ -627,18 +627,26 @@ function DefaultProgress({ nav, label }: ProgressUIProps) {
   );
 }
 
+/** A layout that shows Next before Back (FocusLayout) gets them in that order, so Tab follows the screen. */
+export const NavOrderContext = createContext<'back-first' | 'next-first'>('back-first');
+
 function DefaultNav({ nav, submitLabel, labels }: NavUIProps) {
   const { Button } = useFormComponents();
+  const order = useContext(NavOrderContext);
+  const back = !nav.isFirst && (
+    <Button type="button" variant="secondary" onClick={nav.back}>
+      {labels.back}
+    </Button>
+  );
+  const next = (
+    <Button type="submit" variant="primary" disabled={nav.submitting}>
+      {nav.submitting ? labels.submitting : nav.isLast ? submitLabel : labels.next}
+    </Button>
+  );
   return (
     <div className="of-nav">
-      {!nav.isFirst && (
-        <Button type="button" variant="secondary" onClick={nav.back}>
-          {labels.back}
-        </Button>
-      )}
-      <Button type="submit" variant="primary" disabled={nav.submitting}>
-        {nav.submitting ? labels.submitting : nav.isLast ? submitLabel : labels.next}
-      </Button>
+      {order === 'next-first' ? next : back}
+      {order === 'next-first' ? back : next}
     </div>
   );
 }

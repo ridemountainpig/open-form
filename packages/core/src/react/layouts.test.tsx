@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { NavOrderContext } from './components.tsx';
 import {
   type ButtonUIProps,
+  defaultComponents,
   FocusLayout,
   Form,
+  type FormNav,
   type FormRuntime,
   FormRuntimeContext,
   type LayoutUIProps,
@@ -39,6 +42,23 @@ function Trip({ layout }: { layout?: (props: LayoutUIProps) => ReactNode }) {
       <Submit>Book</Submit>
     </Form>
   );
+}
+
+function navState(): FormNav {
+  return {
+    step: 1,
+    position: 1,
+    total: 2,
+    steps: [],
+    isFirst: true,
+    isLast: false,
+    status: 'idle',
+    submitting: false,
+    inspecting: false,
+    next: async () => {},
+    back: () => {},
+    goTo: async () => {},
+  };
 }
 
 const render = (node: ReactNode, runtime: Partial<FormRuntime> = {}) =>
@@ -194,5 +214,24 @@ describe('built-in layouts', () => {
     expect(html).toContain('Step 1 of');
     expect(html).toContain('press Enter ↵');
     expect(html).toContain('for a new line');
+    // Nowhere to go back to from the first step.
+    expect(html).not.toContain('to go back');
+  });
+
+  it('puts Next before Back where the layout shows them that way, so Tab follows the screen', () => {
+    const Nav = defaultComponents.Nav;
+    const nav = { ...navState(), isFirst: false };
+    const labels = { back: 'Back', next: 'Next', submitting: 'Sending' };
+    const order = (html: string) => html.indexOf('>Next<') < html.indexOf('>Back<');
+    expect(order(renderToString(<Nav nav={nav} submitLabel="Book" labels={labels} />))).toBe(false);
+    expect(
+      order(
+        renderToString(
+          <NavOrderContext.Provider value="next-first">
+            <Nav nav={nav} submitLabel="Book" labels={labels} />
+          </NavOrderContext.Provider>,
+        ),
+      ),
+    ).toBe(true);
   });
 });

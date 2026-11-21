@@ -94,10 +94,18 @@ function FramedInput(props: TextInputUIProps) {
 
 When the form has a `title` or `description`, `FocusLayout` opens with a
 welcome screen built from them and a Start button, so write them as an
-invitation. Enter advances from a `Textarea` too; Shift + Enter adds a line.
-On touch screens, Return in a `Textarea` adds a line and Cmd/Ctrl + Enter
-advances. To show the title above the first question instead of on its own
-screen:
+invitation.
+
+It is built for the keyboard. Enter moves on from anywhere on the step, a
+`Textarea` too, where Shift + Enter adds a line; everywhere else Shift + Enter
+goes back a step, and the hint under the buttons says which. A step that opens
+with a text field puts the cursor in it, so people can type straight away, and
+Tab reaches Next before Back, as they sit on screen. On touch screens nothing
+is focused for them, Return in a `Textarea` adds a line and Cmd/Ctrl + Enter
+advances. Letter keys for choices or number keys for a rating belong in the
+theme's `ChoiceGroup` and `Rating`.
+
+To show the title above the first question instead of on its own screen:
 
 ```tsx
 <Form components={{ Layout: (props) => <FocusLayout {...props} cover={false} /> }}>…</Form>

@@ -1147,18 +1147,63 @@
   }
 }
 
-.of-turnstile {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: calc(var(--of-gap) * 1.25);
+/* Turnstile works out of sight; a challenge the respondent has to answer opens
+   as a modal dialog. Hidden, it stays rendered so Cloudflare's iframe keeps running. */
+.of-turnstile:not(:modal) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  visibility: hidden;
 }
 
-.of-turnstile:empty {
-  display: none;
+.of-turnstile:modal {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  max-width: calc(100vw - 16px);
+  /* Room for the 300px widget on a 320px screen. */
+  padding: 1.5rem clamp(2px, (100vw - 316px) / 2, 1.5rem) 1.25rem;
+  border: 1px solid var(--of-border);
+  border-radius: var(--of-radius);
+  background: var(--of-surface);
+  color: var(--of-fg);
+  box-shadow: 0 24px 64px -16px rgb(0 0 0 / 0.35);
+  animation: of-dialog-in 0.2s var(--of-ease);
 }
 
-.of-turnstile + .of-nav {
-  margin-top: var(--of-gap);
+.of-turnstile:focus-visible {
+  outline: none;
+}
+
+.of-turnstile::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.of-turnstile-title {
+  margin: 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.of-turnstile-widget {
+  min-height: 65px;
+}
+
+/* A block, so a theme's auto margins on .of-button-secondary (meant for .of-nav) don't move it. */
+.of-turnstile-actions {
+  display: block;
+}
+
+@keyframes of-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
 }
 
 .of-hp {
@@ -1503,6 +1548,11 @@
 
 .of-focus-inner:has(textarea) .of-focus-newline {
   display: inline;
+}
+
+/* In a textarea, Shift+Enter makes a new line instead. */
+.of-focus-inner:has(textarea) .of-focus-back {
+  display: none;
 }
 
 @media (hover: none) {
