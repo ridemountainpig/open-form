@@ -1,0 +1,542 @@
+.of-root[data-of-theme="fern"] {
+  --fe-tile: #f0ece2;
+  --fe-on: #e3efe5;
+  --fe-art-bg: #e6eee2;
+  --fe-sun: #f6c896;
+  --fe-hill1: #cfe3d2;
+  --fe-hill2: #b5d4bc;
+  --fe-eye: #f3d9b8;
+  --fe-g1: #1f5a3d;
+  --fe-g2: #3f8a5c;
+  --fe-g3: #8cc49a;
+  --fe-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="fern"]:not([data-scheme]) {
+    --fe-tile: #161f1a;
+    --fe-on: #1c2e23;
+    --fe-art-bg: #0c120f;
+    --fe-sun: #e9b06a;
+    --fe-hill1: #1d3326;
+    --fe-hill2: #16281d;
+    --fe-eye: #4a3a22;
+    --fe-g1: #8fd3a8;
+    --fe-g2: #4fa474;
+    --fe-g3: #2f6b48;
+  }
+}
+
+.of-root[data-of-theme="fern"][data-scheme="dark"] {
+  --fe-tile: #161f1a;
+  --fe-on: #1c2e23;
+  --fe-art-bg: #0c120f;
+  --fe-sun: #e9b06a;
+  --fe-hill1: #1d3326;
+  --fe-hill2: #16281d;
+  --fe-eye: #4a3a22;
+  --fe-g1: #8fd3a8;
+  --fe-g2: #4fa474;
+  --fe-g3: #2f6b48;
+}
+
+[data-of-theme="fern"] .fe-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44%;
+  min-height: 100dvh;
+}
+
+[data-of-theme="fern"] .fe-main {
+  position: relative;
+}
+
+[data-of-theme="fern"] .fe-logo {
+  position: absolute;
+  z-index: 1;
+  top: 30px;
+  left: clamp(20px, 5vw, 64px);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="fern"] .of-focus-inner {
+  width: min(var(--of-width), 100% - 2 * clamp(20px, 5vw, 64px));
+  margin-inline: clamp(20px, 5vw, 64px) auto;
+  padding: 96px 0 64px;
+}
+
+[data-of-theme="fern"] .of-focus-bar {
+  background: var(--fe-tile);
+}
+
+[data-of-theme="fern"] .of-focus-bar span {
+  border-radius: 0 2px 2px 0;
+}
+
+[data-of-theme="fern"] .of-focus-count,
+[data-of-theme="fern"] .of-focus-hint {
+  font-family: var(--fe-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+[data-of-theme="fern"] .of-focus .of-title {
+  font-family: "Instrument Serif", ui-serif, Georgia, var(--of-cjk-serif), serif;
+  font-size: clamp(2.6rem, 1.8rem + 3vw, 4rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="fern"] .of-focus .of-description {
+  font-size: 1.125rem;
+}
+
+[data-of-theme="fern"] .of-focus .of-label {
+  font-size: clamp(1.7rem, 1.3rem + 1.5vw, 2.375rem);
+  font-weight: 500;
+  line-height: 1.14;
+  letter-spacing: -0.03em;
+}
+
+[data-of-theme="fern"] .of-focus .of-help {
+  font-size: 1.125rem;
+}
+
+[data-of-theme="fern"] .of-focus .of-input {
+  border-color: var(--of-border);
+}
+
+[data-of-theme="fern"] :is(.fe-choices, .fe-scale) input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="fern"] .fe-choices {
+  display: grid;
+  gap: 9px;
+  max-width: 420px;
+  margin-top: 1rem;
+}
+
+[data-of-theme="fern"] .fe-choice {
+  position: relative;
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--of-border);
+  border-radius: 10px;
+  background: var(--fe-tile);
+  font-size: 1.0625rem;
+  transition: background 0.15s ease;
+}
+
+[data-of-theme="fern"] .fe-choice:hover {
+  background: color-mix(in srgb, var(--fe-on) 60%, var(--fe-tile));
+}
+
+[data-of-theme="fern"] .fe-choice:has(input:checked) {
+  border-color: var(--of-primary);
+  background: var(--fe-on);
+  box-shadow: 0 0 0 1px var(--of-primary);
+  animation: fe-select 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+[data-of-theme="fern"] :is(.fe-choice, .fe-scale-item):has(input:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 3px;
+}
+
+[data-of-theme="fern"] .fe-cap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+[data-of-theme="fern"] .fe-key {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--of-border);
+  border-radius: 6px;
+  background: var(--of-bg);
+  font: 500 0.75rem var(--fe-mono);
+}
+
+[data-of-theme="fern"] .fe-choice:has(input:checked) .fe-key {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="fern"] .fe-check {
+  margin-left: auto;
+  color: var(--of-primary);
+  font-weight: 600;
+  visibility: hidden;
+}
+
+[data-of-theme="fern"] .fe-choice:has(input:checked) .fe-check {
+  visibility: visible;
+}
+
+[data-of-theme="fern"] .fe-scale {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  gap: 9px;
+  max-width: 420px;
+  margin-top: 1rem;
+}
+
+[data-of-theme="fern"] .fe-scale-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 60px;
+  border: 1px solid var(--of-border);
+  border-radius: 10px;
+  background: var(--fe-tile);
+  font-size: 1.1875rem;
+  font-weight: 500;
+}
+
+[data-of-theme="fern"] .fe-scale-item:has(input:checked) {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="fern"] .fe-scale-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 420px;
+  margin-top: 10px;
+  color: var(--of-muted);
+  font-size: 0.875rem;
+}
+
+[data-of-theme="fern"] .of-button {
+  min-height: 46px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+[data-of-theme="fern"] .of-focus-inner.of-success {
+  text-align: left;
+}
+
+[data-of-theme="fern"] .of-focus-inner.of-success .of-description {
+  margin-inline: 0;
+}
+
+[data-of-theme="fern"] .of-success-icon {
+  margin-inline: 0;
+}
+
+/* The garden. */
+[data-of-theme="fern"] .fe-art {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--fe-art-bg);
+}
+
+[data-of-theme="fern"] .fe-art svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-of-theme="fern"] .fe-sun {
+  fill: var(--fe-sun);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    fe-rise 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    fe-breathe 6s 2.2s ease-in-out infinite alternate;
+}
+
+[data-of-theme="fern"] .fe-ring {
+  fill: none;
+  stroke: var(--fe-sun);
+  stroke-width: 1.5;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fe-ring 5s linear infinite;
+}
+
+[data-of-theme="fern"] .fe-hill1 {
+  fill: var(--fe-hill1);
+  animation: fe-up 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+[data-of-theme="fern"] .fe-hill2 {
+  fill: var(--fe-hill2);
+  animation: fe-up 1.4s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+[data-of-theme="fern"] .fe-g1 {
+  fill: var(--fe-g1);
+  stroke: var(--fe-g1);
+}
+
+[data-of-theme="fern"] .fe-g2 {
+  fill: var(--fe-g2);
+  stroke: var(--fe-g2);
+}
+
+[data-of-theme="fern"] .fe-g3 {
+  fill: var(--fe-g3);
+  stroke: var(--fe-g3);
+}
+
+[data-of-theme="fern"] .fe-stem {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: fe-grow 1.5s cubic-bezier(0.3, 0.7, 0.2, 1) forwards;
+}
+
+[data-of-theme="fern"] .fe-leaf {
+  stroke: none;
+  scale: 0;
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: fe-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+
+[data-of-theme="fern"] .fe-sway {
+  transform-box: view-box;
+  animation: fe-sway 5.5s ease-in-out infinite alternate;
+}
+
+[data-of-theme="fern"] .fe-head {
+  scale: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fe-pop 1s cubic-bezier(0.2, 1.5, 0.4, 1) 1s forwards;
+}
+
+[data-of-theme="fern"] .fe-head circle {
+  stroke: none;
+}
+
+[data-of-theme="fern"] .fe-petals {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fe-spin 40s linear infinite;
+}
+
+[data-of-theme="fern"] .fe-petal {
+  fill: var(--of-bg);
+}
+
+[data-of-theme="fern"] .fe-eye {
+  fill: var(--fe-eye);
+}
+
+[data-of-theme="fern"] .fe-dot {
+  fill: var(--fe-sun);
+  opacity: 0;
+  animation: fe-float 7s linear infinite;
+}
+
+[data-of-theme="fern"] .fe-chip {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--of-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--of-bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  animation: fe-up 0.8s 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+[data-of-theme="fern"] .fe-chip b {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+[data-of-theme="fern"] .fe-chip span {
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="fern"] .fe-pips {
+  display: flex;
+  gap: 5px;
+}
+
+[data-of-theme="fern"] .fe-pips i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--of-primary);
+  border-radius: 50%;
+}
+
+[data-of-theme="fern"] .fe-pips i[data-on] {
+  background: var(--of-primary);
+}
+
+[data-of-theme="fern"] .fe-pips i[data-now] {
+  animation: fe-pip 1.6s ease-in-out infinite;
+}
+
+@keyframes fe-grow {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fe-pop {
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes fe-sway {
+  from {
+    rotate: -2.2deg;
+  }
+  to {
+    rotate: 2.2deg;
+  }
+}
+
+@keyframes fe-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes fe-rise {
+  from {
+    translate: 0 220px;
+    opacity: 0;
+  }
+}
+
+@keyframes fe-breathe {
+  to {
+    scale: 1.05;
+  }
+}
+
+@keyframes fe-ring {
+  0% {
+    scale: 1;
+    opacity: 0.55;
+  }
+  100% {
+    scale: 1.9;
+    opacity: 0;
+  }
+}
+
+@keyframes fe-up {
+  from {
+    translate: 0 60px;
+    opacity: 0;
+  }
+}
+
+@keyframes fe-float {
+  0% {
+    translate: 0 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    translate: 30px -420px;
+    opacity: 0;
+  }
+}
+
+@keyframes fe-pip {
+  50% {
+    scale: 1.35;
+  }
+}
+
+@keyframes fe-select {
+  from {
+    scale: 0.97;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-of-theme="fern"] .fe-art *,
+  [data-of-theme="fern"] .fe-choice {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat every drawing's own animation */
+    animation: none !important;
+  }
+
+  [data-of-theme="fern"] :is(.fe-leaf, .fe-head) {
+    scale: 1;
+  }
+
+  [data-of-theme="fern"] .fe-stem {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  [data-of-theme="fern"] .fe-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-of-theme="fern"] .fe-art {
+    display: none;
+  }
+
+  [data-of-theme="fern"] .of-focus-inner {
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="fern"] .of-focus {
+    align-items: start;
+  }
+
+  [data-of-theme="fern"] .fe-logo {
+    top: 24px;
+  }
+
+  [data-of-theme="fern"] .of-focus-inner {
+    padding: 84px 0 40px;
+  }
+
+  [data-of-theme="fern"] :is(.fe-choices, .fe-scale, .fe-scale-ends) {
+    max-width: none;
+  }
+}
+
+[data-of-theme="fern"] .of-focus-back {
+  display: none;
+}

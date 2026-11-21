@@ -1,0 +1,418 @@
+.of-root[data-of-theme="northwind"] {
+  --nw-soft: #eef2f8;
+  --nw-note-bg: #fff7e6;
+  --nw-note: #7a4f00;
+  --nw-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="northwind"]:not([data-scheme]) {
+    --nw-soft: #162033;
+    --nw-note-bg: #2a2110;
+    --nw-note: #f1c56b;
+  }
+}
+
+.of-root[data-of-theme="northwind"][data-scheme="dark"] {
+  --nw-soft: #162033;
+  --nw-note-bg: #2a2110;
+  --nw-note: #f1c56b;
+}
+
+[data-of-theme="northwind"] .nw-bar {
+  border-bottom: 1px solid var(--of-border);
+  background: var(--of-surface);
+}
+
+[data-of-theme="northwind"] .nw-bar-in,
+[data-of-theme="northwind"] .nw-wrap {
+  max-width: var(--of-width);
+  margin: 0 auto;
+  padding-inline: clamp(14px, 3vw, 40px);
+}
+
+[data-of-theme="northwind"] .nw-bar-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 56px;
+}
+
+[data-of-theme="northwind"] .nw-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+[data-of-theme="northwind"] .nw-logo i {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: var(--of-primary);
+  clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%);
+}
+
+[data-of-theme="northwind"] .nw-ref,
+[data-of-theme="northwind"] .nw-role .of-description {
+  color: var(--of-muted);
+  font: 0.72rem var(--nw-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="northwind"] .nw-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  align-items: start;
+  gap: 40px;
+  padding-block: 34px 50px;
+}
+
+[data-of-theme="northwind"] .nw-role .of-header {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  margin: 0;
+}
+
+[data-of-theme="northwind"] .nw-role .of-title {
+  font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.375rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="northwind"] .nw-role .of-description {
+  margin: 0;
+}
+
+[data-of-theme="northwind"] .nw-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-of-theme="northwind"] .nw-meta li {
+  padding: 3px 12px;
+  border: 1px solid var(--of-border);
+  border-radius: 999px;
+  background: var(--of-surface);
+  font-size: 0.84rem;
+}
+
+[data-of-theme="northwind"] .nw-steps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin: 28px 0 0;
+  padding: 0;
+  border: 1px solid var(--of-border);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  background: var(--of-surface);
+  list-style: none;
+}
+
+[data-of-theme="northwind"] .nw-steps li + li {
+  border-left: 1px solid var(--of-border);
+}
+
+[data-of-theme="northwind"] .nw-steps button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--of-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+[data-of-theme="northwind"] .nw-steps button:disabled {
+  cursor: default;
+}
+
+[data-of-theme="northwind"] .nw-steps button:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: -3px;
+}
+
+[data-of-theme="northwind"] .nw-steps i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--of-control);
+  border-radius: 50%;
+  font: 500 0.6875rem var(--nw-mono);
+}
+
+[data-of-theme="northwind"] .nw-steps [data-state="done"] button {
+  color: var(--of-fg);
+}
+
+[data-of-theme="northwind"] .nw-steps [data-state="done"] i {
+  border-color: var(--of-success);
+  background: var(--of-success);
+  color: var(--of-surface);
+}
+
+[data-of-theme="northwind"] .nw-steps [data-state="current"] button {
+  box-shadow: inset 0 -2px 0 var(--of-primary);
+  color: var(--of-fg);
+  font-weight: 600;
+}
+
+[data-of-theme="northwind"] .nw-steps [data-state="current"] i {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="northwind"] .nw-sheet {
+  padding: 28px 32px 26px;
+  border: 1px solid var(--of-border);
+  border-radius: 0 0 10px 10px;
+  background: var(--of-surface);
+}
+
+[data-of-theme="northwind"] .nw-sheet:is(.of-success, .of-notice) {
+  padding-block: 64px;
+  border-radius: 10px;
+}
+
+[data-of-theme="northwind"] .of-page-title {
+  font-size: 1.4375rem;
+  font-weight: 600;
+}
+
+[data-of-theme="northwind"] .of-page-description {
+  margin-top: 2px;
+  font-size: 0.875rem;
+}
+
+[data-of-theme="northwind"] .of-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+[data-of-theme="northwind"] .of-input {
+  min-height: 44px;
+}
+
+[data-of-theme="northwind"] .of-input:focus {
+  border-color: var(--of-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--of-primary) 18%, transparent);
+}
+
+[data-of-theme="northwind"] .of-input-group {
+  max-width: 320px;
+}
+
+[data-of-theme="northwind"] .of-choices .of-choice {
+  min-height: 44px;
+}
+
+[data-of-theme="northwind"] .of-choices .of-choice:has(input:checked) {
+  border-color: var(--of-primary);
+  background: var(--nw-soft);
+}
+
+[data-of-theme="northwind"] .of-paragraph {
+  margin-top: -8px;
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: var(--nw-note-bg);
+  color: var(--nw-note);
+  font-size: 0.84rem;
+}
+
+[data-of-theme="northwind"] .of-nav {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--of-border);
+}
+
+[data-of-theme="northwind"] .of-button {
+  min-height: 44px;
+  font-weight: 500;
+}
+
+[data-of-theme="northwind"] .nw-review {
+  margin: 0;
+  border: 1px solid var(--of-border);
+  border-radius: 7px;
+}
+
+[data-of-theme="northwind"] .nw-review div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 0.906rem;
+}
+
+[data-of-theme="northwind"] .nw-review div + div {
+  border-top: 1px solid var(--of-border);
+}
+
+[data-of-theme="northwind"] .nw-review dt {
+  color: var(--of-muted);
+}
+
+[data-of-theme="northwind"] .nw-review dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-of-theme="northwind"] .nw-side {
+  position: sticky;
+  top: 30px;
+  display: grid;
+  gap: 16px;
+}
+
+[data-of-theme="northwind"] .nw-card {
+  padding: 20px 22px;
+  border: 1px solid var(--of-border);
+  border-radius: 10px;
+  background: var(--of-surface);
+}
+
+[data-of-theme="northwind"] .nw-card h2 {
+  margin: 0 0 10px;
+  font: 600 1.0625rem var(--of-heading-font);
+}
+
+[data-of-theme="northwind"] .nw-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+[data-of-theme="northwind"] .nw-facts dt {
+  color: var(--of-muted);
+}
+
+[data-of-theme="northwind"] .nw-facts dd {
+  margin: 0;
+  text-align: right;
+}
+
+[data-of-theme="northwind"] .nw-timeline {
+  margin: 0 0 0 5px;
+  padding: 0;
+  border-left: 1px solid var(--of-border);
+  list-style: none;
+}
+
+[data-of-theme="northwind"] .nw-timeline li {
+  position: relative;
+  padding: 0 0 14px 18px;
+  font-size: 0.875rem;
+}
+
+[data-of-theme="northwind"] .nw-timeline li:last-child {
+  padding-bottom: 0;
+}
+
+[data-of-theme="northwind"] .nw-timeline li::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--of-control);
+  border-radius: 50%;
+  background: var(--of-surface);
+}
+
+[data-of-theme="northwind"] .nw-timeline li[data-on]::before {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+}
+
+[data-of-theme="northwind"] .nw-timeline b {
+  display: block;
+  font-weight: 500;
+}
+
+[data-of-theme="northwind"] .nw-timeline span,
+[data-of-theme="northwind"] .nw-eeo {
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="northwind"] .nw-eeo {
+  margin: 0;
+  line-height: 1.6;
+}
+
+@media (max-width: 960px) {
+  [data-of-theme="northwind"] .nw-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding-block: 20px 36px;
+  }
+
+  [data-of-theme="northwind"] .nw-side {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-of-theme="northwind"] .nw-ref {
+    display: none;
+  }
+
+  [data-of-theme="northwind"] .nw-steps {
+    grid-auto-columns: auto;
+    grid-template-columns: none;
+  }
+
+  [data-of-theme="northwind"] .nw-steps li:has([aria-current]) {
+    flex: 1;
+  }
+
+  [data-of-theme="northwind"] .nw-steps {
+    display: flex;
+  }
+
+  [data-of-theme="northwind"] .nw-steps button {
+    padding: 0 13px;
+  }
+
+  [data-of-theme="northwind"] .nw-steps li:not([data-state="current"]) span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  [data-of-theme="northwind"] .nw-sheet {
+    padding: 20px 16px;
+  }
+
+  [data-of-theme="northwind"] .nw-review div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

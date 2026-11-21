@@ -1,6 +1,6 @@
 ---
 name: Conversational
-description: One question per screen, big friendly rounded type, soft violet — Typeform-like, with letter keys and auto-advance.
+description: One question per screen on a warm sunrise wash, with letter keys and auto-advance.
 layout: FocusLayout
 ---
 
@@ -8,20 +8,9 @@ layout: FocusLayout
 
 **Mood:** friendly, unhurried, personal. Feels like being asked, not like filling in a form.
 
-**Best for:** surveys and NPS, feedback, quizzes, onboarding questionnaires, research screeners, event RSVPs, anything with mostly single-choice questions.
+**Best for:** surveys and NPS, feedback, quizzes, onboarding questionnaires, research screeners, anything with mostly single-choice questions.
 
 **Avoid when:** people need to see and review everything at once (long applications, data entry), or there are many free-text fields.
-
-## Palette
-
-| Token | Light | Dark | Use |
-| --- | --- | --- | --- |
-| `primary` | `#5b4cf5` violet | `#a99cff` | Answers, keys, selected choices, progress, button |
-| `background` | `#f8f7ff` + one soft violet glow from the top | `#0e0c1f` | Page |
-| `surface` / `input` | `#ffffff` | `#17142e` / `#1c1838` | Choice and rating tiles |
-| `foreground` | `#1b1838` | `#f0edff` | Questions |
-| `muted` | `#66627f` | `#a39fc4` | Help, captions, counter |
-| `control` | `#8a82c6` | `#6a62b8` | Tile and underline outlines (≥ 3:1) |
 
 ## Tokens
 
@@ -29,64 +18,63 @@ The tokens a form copies into its `theme/index.ts`.
 
 | Token | Light | Dark |
 | --- | --- | --- |
-| `primary` | `#5b4cf5` | `#a99cff` |
-| `primaryForeground` | `#ffffff` | `#120f2e` |
-| `background` | `#f8f7ff` | `#0e0c1f` |
-| `surface` | `#ffffff` | `#17142e` |
-| `foreground` | `#1b1838` | `#f0edff` |
-| `muted` | `#66627f` | `#a39fc4` |
-| `border` | `#e6e2fa` | `#2c2850` |
-| `control` | `#8a82c6` | `#6a62b8` |
-| `input` | `#ffffff` | `#1c1838` |
-| `error` | `#d1242f` | `#ff6b70` |
-| `success` | `#30a46c` | `#4cc38a` |
+| `primary` | `#3b2412` | `#fbeedd` |
+| `primaryForeground` | `#fff6ea` | `#2a1710` |
+| `background` | `#f9e3c4` | `#2b1a1a` |
+| `surface` | `#fbecd6` | `#33201d` |
+| `foreground` | `#3b2412` | `#fbeedd` |
+| `muted` | `#6e5440` | `#c9b3a0` |
+| `border` | `#c9ab8c` | `#6b4a40` |
+| `control` | `#8a6a50` | `#a88a78` |
+| `input` | `#fdf3e4` | `#3a2521` |
+| `error` | `#a3271b` | `#ff9a8a` |
+| `success` | `#2d6a3e` | `#8ed3a0` |
 
-- `font`: `'ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, var(--of-cjk), sans-serif'`
-- `headingFont`: same as `font`
-- `radius`: `'14px'`
-- `buttonRadius`: `'999px'`
+- `font`: `'"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif'`
+- `headingFont`: `'"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif'`
+- `radius`: `'6px'`
 - `spacing`: `'comfortable'`
-- `width`: `'680px'`
-- Layout: `FocusLayout`, not a token: add `components: { Layout: FocusLayout }`.
+- `width`: `'880px'`
+- Fonts are served from `fonts/` (`bricolage-grotesque.css`, `geist-mono.css`); a form that uses one gets its own copy with `open-form theme font <form> <Family> --form`.
+- Layout: FocusLayout, not a token: it comes from `components`.
 
 ## Typography
 
-Rounded system sans for Latin (`ui-rounded`, `SF Pro Rounded`, `Nunito`); CJK falls through to `var(--of-cjk)` — PingFang / Noto Sans / Hiragino Sans in the form's language — which have real bold weights. Don't add `Hiragino Maru Gothic` back: it has a single weight, so browsers fake the bold and Chinese headings turn smudgy. Title 2.25–3.5rem / 700, questions 1.5–2rem / 650, answers typed at ~1.5rem in the primary color. Wrap with `text-wrap: pretty`, not `balance` (balance splits Chinese words).
+- Bricolage Grotesque throughout: titles at weight 500 with tight tracking, questions at 1.6 to 2.25rem and weight 400.
+- Counters and key hints in Geist Mono.
+- Wrap with `text-wrap: pretty`, not `balance`, which splits Chinese words.
 
 ## Layout & components
 
-- `FocusLayout`: a **welcome screen** with the form's title, description and a Start button; then one step per screen, vertically centered, a thin progress bar at the top, a `1 / 4` counter, and the Next button with "press Enter ↵" beside it (Back sits at the far end of that row).
-- Write **one question per `<Page>`** and leave page titles off — the field label is the question. Write `title` / `description` as the invitation on the welcome screen.
-- Choices: rounded rows with letter keys (A, B, C…). Press the letter to choose. On a one-question step, picking a single answer — or a rating — advances automatically.
-- Inputs: large underline fields; textareas grow with the answer. Give them a friendly `placeholder` ("說說看…"). Enter moves on from a textarea too; Shift + Enter adds a line (phones keep Return for new lines).
-- Rating: number tiles; 0–10 scales wrap to two rows on phones.
-- Matrix: rounded rows with a dot under each column heading that fills with a check; on phones each row is a card of answer tiles. No letter keys or auto-advance — the screen has more than one answer. Give a `<Matrix>` its own `<Page>`.
-- Buttons: pill with an arrow.
-- Success: a drawn check in a primary-colored badge.
+- `FocusLayout` inside a small wrapper that adds the mark in the corner: a welcome screen with the title, description and a Start button, then one step per screen with a thin progress bar and a `1 / 4` counter.
+- The wash is three gradients on `.of-root`, fixed to the viewport; dark mode swaps it for an ember-to-plum one.
+- Write **one question per `<Page>`** and leave page titles off: the field label is the question.
+- Choices: translucent rows with letter keys (A, B, C). Press the letter to choose. On a one-question step, picking a single answer or a rating moves on by itself.
+- Inputs: large underline fields with no box.
+- Rating: number tiles; 0 to 10 scales wrap to two rows on phones.
 
 ### Building a form's look from it
 
 `index.tsx` and `conversational.css` are built this way, so take from them as they are:
 
-- **CSS on the runtime's markup** (scoped to the form): the question-sized labels and raised `*` (`.of-label`, `.of-required`), help, the error pill (`.of-error`), the select's answer line and chevron (`.of-select-wrap`), the checkbox row with the input itself as the box (`.of-choice-single > .of-checkbox`), the matrix's answer tiles and, once wide, the radio itself as a dot with a masked check (`.of-matrix-*`), and the pill button with its arrow (`.of-button-primary:not(:disabled)::after`, a masked SVG).
-- **Components**: `ChoiceGroup` (letter keys A–Z and the check), `Rating` (moves on once chosen), `TextInput` / `Textarea` (the large answer line and counter) and `Success` (the badge whose check draws itself). The auto-advance counts `.of-field` elements on the step.
+- **CSS on the runtime's markup** (scoped to the form): the wash, question-sized labels, underline inputs, the select, the checkbox row, the buttons and the focus bar.
+- **Components**: `Layout` (the mark over `FocusLayout`), `ChoiceGroup` (letter keys, the check, the keyboard shortcut and auto-advance) and `Rating` (moves on once chosen). Auto-advance counts `.of-field` elements on the step, so it only fires when the question is alone.
 
 ## Signature ideas
 
-`FocusLayout` doesn't show `aside`, so the signature lives in the flow. Pick one:
+Pick one:
 
-- **A personal ending** — `<Success>` that reads the answers back: a quiz result, a thank-you that fits their NPS score, "See you on Friday, Amy".
-- **A welcome worth starting** — the title and description as an invitation that says what it takes: "4 questions · about a minute".
-- **Answers that carry over** — a later screen that uses an earlier answer in a line above its question ("Nice to meet you, Amy."), from `useFieldValue`.
-
-Soft and roomy; one idea per screen.
+- **Picture tiles**: for `variant="cards"`, draw a small SVG per option in the form's theme and show it above the caption.
+- **A drawing that grows**: a scene beside the questions that gains a piece on every step, from `nav.position`.
+- **A personal ending**: `<Success>` that uses the name or the score they gave.
 
 ## Copy tone
 
-Second person, warm, one idea per question: "What should we call you?", "How likely are you to recommend us?" Use `description` for gentle hints.
+Spoken, second person, one idea per question. "Who do you usually travel with?"
 
 ## Do / Don't
 
-- Do branch with `<When>` around pages — skipped questions just never appear.
-- Do keep options short so letter keys stay scannable.
-- Don't put several fields on one page unless they belong together (first + last name).
+- **Do:** Keep each screen to one question.
+- **Do:** Write the title and description as an invitation that says how long it takes.
+- **Don't:** Put a long page of fields on one step: the wash and large type are sized for one question.
+- **Don't:** Use it where people need to scan their answers before sending.

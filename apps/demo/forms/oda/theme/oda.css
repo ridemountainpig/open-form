@@ -1,0 +1,267 @@
+.of-root[data-of-theme="oda"] {
+  --od-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  padding: 0;
+}
+
+[data-of-theme="oda"] :is(.od-top .of-description, .od-progress p) {
+  margin: 0;
+  color: var(--of-muted);
+  font: 0.72rem var(--od-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="oda"] .od-page {
+  display: grid;
+  overflow-x: clip;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+}
+
+[data-of-theme="oda"] .od-page > * {
+  padding-inline: clamp(20px, 3.9vw, 56px);
+}
+
+[data-of-theme="oda"] .od-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 26px;
+}
+
+[data-of-theme="oda"] .od-logo {
+  font: 1.625rem var(--of-heading-font);
+  white-space: nowrap;
+}
+
+[data-of-theme="oda"] .od-top .of-header {
+  margin: 0;
+  text-align: right;
+}
+
+[data-of-theme="oda"] .od-top .of-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+[data-of-theme="oda"] .od-main {
+  width: 100%;
+  max-width: calc(var(--of-width) + 2 * clamp(20px, 3.9vw, 56px));
+  padding-top: clamp(16px, 7vh, 70px);
+  padding-bottom: 32px;
+}
+
+[data-of-theme="oda"] .od-main:is(.of-success, .of-notice) {
+  align-self: center;
+  text-align: left;
+}
+
+[data-of-theme="oda"] .od-main :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="oda"] .od-main:is(.of-success, .of-notice) .of-title {
+  font-size: clamp(3rem, 2rem + 4vw, 5rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+[data-of-theme="oda"] .od-letter {
+  margin: 0;
+  font: clamp(2rem, 1.2rem + 3.3vw, 3.75rem) / 1.36 var(--of-heading-font);
+  letter-spacing: -0.015em;
+}
+
+/* A blank: the sizer sets the width, the control lies over it. */
+[data-of-theme="oda"] .od-blank {
+  position: relative;
+  display: inline-grid;
+  min-width: 3ch;
+  max-width: 100%;
+  border-bottom: 0.05em dashed var(--of-control);
+  line-height: 1.05;
+  vertical-align: baseline;
+}
+
+[data-of-theme="oda"] .od-sizer {
+  grid-area: 1 / 1;
+  padding: 0 0.1em;
+  overflow: hidden;
+  font-style: italic;
+  visibility: hidden;
+  white-space: pre;
+}
+
+[data-of-theme="oda"] .od-pick .od-sizer {
+  padding-right: 0.75em;
+}
+
+[data-of-theme="oda"] .od-blank :is(input, select) {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0.1em;
+  border: 0;
+  border-radius: 0.14em 0.14em 0 0;
+  background: none;
+  color: var(--of-muted);
+  font: inherit;
+  letter-spacing: inherit;
+  appearance: none;
+  caret-color: var(--of-primary);
+}
+
+[data-of-theme="oda"] .od-blank input::placeholder {
+  color: var(--of-muted);
+  opacity: 1;
+}
+
+[data-of-theme="oda"] .od-blank select {
+  cursor: pointer;
+}
+
+[data-of-theme="oda"] .od-blank select option {
+  color: var(--of-fg);
+  background: var(--of-surface);
+  font: 1rem var(--of-font);
+}
+
+[data-of-theme="oda"] .od-pick::after {
+  content: "";
+  position: absolute;
+  right: 0.14em;
+  top: 50%;
+  width: 0.16em;
+  height: 0.16em;
+  border: solid var(--of-control);
+  border-width: 0 0.045em 0.045em 0;
+  rotate: 45deg;
+  translate: 0 -70%;
+  pointer-events: none;
+}
+
+[data-of-theme="oda"] .od-blank[data-filled] {
+  border-bottom: 0.05em solid var(--of-primary);
+}
+
+[data-of-theme="oda"] .od-blank[data-filled] :is(input, select) {
+  color: var(--of-primary);
+  font-style: italic;
+}
+
+[data-of-theme="oda"] .od-blank[data-filled]::after {
+  border-color: var(--of-primary);
+}
+
+[data-of-theme="oda"] .od-blank:focus-within {
+  border-bottom-style: solid;
+  border-bottom-color: var(--of-primary);
+}
+
+[data-of-theme="oda"] .od-blank :is(input, select):focus {
+  background: color-mix(in srgb, var(--of-primary) 16%, transparent);
+  outline: none;
+}
+
+[data-of-theme="oda"] .od-blank :is(input, select):focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 0.06em;
+}
+
+[data-of-theme="oda"] .od-blank[data-invalid] {
+  border-bottom-color: var(--of-error);
+}
+
+[data-of-theme="oda"] .od-error {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: calc(100% + 4px);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--of-error);
+  color: var(--of-bg);
+  font: 500 0.8125rem / 1.4 var(--of-font);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+[data-of-theme="oda"] .od-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: 26px;
+}
+
+[data-of-theme="oda"] .od-progress div {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+[data-of-theme="oda"] .od-progress i {
+  width: 34px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--of-border);
+}
+
+[data-of-theme="oda"] .od-progress i[data-on] {
+  background: var(--of-primary);
+}
+
+[data-of-theme="oda"] .of-nav {
+  margin: 0;
+}
+
+[data-of-theme="oda"] .of-button-primary {
+  min-height: 60px;
+  padding: 0 30px;
+  font: 1.6875rem var(--of-heading-font);
+}
+
+[data-of-theme="oda"] .of-button-primary::after {
+  content: "→" / "";
+  margin-left: 14px;
+}
+
+@media (max-width: 640px) {
+  [data-of-theme="oda"] .od-top {
+    padding-block: 18px;
+  }
+
+  [data-of-theme="oda"] .od-top .of-description {
+    display: none;
+  }
+
+  [data-of-theme="oda"] .od-letter {
+    line-height: 1.5;
+  }
+
+  [data-of-theme="oda"] .od-foot {
+    padding-block: 18px;
+  }
+
+  [data-of-theme="oda"] .od-progress i {
+    width: 18px;
+  }
+
+  [data-of-theme="oda"] .of-button-primary {
+    min-height: 52px;
+    padding: 0 22px;
+    font-size: 1.3125rem;
+  }
+}
+
+[data-of-theme="oda"] .od-main:is(.of-success, .of-notice) .of-description {
+  max-width: 44ch;
+  margin-inline: 0;
+  font-size: 1.125rem;
+}

@@ -1,0 +1,562 @@
+.of-root[data-of-theme="bento"] {
+  --bn-y: #ffd84a;
+  --bn-ink: #15150f;
+  --bn-pink: #ffcbd9;
+  --bn-blue: #c9dcff;
+  --bn-green: #bfe8c9;
+  --bn-chip: #f3f2ed;
+  --bn-on: #15150f;
+  --bn-on-fg: #ffffff;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="bento"]:not([data-scheme]) {
+    --bn-pink: #55202f;
+    --bn-blue: #1d2f57;
+    --bn-green: #234a31;
+    --bn-chip: #22221e;
+    --bn-on: #f3f2ea;
+    --bn-on-fg: #0c0c0a;
+  }
+}
+
+.of-root[data-of-theme="bento"][data-scheme="dark"] {
+  --bn-pink: #55202f;
+  --bn-blue: #1d2f57;
+  --bn-green: #234a31;
+  --bn-chip: #22221e;
+  --bn-on: #f3f2ea;
+  --bn-on-fg: #0c0c0a;
+}
+
+[data-of-theme="bento"] .bn-page {
+  width: min(var(--of-width), 100%);
+  margin: 0 auto;
+  padding: 18px;
+}
+
+[data-of-theme="bento"] .bn-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.36fr) 1fr;
+  align-items: start;
+  gap: 14px;
+}
+
+[data-of-theme="bento"] .bn-tile,
+[data-of-theme="bento"] .bn-board .of-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 18px 20px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--of-surface);
+}
+
+/* Hero */
+[data-of-theme="bento"] .bn-hero {
+  position: sticky;
+  top: 18px;
+  min-height: calc(100dvh - 36px);
+  background: var(--bn-y);
+  color: var(--bn-ink);
+  overflow: hidden;
+}
+
+[data-of-theme="bento"] .bn-sun {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 190px;
+  height: 190px;
+  border: 26px solid rgb(21 21 15 / 0.9);
+  border-radius: 50%;
+}
+
+[data-of-theme="bento"] .bn-hero .of-header {
+  margin: auto 0 0;
+  padding-top: 150px;
+  text-align: left;
+}
+
+[data-of-theme="bento"] .bn-hero .of-title {
+  color: var(--bn-ink);
+  font-size: clamp(2.25rem, 1rem + 2.9vw, 3.625rem);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+[data-of-theme="bento"] .bn-hero .of-description {
+  max-width: 30ch;
+  margin: 12px 0 0;
+  color: var(--bn-ink);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+/* The board: tiles wrap and stretch, so every row is full whatever the form asks. */
+[data-of-theme="bento"] .bn-board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+[data-of-theme="bento"] .bn-board .of-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+[data-of-theme="bento"] .bn-board .of-page-header {
+  margin: 0;
+  padding: 8px 6px 0;
+}
+
+[data-of-theme="bento"] .bn-board .of-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+[data-of-theme="bento"] .bn-board .of-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  counter-reset: bn-tile;
+}
+
+[data-of-theme="bento"] .bn-board .of-row {
+  display: contents;
+}
+
+[data-of-theme="bento"] .bn-board .of-field {
+  flex: 1 1 220px;
+  min-height: 150px;
+  counter-increment: bn-tile;
+  transition: box-shadow 0.2s ease;
+}
+
+[data-of-theme="bento"] .bn-board .of-field:has(.of-choices, .of-rating, .of-textarea) {
+  flex: 2 1 340px;
+}
+
+[data-of-theme="bento"] .bn-board .of-field:has(.of-choice-single) {
+  flex: 1 1 100%;
+  min-height: 0;
+}
+
+[data-of-theme="bento"] .bn-board .of-field:focus-within {
+  box-shadow: 0 0 0 3px var(--bn-y);
+}
+
+[data-of-theme="bento"] .bn-board .of-field[data-invalid] {
+  box-shadow: 0 0 0 3px var(--of-error);
+}
+
+[data-of-theme="bento"] .bn-board .of-field:has(.of-rating) {
+  background: var(--bn-blue);
+}
+
+[data-of-theme="bento"] .bn-board .of-field:has(.bn-stepper) {
+  background: var(--bn-pink);
+}
+
+[data-of-theme="bento"] .bn-board .of-field:has(.of-checkbox):not(:has(.of-choice-single)) {
+  background: var(--bn-green);
+}
+
+[data-of-theme="bento"] .bn-board .of-field::before {
+  content: counter(bn-tile) / "";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background: var(--bn-on);
+  color: var(--bn-on-fg);
+  font:
+    600 0.8125rem "Geist Mono",
+    ui-monospace,
+    monospace;
+}
+
+[data-of-theme="bento"] .bn-board .of-field:has(.of-choice-single)::before {
+  content: none;
+}
+
+[data-of-theme="bento"] .bn-board .of-label {
+  float: left;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 0;
+  color: var(--of-fg);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="bento"] .bn-board .of-help {
+  margin: 0 0 10px;
+  color: var(--of-muted);
+}
+
+[data-of-theme="bento"]
+  .bn-board
+  .of-field
+  > :is(
+    .of-input,
+    .of-select-wrap,
+    .of-input-group,
+    .of-textarea,
+    .of-choices,
+    .of-rating,
+    .bn-stepper
+  ) {
+  margin-top: auto;
+}
+
+[data-of-theme="bento"] .bn-board .of-rating-labels {
+  margin-top: 6px;
+}
+
+[data-of-theme="bento"] .bn-board .of-error {
+  margin-top: 8px;
+}
+
+[data-of-theme="bento"] .bn-board .of-field > .of-input:focus,
+[data-of-theme="bento"] .bn-board .of-input-group .of-input:focus {
+  border-bottom-color: var(--of-fg);
+  outline: none;
+}
+
+[data-of-theme="bento"] .bn-board .of-textarea {
+  flex: 1;
+  min-height: 84px;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--bn-chip);
+  box-shadow: none;
+  resize: none;
+}
+
+[data-of-theme="bento"] .bn-board :is(.of-textarea, .of-select-wrap .of-input):focus {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 0;
+}
+
+/* Stepper */
+[data-of-theme="bento"] .bn-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-of-theme="bento"] .bn-stepper button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--of-surface);
+  color: var(--of-fg);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+[data-of-theme="bento"] .bn-stepper button:focus-visible {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 2px;
+}
+
+[data-of-theme="bento"] .bn-stepper .of-input {
+  width: 2.2ch;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: center;
+  box-sizing: content-box;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+[data-of-theme="bento"] .bn-stepper .of-input::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+[data-of-theme="bento"] .bn-stepper .of-input:focus-visible {
+  outline: 2px solid var(--of-fg);
+  border-radius: 8px;
+}
+
+/* Choices and ratings are chips; the native control lies over each one. */
+[data-of-theme="bento"] .bn-board .of-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+[data-of-theme="bento"] .bn-board :is(.of-choices .of-choice, .of-rating-item) {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+[data-of-theme="bento"] .bn-board :is(.of-choices .of-choice, .of-rating-item) input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="bento"] .bn-board :is(.of-choices .of-choice, .of-rating-item) span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--bn-chip);
+  color: var(--of-fg);
+  font-weight: 500;
+  text-align: center;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+[data-of-theme="bento"]
+  .bn-board
+  .of-field:has(.of-rating, .of-checkbox)
+  :is(.of-choice, .of-rating-item)
+  span {
+  background: var(--of-surface);
+}
+
+[data-of-theme="bento"]
+  .bn-board
+  :is(.of-choices .of-choice, .of-rating-item)
+  input:checked
+  + span {
+  background: var(--bn-on);
+  color: var(--bn-on-fg);
+}
+
+[data-of-theme="bento"]
+  .bn-board
+  :is(.of-choices .of-choice, .of-rating-item)
+  input:focus-visible
+  + span {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 2px;
+}
+
+/* Send tile */
+[data-of-theme="bento"] .bn-go {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  background: var(--bn-on);
+  color: var(--bn-on-fg);
+}
+
+[data-of-theme="bento"] .bn-count {
+  font:
+    0.6875rem "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+[data-of-theme="bento"] .bn-go .of-alert {
+  margin: 0;
+  color: var(--bn-y);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="bento"] .bn-go .of-nav {
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+}
+
+[data-of-theme="bento"] .bn-go .of-button {
+  min-height: 52px;
+  background: none;
+  color: var(--bn-on-fg);
+}
+
+[data-of-theme="bento"] .bn-go .of-button-secondary {
+  border-color: color-mix(in srgb, var(--bn-on-fg) 35%, transparent);
+}
+
+[data-of-theme="bento"] .bn-go .of-button-primary {
+  gap: 16px;
+  padding: 0 4px 0 12px;
+  font-size: clamp(1.25rem, 0.9rem + 1vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+[data-of-theme="bento"] .bn-go .of-button-primary::after {
+  content: "→" / "";
+  transition: transform 0.2s ease;
+}
+
+[data-of-theme="bento"] .bn-go .of-button-primary:hover:not(:disabled)::after {
+  transform: translateX(4px);
+}
+
+[data-of-theme="bento"] .bn-go .of-button:focus-visible {
+  outline: 2px solid var(--bn-y);
+  outline-offset: 2px;
+}
+
+/* Success and closed states live in the hero tile. */
+[data-of-theme="bento"] .bn-page:not([data-state="form"]) .bn-grid {
+  grid-template-columns: 1fr;
+}
+
+[data-of-theme="bento"] .bn-page:not([data-state="form"]) .bn-hero {
+  padding: clamp(24px, 5vw, 64px);
+}
+
+[data-of-theme="bento"] .bn-end {
+  margin: auto 0 0;
+  padding: 150px 0 0;
+  text-align: left;
+}
+
+[data-of-theme="bento"] .bn-end :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="bento"] .bn-end .of-title {
+  font-size: clamp(2.5rem, 1rem + 5vw, 5rem);
+}
+
+[data-of-theme="bento"] .bn-end .of-description {
+  max-width: 44ch;
+  font-size: 1.0625rem;
+}
+
+[data-of-theme="bento"] .bn-end .of-button {
+  margin-top: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-of-theme="bento"]
+    :is(.of-field, .of-choice span, .of-rating-item span, .of-button-primary::after) {
+    transition: none;
+  }
+}
+
+/* Tablet and down: the hero sits on top. */
+@media (max-width: 960px) {
+  [data-of-theme="bento"] .bn-grid {
+    grid-template-columns: 1fr;
+  }
+
+  [data-of-theme="bento"] .bn-hero {
+    position: relative;
+    top: 0;
+    min-height: 240px;
+  }
+
+  [data-of-theme="bento"] .bn-hero .of-header,
+  [data-of-theme="bento"] .bn-end {
+    padding-top: 70px;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-of-theme="bento"] .bn-page {
+    padding: 10px;
+  }
+
+  [data-of-theme="bento"] :is(.bn-grid, .bn-board, .bn-board .of-page, .bn-board .of-fields) {
+    gap: 10px;
+  }
+
+  [data-of-theme="bento"] .bn-tile,
+  [data-of-theme="bento"] .bn-board .of-field {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  [data-of-theme="bento"] .bn-board .of-field {
+    flex-basis: 100%;
+    min-height: 0;
+  }
+
+  [data-of-theme="bento"] .bn-sun {
+    top: -60px;
+    right: -60px;
+    width: 160px;
+    height: 160px;
+    border-width: 22px;
+  }
+
+  [data-of-theme="bento"] .bn-go .of-nav {
+    flex-basis: 100%;
+  }
+}
+
+[data-of-theme="bento"] .bn-board .of-field > .of-input,
+[data-of-theme="bento"] .bn-board .of-input-group .of-input {
+  min-height: 46px;
+  padding: 0 0 6px;
+  border: 0;
+  border-bottom: 1.5px solid var(--of-control);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="bento"] .bn-board .of-select-wrap .of-input {
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--bn-chip);
+  box-shadow: none;
+  font-weight: 500;
+}
