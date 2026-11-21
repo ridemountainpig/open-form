@@ -321,9 +321,10 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 
 ## v0.6 — Protection & analytics
 
-### Step 1 — CAPTCHA ⬜
+### Step 1 — CAPTCHA 🚧
 
-- ⬜ Turnstile / hCaptcha (optional)
+- ✅ Cloudflare Turnstile (`protection.turnstile`): verified on the server, out of sight until Cloudflare asks the respondent to tick a box, which opens in a dialog
+- ⬜ hCaptcha (optional)
 
 ### Step 2 — Analytics ⬜
 

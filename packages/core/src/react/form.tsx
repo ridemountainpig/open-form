@@ -75,6 +75,7 @@ import { firstOnPage, revealField, scrollBehavior } from './reveal.ts';
 import { type FormParts, partitionForm, type StepEntry } from './steps.ts';
 import { createFormStore, type FormStore, useStoreSelector } from './store.ts';
 import type { FormTheme } from './theme.ts';
+import { type TurnstileHandle, type TurnstileOutcome, TurnstileWidget } from './turnstile.tsx';
 import { visitorId } from './visitor.ts';
 
 export type FormProps = {
@@ -507,6 +508,9 @@ function InteractiveForm({
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
+  const turnstileKey = runtime.endpoint && !props.onSubmit ? runtime.turnstile?.siteKey : undefined;
+  const [verifying, setVerifying] = useState(false);
   const focusAfterRender = useRef<FocusTarget | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const requestFocus = useCallback((target: FocusTarget) => {
@@ -715,6 +719,7 @@ function InteractiveForm({
   const submit = useCallback(async () => {
     store.setState({ status: 'submitting', formError: undefined });
     const { values } = store.getState();
+    let inFlight: string | undefined;
     try {
       if (props.onSubmit) {
         await props.onSubmit(collected ? submissionValues(collected.schema, values) : values);
@@ -726,6 +731,31 @@ function InteractiveForm({
         store.setState({ status: 'success' });
         return;
       }
+      let turnstile: string | undefined;
+      if (turnstileKey) {
+        const widget = turnstileRef.current;
+        turnstile = widget?.token();
+        if (!turnstile) {
+          setVerifying(true);
+          let outcome: TurnstileOutcome = 'failed';
+          try {
+            if (widget) outcome = await widget.request();
+          } finally {
+            setVerifying(false);
+          }
+          if (outcome === 'cancelled') {
+            store.setState({ status: 'idle' });
+            return;
+          }
+          if (outcome === 'failed') {
+            store.setState({ status: 'error' });
+            showError(messages.humanCheck);
+            return;
+          }
+          turnstile = outcome.token;
+        }
+      }
+      inFlight = turnstile;
       const res = await fetch(runtime.endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -736,9 +766,13 @@ function InteractiveForm({
           token: runtime.token,
           hp: honeypotRef.current?.value ?? '',
           visitor: visitorId(),
+          ...(turnstile ? { turnstile } : {}),
         }),
       });
+      inFlight = undefined;
       const body = (await res.json().catch(() => ({}))) as SubmitResponse;
+      // The server checks answers before spending the token, so a 422 leaves it valid.
+      if (!res.ok && turnstile && res.status !== 422) turnstileRef.current?.reset();
       if (res.ok) {
         store.setState({ status: 'success', submissionId: body.id });
         runtime.onSubmitted?.({ id: body.id });
@@ -767,6 +801,8 @@ function InteractiveForm({
       store.setState({ status: 'error' });
       showError(body.message ? tr(body.message) : messages.genericError);
     } catch {
+      // The server may have spent the token before the connection dropped.
+      if (inFlight) turnstileRef.current?.reset();
       store.setState({ status: 'error' });
       showError(messages.networkError);
     }
@@ -783,6 +819,7 @@ function InteractiveForm({
     stepOf,
     store,
     tr,
+    turnstileKey,
   ]);
 
   const next = useCallback(async () => {
@@ -1068,15 +1105,29 @@ function InteractiveForm({
       }
       actions={
         inForm ? (
-          <Nav
-            nav={nav}
-            submitLabel={
-              typeof parts.submit?.props.children === 'string'
-                ? tr(parts.submit.props.children)
-                : (parts.submit?.props.children ?? messages.submit)
-            }
-            labels={{ back: messages.back, next: messages.next, submitting: messages.submitting }}
-          />
+          <>
+            {turnstileKey && isLast && (
+              <TurnstileWidget
+                ref={turnstileRef}
+                siteKey={turnstileKey}
+                locale={language.locale}
+                labels={{ title: messages.humanCheckTitle, cancel: messages.cancel }}
+              />
+            )}
+            <Nav
+              nav={nav}
+              submitLabel={
+                typeof parts.submit?.props.children === 'string'
+                  ? tr(parts.submit.props.children)
+                  : (parts.submit?.props.children ?? messages.submit)
+              }
+              labels={{
+                back: messages.back,
+                next: messages.next,
+                submitting: verifying ? messages.verifying : messages.submitting,
+              }}
+            />
+          </>
         ) : null
       }
       aside={inForm ? (props.aside ?? null) : null}

@@ -10,6 +10,7 @@ import type { StorageAdapter } from '../storage/index.ts';
 import { createSigner } from './crypto.ts';
 import { toCsv } from './export.ts';
 import { createOpenFormHandler, type FormDefinition, type OpenFormHandler } from './handler.ts';
+import { TURNSTILE_TEST_SECRET, TURNSTILE_TEST_SITE_KEY } from './turnstile.ts';
 import { XLSX_CONTENT_TYPE } from './xlsx.ts';
 
 const SECRET = 'test-secret-0123456789abcdef';
@@ -325,6 +326,20 @@ describe('submissions', () => {
     }
     expect((await handle(post(alex))).status).toBe(201);
     expect((await handle(post({ ...alex, email: 'b@x.co' }))).status).toBe(429);
+  });
+
+  it('caps attempts, valid or not, at five times the rate limit', async () => {
+    const handle = makeHandler({
+      minimumCompletionTime: false,
+      rateLimit: { max: 1, window: '1m' },
+    });
+    for (let i = 0; i < 5; i++) {
+      expect((await handle(post({ ...alex, email: 'nope' }))).status).toBe(422);
+    }
+    expect((await handle(post({ ...alex, email: 'nope' }))).status).toBe(429);
+    expect((await handle(post(alex))).status).toBe(429);
+    now += 61_000;
+    expect((await handle(post(alex))).status).toBe(201);
   });
 
   it('rate limits an IPv6 /64 as one visitor, and IPv4 addresses one by one', async () => {
@@ -1201,5 +1216,124 @@ describe('toCsv', () => {
 describe('createSigner', () => {
   it('rejects short secrets', () => {
     expect(() => createSigner('short')).toThrow(/at least 16/);
+  });
+});
+
+describe('turnstile', () => {
+  const SITE_KEY = '0x4AAAAAAAtest';
+  const verifyCalls: URLSearchParams[] = [];
+
+  function turnstileHandler(opts: {
+    secret?: string;
+    testKeys?: boolean;
+    answer?: () => Response | Promise<Response>;
+  }) {
+    verifyCalls.length = 0;
+    return createOpenFormHandler({
+      registry: {
+        list: async () => ['meetup'],
+        load: async (id) => (id === 'meetup' ? definition() : null),
+      },
+      storage,
+      secret: SECRET,
+      config: {
+        protection: {
+          minimumCompletionTime: false,
+          rateLimit: false,
+          turnstile: { siteKey: SITE_KEY },
+        },
+      },
+      now: () => now,
+      clientAddress: () => address,
+      turnstileSecret: opts.secret,
+      turnstileTestKeys: opts.testKeys,
+      fetch: (async (_url: string, init?: RequestInit) => {
+        verifyCalls.push(new URLSearchParams(init?.body as URLSearchParams));
+        return (opts.answer ?? (() => Response.json({ success: true })))();
+      }) as typeof fetch,
+    });
+  }
+
+  it('hands the site key to the form page', async () => {
+    const handle = turnstileHandler({ secret: 'turnstile-secret' });
+    const res = await handle(new Request(`${ORIGIN}/api/forms/meetup`));
+    expect(((await res.json()) as { turnstile?: unknown }).turnstile).toEqual({
+      siteKey: SITE_KEY,
+    });
+  });
+
+  it('stores a response only with a token Cloudflare accepts', async () => {
+    const handle = turnstileHandler({ secret: 'turnstile-secret' });
+    const res = await handle(post(alex, { turnstile: 'token-1' }));
+    expect(res.status).toBe(201);
+    expect(verifyCalls[0]?.get('secret')).toBe('turnstile-secret');
+    expect(verifyCalls[0]?.get('response')).toBe('token-1');
+    expect(verifyCalls[0]?.get('remoteip')).toBe(address);
+  });
+
+  it('refuses a missing or rejected token, without storing', async () => {
+    const handle = turnstileHandler({
+      secret: 'turnstile-secret',
+      answer: () => Response.json({ success: false, 'error-codes': ['invalid-input-response'] }),
+    });
+    const missing = await handle(post(alex));
+    expect(missing.status).toBe(400);
+    expect(((await missing.json()) as { error: string }).error).toBe('human_check');
+    expect(verifyCalls).toHaveLength(0);
+    expect((await handle(post(alex, { turnstile: 'forged' }))).status).toBe(400);
+    expect(await storage.countSubmissions('meetup')).toBe(0);
+  });
+
+  it('checks the answers first, so fixing a mistake keeps the token', async () => {
+    const handle = turnstileHandler({ secret: 'turnstile-secret' });
+    expect((await handle(post({ ...alex, email: 'nope' }, { turnstile: 't' }))).status).toBe(422);
+    expect(verifyCalls).toHaveLength(0);
+  });
+
+  it('swaps in Cloudflare’s test pair under dev without a secret', async () => {
+    const dev = turnstileHandler({ testKeys: true });
+    const info = await dev(new Request(`${ORIGIN}/api/forms/meetup`));
+    expect(((await info.json()) as { turnstile?: unknown }).turnstile).toEqual({
+      siteKey: TURNSTILE_TEST_SITE_KEY,
+    });
+    expect((await dev(post(alex, { turnstile: 'XXXX.DUMMY.TOKEN.XXXX' }))).status).toBe(201);
+    expect(verifyCalls[0]?.get('secret')).toBe(TURNSTILE_TEST_SECRET);
+
+    const real = turnstileHandler({ secret: 'turnstile-secret', testKeys: true });
+    const realInfo = await real(new Request(`${ORIGIN}/api/forms/meetup`));
+    expect(((await realInfo.json()) as { turnstile?: unknown }).turnstile).toEqual({
+      siteKey: SITE_KEY,
+    });
+  });
+
+  it('refuses to start with an invalid project turnstile config', () => {
+    expect(() =>
+      createOpenFormHandler({
+        registry: { list: async () => [], load: async () => null },
+        storage,
+        secret: SECRET,
+        config: { protection: { turnstile: { siteKey: ' ' } } },
+      }),
+    ).toThrow(/open-form.config.ts protection: turnstile needs a siteKey/);
+  });
+
+  it('fails closed without a secret or when Cloudflare is unreachable', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const unset = turnstileHandler({});
+      expect((await unset(post(alex, { turnstile: 't' }))).status).toBe(503);
+      const down = turnstileHandler({
+        secret: 'turnstile-secret',
+        answer: () => {
+          throw new TypeError('fetch failed');
+        },
+      });
+      expect((await down(post(alex, { turnstile: 't' }))).status).toBe(503);
+      expect(await storage.countSubmissions('meetup')).toBe(0);
+    } finally {
+      error.mockRestore();
+      warn.mockRestore();
+    }
   });
 });

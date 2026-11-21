@@ -31,10 +31,12 @@ export type Messages = {
   back: string;
   submit: string;
   submitting: string;
+  verifying: string;
   stepOf: string;
   stepLabel: string;
   pressEnter: string;
   newline: string;
+  goBack: string;
   start: string;
   language: string;
   previewInspect: string;
@@ -55,6 +57,9 @@ export type Messages = {
   duplicateMessage: string;
   rateLimited: string;
   tooFast: string;
+  humanCheck: string;
+  humanCheckTitle: string;
+  cancel: string;
   fixErrors: string;
   genericError: string;
   expiredToken: string;
@@ -93,10 +98,12 @@ const en: Messages = {
   back: 'Back',
   submit: 'Submit',
   submitting: 'Submitting…',
+  verifying: 'Verifying…',
   stepOf: 'Step {current} of {total}',
   stepLabel: 'Step {n}',
   pressEnter: 'press Enter ↵',
   newline: 'Shift ⇧ + Enter ↵ for a new line',
+  goBack: 'Shift ⇧ + Enter ↵ to go back',
   start: 'Start',
   language: 'Language',
   previewInspect:
@@ -119,6 +126,9 @@ const en: Messages = {
   duplicateMessage: 'You have already submitted this form.',
   rateLimited: 'Too many submissions. Please try again in a few minutes.',
   tooFast: 'That was quick! Please wait a moment and submit again.',
+  humanCheck: 'We couldn’t confirm you’re not a bot. Please try again.',
+  humanCheckTitle: 'Confirm you’re human',
+  cancel: 'Cancel',
   fixErrors: 'Please fix the highlighted fields.',
   genericError: 'Something went wrong. Please try again.',
   expiredToken: 'This page has been open too long. Reload it and submit again.',
@@ -157,10 +167,12 @@ const zhTW: Messages = {
   back: '上一步',
   submit: '送出',
   submitting: '送出中…',
+  verifying: '驗證中…',
   stepOf: '第 {current} 步，共 {total} 步',
   stepLabel: '第 {n} 步',
   pressEnter: '按 Enter ↵',
   newline: 'Shift ⇧ + Enter ↵ 換行',
+  goBack: 'Shift ⇧ + Enter ↵ 上一步',
   start: '開始',
   language: '語言',
   previewInspect: '預覽模式：顯示所有步驟與條件題目，不會檢查或送出答案。',
@@ -181,6 +193,9 @@ const zhTW: Messages = {
   duplicateMessage: '你已經填寫過此表單。',
   rateLimited: '送出次數過多，請稍後再試。',
   tooFast: '填寫速度太快了，請稍候再送出一次。',
+  humanCheck: '無法確認你不是機器人，請再試一次。',
+  humanCheckTitle: '確認你不是機器人',
+  cancel: '取消',
   fixErrors: '請修正標示的欄位。',
   genericError: '發生錯誤，請再試一次。',
   expiredToken: '此頁面開啟太久了，請重新整理後再送出。',
@@ -220,10 +235,12 @@ const zhCN: Messages = {
   back: '上一步',
   submit: '提交',
   submitting: '提交中…',
+  verifying: '验证中…',
   stepOf: '第 {current} 步，共 {total} 步',
   stepLabel: '第 {n} 步',
   pressEnter: '按 Enter ↵',
   newline: 'Shift ⇧ + Enter ↵ 换行',
+  goBack: 'Shift ⇧ + Enter ↵ 上一步',
   start: '开始',
   language: '语言',
   previewInspect: '预览模式：显示所有步骤和条件题目，不会检查或提交答案。',
@@ -244,6 +261,9 @@ const zhCN: Messages = {
   duplicateMessage: '您已经填写过此表单。',
   rateLimited: '提交次数过多，请稍后再试。',
   tooFast: '填写速度太快了，请稍等片刻后再提交。',
+  humanCheck: '无法确认你不是机器人，请重试。',
+  humanCheckTitle: '确认你不是机器人',
+  cancel: '取消',
   fixErrors: '请修正标出的字段。',
   genericError: '出错了，请重试。',
   expiredToken: '此页面打开时间过长，请刷新后重新提交。',
@@ -283,10 +303,12 @@ const ja: Messages = {
   back: '戻る',
   submit: '送信',
   submitting: '送信中…',
+  verifying: '確認中…',
   stepOf: 'ステップ {current} / {total}',
   stepLabel: 'ステップ {n}',
   pressEnter: 'Enter ↵ で次へ',
   newline: 'Shift ⇧ + Enter ↵ で改行',
+  goBack: 'Shift ⇧ + Enter ↵ で戻る',
   start: 'はじめる',
   language: '言語',
   previewInspect:
@@ -309,6 +331,9 @@ const ja: Messages = {
   duplicateMessage: 'このフォームにはすでに回答済みです。',
   rateLimited: '送信回数が多すぎます。しばらくしてからもう一度お試しください。',
   tooFast: '入力が速すぎるようです。少し待ってからもう一度送信してください。',
+  humanCheck: 'ボットではないことを確認できませんでした。もう一度お試しください。',
+  humanCheckTitle: 'ボットではないことの確認',
+  cancel: 'キャンセル',
   fixErrors: '表示された項目を修正してください。',
   genericError: 'エラーが発生しました。もう一度お試しください。',
   expiredToken:

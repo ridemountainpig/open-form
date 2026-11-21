@@ -22,7 +22,7 @@ export type FormHostProps = {
   className?: string;
 };
 
-type Info = { availability: FormAvailability; token?: string };
+type Info = { availability: FormAvailability; token?: string; turnstile?: { siteKey: string } };
 
 /**
  * Renders an Open Form form inside your own React app (Next.js, Remix, …)
@@ -70,6 +70,7 @@ export function FormHost({
       endpoint: `${base}/submissions`,
       availability: info?.availability,
       token: info?.token,
+      turnstile: info?.turnstile,
     }),
     [base, config, id, info, locale, theme, themeId],
   );

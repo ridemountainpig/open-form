@@ -91,6 +91,9 @@ export function Settings() {
                   })
                 : off}
             </Row>
+            <Row label={t('settings.turnstile')}>
+              {protection.turnstile ? t('settings.on') : off}
+            </Row>
           </Section>
           <LanguagesSection formId={formId} info={info} />
           <WebhooksSection info={info} />
