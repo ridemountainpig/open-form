@@ -52,7 +52,7 @@ export type SchemaInfo = {
   opensAt?: string;
   closesAt?: string;
   protection: ResolvedProtection;
-  /** The server has a Turnstile secret and a site key of its own, so Studio can turn the check on. */
+  /** The server has a Turnstile secret and a site key (its own or the form's), so Studio can turn the check on. */
   turnstileKeys: boolean;
   responses: number;
   embed?: { origins: string[] };

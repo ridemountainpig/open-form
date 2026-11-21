@@ -56,6 +56,9 @@ describe('turnstileWarnings', () => {
     expect(
       turnstileWarnings(always, {}, { ...env, OPEN_FORM_TURNSTILE_SITE_KEY: '0x4AAA' }),
     ).toEqual([]);
+    expect(
+      turnstileWarnings(always, {}, { ...env, OPEN_FORM_TURNSTILE_SITE_KEY: ' ' }),
+    ).toHaveLength(1);
   });
 });
 

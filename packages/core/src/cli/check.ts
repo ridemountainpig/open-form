@@ -369,7 +369,9 @@ export function turnstileWarnings(
   if (!turnstile) return [];
   const missing = [
     env.OPEN_FORM_TURNSTILE_SECRET ? '' : 'OPEN_FORM_TURNSTILE_SECRET',
-    turnstile.siteKey || env.OPEN_FORM_TURNSTILE_SITE_KEY ? '' : 'OPEN_FORM_TURNSTILE_SITE_KEY',
+    turnstile.siteKey || env.OPEN_FORM_TURNSTILE_SITE_KEY?.trim()
+      ? ''
+      : 'OPEN_FORM_TURNSTILE_SITE_KEY',
   ].filter(Boolean);
   if (missing.length === 0) return [];
   return [

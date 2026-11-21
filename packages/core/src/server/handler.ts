@@ -728,7 +728,10 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       opensAt: iso(window.opensAt),
       closesAt: iso(window.closesAt),
       protection: protectionOf(def, overrides),
-      turnstileKeys: Boolean(turnstileSecret && (turnstileTest || defaultSiteKey)),
+      turnstileKeys: Boolean(
+        turnstileSecret &&
+          (turnstileTest || defaultSiteKey || protectionOf(def, null).turnstile?.siteKey),
+      ),
       responses,
       embed: { origins: embedOrigins },
       webhooks: webhooks.targets(def.id).map((hook) => ({

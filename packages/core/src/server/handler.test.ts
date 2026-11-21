@@ -1249,6 +1249,7 @@ describe('turnstile', () => {
       clientAddress: () => address,
       turnstileSecret: opts.secret,
       turnstileSiteKey: opts.siteKey,
+      adminAuth: { authorize: () => true },
       turnstileTestKeys: opts.testKeys,
       fetch: (async (_url: string, init?: RequestInit) => {
         verifyCalls.push(new URLSearchParams(init?.body as URLSearchParams));
@@ -1336,6 +1337,21 @@ describe('turnstile', () => {
       error.mockRestore();
       warn.mockRestore();
     }
+  });
+
+  it('tells Studio whether it can turn Turnstile on', async () => {
+    const keysOf = async (handle: (request: Request) => Promise<Response>) =>
+      (
+        (await (await handle(new Request(`${ORIGIN}/api/forms/meetup/schema`))).json()) as {
+          turnstileKeys: boolean;
+        }
+      ).turnstileKeys;
+    expect(await keysOf(turnstileHandler({ secret: 's' }))).toBe(true);
+    expect(await keysOf(turnstileHandler({ secret: 's', turnstile: false }))).toBe(false);
+    expect(
+      await keysOf(turnstileHandler({ secret: 's', siteKey: '0x4AAAenv', turnstile: false })),
+    ).toBe(true);
+    expect(await keysOf(turnstileHandler({}))).toBe(false);
   });
 
   it('follows Studio’s switch over the code', async () => {

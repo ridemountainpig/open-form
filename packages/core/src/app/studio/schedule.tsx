@@ -348,7 +348,7 @@ export function ScheduleSection({
             <div className="min-w-0">
               <Switch
                 checked={draft.turnstile}
-                disabled={!draft.turnstile && !info.turnstileKeys}
+                disabled={!draft.turnstile && !initial.turnstile && !info.turnstileKeys}
                 onChange={(turnstile) => update({ turnstile })}
                 labelledBy={`${ids}-turnstile`}
               />
