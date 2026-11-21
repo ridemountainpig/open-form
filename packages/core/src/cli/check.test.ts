@@ -42,8 +42,20 @@ describe('turnstileWarnings', () => {
     const bad = { protection: { turnstile: { siteKey: '' } } };
     const env = { OPEN_FORM_TURNSTILE_SECRET: 'x' };
     expect(turnstileWarnings({}, bad, env)).toEqual([
-      'protection: turnstile needs a siteKey from the Cloudflare dashboard, or `false`.',
+      'protection: turnstile needs a siteKey from the Cloudflare dashboard, `true` for OPEN_FORM_TURNSTILE_SITE_KEY, or `false`.',
     ]);
+  });
+
+  it('asks for the site key when turnstile is true', () => {
+    const env = { OPEN_FORM_TURNSTILE_SECRET: 'x' };
+    const always = { protection: { turnstile: true } };
+    expect(turnstileWarnings(always, {}, env)[0]).toMatch(/OPEN_FORM_TURNSTILE_SITE_KEY is not/);
+    expect(turnstileWarnings(always, {}, {})[0]).toMatch(
+      /SECRET and OPEN_FORM_TURNSTILE_SITE_KEY are/,
+    );
+    expect(
+      turnstileWarnings(always, {}, { ...env, OPEN_FORM_TURNSTILE_SITE_KEY: '0x4AAA' }),
+    ).toEqual([]);
   });
 });
 

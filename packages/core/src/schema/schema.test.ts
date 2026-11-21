@@ -10,6 +10,7 @@ import {
   isTimeZone,
   mostVisibleSteps,
   overriddenTimeZone,
+  overriddenTurnstile,
   parseDuration,
   parseSchedule,
   patternProblem,
@@ -19,6 +20,7 @@ import {
   resolveVisibleFields,
   sampleAnswers,
   scheduleChanges,
+  scheduleEdit,
   schemaVersion,
   studioProblem,
   submissionValues,
@@ -612,9 +614,8 @@ describe('config helpers', () => {
     expect(resolveProtection(on).turnstile).toEqual({ siteKey: '0x4AAA' });
     expect(resolveProtection(on, { turnstile: false }).turnstile).toBeNull();
     expect(() => resolveProtection({ turnstile: { siteKey: '' } })).toThrow(/siteKey/);
-    expect(() => resolveProtection({ turnstile: true as unknown as { siteKey: string } })).toThrow(
-      /siteKey/,
-    );
+    expect(resolveProtection({ turnstile: true }).turnstile).toEqual({});
+    expect(() => resolveProtection({ turnstile: 'yes' as unknown as true })).toThrow(/siteKey/);
     for (const value of ['', null, 0]) {
       const layer = { turnstile: value as unknown as false };
       expect(() => resolveProtection(on, layer)).toThrow(/siteKey/);
@@ -704,6 +705,18 @@ describe('schedule overrides', () => {
     expect(overriddenTimeZone(form, null, 'UTC')).toBe('Asia/Tokyo');
     expect(overriddenTimeZone({}, {}, 'Europe/Berlin')).toBe('Europe/Berlin');
     expect(overriddenTimeZone(undefined, null, undefined)).toBe('UTC');
+  });
+
+  it('stores the Turnstile switch only when it differs from the code', () => {
+    const code = { policy: undefined, timeZone: 'UTC', published: true, turnstile: false };
+    expect(scheduleEdit({ submissions: {}, turnstile: true }, code)).toEqual({ turnstile: true });
+    expect(scheduleEdit({ submissions: {}, turnstile: false }, code)).toEqual({});
+    expect(scheduleEdit({ submissions: {} }, { ...code, turnstile: true })).toEqual({});
+    expect(() => scheduleEdit({ submissions: {}, turnstile: 'on' }, code)).toThrow(/turnstile/);
+    expect(overriddenTurnstile({ siteKey: 'k' }, { turnstile: false })).toBeNull();
+    expect(overriddenTurnstile(null, { turnstile: true })).toEqual({});
+    expect(overriddenTurnstile({ siteKey: 'k' }, { turnstile: true })).toEqual({ siteKey: 'k' });
+    expect(overriddenTurnstile({ siteKey: 'k' }, null)).toEqual({ siteKey: 'k' });
   });
 });
 

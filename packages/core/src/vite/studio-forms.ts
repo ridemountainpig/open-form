@@ -6,7 +6,13 @@ import { deleteForm } from '../editing/delete-form.ts';
 import { writeScheduleChanges } from '../editing/form-config.ts';
 import { wireFormTheme } from '../editing/form-theme.ts';
 import { writeFormTheme } from '../editing/theme-files.ts';
-import { formTimeZone, isPublished, type OpenFormConfig, scheduleEdit } from '../schema/index.ts';
+import {
+  formTimeZone,
+  isPublished,
+  type OpenFormConfig,
+  resolveProtection,
+  scheduleEdit,
+} from '../schema/index.ts';
 import type { StorageAdapter } from '../storage/index.ts';
 import { createDevRegistry } from './api-plugin.ts';
 import { findForms, formThemeFile, type ProjectPaths, THEME_DIR } from './project.ts';
@@ -42,7 +48,7 @@ export function studioFormsMiddleware(ctx: Context) {
 
   async function saveSchedule(
     id: string,
-    input: { submissions?: unknown; timeZone?: unknown; published?: unknown },
+    input: { submissions?: unknown; timeZone?: unknown; published?: unknown; turnstile?: unknown },
   ): Promise<void> {
     const entry = findForms(ctx.paths.formsRoot).find((f) => f.id === id);
     if (!entry) throw new StudioError(404, `No form "${id}".`);
@@ -57,6 +63,8 @@ export function studioFormsMiddleware(ctx: Context) {
         policy: def.config.submissions,
         timeZone: formTimeZone(def.config, ctx.config.timeZone),
         published: isPublished(def.config, null),
+        turnstile:
+          resolveProtection(ctx.config.protection, def.config.protection).turnstile !== null,
       });
       if (Object.keys(changes).length === 0) return;
       const source = await readFile(entry.file, 'utf8');

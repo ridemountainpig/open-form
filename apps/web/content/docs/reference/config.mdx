@@ -63,7 +63,7 @@ loads `.env` itself.
     protection: {
       type: 'ProtectionConfig',
       default: "{ honeypot: true, minimumCompletionTime: '2s', rateLimit: { max: 10, window: '10m' }, turnstile: false }",
-      description: 'Defaults for every form. Each form’s own protection keys win. turnstile: { siteKey } turns on Cloudflare Turnstile and needs OPEN_FORM_TURNSTILE_SECRET.',
+      description: 'Defaults for every form. Each form’s own protection keys win. turnstile: { siteKey }, or true for OPEN_FORM_TURNSTILE_SITE_KEY, turns on Cloudflare Turnstile and needs OPEN_FORM_TURNSTILE_SECRET.',
     },
     trustProxy: {
       type: 'boolean | number',

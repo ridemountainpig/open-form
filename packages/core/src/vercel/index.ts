@@ -139,6 +139,7 @@ export function createOpenFormApp(opts: OpenFormAppOptions = {}): OpenFormApp {
       publicStudio: publicStudio ? 'read-only' : undefined,
       webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
       turnstileSecret: process.env.OPEN_FORM_TURNSTILE_SECRET || undefined,
+      turnstileSiteKey: process.env.OPEN_FORM_TURNSTILE_SITE_KEY || undefined,
       waitUntil: opts.waitUntil,
       clientAddress: (request) =>
         forwardedAddress(request.headers.get('x-forwarded-for'), trustProxy),

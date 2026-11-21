@@ -28,6 +28,9 @@ export function writeScheduleChanges(source: string, changes: FormOverrides): st
   if (changes.published !== undefined) {
     next = setPath(next, configObject, ['published'], changes.published ? null : false);
   }
+  if (changes.turnstile !== undefined) {
+    next = setPath(next, configObject, ['protection', 'turnstile'], changes.turnstile);
+  }
   const submissions = changes.submissions ?? {};
   for (const key of KEYS) {
     if (!(key in submissions)) continue;

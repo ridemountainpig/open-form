@@ -106,6 +106,7 @@ export {
   applyOverrides,
   isPublished,
   overriddenTimeZone,
+  overriddenTurnstile,
   parseSchedule,
   parseTimeZone,
   scheduleChanges,

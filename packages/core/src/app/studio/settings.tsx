@@ -40,7 +40,7 @@ export function Settings() {
   return (
     <div className="space-y-6">
       <ScheduleSection
-        key={`${info.timeZone}|${info.published}|${JSON.stringify(info.schedule)}|${info.overrides?.updatedAt ?? ''}`}
+        key={`${info.timeZone}|${info.published}|${info.protection.turnstile !== null}|${JSON.stringify(info.schedule)}|${info.overrides?.updatedAt ?? ''}`}
         formId={formId}
         info={info}
         onSaved={reloadInfo}
@@ -90,9 +90,6 @@ export function Settings() {
                     window: formatDuration(protection.rateLimit.windowMs),
                   })
                 : off}
-            </Row>
-            <Row label={t('settings.turnstile')}>
-              {protection.turnstile ? t('settings.on') : off}
             </Row>
           </Section>
           <LanguagesSection formId={formId} info={info} />

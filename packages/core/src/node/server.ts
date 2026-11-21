@@ -237,6 +237,7 @@ export async function startServer(opts: StartServerOptions): Promise<StartedServ
     publicStudio: publicStudio ? 'read-only' : undefined,
     webhookSecret: process.env.OPEN_FORM_WEBHOOK_SECRET || undefined,
     turnstileSecret: process.env.OPEN_FORM_TURNSTILE_SECRET || undefined,
+    turnstileSiteKey: process.env.OPEN_FORM_TURNSTILE_SITE_KEY || undefined,
     clientAddress: (request) => {
       const req = sockets.get(request);
       return req ? clientAddress(req, { trustProxy }) : undefined;

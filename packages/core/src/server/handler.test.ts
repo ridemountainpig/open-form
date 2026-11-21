@@ -1225,6 +1225,8 @@ describe('turnstile', () => {
 
   function turnstileHandler(opts: {
     secret?: string;
+    siteKey?: string;
+    turnstile?: { siteKey: string } | boolean;
     testKeys?: boolean;
     answer?: () => Response | Promise<Response>;
   }) {
@@ -1240,12 +1242,13 @@ describe('turnstile', () => {
         protection: {
           minimumCompletionTime: false,
           rateLimit: false,
-          turnstile: { siteKey: SITE_KEY },
+          turnstile: opts.turnstile ?? { siteKey: SITE_KEY },
         },
       },
       now: () => now,
       clientAddress: () => address,
       turnstileSecret: opts.secret,
+      turnstileSiteKey: opts.siteKey,
       turnstileTestKeys: opts.testKeys,
       fetch: (async (_url: string, init?: RequestInit) => {
         verifyCalls.push(new URLSearchParams(init?.body as URLSearchParams));
@@ -1304,6 +1307,48 @@ describe('turnstile', () => {
     expect(((await realInfo.json()) as { turnstile?: unknown }).turnstile).toEqual({
       siteKey: SITE_KEY,
     });
+  });
+
+  const siteKeyOf = async (handle: (request: Request) => Promise<Response>) =>
+    (
+      (await (await handle(new Request(`${ORIGIN}/api/forms/meetup`))).json()) as {
+        turnstile?: { siteKey: string };
+      }
+    ).turnstile?.siteKey;
+
+  it('takes the server’s site key for `turnstile: true`', async () => {
+    const handle = turnstileHandler({ secret: 's', siteKey: ' 0x4AAAenv ', turnstile: true });
+    expect(await siteKeyOf(handle)).toBe('0x4AAAenv');
+    const code = turnstileHandler({ secret: 's', siteKey: '0x4AAAenv' });
+    expect(await siteKeyOf(code)).toBe(SITE_KEY);
+  });
+
+  it('fails closed when `turnstile: true` has no site key', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const handle = turnstileHandler({ secret: 's', turnstile: true });
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/OPEN_FORM_TURNSTILE_SITE_KEY/));
+      expect(await siteKeyOf(handle)).toBeUndefined();
+      expect((await handle(post(alex, { turnstile: 't' }))).status).toBe(503);
+      expect(verifyCalls).toHaveLength(0);
+    } finally {
+      error.mockRestore();
+      warn.mockRestore();
+    }
+  });
+
+  it('follows Studio’s switch over the code', async () => {
+    const off = turnstileHandler({ secret: 's', siteKey: '0x4AAAenv', turnstile: false });
+    await storage.setFormOverrides('meetup', { turnstile: true });
+    expect(await siteKeyOf(off)).toBe('0x4AAAenv');
+    expect((await off(post(alex))).status).toBe(400);
+
+    const on = turnstileHandler({ secret: 's' });
+    await storage.setFormOverrides('meetup', { turnstile: false });
+    expect(await siteKeyOf(on)).toBeUndefined();
+    expect((await on(post(alex))).status).toBe(201);
+    expect(verifyCalls).toHaveLength(0);
   });
 
   it('refuses to start with an invalid project turnstile config', () => {

@@ -54,9 +54,10 @@ export type ProtectionConfig = {
   rateLimit?: RateLimitConfig | false;
   /**
    * Cloudflare Turnstile before submit. The secret key comes from
-   * `OPEN_FORM_TURNSTILE_SECRET`. Off by default.
+   * `OPEN_FORM_TURNSTILE_SECRET`; `true` takes the site key from
+   * `OPEN_FORM_TURNSTILE_SITE_KEY` too. Off by default.
    */
-  turnstile?: TurnstileConfig | false;
+  turnstile?: TurnstileConfig | boolean;
 };
 
 export type TurnstileConfig = {
@@ -194,7 +195,8 @@ export type ResolvedProtection = {
   honeypot: boolean;
   minimumCompletionTimeMs: number;
   rateLimit: { max: number; windowMs: number } | null;
-  turnstile: { siteKey: string } | null;
+  /** No `siteKey`: the server's `OPEN_FORM_TURNSTILE_SITE_KEY`. */
+  turnstile: { siteKey?: string } | null;
 };
 
 export function resolveProtection(
@@ -210,13 +212,15 @@ export function resolveProtection(
   const rate = merged.rateLimit;
   const turnstile = merged.turnstile;
   if (
-    turnstile !== false &&
+    typeof turnstile !== 'boolean' &&
     (typeof turnstile !== 'object' ||
       turnstile === null ||
       typeof turnstile.siteKey !== 'string' ||
       !turnstile.siteKey.trim())
   ) {
-    throw new Error('turnstile needs a siteKey from the Cloudflare dashboard, or `false`.');
+    throw new Error(
+      'turnstile needs a siteKey from the Cloudflare dashboard, `true` for OPEN_FORM_TURNSTILE_SITE_KEY, or `false`.',
+    );
   }
   return {
     honeypot: merged.honeypot !== false,
@@ -225,7 +229,7 @@ export function resolveProtection(
         ? 0
         : parseDuration(merged.minimumCompletionTime),
     rateLimit: rate ? { max: rate.max, windowMs: parseDuration(rate.window) } : null,
-    turnstile: turnstile ? { siteKey: turnstile.siteKey.trim() } : null,
+    turnstile: turnstile === true ? {} : turnstile ? { siteKey: turnstile.siteKey.trim() } : null,
   };
 }
 
