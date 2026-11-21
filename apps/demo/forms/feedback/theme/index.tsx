@@ -85,14 +85,17 @@ function useAutoAdvance() {
   const nav = useFormNav();
   const latest = useRef(nav);
   latest.current = nav;
+  const queued = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const cancel = () => clearTimeout(queued.current);
   const advance = () => {
     const step = ref.current?.closest('.of-step');
     if (step?.querySelectorAll('.of-field').length !== 1) return;
-    setTimeout(() => {
+    cancel();
+    queued.current = setTimeout(() => {
       if (!latest.current.isLast) void latest.current.next();
     }, 380);
   };
-  return { ref, advance };
+  return { ref, advance, cancel };
 }
 
 // Arrow keys walk a radio group and pick as they go, so only a click, Space or a
@@ -117,14 +120,15 @@ function useArrowPicks() {
 }
 
 function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGroupUIProps) {
-  const { ref, advance } = useAutoAdvance();
+  const { ref, advance, cancel } = useAutoAdvance();
   const arrows = useArrowPicks();
   const latest = useRef({ selected, onToggle });
   latest.current = { selected, onToggle };
 
   const pick = (value: string, checked: boolean, byArrow = false) => {
     latest.current.onToggle(value, checked);
-    if (!multiple && checked && !byArrow) advance();
+    if (byArrow) cancel();
+    else if (!multiple && checked) advance();
   };
 
   useEffect(() => {
@@ -173,7 +177,7 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
 
 // Number keys pick a score; on a scale that reaches 10, 1 waits a moment for a 0.
 function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingUIProps) {
-  const { ref, advance } = useAutoAdvance();
+  const { ref, advance, cancel } = useAutoAdvance();
   const arrows = useArrowPicks();
   const latest = useRef({ scores, onChange, advance });
   latest.current = { scores, onChange, advance };
@@ -247,7 +251,13 @@ function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingU
               onBlur={field.onBlur}
               onChange={() => {
                 onChange(score);
-                if (!arrows.byArrow()) advance();
+                if (!arrows.byArrow()) {
+                  advance();
+                  return;
+                }
+                clearTimeout(typed.current.timer);
+                typed.current = { digits: '' };
+                cancel();
               }}
             />
             <span className="cv-rating-num">{score}</span>

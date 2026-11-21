@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { format } from '../schema/index.ts';
 import {
   defaultComponents,
@@ -131,32 +137,27 @@ export function FocusLayout({
   // Enter moves on from anywhere on the step, a textarea too, like Typeform
   // (Shift+Enter adds a line there); everywhere else Shift+Enter goes back.
   // Phones have no Shift, so their Return key keeps making new lines.
+  // A React handler, so a field's own onKeyDown runs first and can claim the key.
   const { isFirst, submitting, back } = nav;
-  useEffect(() => {
-    const el = root.current;
-    if (!el || !inForm) return;
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (event.key !== 'Enter' || event.defaultPrevented || !target) return;
-      if (event.isComposing || event.keyCode === 229 || event.altKey) return;
-      if (target.closest('dialog, select, [contenteditable="true"]')) return;
-      const textarea = target.tagName === 'TEXTAREA';
-      const shortcut = event.metaKey || event.ctrlKey;
-      if (event.shiftKey) {
-        if (textarea || shortcut || isFirst || submitting) return;
-        event.preventDefault();
-        back();
-        return;
-      }
-      // Inputs and buttons already act on Enter; the step itself, focused after each move, doesn't.
-      if (!textarea && !target.matches('.of-step, .of-focus')) return;
-      if (textarea && !shortcut && window.matchMedia('(hover: none)').matches) return;
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (!inForm || event.key !== 'Enter' || event.defaultPrevented) return;
+    if (event.nativeEvent.isComposing || event.keyCode === 229 || event.altKey) return;
+    if (target.closest('dialog, select, [contenteditable="true"]')) return;
+    const textarea = target.tagName === 'TEXTAREA';
+    const shortcut = event.metaKey || event.ctrlKey;
+    if (event.shiftKey) {
+      if (textarea || shortcut || isFirst || submitting) return;
       event.preventDefault();
-      target.closest('form')?.requestSubmit();
-    };
-    el.addEventListener('keydown', onKey);
-    return () => el.removeEventListener('keydown', onKey);
-  }, [inForm, isFirst, submitting, back]);
+      back();
+      return;
+    }
+    // Inputs and buttons already act on Enter; the step itself, focused after each move, doesn't.
+    if (!textarea && !target.matches('.of-step, .of-focus')) return;
+    if (textarea && !shortcut && window.matchMedia('(hover: none)').matches) return;
+    event.preventDefault();
+    target.closest('form')?.requestSubmit();
+  };
 
   // A step that opens with a text field puts the cursor in it, so typing just
   // works. Not on touch screens, where it would pop the keyboard over the question.
@@ -195,7 +196,14 @@ export function FocusLayout({
   }, [onCover, start]);
 
   return (
-    <div className="of-focus" data-state={state} data-cover={onCover || undefined} ref={root}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: catches Enter bubbling up from the step's own controls.
+    <div
+      className="of-focus"
+      data-state={state}
+      data-cover={onCover || undefined}
+      ref={root}
+      onKeyDown={onKeyDown}
+    >
       {inForm && nav.total > 1 && !onCover && (
         <div className="of-focus-bar" aria-hidden="true">
           <span style={{ width: `${((nav.position + 1) / nav.total) * 100}%` }} />

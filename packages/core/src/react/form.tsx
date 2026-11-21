@@ -719,6 +719,7 @@ function InteractiveForm({
   const submit = useCallback(async () => {
     store.setState({ status: 'submitting', formError: undefined });
     const { values } = store.getState();
+    let inFlight: string | undefined;
     try {
       if (props.onSubmit) {
         await props.onSubmit(collected ? submissionValues(collected.schema, values) : values);
@@ -754,6 +755,7 @@ function InteractiveForm({
           turnstile = outcome.token;
         }
       }
+      inFlight = turnstile;
       const res = await fetch(runtime.endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -767,6 +769,7 @@ function InteractiveForm({
           ...(turnstile ? { turnstile } : {}),
         }),
       });
+      inFlight = undefined;
       const body = (await res.json().catch(() => ({}))) as SubmitResponse;
       // The server checks answers before spending the token, so a 422 leaves it valid.
       if (!res.ok && turnstile && res.status !== 422) turnstileRef.current?.reset();
@@ -798,6 +801,8 @@ function InteractiveForm({
       store.setState({ status: 'error' });
       showError(body.message ? tr(body.message) : messages.genericError);
     } catch {
+      // The server may have spent the token before the connection dropped.
+      if (inFlight) turnstileRef.current?.reset();
       store.setState({ status: 'error' });
       showError(messages.networkError);
     }

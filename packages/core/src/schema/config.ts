@@ -210,8 +210,9 @@ export function resolveProtection(
   const rate = merged.rateLimit;
   const turnstile = merged.turnstile;
   if (
-    turnstile &&
+    turnstile !== false &&
     (typeof turnstile !== 'object' ||
+      turnstile === null ||
       typeof turnstile.siteKey !== 'string' ||
       !turnstile.siteKey.trim())
   ) {

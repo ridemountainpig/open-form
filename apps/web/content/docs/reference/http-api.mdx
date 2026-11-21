@@ -82,9 +82,10 @@ Content-Type: application/json
 The handler checks the request's origin, the form's schedule and the timing
 token. It then drops unknown fields and fields hidden by `<When>`, coerces the
 rest, and runs the same validation as the browser plus custom validators. Only a
-valid submission counts against the rate limit, so fixing mistakes doesn't use
-it up; every attempt counts against a cap of five times the limit. With
-`protection.turnstile`, the token is then verified with Cloudflare. The response is stored with `maxResponses` and `uniqueBy` checked in one
+submission with valid answers counts against the rate limit, so fixing mistakes
+doesn't use it up; every attempt counts against a cap of five times the limit.
+With `protection.turnstile`, the token is then verified with Cloudflare, so a
+submission rejected with `human_check` has already counted. The response is stored with `maxResponses` and `uniqueBy` checked in one
 transaction, and webhooks go out after the response.
 
 | Status | `error` | When |

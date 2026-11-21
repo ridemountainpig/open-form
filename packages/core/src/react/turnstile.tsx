@@ -93,6 +93,7 @@ export function TurnstileWidget({
   const widget = useRef<{ api: TurnstileApi; id: string } | null>(null);
   const token = useRef<string | undefined>(undefined);
   const failed = useRef(false);
+  const retry = useRef<(() => void) | null>(null);
   const interactive = useRef(false);
   const waiting = useRef<Waiting | null>(null);
 
@@ -138,6 +139,7 @@ export function TurnstileWidget({
           waiting.current = wait;
           if (interactive.current) openDialog();
           else wait.timer = setTimeout(() => settle('failed'), WAIT_MS);
+          retry.current?.();
         });
       },
       reset() {
@@ -157,44 +159,52 @@ export function TurnstileWidget({
       failed.current = true;
       settle('failed');
     };
-    loadTurnstile()
-      .then((api) => {
-        if (cancelled || !container.current) return;
-        const id = api.render(container.current, {
-          sitekey: siteKey,
-          language: locale.toLowerCase(),
-          theme: 'auto',
-          appearance: 'interaction-only',
-          'refresh-expired': 'auto',
-          callback: (value) => {
-            token.current = value;
-            interactive.current = false;
-            settle({ token: value });
-          },
-          'expired-callback': () => {
-            token.current = undefined;
-          },
-          'error-callback': () => {
-            token.current = undefined;
-            settle('failed');
-          },
-          'before-interactive-callback': () => {
-            interactive.current = true;
-            openDialog();
-          },
-          'after-interactive-callback': () => {
-            interactive.current = false;
-          },
-          'unsupported-callback': fail,
+    const mount = () => {
+      retry.current = null;
+      loadTurnstile()
+        .then((api) => {
+          if (cancelled || !container.current) return;
+          const id = api.render(container.current, {
+            sitekey: siteKey,
+            language: locale.toLowerCase(),
+            theme: 'auto',
+            appearance: 'interaction-only',
+            'refresh-expired': 'auto',
+            callback: (value) => {
+              token.current = value;
+              interactive.current = false;
+              settle({ token: value });
+            },
+            'expired-callback': () => {
+              token.current = undefined;
+            },
+            'error-callback': () => {
+              token.current = undefined;
+              settle('failed');
+            },
+            'before-interactive-callback': () => {
+              interactive.current = true;
+              openDialog();
+            },
+            'after-interactive-callback': () => {
+              interactive.current = false;
+            },
+            'unsupported-callback': fail,
+          });
+          if (id) widget.current = { api, id };
+          else fail();
+        })
+        .catch(() => {
+          if (cancelled) return;
+          // A dropped connection: the next submit tries the script again.
+          retry.current = mount;
+          settle('failed');
         });
-        if (id) widget.current = { api, id };
-        else fail();
-      })
-      .catch(() => {
-        if (!cancelled) fail();
-      });
+    };
+    mount();
     return () => {
       cancelled = true;
+      retry.current = null;
       token.current = undefined;
       settle('cancelled');
       if (widget.current) widget.current.api.remove(widget.current.id);

@@ -150,7 +150,7 @@ Submit button. `uniqueBy` must name a field in the form.
     rateLimit: {
       type: '{ max: number; window: Duration } | false',
       default: "{ max: 10, window: '10m' }",
-      description: 'Valid submissions per IP address per form within each window. An IPv6 address counts as its /64. Attempts, valid or not, are capped at five times max.',
+      description: 'Submissions with valid answers per IP address per form within each window, counted before the Turnstile check, so one Turnstile rejects still counts. An IPv6 address counts as its /64. Attempts, valid or not, are capped at five times max.',
     },
     turnstile: {
       type: '{ siteKey: string } | false',

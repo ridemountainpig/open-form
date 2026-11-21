@@ -615,6 +615,10 @@ describe('config helpers', () => {
     expect(() => resolveProtection({ turnstile: true as unknown as { siteKey: string } })).toThrow(
       /siteKey/,
     );
+    for (const value of ['', null, 0]) {
+      const layer = { turnstile: value as unknown as false };
+      expect(() => resolveProtection(on, layer)).toThrow(/siteKey/);
+    }
   });
 
   it('treats date-only bounds as whole days in the form’s time zone', () => {

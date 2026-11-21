@@ -77,7 +77,7 @@ project-wide defaults in `open-form.config.ts` (each form's own keys win).
 | --- | --- | --- |
 | `honeypot` | `true` | A hidden field bots fill in. Those submissions get the answer a new one would and nothing is stored. |
 | `minimumCompletionTime` | `'2s'` | The page gets a signed timing token on load; submissions sent faster are rejected. `false` disables it. |
-| `rateLimit` | `{ max: 10, window: '10m' }` | Valid submissions per IP per form; an IPv6 address counts as its /64. Attempts, valid or not, are capped at five times `max` in the same window. `false` disables both. |
+| `rateLimit` | `{ max: 10, window: '10m' }` | Submissions with valid answers per IP per form, counted before the Turnstile check; an IPv6 address counts as its /64. Attempts, valid or not, are capped at five times `max` in the same window. `false` disables both. |
 | `turnstile` | `false` | `{ siteKey }` adds a [Cloudflare Turnstile](#cloudflare-turnstile) check on submit, out of sight unless Cloudflare asks the respondent to tick a box. |
 
 Durations accept `'2s'`, `'10m'`, `'1h'`, `'1d'` or milliseconds. Behind a reverse
@@ -173,7 +173,7 @@ POST /api/forms/:id/submissions
   ├─ timing token     signed; checks minimumCompletionTime
   ├─ sanitize         drop hidden (<When>) and unknown fields, coerce types
   ├─ validate         the same rules the browser ran, custom validate included
-  ├─ rate limit       per IP (IPv6: per /64) per form; only valid submissions count
+  ├─ rate limit       per IP (IPv6: per /64) per form; valid answers count, Turnstile or not
   ├─ turnstile        protection.turnstile → token verified with Cloudflare
   ├─ honeypot         filled → the answer a real submission gets, nothing stored
   ├─ store            maxResponses + uniqueBy checked in one transaction
