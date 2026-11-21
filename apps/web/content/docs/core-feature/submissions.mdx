@@ -109,6 +109,11 @@ CAPTCHA alternative. Most people never see a puzzle.
    OPEN_FORM_TURNSTILE_SECRET=0x4AAAAAAA…
    ```
 
+One widget covers every form: the server has a single secret, so a form that
+sets its own `siteKey` must use the same widget's. Add each hostname your forms
+are served from to the widget. Embedded forms run on your Open Form host, so
+the sites that embed them don't need adding.
+
 The check runs out of sight once the respondent reaches the last step, and is
 usually done before they press Submit; if it isn't, the button reads
 **Verifying…** until it is. Only when Cloudflare wants the person to do
