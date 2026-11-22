@@ -135,14 +135,15 @@
 
 [data-of-theme="conversational"] .kt-choices {
   display: grid;
-  justify-items: start;
+  width: fit-content;
+  min-width: min(100%, 300px);
+  max-width: 100%;
   gap: 9px;
   margin-top: 0.75rem;
 }
 
 [data-of-theme="conversational"] .kt-choice {
   display: block;
-  min-width: min(100%, 300px);
   padding: 9px 12px;
 }
 
@@ -242,8 +243,23 @@
 }
 
 [data-of-theme="conversational"] .of-button-secondary {
-  border-color: var(--of-control);
+  min-width: 0;
+  padding-inline: 0.75rem;
+  border-color: transparent;
   background: none;
+  color: var(--of-muted);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+[data-of-theme="conversational"] .of-button-secondary::before {
+  content: "←" / "";
+  margin-right: 0.5rem;
+}
+
+[data-of-theme="conversational"] .of-button-secondary:hover:not(:disabled) {
+  background: var(--kt-tile);
+  color: var(--of-fg);
 }
 
 [data-of-theme="conversational"] .of-focus-hint {

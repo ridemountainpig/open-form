@@ -64,6 +64,15 @@
   font-size: 0.84rem;
 }
 
+/* The help is out of flow, so what follows it clears the floated legend itself. */
+[data-of-theme="minimal"] .of-field > legend {
+  box-sizing: border-box;
+}
+
+[data-of-theme="minimal"] .of-field > .of-help ~ * {
+  clear: both;
+}
+
 [data-of-theme="minimal"] .of-field > * + :is(.of-rating, .of-choices, .of-input) {
   margin-top: 0.75rem;
 }

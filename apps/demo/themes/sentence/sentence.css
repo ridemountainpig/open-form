@@ -209,6 +209,11 @@
   outline: none;
 }
 
+[data-of-theme="sentence"] .od-main .of-input:is(:autofill, :-webkit-autofill) {
+  -webkit-text-fill-color: var(--of-primary);
+  box-shadow: 0 0 0 100vmax var(--of-bg) inset;
+}
+
 [data-of-theme="sentence"] .od-main :is(.of-select-wrap, .of-input-group) {
   display: inline-flex;
   align-items: baseline;
