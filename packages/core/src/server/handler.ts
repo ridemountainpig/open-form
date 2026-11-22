@@ -11,6 +11,7 @@ import {
   getMessages,
   isPublished,
   type Locale,
+  MAX_TRACKED_STEPS,
   type Messages,
   type OpenFormConfig,
   overriddenTimeZone,
@@ -21,6 +22,7 @@ import {
   resolveProtection,
   scheduleEdit,
   scheduleOf,
+  stableStringify,
   submissionWindow,
   summarizeVisits,
   translationCoverage,
@@ -513,7 +515,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     if (!countsVisits(def) || typeof body.visit !== 'string' || !VISITOR_RE.test(body.visit)) {
       return done;
     }
-    const steps = Math.max(def.schema.pages.length, 1);
+    const steps = Math.min(Math.max(def.schema.pages.length, 1), MAX_TRACKED_STEPS + 1);
     const step =
       Number.isSafeInteger(body.step) && (body.step as number) >= 0 && (body.step as number) < steps
         ? (body.step as number)
@@ -935,6 +937,19 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       picked?.schema ?? def.schema,
       picked ? new Set([picked.id]) : undefined,
     );
+    // Steps are matched by index, so a funnel across versions only holds when their steps agree.
+    const stepsOf = (schema: FormSchema) =>
+      stableStringify(
+        schema.pages.map((page) => ({
+          ...page,
+          fields: schema.fields.filter((f) => f.page === page.index).map((f) => f.name),
+        })),
+      );
+    const counted = records.filter((record) => counts.has(record.id));
+    const comparable =
+      picked !== null && picked !== undefined
+        ? true
+        : counted.every((record) => stepsOf(record.schema) === stepsOf(def.schema));
     return json({
       supported: true,
       enabled,
@@ -942,6 +957,8 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       version: picked ? picked.id : 'all',
       versions,
       ...summary,
+      steps: comparable ? summary.steps : [],
+      stepsDiffer: !comparable,
     });
   }
 

@@ -71,6 +71,8 @@ export type AnalyticsInfo =
       /** The version id the numbers are for, or `all`. */
       version: string;
       versions: AnalyticsVersion[];
+      /** `version=all` over versions whose steps differ: no funnel, only the totals. */
+      stepsDiffer: boolean;
     });
 
 export type Submission = {

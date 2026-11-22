@@ -156,6 +156,30 @@ describe('form analytics', () => {
     expect((await t.analytics()).views).toBe(0);
   });
 
+  it('adds versions up only when their steps agree', async () => {
+    const t = setup();
+    await t.send({ visit: visitId(1), step: 0 });
+    const old = await t.storage.ensureFormVersion('trip', 'old', {
+      ...schema,
+      pages: [{ index: 0, title: 'Only', when: [] }],
+      fields: [{ name: 'other', type: 'text', page: 0, when: [] }],
+    });
+    await t.storage.recordVisit?.({
+      formId: 'trip',
+      visitId: visitId(2),
+      formVersionId: old.id,
+      day: '2026-11-20',
+      step: 0,
+    });
+    const all = (await t.analytics('?version=all')) as Awaited<ReturnType<typeof t.analytics>> & {
+      stepsDiffer: boolean;
+    };
+    expect(all).toMatchObject({ views: 2, steps: [], stepsDiffer: true });
+    const current = await t.analytics();
+    expect(current).toMatchObject({ views: 1, stepsDiffer: false });
+    expect((await t.analytics(`?version=${old.id}`)).steps).toHaveLength(1);
+  });
+
   it('tells Studio when the storage keeps no visits', async () => {
     const storage = createMemoryStorage();
     delete storage.recordVisit;

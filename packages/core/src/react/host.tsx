@@ -93,7 +93,7 @@ export function FormHost({
   return (
     <div className={host}>
       <RuntimeContext.Provider value={runtime}>
-        <Form />
+        <Form key={base} />
       </RuntimeContext.Provider>
     </div>
   );

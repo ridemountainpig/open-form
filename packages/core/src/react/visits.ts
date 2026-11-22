@@ -57,6 +57,11 @@ export function useVisit({
   store: FormStore;
 }): () => string | undefined {
   const sent = useRef<{ step?: number; started: boolean }>({ started: false });
+  // Another form in the same component (FormHost's id or api changed) is another visit.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resets when the identity changes
+  useEffect(() => {
+    sent.current = { started: false };
+  }, [endpoint, formId]);
   const visit = useCallback(
     () => (endpoint && formId ? visitIdFor(formId) : undefined),
     [endpoint, formId],

@@ -116,6 +116,8 @@ const en = {
   'analytics.medianHint': 'From opening to submitting',
   'analytics.funnel': 'Drop-off by step',
   'analytics.funnelHint': 'How many visits reached each step, and how many stopped there',
+  'analytics.stepsDiffer':
+    'The steps changed between versions, so their drop-off can’t be added up. Pick a version to see it.',
   'analytics.empty': 'No visits in this range yet.',
   'analytics.reachedCount': '{n} reached',
   'analytics.stepN': 'Step {n}',
@@ -774,6 +776,7 @@ const zhTW: Dictionary = {
   'analytics.medianHint': '從打開到送出',
   'analytics.funnel': '各步驟流失',
   'analytics.funnelHint': '每一步有多少造訪到達，又有多少停在那裡',
+  'analytics.stepsDiffer': '各版本的步驟不一樣，流失無法合併計算。選一個版本就能看到。',
   'analytics.empty': '這段時間還沒有造訪。',
   'analytics.reachedCount': '{n} 人到達',
   'analytics.stepN': '第 {n} 步',
@@ -1411,6 +1414,7 @@ const zhCN: Dictionary = {
   'analytics.medianHint': '从打开到提交',
   'analytics.funnel': '各步骤流失',
   'analytics.funnelHint': '每一步有多少访问到达，又有多少停在那里',
+  'analytics.stepsDiffer': '各版本的步骤不一样，流失无法合并计算。选一个版本就能看到。',
   'analytics.empty': '这段时间还没有访问。',
   'analytics.reachedCount': '{n} 人到达',
   'analytics.stepN': '第 {n} 步',
@@ -2052,6 +2056,8 @@ const ja: Dictionary = {
   'analytics.medianHint': '開いてから送信まで',
   'analytics.funnel': 'ステップ別の離脱',
   'analytics.funnelHint': '各ステップに到達した訪問と、そこで止まった訪問の数',
+  'analytics.stepsDiffer':
+    'バージョン間でステップが変わっているため、離脱は合算できません。バージョンを選ぶと表示されます。',
   'analytics.empty': 'この期間の訪問はまだありません。',
   'analytics.reachedCount': '{n} 件到達',
   'analytics.stepN': 'ステップ {n}',

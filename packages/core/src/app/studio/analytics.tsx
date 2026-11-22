@@ -33,7 +33,6 @@ export function Analytics() {
   if (range !== 'all') params.set('days', range);
   if (version !== 'current') params.set('version', version);
   const { data, error } = useResource<AnalyticsInfo>(`${formPath(formId)}/analytics?${params}`, {
-    scope: `${formId}:analytics`,
     refresh: REFRESH_MS,
   });
 
@@ -120,7 +119,11 @@ export function Analytics() {
           <h2 className="text-sm font-semibold">{t('analytics.funnel')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('analytics.funnelHint')}</p>
         </div>
-        {data.views === 0 ? (
+        {data.stepsDiffer ? (
+          <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            {t('analytics.stepsDiffer')}
+          </p>
+        ) : data.views === 0 ? (
           <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
             {t('analytics.empty')}
           </p>
