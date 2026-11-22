@@ -1,5 +1,11 @@
 import { ADD, PACKAGE_MANAGERS } from '../cli/package-managers.ts';
-import type { FormOverrides, FormSchema, FormValues } from '../schema/index.ts';
+import {
+  type FormOverrides,
+  type FormSchema,
+  type FormValues,
+  stepBit,
+  type VisitGroup,
+} from '../schema/index.ts';
 import { countersFor, planVersions, RESTORE_NOT_EMPTY } from '../storage/dump.ts';
 import type {
   CreateSubmissionResult,
@@ -91,6 +97,21 @@ const MIGRATIONS: Array<(s: string) => string[]> = [
        id TEXT PRIMARY KEY,
        expires_at BIGINT NOT NULL
      )`,
+  ],
+  (s) => [
+    `CREATE TABLE ${s}.form_visits (
+       form_id TEXT NOT NULL,
+       id TEXT NOT NULL,
+       form_version_id TEXT NOT NULL,
+       day TEXT NOT NULL,
+       steps BIGINT NOT NULL,
+       last_step INTEGER,
+       started BOOLEAN NOT NULL,
+       completed BOOLEAN NOT NULL,
+       seconds INTEGER,
+       PRIMARY KEY (form_id, id)
+     )`,
+    `CREATE INDEX form_visits_form_day ON ${s}.form_visits (form_id, day)`,
   ],
 ];
 
@@ -475,11 +496,70 @@ export async function createPostgresStorage(opts: PostgresStorageOptions): Promi
         const { rowCount } = await tx.query(`DELETE FROM ${t('submissions')} WHERE form_id = $1`, [
           formId,
         ]);
-        for (const table of ['form_versions', 'form_overrides', 'form_counters']) {
+        for (const table of ['form_visits', 'form_versions', 'form_overrides', 'form_counters']) {
           await tx.query(`DELETE FROM ${t(table)} WHERE form_id = $1`, [formId]);
         }
         return Number(rowCount);
       });
+    },
+
+    async recordVisit(update) {
+      const completed = update.completed === true;
+      await pool.query(
+        `INSERT INTO ${t('form_visits')} AS v
+           (form_id, id, form_version_id, day, steps, last_step, started, completed, seconds)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (form_id, id) DO UPDATE SET
+           steps = v.steps | excluded.steps,
+           last_step = COALESCE(excluded.last_step, v.last_step),
+           started = v.started OR excluded.started,
+           completed = v.completed OR excluded.completed,
+           seconds = COALESCE(excluded.seconds, v.seconds)`,
+        [
+          update.formId,
+          update.visitId,
+          update.formVersionId,
+          update.day,
+          update.step === undefined ? 0 : stepBit(update.step),
+          update.step ?? null,
+          update.started === true || completed,
+          completed,
+          update.seconds ?? null,
+        ],
+      );
+    },
+
+    async visitStats(formId, opts = {}) {
+      const params = [formId, opts.since ?? ''];
+      const [grouped, timed] = await Promise.all([
+        pool.query(
+          `SELECT form_version_id, steps, last_step, started, completed, COUNT(*) AS n
+           FROM ${t('form_visits')} WHERE form_id = $1 AND day >= $2
+           GROUP BY form_version_id, steps, last_step, started, completed`,
+          params,
+        ),
+        pool.query(
+          `SELECT form_version_id, seconds FROM ${t('form_visits')}
+           WHERE form_id = $1 AND day >= $2 AND completed AND seconds IS NOT NULL`,
+          params,
+        ),
+      ]);
+      return {
+        groups: grouped.rows.map(
+          (row): VisitGroup => ({
+            formVersionId: row.form_version_id as string,
+            steps: Number(row.steps),
+            lastStep: row.last_step === null ? null : Number(row.last_step),
+            started: row.started === true,
+            completed: row.completed === true,
+            count: Number(row.n),
+          }),
+        ),
+        durations: timed.rows.map((row) => ({
+          formVersionId: row.form_version_id as string,
+          seconds: Number(row.seconds),
+        })),
+      };
     },
 
     async hasUniqueKey(formId, uniqueKey) {

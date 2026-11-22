@@ -16,6 +16,7 @@ the admin routes.
 | --- | --- | --- | --- |
 | `GET` | `/api/forms/:id` | Public | Form status and a timing token |
 | `POST` | `/api/forms/:id/submissions` | Public | Submit a response |
+| `POST` | `/api/forms/:id/visits` | Public | Count a visit's step or start for [Analytics](/docs/core-feature/studio#analytics): `{ visit, step }` or `{ visit, started: true }`; always `204` |
 | `GET` | `/api/forms` | Admin | Every form with response counts and status |
 | `GET` | `/api/forms/:id/schema` | Admin | Schema, config, effective schedule and status |
 | `GET` | `/api/forms/:id/submissions` | Admin | Responses, paged: `limit` (default 50, max 500) and `offset` as whole numbers, `q`, and Studio's `filter` and `sort` as JSON (see [below](#listing-responses)) |
@@ -24,6 +25,7 @@ the admin routes.
 | `POST` | `/api/forms/:id/submissions/delete` | Admin | Delete 1–500 responses: `{ ids }` |
 | `PUT` | `/api/forms/:id/overrides` | Admin | Save Studio's schedule, time zone and Published changes |
 | `DELETE` | `/api/forms/:id/overrides` | Admin | Go back to the settings in code |
+| `GET` | `/api/forms/:id/analytics` | Admin | Views, starts, completions, median time and the step funnel: `days=7`, `30` or `90` (default all), `version=all` or a version id (default the current one) |
 | `GET` | `/api/forms/:id/export` | Admin | Download responses: `format=csv`, `xlsx` or `json` |
 | `GET` | `/api/studio/folders` | Admin | Studio's form folders, from `forms/.folders.json` (as of the build in production) |
 | `GET` | `/api/studio/session` | Open | Whether this browser is signed in to Studio |
@@ -60,6 +62,11 @@ For `duplicate`, the device is the `of_vid` cookie the server sets on submit
 embeds, send the page's own random id — 16 to 64 letters, digits, `-` or `_`
 — in the `x-open-form-visitor` header. `<FormHost>` and the form page do this
 for you.
+
+When the form counts visits ([`analytics`](/docs/reference/define-form#analytics)),
+an open form's status also has `"visits": true`. The page then POSTs a random
+per-tab `visit` id with each step it reaches, and sends the same `visit` with
+the submission, which marks it complete.
 
 ## Submitting
 

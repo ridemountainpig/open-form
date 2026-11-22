@@ -1,3 +1,11 @@
+export type {
+  AnalyticsStep,
+  AnalyticsVersion,
+  FormAnalytics,
+  VisitGroup,
+  VisitStats,
+} from './analytics.ts';
+export { MAX_TRACKED_STEPS, stepBit, summarizeVisits, visitDay } from './analytics.ts';
 export type { CalendarEvent, ResolvedCalendarTimes } from './calendar.ts';
 export {
   calendarEventProblem,
@@ -32,6 +40,7 @@ export type {
   WindowStatus,
 } from './config.ts';
 export {
+  analyticsEnabled,
   DEFAULT_PROTECTION,
   defineConfig,
   defineForm,

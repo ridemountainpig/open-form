@@ -326,9 +326,10 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for architecture details. Status: ✅ D
 - ✅ Cloudflare Turnstile (`protection.turnstile`): verified on the server, out of sight until Cloudflare asks the respondent to tick a box, which opens in a dialog
 - ⬜ hCaptcha (optional)
 
-### Step 2 — Analytics ⬜
+### Step 2 — Analytics ✅
 
-- ⬜ Completion rate, drop-off per step
+- ✅ Completion rate, drop-off per step: Studio's Analytics tab (views, starts, completion rate, median time, a funnel by step with conditional steps marked, by date range and form version); `analytics: false` per form or project
+- ✅ Privacy by construction: per visit only a random per-tab id, the day, steps reached and whether it finished; no answers, IPs, cookies or device ids, and nothing links a visit to a response
 
 ## v0.7 — Remote storage & integrations
 

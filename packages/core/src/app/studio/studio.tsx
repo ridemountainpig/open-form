@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { reportCurrent } from '../lib/forms.ts';
+import { Analytics } from './analytics.tsx';
 import { CommandPalette, usePaletteShortcut } from './command-palette.tsx';
 import { StudioDataProvider } from './data.tsx';
 import { FormDetail } from './form-detail.tsx';
@@ -46,6 +47,7 @@ function StudioRoutes() {
           <Route index element={<Preview />} />
           <Route path="responses" element={<Responses />} />
           <Route path="responses/:responseId" element={<Responses />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="schema" element={<Schema />} />
           <Route path="settings" element={<Settings />} />
         </Route>

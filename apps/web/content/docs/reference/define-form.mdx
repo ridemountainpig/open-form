@@ -93,6 +93,11 @@ It's `theme/index.tsx` once it adds components.
       default: 'false',
       description: 'Keep unfinished answers in the browser and restore them on return.',
     },
+    analytics: {
+      type: 'boolean',
+      default: "the project's analytics, else true",
+      description: 'Count visits, starts, steps reached and completions for Studio’s Analytics tab. Never answers.',
+    },
   }}
 />
 
@@ -225,6 +230,15 @@ browser and are cleared on submit, when the form closes, fills up or the
 respondent has already answered, and when you turn `drafts` off. Opening any
 form also clears expired drafts of the others. A restored draft shows a notice
 with a button to start over.
+
+## `analytics`
+
+On by default. The form page tells the server which steps a visit reaches and
+when the respondent first changes an answer, and the submission marks the visit
+complete; Studio's [Analytics](/docs/core-feature/studio#analytics) tab turns
+that into a completion rate and drop-off by step. `analytics: false` stops
+counting this form; set it in `open-form.config.ts` to stop counting every form
+that doesn't say otherwise. Visits already counted stay in Studio.
 
 ## Dates and time zones
 

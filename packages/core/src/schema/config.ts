@@ -102,6 +102,12 @@ export type FormConfig = {
    * on a shared computer the next person would see them.
    */
   drafts?: boolean | { expires?: Duration };
+  /**
+   * Count visits, starts, the steps reached and completions for Studio's
+   * Analytics tab. Never answers, IPs, cookies or device ids. Default: the
+   * project's `analytics`, else `true`.
+   */
+  analytics?: boolean;
 };
 
 export function defineForm(config: FormConfig): FormConfig {
@@ -161,6 +167,8 @@ export type OpenFormConfig = {
      */
     origins?: string[];
   };
+  /** Default for every form's `analytics`; each form's own setting wins. Default `true`. */
+  analytics?: boolean;
   studio?: {
     /**
      * `'read-only'`: under `open-form start`, anyone can open Studio and read
@@ -181,6 +189,11 @@ export function studioProblem(studio: unknown): string | undefined {
   const value = (studio as { public?: unknown }).public;
   if (value === undefined || value === 'read-only') return undefined;
   return `studio.public ${JSON.stringify(value)} isn't supported. Use 'read-only', or leave it out.`;
+}
+
+/** Whether a form's visits are counted: the form's `analytics`, else the project's, else on. */
+export function analyticsEnabled(form?: FormConfig, project?: OpenFormConfig): boolean {
+  return form?.analytics ?? project?.analytics ?? true;
 }
 
 export const DEFAULT_PROTECTION = {

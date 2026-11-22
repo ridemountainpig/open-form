@@ -1,4 +1,6 @@
 import {
+  type AnalyticsVersion,
+  analyticsEnabled,
   applyOverrides,
   type CustomValidator,
   type FormConfig,
@@ -20,8 +22,10 @@ import {
   scheduleEdit,
   scheduleOf,
   submissionWindow,
+  summarizeVisits,
   translationCoverage,
   validateSubmission,
+  visitDay,
   type WindowStatus,
 } from '../schema/index.ts';
 import type { CreateSubmissionResult, StorageAdapter, StoredOverrides } from '../storage/index.ts';
@@ -106,6 +110,11 @@ const MAX_BULK_DELETE = 500;
 // Invalid submissions aren't counted by `rateLimit`, so fixing mistakes doesn't
 // use it up; this looser cap still stops them, and the validators they run, at some point.
 const ATTEMPTS_PER_SUBMISSION = 5;
+// A respondent moving back and forth through a long form sends a few dozen.
+const VISIT_EVENTS_MAX = 300;
+const VISIT_EVENTS_WINDOW_MS = 10 * 60_000;
+const ANALYTICS_DAYS = [7, 30, 90] as const;
+const DAY_MS = 86_400_000;
 
 class HttpError extends Error {
   constructor(
@@ -389,6 +398,18 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     return { def, overrides };
   }
 
+  const countsVisits = (def: FormDefinition) =>
+    Boolean(storage.recordVisit) && analyticsEnabled(def.config, opts.config);
+
+  /** Whatever happens, never fails the request it rides on: analytics are a side note. */
+  async function recordVisit(update: Parameters<NonNullable<StorageAdapter['recordVisit']>>[0]) {
+    try {
+      await storage.recordVisit?.(update);
+    } catch (err) {
+      console.error('[open-form] Could not record a form visit:', withoutMessage(err));
+    }
+  }
+
   // Not cached: deleting a form erases its versions, from Studio or from
   // `open-form delete` in another process, and a stale id would fail every insert.
   async function versionId(def: FormDefinition): Promise<string> {
@@ -479,7 +500,39 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       availability: status,
       token,
       ...(turnstile ? { turnstile: { siteKey: siteKeyOf(turnstile) } } : {}),
+      ...(status.state === 'open' && countsVisits(def) ? { visits: true } : {}),
     });
+  }
+
+  /** Body: `{ visit, step?, started? }` from the form page. Answers never come here. */
+  async function visit({ request, now }: RouteContext, [id]: string[]) {
+    assertSameOrigin(request, embedOrigins);
+    const { def } = await loadPublicForm(id as string);
+    const body = await readJson(request, 1024);
+    const done = new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
+    if (!countsVisits(def) || typeof body.visit !== 'string' || !VISITOR_RE.test(body.visit)) {
+      return done;
+    }
+    const steps = Math.max(def.schema.pages.length, 1);
+    const step =
+      Number.isSafeInteger(body.step) && (body.step as number) >= 0 && (body.step as number) < steps
+        ? (body.step as number)
+        : undefined;
+    if (step === undefined && body.started !== true) return done;
+    const address = rateLimitSubject(opts.clientAddress?.(request) ?? 'unknown');
+    const key = (await signer.sign(`visit:${def.id}:${address}`)).slice(0, 32);
+    if ((await storage.hitRateLimit(key, VISIT_EVENTS_WINDOW_MS, now)) > VISIT_EVENTS_MAX) {
+      return done;
+    }
+    await recordVisit({
+      formId: def.id,
+      visitId: body.visit,
+      formVersionId: await versionId(def),
+      day: visitDay(now),
+      step,
+      started: body.started === true || undefined,
+    });
+    return done;
   }
 
   async function submit({ request, now }: RouteContext, [id]: string[]) {
@@ -624,6 +677,21 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     );
     if (!created.ok) return respond(created);
     const { submission } = created;
+    if (countsVisits(def) && typeof body.visit === 'string' && VISITOR_RE.test(body.visit)) {
+      // The timing token says when the page was opened, so the respondent can't set the time.
+      const opened =
+        (await checkTimingToken(signer, def.id, body.token, 0, now)) === 'ok'
+          ? Number(String(body.token).split('.')[0])
+          : undefined;
+      await recordVisit({
+        formId: def.id,
+        visitId: body.visit,
+        formVersionId: submission.formVersionId,
+        day: visitDay(now),
+        completed: true,
+        seconds: opened === undefined ? undefined : Math.max(0, Math.round((now - opened) / 1000)),
+      });
+    }
     const delivered = webhooks.send(def.id, {
       type: 'submission.created',
       timestamp: submission.createdAt,
@@ -827,6 +895,56 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     });
   }
 
+  /** `?days=7|30|90` (absent: every day kept) and `?version=all|<version id>` (absent: the current one). */
+  async function getAnalytics({ url, now }: RouteContext, [id]: string[]) {
+    const def = await loadForm(id as string);
+    const enabled = analyticsEnabled(def.config, opts.config);
+    const daysParam = Number(url.searchParams.get('days'));
+    const days = (ANALYTICS_DAYS as readonly number[]).includes(daysParam) ? daysParam : null;
+    if (!storage.recordVisit || !storage.visitStats) {
+      return json({ supported: false, enabled, days });
+    }
+    const since = days === null ? undefined : visitDay(now - (days - 1) * DAY_MS);
+    const currentId = await versionId(def);
+    const [stats, records] = await Promise.all([
+      storage.visitStats(def.id, { since }),
+      storage.listFormVersions(def.id),
+    ]);
+    const counts = new Map<string, number>();
+    for (const group of stats.groups) {
+      counts.set(group.formVersionId, (counts.get(group.formVersionId) ?? 0) + group.count);
+    }
+    const versions: AnalyticsVersion[] = records
+      .filter((record) => record.id === currentId || counts.has(record.id))
+      .map((record) => ({
+        id: record.id,
+        version: record.version,
+        createdAt: record.createdAt,
+        visits: counts.get(record.id) ?? 0,
+        current: record.id === currentId,
+      }))
+      .reverse();
+    const requested = url.searchParams.get('version');
+    const picked =
+      requested === 'all'
+        ? null
+        : (records.find((record) => record.id === requested) ??
+          records.find((record) => record.id === currentId));
+    const summary = summarizeVisits(
+      stats,
+      picked?.schema ?? def.schema,
+      picked ? new Set([picked.id]) : undefined,
+    );
+    return json({
+      supported: true,
+      enabled,
+      days,
+      version: picked ? picked.id : 'all',
+      versions,
+      ...summary,
+    });
+  }
+
   function requireGate() {
     if (!gate) throw new HttpError(404, 'not_found', 'Not found.');
     return gate;
@@ -899,6 +1017,19 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       admin: false,
       cors: true,
       handle: submit,
+    },
+    {
+      method: 'POST',
+      pattern: new RegExp(`^/forms/${SEG}/visits$`),
+      admin: false,
+      cors: true,
+      handle: visit,
+    },
+    {
+      method: 'GET',
+      pattern: new RegExp(`^/forms/${SEG}/analytics$`),
+      admin: true,
+      handle: getAnalytics,
     },
     {
       method: 'GET',

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
+  AnalyticsVersion,
   FieldType,
+  FormAnalytics,
   FormConfig,
   FormOverrides,
   FormSchema,
@@ -58,6 +60,18 @@ export type SchemaInfo = {
   webhooks?: Array<{ origin: string; signed: boolean }>;
   languages?: { available: Locale[]; coverage: TranslationCoverage[] };
 };
+
+/** `GET /forms/:id/analytics`: visits, starts, completions and the step funnel. */
+export type AnalyticsInfo =
+  | { supported: false; enabled: boolean; days: number | null }
+  | (FormAnalytics & {
+      supported: true;
+      enabled: boolean;
+      days: number | null;
+      /** The version id the numbers are for, or `all`. */
+      version: string;
+      versions: AnalyticsVersion[];
+    });
 
 export type Submission = {
   id: string;

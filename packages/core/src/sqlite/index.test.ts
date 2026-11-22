@@ -73,7 +73,7 @@ describe('sqlite storage on disk', () => {
     // Roll the file back to before the counters existed.
     const { DatabaseSync } = await import('node:sqlite');
     const db = new DatabaseSync(file);
-    db.exec(`DROP TABLE form_counters; DROP TABLE revoked_sessions;
+    db.exec(`DROP TABLE form_counters; DROP TABLE revoked_sessions; DROP TABLE form_visits;
              UPDATE meta SET value = '3' WHERE key = 'schema_version';`);
     db.close();
 

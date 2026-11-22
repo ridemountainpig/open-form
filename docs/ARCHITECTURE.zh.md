@@ -306,6 +306,7 @@ Admin API（Studio 使用）：
 GET    /api/forms                                   admin：forms + response counts、狀態、最新回覆時間
 GET    /api/forms/:id                               public：狀態 + timing token
 POST   /api/forms/:id/submissions                   public：送出（見上方 pipeline）
+POST   /api/forms/:id/visits                        public: 造訪的步驟或開始填寫（分析），204
 GET    /api/forms/:id/schema                        admin：schema + 套用覆寫後的 status／opensAt／closesAt
 GET    /api/forms/:id/submissions?limit&offset&q    admin（limit 預設 50、上限 500）
 GET    /api/forms/:id/submissions/:sid              admin
@@ -313,6 +314,7 @@ DELETE /api/forms/:id/submissions/:sid              admin
 POST   /api/forms/:id/submissions/delete { ids }    admin：一次刪多筆（1–500），回 { deleted }
 PUT    /api/forms/:id/overrides                     admin：Studio 收件設定覆寫（見 §9）
 DELETE /api/forms/:id/overrides                     admin：改回程式碼設定
+GET    /api/forms/:id/analytics?days&version       admin：分析：瀏覽、開始、完成、步驟漏斗（days、version）
 GET    /api/forms/:id/export?format=csv|xlsx|json   admin
 GET    /api/studio/session                          登入狀態（signedIn、可否登出、登入方式）
 POST   /api/studio/session    { password }          密碼 → session cookie（same-origin、每 IP（IPv6 為每 /64）10 次／10 分鐘）
@@ -345,10 +347,12 @@ rate_limits      (key_hash, window_start, count, expires_at)                 PRI
 form_overrides   (form_id, data JSON, updated_at)                            PRIMARY KEY(form_id)
 form_counters    (form_id, last_number)                                      PRIMARY KEY(form_id)
 revoked_sessions (id, expires_at)                                            PRIMARY KEY(id)  -- 登出的 Studio session
+form_visits      (form_id, id, form_version_id, day, steps, last_step,
+                  started, completed, seconds)                              PRIMARY KEY(form_id, id)
 meta             (key, value)                                                -- schema_version 等
 ```
 
-- Migration 依序執行，`meta.schema_version` 記錄已套用到哪一個：① 初始的 4 張表 ② `submissions.locale`（v0.3 多語系）③ `form_overrides`（Studio 收件設定覆寫）④ `form_counters`（回覆編號計數器）⑤ `revoked_sessions`（登出即撤銷 session）。
+- Migration 依序執行，`meta.schema_version` 記錄已套用到哪一個：① 初始的 4 張表 ② `submissions.locale`（v0.3 多語系）③ `form_overrides`（Studio 收件設定覆寫）④ `form_counters`（回覆編號計數器）⑤ `revoked_sessions`（登出即撤銷 session）⑥ `form_visits`（Studio 分析）。
 
 - 預設路徑 `.open-form/open-form.db`（可用 `storage.path` 或 `OPEN_FORM_DB` 覆寫），WAL mode。
 - 回覆是個資：`.open-form/` 目錄 `0700`、DB 與 `-wal`／`-shm` `0600`（DB 以 `0600` 建立，開啟時修正既有檔案），`secret` `0600`（讀取時也收緊）。
@@ -362,10 +366,12 @@ meta             (key, value)                                                -- 
 - 篩選（`listSubmissions({ filter, now })`，Studio 的 `?filter=` JSON）只在 `schema/response-filter.ts` 定義一次：`parseResponseFilter` 驗證（handler 遇到不合法的回 400），`responseFilterTest` 執行。memory adapter 直接呼叫；SQLite 把它註冊成 `open_form_filter(data, created_at)` SQL 函式，所以 `COUNT`、`LIMIT`、`OFFSET` 仍在 SQL 裡做，兩個 adapter 結果一致。送出時間的「日」以 Studio 傳來的 `timeZone`（檢視者的時區）計算。
 - 排序（`listSubmissions({ sort })`，Studio 的 `?sort=` JSON）同樣做法：`schema/response-sort.ts` 把答案轉成排序鍵（`responseSortKey`：數字、轉小寫的文字，或選項在 Studio 傳來的 `values` 中的位置，讓選項依表單順序排）並定義順序（`compareResponseSortKeys`：與 SQLite 相同——數字在文字前、空答案不論升降冪都排最後）。SQLite 把排序鍵註冊成 `open_form_sort_key(data)`，在子查詢裡排序，所以分頁仍在 SQL 完成；同值以 `number DESC` 決定先後。
 
+- `form_visits` 存 Studio 的分析：每次造訪一列，用表單頁存在 `sessionStorage` 的隨機 id 當鍵（重新整理會延續同一次造訪），從不使用裝置 id。只記 UTC 日期（沒有時間）、表單版本、到過的步驟（一個整數的位元，`stepBit`，步驟 0–52）、最後一步、`started`、`completed` 和送出所花的秒數；秒數取自簽章過的 timing token，頁面無法自己填。`POST /api/forms/:id/visits` 以 upsert 寫入（依雜湊後的 IP 限速，一律回 `204`），帶著同一個 `visit` 的送出成功後標記完成，honeypot 不會。各 adapter 在 SQL 裡分組（`visitStats`），由 `schema/analytics.ts` 的 `summarizeVisits` 算出漏斗，所以每個 adapter 結果一致。`recordVisit` / `visitStats` 是可選的：沒有時 Studio 會說這個儲存方式不保存分析資料。`analytics: false`（先看表單再看專案）停止記錄；`open-form db copy` 不搬造訪資料。
+
 ### Postgres（`@open-form-build/core/postgres`）
 
 - 同樣的表，放在獨立 schema（預設 `open_form`，可用 `createPostgresStorage({ schema })` 改），不跟 app 在 `public` 的表混在一起。`data`、`schema` 與覆寫資料用 `json` 而非 `jsonb`：答案取回時欄位順序與表單送出時相同。時間跟 SQLite 一樣存 ISO-8601 `TEXT`，所有 adapter 回傳的 `createdAt` 字串一致。另加 `(form_id, number)` 唯一索引。
-- 目前只有一個 migration（整份現行 schema），記錄在 `open_form.meta`。server 先不加鎖讀 `schema_version`（serverless 熱啟動只多一個 query），落後時才在 migration transaction 內取 `pg_advisory_xact_lock`；同時冷啟動的其他實例會等待，之後發現已無事可做。只有 `pg_namespace` 沒有該 schema 時才建立，所以只擁有既有 schema 的 role 也能用。
+- 目前有兩個 migration（v0.7 時的整份 schema，再加上 `form_visits`），記錄在 `open_form.meta`。server 先不加鎖讀 `schema_version`（serverless 熱啟動只多一個 query），落後時才在 migration transaction 內取 `pg_advisory_xact_lock`；同時冷啟動的其他實例會等待，之後發現已無事可做。只有 `pg_namespace` 沒有該 schema 時才建立，所以只擁有既有 schema 的 role 也能用。
 - `createSubmission` 在一個 transaction 內：upsert 該表單的 `form_counters` 列並 `SELECT … FOR UPDATE`，再檢查 `maxResponses` 與 unique key、遞增計數器、插入。這個 row lock 讓同一表單的回覆跨 process 依序寫入，READ COMMITTED 下後續語句看得到前一筆。partial unique index 的 `23505` 仍轉成 `duplicate`。編號只來自計數器，沒有舊資料需要用 `MAX(number)` 墊底。
 - 搜尋在 SQL 內：`jsonb_path_query(data::jsonb, 'strict $.**')` 只取字串與數字，跳脫萬用字元後 `ILIKE`。沒有篩選或欄位排序時，`COUNT`／`ORDER BY number`／`LIMIT`／`OFFSET` 都在 SQL；有的話，adapter 讀出該表單符合搜尋的列，交給 `pageSubmissions`（`storage/list.ts`，與 memory adapter 共用）跑 `responseFilterTest`／`responseSortKey`——Postgres 不能呼叫 JavaScript，把 26 個含時區的運算子翻成 SQL 會讓 adapter 之間結果不一致。常用運算子下推到 SQL 是之後的優化，由共用的合約測試把關。
 - 連線：`pg` 的 `Pool`（只用 unnamed statement，PgBouncer／Supabase transaction pooling 可用），掛 `error` listener，閒置連線斷掉不會讓 server 崩潰。遠端主機沒寫 `sslmode` 時補上 `sslmode=verify-full`；遠端 `sslmode=disable` 會印警告。連線字串只透過 `redactUrl` 顯示（密碼與類似 `password=` 的 query 參數換成 `***`）。

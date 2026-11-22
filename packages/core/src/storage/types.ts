@@ -4,6 +4,7 @@ import type {
   FormValues,
   ResponseFilter,
   ResponseSort,
+  VisitStats,
 } from '../schema/index.ts';
 
 export type FormVersionRecord = {
@@ -54,6 +55,25 @@ export type ListSubmissionsOptions = {
   order?: 'asc' | 'desc';
   /** Studio's column sort, keyed by `responseSortKey`; replaces `order`. Ties stay newest first. */
   sort?: ResponseSort;
+};
+
+/**
+ * One step of a visit to a form, for Studio's Analytics. Visits never carry
+ * answers, IPs or device ids, and nothing links one to a response.
+ */
+export type VisitUpdate = {
+  formId: string;
+  /** A random id the page keeps for one browser tab. */
+  visitId: string;
+  formVersionId: string;
+  /** `YYYY-MM-DD` (UTC), kept from the visit's first update. */
+  day: string;
+  started?: boolean;
+  /** A step reached (`PageSchema.index`); it becomes the visit's last step. */
+  step?: number;
+  completed?: boolean;
+  /** Seconds from opening the form to submitting it, with `completed`. */
+  seconds?: number;
 };
 
 /** Settings changed in Studio on a running server; they win over the form's code. */
@@ -118,7 +138,7 @@ export type StorageAdapter = {
   deleteSubmission(formId: string, id: string): Promise<boolean>;
   /**
    * Erases everything stored for a form — responses, schema versions, Studio
-   * overrides and its response numbering — and resolves how many responses it held.
+   * overrides, its response numbering and its visits — and resolves how many responses it held.
    */
   deleteForm(formId: string): Promise<number>;
   hasUniqueKey(formId: string, uniqueKey: string): Promise<boolean>;
@@ -131,6 +151,10 @@ export type StorageAdapter = {
   /** Ends a Studio session before it expires (sign-out); kept until `expiresAt` (epoch ms). */
   revokeSession(id: string, expiresAt: number, now?: number): Promise<void>;
   isSessionRevoked(id: string): Promise<boolean>;
+  /** Optional: creates the visit or adds to it. Without it, Studio has no Analytics. */
+  recordVisit?(update: VisitUpdate): Promise<void>;
+  /** Optional, with `recordVisit`: a form's visits since `since` (`YYYY-MM-DD`), grouped. */
+  visitStats?(formId: string, opts?: { since?: string }): Promise<VisitStats>;
   /** Optional, for `open-form db copy`: everything in `StorageDump`. */
   dump?(): Promise<StorageDump>;
   /**

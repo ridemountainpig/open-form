@@ -36,6 +36,7 @@ type FormInfo = {
   availability: FormAvailability;
   token?: string;
   turnstile?: { siteKey: string };
+  visits?: boolean;
 };
 
 // Embedded on another site (`?embed`, see embed.js): only non-personal facts go
@@ -259,6 +260,7 @@ export function PublicFormPage() {
       availability: info?.availability,
       token: info?.token,
       turnstile: info?.turnstile,
+      visits: info?.visits ? `/api/forms/${encodeURIComponent(formId)}/visits` : undefined,
       preview,
       onNavigate,
       // Studio shows forms in the language they're written in, like their titles.

@@ -126,6 +126,29 @@ The **Responses** tab is a searchable, filterable, sortable table of everything 
 view, copy, delete and Excel / CSV / JSON export. See
 [Responses & export](/docs/core-feature/responses).
 
+## Analytics
+
+The **Analytics** tab shows how far people get through the form: views,
+how many started (changed an answer), the completion rate (responses per view,
+and per start) and the median time from opening the form to submitting it.
+Below, each step shows how many visits reached it and how many stopped there
+without submitting, so the step that loses people stands out. Steps shown only
+for some answers are marked, since not every visit passes through them. Pick
+the last 7, 30 or 90 days or all time; when the form's fields have changed, pick
+a version too (the current one by default).
+
+A visit is one browser tab: a reload continues it, and submitting ends it.
+Studio's preview, `<Form onSubmit>` and closed forms aren't counted.
+
+What's kept is deliberately little: per visit, a random id, the form version,
+the day it began (no time), the steps reached, the last step, whether it
+started and finished, and the seconds it took. No answers, IP addresses,
+cookies, device ids, user agents or referrers, and nothing links a visit to its
+response. The IP is only used, hashed, to rate-limit the visit endpoint like
+submissions. Turn it off per form or per project with
+[`analytics: false`](/docs/reference/define-form#analytics). Deleting a form
+erases its visits; [`open-form db copy`](/docs/cli/db) doesn't move them.
+
 ## Schema
 
 The **Schema** tab is a table of every field the form collects, grouped by
@@ -181,6 +204,7 @@ so a deployed Studio shows them. See [Themes](/docs/core-feature/themes).
 | `/studio` | Forms list |
 | `/studio/:formId` | Preview |
 | `/studio/:formId/responses` | Responses table; `/responses/:responseId` opens one response |
+| `/studio/:formId/analytics` | Views, completion rate and drop-off by step |
 | `/studio/:formId/schema` | Fields by step: data keys, types, validation, conditions |
 | `/studio/:formId/settings` | Schedule and settings in code |
 | `/studio/themes` | Reference theme gallery |

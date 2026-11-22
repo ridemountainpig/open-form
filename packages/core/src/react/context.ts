@@ -63,6 +63,8 @@ export type FormRuntime = {
   /** URL submissions are POSTed to. */
   endpoint?: string;
   availability?: FormAvailability;
+  /** URL the steps a visit reaches are POSTed to, when the server counts visits (Analytics). */
+  visits?: string;
   /** Signed timing token from the server, echoed back on submit. */
   token?: string;
   /** Cloudflare Turnstile's site key, when the server asks for the check. */
