@@ -56,11 +56,15 @@ export function useVisit({
   done: boolean;
   store: FormStore;
 }): () => string | undefined {
-  const sent = useRef<{ step?: number; started: boolean }>({ started: false });
+  const sent = useRef<{ key: string; step?: number; started: boolean }>({
+    key: '',
+    started: false,
+  });
   // Another form in the same component (FormHost's id or api changed) is another visit.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resets when the identity changes
-  useEffect(() => {
-    sent.current = { started: false };
+  const marks = useCallback(() => {
+    const key = `${endpoint}\n${formId}`;
+    if (sent.current.key !== key) sent.current = { key, started: false };
+    return sent.current;
   }, [endpoint, formId]);
   const visit = useCallback(
     () => (endpoint && formId ? visitIdFor(formId) : undefined),
@@ -68,32 +72,32 @@ export function useVisit({
   );
 
   useEffect(() => {
-    if (!endpoint || done || sent.current.step === step) return;
+    if (!endpoint || done || marks().step === step) return;
     const id = visit();
     if (!id) return;
-    sent.current.step = step;
+    marks().step = step;
     send(endpoint, { visit: id, step });
-  }, [done, endpoint, step, visit]);
+  }, [done, endpoint, marks, step, visit]);
 
   useEffect(() => {
     if (!endpoint) return;
     const check = () => {
-      if (sent.current.started || !store.getState().edited || store.getState().status === 'success')
+      if (marks().started || !store.getState().edited || store.getState().status === 'success')
         return;
       const id = visit();
       if (!id) return;
-      sent.current.started = true;
+      marks().started = true;
       send(endpoint, { visit: id, started: true });
     };
     check();
     return store.subscribe(check);
-  }, [endpoint, store, visit]);
+  }, [endpoint, marks, store, visit]);
 
   // Answering again after submitting is another visit.
   useEffect(() => {
     if (!done || !formId) return;
     forgetVisit(formId);
-    sent.current = { started: false };
+    sent.current = { key: sent.current.key, started: false };
   }, [done, formId]);
 
   return visit;
