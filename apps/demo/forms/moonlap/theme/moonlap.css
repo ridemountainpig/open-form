@@ -1,0 +1,769 @@
+.of-root[data-of-theme="moonlap"] {
+  --ml-paper: #f8f5ea;
+  --ml-ink: #1d1611;
+  --ml-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  padding: 0;
+}
+
+[data-of-theme="moonlap"]
+  :is(
+    .ml-laps,
+    .ml-stage-top,
+    .ml-stats dt,
+    .of-label,
+    .of-help,
+    .ml-pace-wave,
+    .ml-pace-ends,
+    .ml-distance em,
+    .of-header .of-description
+  ) {
+  font-family: var(--ml-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="moonlap"] .ml-page {
+  display: grid;
+  grid-template-columns: minmax(0, var(--of-width)) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+[data-of-theme="moonlap"] .ml-form {
+  display: flex;
+  flex-direction: column;
+  padding: 30px clamp(18px, 3vw, 44px) 30px clamp(18px, 3.6vw, 52px);
+  border-right: 1px solid var(--of-border);
+  background: linear-gradient(180deg, #15100c, #0e0b09);
+}
+
+[data-of-theme="moonlap"] .ml-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font: 900 1.875rem / 0.88 var(--of-heading-font);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="moonlap"] .ml-logo i {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset -7px 0 0 0 var(--of-fg);
+}
+
+[data-of-theme="moonlap"] .ml-laps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-of-theme="moonlap"] .ml-laps li {
+  padding-top: 8px;
+  border-top: 3px solid var(--of-border);
+  color: var(--of-control);
+  white-space: nowrap;
+}
+
+[data-of-theme="moonlap"] .ml-laps [data-state="done"] {
+  border-color: var(--of-fg);
+  color: var(--of-muted);
+}
+
+[data-of-theme="moonlap"] .ml-laps [data-state="current"] {
+  border-color: var(--of-primary);
+  color: var(--of-fg);
+}
+
+[data-of-theme="moonlap"] .ml-laps b {
+  margin-right: 6px;
+  color: var(--of-primary);
+  font-weight: 500;
+}
+
+[data-of-theme="moonlap"] .ml-form .of-header {
+  margin: 26px 0 0;
+}
+
+[data-of-theme="moonlap"] .ml-form .of-title {
+  font-size: clamp(2.75rem, 2rem + 2.6vw, 4rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="moonlap"] .of-header .of-description {
+  margin-top: 10px;
+}
+
+[data-of-theme="moonlap"] .of-page-header {
+  margin-top: 6px;
+}
+
+[data-of-theme="moonlap"] .of-page-title {
+  color: var(--of-primary);
+  font: 900 1.75rem / 1 var(--of-heading-font);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="moonlap"] .of-label {
+  color: var(--of-fg);
+  font-weight: 500;
+}
+
+[data-of-theme="moonlap"] .of-input {
+  min-height: 50px;
+}
+
+[data-of-theme="moonlap"] .of-input:focus {
+  border-color: var(--of-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--of-primary) 28%, transparent);
+}
+
+[data-of-theme="moonlap"] input[name="bibName"] {
+  min-height: 54px;
+  font: 900 1.875rem / 1 var(--of-heading-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  caret-color: var(--of-primary);
+}
+
+[data-of-theme="moonlap"] :is(.ml-distances, .ml-colors) input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="moonlap"] .ml-distances {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+[data-of-theme="moonlap"] .ml-distance {
+  position: relative;
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--of-border);
+  border-radius: 14px;
+  background: var(--of-surface);
+}
+
+[data-of-theme="moonlap"] .ml-distance b {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font: 900 3.375rem / 0.88 var(--of-heading-font);
+}
+
+[data-of-theme="moonlap"] .ml-distance span {
+  display: block;
+  margin-top: 8px;
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+[data-of-theme="moonlap"] .ml-distance em {
+  display: block;
+  margin-top: 10px;
+  font-style: normal;
+}
+
+[data-of-theme="moonlap"] .ml-distance:has(input:checked) {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 13%, var(--of-surface));
+  box-shadow:
+    0 0 0 1px var(--of-primary),
+    0 18px 40px -22px var(--of-primary);
+}
+
+[data-of-theme="moonlap"] .ml-distance:has(input:checked)::after {
+  content: "✓" / "";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+[data-of-theme="moonlap"] :is(.ml-distance, .ml-color):has(input:focus-visible) {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 3px;
+}
+
+[data-of-theme="moonlap"] .ml-pace {
+  padding: 14px 16px 12px;
+  border: 1px solid var(--of-border);
+  border-radius: 14px;
+  background: var(--of-surface);
+}
+
+[data-of-theme="moonlap"] .ml-pace-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+[data-of-theme="moonlap"] .ml-pace-value {
+  margin: 0;
+  font: 900 2.875rem / 0.88 var(--of-heading-font);
+}
+
+[data-of-theme="moonlap"] .ml-pace-value small {
+  margin-left: 5px;
+  color: var(--of-muted);
+  font-size: 1.125rem;
+}
+
+[data-of-theme="moonlap"] .ml-pace-wave {
+  margin: 0;
+  color: var(--of-muted);
+  text-align: right;
+}
+
+[data-of-theme="moonlap"] .ml-pace-wave b {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+  font-weight: 600;
+}
+
+[data-of-theme="moonlap"] .ml-pace input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 4px 0 0;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+[data-of-theme="moonlap"] .ml-pace input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--of-primary) var(--ml-fill), var(--of-border) 0);
+}
+
+[data-of-theme="moonlap"] .ml-pace input::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--of-primary) var(--ml-fill), var(--of-border) 0);
+}
+
+[data-of-theme="moonlap"] .ml-pace input::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  margin-top: -10px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--of-fg);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--of-primary) 35%, transparent),
+    0 0 0 1px var(--of-primary);
+  appearance: none;
+}
+
+[data-of-theme="moonlap"] .ml-pace input::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--of-fg);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--of-primary) 35%, transparent),
+    0 0 0 1px var(--of-primary);
+}
+
+[data-of-theme="moonlap"] .ml-pace input:focus-visible {
+  outline: 2px solid var(--of-fg);
+  outline-offset: 2px;
+}
+
+[data-of-theme="moonlap"] .ml-pace-ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--of-muted);
+}
+
+[data-of-theme="moonlap"] .ml-colors {
+  display: flex;
+  gap: 10px;
+}
+
+[data-of-theme="moonlap"] [data-color] {
+  --ml-c: #ffe07a;
+}
+
+[data-of-theme="moonlap"] [data-color="coral"] {
+  --ml-c: #ff8166;
+}
+
+[data-of-theme="moonlap"] [data-color="rose"] {
+  --ml-c: #ff9ec4;
+}
+
+[data-of-theme="moonlap"] [data-color="sand"] {
+  --ml-c: #f3ead8;
+}
+
+[data-of-theme="moonlap"] [data-color="mint"] {
+  --ml-c: #74efc4;
+}
+
+[data-of-theme="moonlap"] .ml-color {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--of-bg);
+  border-radius: 50%;
+  background: var(--ml-c);
+}
+
+[data-of-theme="moonlap"] .ml-color:has(input:checked) {
+  box-shadow: 0 0 0 2px var(--ml-c);
+}
+
+[data-of-theme="moonlap"] .of-choices .of-choice:has(input:checked) {
+  border-color: var(--of-primary);
+}
+
+[data-of-theme="moonlap"] .of-nav {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+[data-of-theme="moonlap"] .of-frame,
+[data-of-theme="moonlap"] .of-step {
+  display: contents;
+}
+
+[data-of-theme="moonlap"] .of-button {
+  min-height: 48px;
+  padding: 0 1.5rem;
+  font-weight: 600;
+}
+
+[data-of-theme="moonlap"] .of-button-secondary {
+  border-color: var(--of-border);
+  background: none;
+  color: var(--of-muted);
+}
+
+[data-of-theme="moonlap"] .ml-form:is(.of-success, .of-notice) {
+  justify-content: center;
+  text-align: left;
+}
+
+[data-of-theme="moonlap"] .ml-form:is(.of-success, .of-notice) .ml-logo {
+  margin-bottom: auto;
+}
+
+[data-of-theme="moonlap"] .ml-form:is(.of-success, .of-notice) > :last-child {
+  margin-bottom: auto;
+}
+
+[data-of-theme="moonlap"] .ml-form :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="moonlap"] .ml-form:is(.of-success, .of-notice) .of-description {
+  margin-inline: 0;
+}
+
+/* The stage: moon, lanes and the bib. */
+[data-of-theme="moonlap"] .ml-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  place-items: center;
+  height: 100dvh;
+  padding: 30px;
+  overflow: hidden;
+  background: radial-gradient(900px 700px at 60% 55%, #2a1d12, transparent 70%);
+}
+
+[data-of-theme="moonlap"] .ml-moon {
+  position: absolute;
+  right: -180px;
+  top: -250px;
+  width: 760px;
+  height: 760px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 42%, #96652c, #4d331b 60%, #21170f);
+  box-shadow:
+    inset -70px -24px 0 0 rgb(255 224 122 / 0.07),
+    0 0 180px rgb(255 170 80 / 0.22);
+}
+
+[data-of-theme="moonlap"] .ml-lanes {
+  position: absolute;
+  inset: auto -10% -420px;
+  height: 700px;
+  border: 1px solid var(--of-border);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 46px var(--of-bg),
+    0 0 0 47px var(--of-border),
+    0 0 0 93px var(--of-bg),
+    0 0 0 94px var(--of-border),
+    0 0 0 140px var(--of-bg),
+    0 0 0 141px var(--of-border);
+}
+
+[data-of-theme="moonlap"] .ml-stage-top {
+  position: absolute;
+  z-index: 3;
+  inset: 30px 36px auto;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--of-muted);
+}
+
+[data-of-theme="moonlap"] .ml-stage-top b {
+  color: var(--of-primary);
+  font-weight: 500;
+}
+
+[data-of-theme="moonlap"] .ml-bib {
+  position: relative;
+  z-index: 2;
+  width: min(620px, 100%);
+  overflow: hidden;
+  border-radius: 2.6cqw;
+  background:
+    linear-gradient(
+      105deg,
+      rgb(0 0 0 / 0.05),
+      transparent 22%,
+      rgb(0 0 0 / 0.03) 48%,
+      transparent 70%,
+      rgb(0 0 0 / 0.05)
+    ),
+    var(--ml-paper);
+  color: var(--ml-ink);
+  font-family: var(--of-heading-font);
+  font-weight: 900;
+  line-height: 0.88;
+  text-transform: uppercase;
+  container-type: inline-size;
+  filter: drop-shadow(0 50px 50px rgb(0 0 0 / 0.65))
+    drop-shadow(0 0 70px color-mix(in srgb, var(--ml-c) 22%, transparent));
+  rotate: -2.2deg;
+}
+
+[data-of-theme="moonlap"] .ml-bib span {
+  font-family: var(--ml-mono);
+  font-size: 1.85cqw;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1.5;
+}
+
+[data-of-theme="moonlap"] .ml-hole {
+  position: absolute;
+  z-index: 3;
+  width: 2.4cqw;
+  height: 2.4cqw;
+  border-radius: 50%;
+  background: var(--of-bg);
+}
+
+[data-of-theme="moonlap"] .ml-hole:nth-child(1) {
+  left: 3.2cqw;
+  top: 3.2cqw;
+}
+
+[data-of-theme="moonlap"] .ml-hole:nth-child(2) {
+  right: 3.2cqw;
+  top: 3.2cqw;
+}
+
+[data-of-theme="moonlap"] .ml-hole:nth-child(3) {
+  left: 3.2cqw;
+  bottom: 15.8cqw;
+}
+
+[data-of-theme="moonlap"] .ml-hole:nth-child(4) {
+  right: 3.2cqw;
+  bottom: 15.8cqw;
+}
+
+[data-of-theme="moonlap"] .ml-bib-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 2.6cqw 9.4cqw 2.1cqw;
+  background: var(--ml-c);
+}
+
+[data-of-theme="moonlap"] .ml-bib-top b {
+  font-size: 7.1cqw;
+  letter-spacing: 0.02em;
+}
+
+[data-of-theme="moonlap"] .ml-bib-top > span {
+  text-align: right;
+}
+
+[data-of-theme="moonlap"] .ml-phases {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8cqw;
+  margin-bottom: 0.8cqw;
+}
+
+[data-of-theme="moonlap"] .ml-phases i {
+  display: block;
+  width: 1.8cqw;
+  height: 1.8cqw;
+  border: 0.25cqw solid var(--ml-ink);
+  border-radius: 50%;
+}
+
+[data-of-theme="moonlap"] .ml-phases i:nth-child(2) {
+  box-shadow: inset -0.5cqw 0 0 var(--ml-ink);
+}
+
+[data-of-theme="moonlap"] .ml-phases i:nth-child(3) {
+  box-shadow: inset -1cqw 0 0 var(--ml-ink);
+}
+
+[data-of-theme="moonlap"] .ml-phases i:nth-child(4) {
+  background: var(--ml-ink);
+}
+
+[data-of-theme="moonlap"] .ml-bib-mid {
+  display: grid;
+  grid-template-columns: 8.7cqw 1fr 8.7cqw;
+}
+
+[data-of-theme="moonlap"] .ml-bib-mid span {
+  display: grid;
+  place-items: center;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+}
+
+[data-of-theme="moonlap"] .ml-bib-mid span:first-child {
+  rotate: 180deg;
+}
+
+[data-of-theme="moonlap"] .ml-bib-mid span:last-child {
+  color: #6f717a;
+}
+
+[data-of-theme="moonlap"] .ml-bib-mid b {
+  padding: 3.5cqw 0 1.3cqw;
+  font-size: 43cqw;
+  line-height: 0.8;
+  text-align: center;
+}
+
+[data-of-theme="moonlap"] .ml-bib-name {
+  display: flex;
+  align-items: center;
+  gap: 2.6cqw;
+  padding: 0 9.4cqw 2.6cqw;
+}
+
+[data-of-theme="moonlap"] .ml-bib-name b {
+  max-width: 60cqw;
+  overflow: hidden;
+  font-size: 9.6cqw;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-of-theme="moonlap"] .ml-bib-name span {
+  flex: 1;
+  height: 1.6cqw;
+  background: repeating-linear-gradient(115deg, var(--ml-ink) 0 1cqw, transparent 1cqw 2cqw);
+}
+
+[data-of-theme="moonlap"] .ml-bib-name em {
+  padding: 0.8cqw 2cqw 0.5cqw;
+  border-radius: 0.8cqw;
+  background: var(--ml-ink);
+  color: var(--ml-paper);
+  font-size: 4.8cqw;
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+[data-of-theme="moonlap"] .ml-bib-tear {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2.9cqw;
+  padding: 2cqw 9.4cqw 2.2cqw;
+  border-top: 0.3cqw dashed var(--ml-ink);
+  background: rgb(0 0 0 / 0.035);
+}
+
+[data-of-theme="moonlap"] .ml-bib-tear b {
+  font-size: 5.8cqw;
+}
+
+[data-of-theme="moonlap"] .ml-bib-tear > span {
+  color: #55575f;
+}
+
+[data-of-theme="moonlap"] .ml-bars {
+  display: flex;
+  gap: 0.3cqw;
+  height: 6cqw;
+}
+
+[data-of-theme="moonlap"] .ml-bars i {
+  width: 0.3cqw;
+  background: var(--ml-ink);
+}
+
+[data-of-theme="moonlap"] .ml-bars i:nth-child(3n) {
+  width: 0.8cqw;
+}
+
+[data-of-theme="moonlap"] .ml-bars i:nth-child(5n) {
+  width: 0.5cqw;
+}
+
+[data-of-theme="moonlap"] .ml-stats {
+  position: absolute;
+  z-index: 3;
+  inset: auto 36px 30px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  color: var(--of-muted);
+}
+
+[data-of-theme="moonlap"] .ml-stats dd {
+  margin: 0;
+  color: var(--of-fg);
+  font: 900 2.125rem / 1.05 var(--of-heading-font);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 960px) {
+  [data-of-theme="moonlap"] .ml-page {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  [data-of-theme="moonlap"] .ml-form {
+    flex: 1;
+    border-right: 0;
+    padding-block: 18px 28px;
+  }
+
+  [data-of-theme="moonlap"] .ml-logo {
+    display: none;
+  }
+
+  [data-of-theme="moonlap"] .ml-laps {
+    margin-top: 0;
+  }
+
+  [data-of-theme="moonlap"] .ml-stage {
+    position: relative;
+    height: auto;
+    padding: 50px 18px 24px;
+  }
+
+  [data-of-theme="moonlap"] .ml-stage-top {
+    inset: 16px 18px auto;
+  }
+
+  [data-of-theme="moonlap"] .ml-stage-top span:last-child,
+  [data-of-theme="moonlap"] .ml-lanes,
+  [data-of-theme="moonlap"] .ml-stats {
+    display: none;
+  }
+
+  [data-of-theme="moonlap"] .ml-moon {
+    right: -160px;
+    top: -170px;
+    width: 420px;
+    height: 420px;
+  }
+
+  [data-of-theme="moonlap"] .ml-bib {
+    width: min(340px, 100%);
+  }
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="moonlap"] .ml-bib {
+    width: min(250px, 100%);
+  }
+
+  [data-of-theme="moonlap"] .ml-stage {
+    padding: 42px 18px 16px;
+  }
+
+  [data-of-theme="moonlap"] .ml-laps li:not([data-state="current"]) span {
+    display: none;
+  }
+
+  [data-of-theme="moonlap"] .ml-distance {
+    padding: 10px;
+  }
+
+  [data-of-theme="moonlap"] .ml-distance b {
+    font-size: 2.5rem;
+  }
+
+  [data-of-theme="moonlap"] .ml-distance span {
+    display: none;
+  }
+
+  [data-of-theme="moonlap"] .ml-distance:has(input:checked)::after {
+    top: 9px;
+    right: 9px;
+    width: 18px;
+    height: 18px;
+    font-size: 0.6875rem;
+  }
+}
+
+[data-of-theme="moonlap"] .ml-distance b small {
+  color: var(--of-muted);
+  font-size: 1.25rem;
+}
+
+[data-of-theme="moonlap"] .ml-distance:has(input:checked) b small {
+  color: var(--of-primary);
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="moonlap"] .ml-distance b small {
+    font-size: 0.9375rem;
+  }
+}

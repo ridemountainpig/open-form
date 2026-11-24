@@ -1,97 +1,79 @@
 ---
 name: Terminal
-description: A CLI session — monospace, phosphor green on black, `? question` prompts and ASCII progress.
-layout: terminal window
+description: A terminal UI in a window: bordered panes with legends, a steps list, `?` prompts, `[x]` boxes and a status bar. Dark only.
+layout: Custom window
 ---
 
 # Terminal
 
-**Mood:** nerdy, playful, insider. The form feels like running a command.
+**Mood:** technical, insider, a little playful. A tool, not a web page.
 
-**Best for:** developer events and hackathons, CLI / devtool / API signups, beta access, bug reports, engineering surveys, anything for an audience that lives in a terminal.
+**Best for:** developer meetups and hackathons, beta and API access requests, internal tooling, CLI products.
 
-**Avoid when:** the audience isn't technical — the joke becomes friction.
-
-## Palette (dark only)
-
-| Token | Value | Use |
-| --- | --- | --- |
-| `primary` | `#5af78e` | Typed answers, prompts, selected options, progress, primary button |
-| `background` | `#050706` | Page |
-| `surface` | `#0c0f0d` | Terminal window |
-| `foreground` | `#d9e4dc` | Questions |
-| `muted` | `#6f8076` | Comments, help, unselected markers |
-| `error` | `#ff5c57` | `✖` errors |
-
-`colorScheme: 'dark'` — it ignores the system setting on purpose.
+**Avoid when:** the audience is not technical, or the form is long prose.
 
 ## Tokens
 
-The tokens a form copies into its `theme/index.ts`. One palette only.
+The tokens a form copies into its `theme/index.ts`.
 
-| Token | Value |
+| Token | Dark |
 | --- | --- |
-| `primary` | `#5af78e` |
-| `primaryForeground` | `#04110a` |
-| `background` | `#050706` |
-| `surface` | `#0c0f0d` |
-| `foreground` | `#d9e4dc` |
-| `muted` | `#6f8076` |
-| `border` | `#1f2823` |
-| `control` | `#6f8076` |
-| `input` | `#0c0f0d` |
-| `error` | `#ff5c57` |
-| `success` | `#5af78e` |
+| `primary` | `#a6e36e` |
+| `primaryForeground` | `#0c1407` |
+| `background` | `#06080b` |
+| `surface` | `#0c0f15` |
+| `foreground` | `#cdd5e3` |
+| `muted` | `#8792a8` |
+| `border` | `#262d3b` |
+| `control` | `#657087` |
+| `input` | `#0c0f15` |
+| `error` | `#ff8b8b` |
+| `success` | `#a6e36e` |
 
-- `colorScheme`: `'dark'`
-- `font`: `'ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, var(--of-cjk), monospace'`
-- `headingFont`: same as `font`
-- `radius`: `'4px'`
-- `spacing`: `'comfortable'`
-- `width`: `'640px'`
-- Layout: its own `Layout` component, the terminal window (see below).
+- `font`: `'"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace'`
+- `headingFont`: `'"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace'`
+- `radius`: `'3px'`
+- `spacing`: `'compact'`
+- `width`: `'1372px'`
+- `colorScheme`: `'dark'` (dark only; `colors` is the one palette)
+- Fonts are served from `fonts/` (`doto.css`, `jetbrains-mono.css`); a form that uses one gets its own copy with `open-form theme font <form> <Family> --form`.
+- Layout: Custom window, not a token: it comes from `components`.
 
 ## Typography
 
-Monospace everywhere (`ui-monospace`, `SF Mono`, `JetBrains Mono`, `Menlo`, `Consolas`), 15px, line-height 1.6. Weight is the only hierarchy: questions bold, everything else regular.
+- JetBrains Mono for everything; the title is set in Doto, a dot-matrix face, at up to 4.5rem.
+- Legends and the status bar are 11px uppercase.
 
 ## Layout & components
 
-- Window chrome with traffic-light dots and `~/forms — step 2/3` in the title bar.
-- Header: `$ open-form start`, then `▲ Title` and a dim description.
-- Progress: `[████████░░░░] 2/3 Background`.
-- Page titles: `## Background`.
-- Fields read like inquirer prompts: `? Question *`, help as `# comment`, errors as `✖ …`.
-- Inputs: `❯` prompt, borderless, answers typed in green.
-- Choices: `( )` / `(•)` radios and `[ ]` / `[x]` checkboxes; `❯` pointer on hover and focus.
-- Matrix: a table of `( )` under dim column headings, with `❯` on the row being answered; on a narrow form each row lists its options like a single-choice prompt.
-- Rating: `[1] [2] [3]`, chosen one inverted.
-- Buttons: `next ↵` (inverted green block) before `← back`.
-- Success: `✔ title`, message, `process exited with code 0`.
+- The Layout is a component: a window with a title bar, a command line above the title, then a grid of panes. The steps pane lists every step and lets you jump back; the main pane holds the questions with the step name in its border; the form's `aside` becomes more panes on the right.
+- A status bar along the bottom shows the mode, the step and the key hints.
+- Prompts: every label starts with `?`, which turns into a green tick once the field has an answer.
+- List choices are `[x]` / `( )` lines with a `❯` cursor on the focused one; `variant="cards"` choices are segmented keys.
+- Under 900px the panes stack and the steps become one line.
 
 ### Building a form's look from it
 
 `index.tsx` and `terminal.css` are built this way, so take from them as they are:
 
-- **CSS on the runtime's markup** (scoped to the form), every glyph drawn with `content: "…" / ""` so screen readers skip it: `? ` before labels (`.of-label::before`), `#` help, `✖` errors, `( )` / `(•)` and `[ ]` / `[x]` marks on choices and the checkbox (`.of-choice::after` with `order: -1`), the same marks in the matrix's cells and a `❯` on the row being answered (`.of-matrix-*`), `← back` and `register ↵` buttons (`.of-button-secondary::before`, `.of-button-primary::after`).
-- **Components**: `Layout` (the window and its `step n/total` title bar), `Header` (the `$ open-form start` line), `Progress` (the ASCII bar), `Success` and `Notice` (the `✔` / `✖` result screens), `TextInput` / `Textarea` / `Select` (the `❯` before the input) and `Rating` (its `1 = … · 5 = …` line names the scale's ends). Take `Notice` only when the form keeps the default closed screens.
+- **CSS on the runtime's markup** (scoped to the form): the prompts and their tick (`.of-field:has(...)`), the `[x]` and `( )` glyphs drawn before each choice, segmented keys, the rating keys, inputs, comment-style help (`# ...`) and the buttons.
+- **Components**: only `Layout` (window, panes, steps and status bar).
 
 ## Signature ideas
 
-Pick one, in the session's voice. `aside` prints at the bottom of the window (`.tm-aside`), after the buttons:
+Pick one:
 
-- **The command being built** — `$ rsvp --name "Amy" --topics rag,agents` filling in as people answer (`useFormValues`). It only repeats answers, so mark it `aria-hidden`.
-- **A printed file** — the agenda or the event's facts as `$ cat agenda.txt` output: times in `muted`, titles in `foreground`.
-- **A log on success** — `<Success>` lines built from the answers and the facts given: `✔ seat reserved for amy@…`, `→ 11/20 19:00 · venue`.
-
-Text and color only — no boxes, cards or icons.
+- **Live panes**: pass `aside` a component with panes that react to the answers: the agenda with matching talks marked, a seat meter, a `whoami` card.
+- **A command that matches the form**: change the command line to what the form does, like `$ npx meetup register`.
+- **Exit code**: `<Success>` printed as command output.
 
 ## Copy tone
 
-Lowercase is fine. Terse, a little wry: "Name, as it should appear on your badge." Avoid exclamation marks.
+Lowercase, terse, like CLI help. Help text reads as `# comments`.
 
 ## Do / Don't
 
-- Do keep labels to one line.
-- Do give each `<Page>` a title when the form has sections — they become `## sections` and the ASCII progress bar appears. Short forms work fine on one page.
-- Don't use emoji in options; use plain words.
+- **Do:** Keep labels short enough for one line of mono.
+- **Do:** Use page titles: they become the pane legend and the steps list.
+- **Don't:** Add a light palette: the look depends on the dark ground (`colorScheme: 'dark'`).
+- **Don't:** Use for forms with long paragraphs of explanation.

@@ -1,0 +1,198 @@
+.of-root[data-of-theme="fieldnotes"] {
+  --fn-cover: linear-gradient(100deg, #ffe9c7, #ffd0d6 55%, #cfe4ff);
+  --fn-ink: var(--of-fg);
+  --fn-ink-fg: var(--of-surface);
+  min-height: 100dvh;
+  padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="fieldnotes"]:not([data-scheme]) {
+    --fn-cover: linear-gradient(100deg, #4a3a20, #4a2630 55%, #1f3550);
+  }
+}
+
+.of-root[data-of-theme="fieldnotes"][data-scheme="dark"] {
+  --fn-cover: linear-gradient(100deg, #4a3a20, #4a2630 55%, #1f3550);
+}
+
+[data-of-theme="fieldnotes"] .fn-cover {
+  height: clamp(110px, 21vh, 190px);
+  background: var(--fn-cover);
+}
+
+[data-of-theme="fieldnotes"] .fn-doc {
+  width: min(var(--of-width), 100% - 56px);
+  margin: 0 auto;
+  padding-bottom: 60px;
+}
+
+[data-of-theme="fieldnotes"] .fn-icon {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin: -46px 0 22px;
+  border-radius: 20px;
+  background: var(--of-surface);
+  box-shadow:
+    0 0 0 1px var(--of-border),
+    0 10px 24px -12px rgb(0 0 0 / 0.25);
+}
+
+[data-of-theme="fieldnotes"] .of-title {
+  font-size: clamp(1.95rem, 1.5rem + 1.6vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+[data-of-theme="fieldnotes"] .of-description {
+  margin-top: 0.625rem;
+  font-size: 1.0625rem;
+}
+
+[data-of-theme="fieldnotes"] .of-label {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+[data-of-theme="fieldnotes"] .of-help {
+  font-size: 0.906rem;
+}
+
+[data-of-theme="fieldnotes"] .of-input {
+  min-height: 44px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+[data-of-theme="fieldnotes"] .of-input:focus {
+  border-color: var(--of-primary);
+  box-shadow: 0 0 0 3px var(--of-ring);
+}
+
+[data-of-theme="fieldnotes"] .of-select-wrap {
+  max-width: 380px;
+}
+
+/* Choices are to-do rows from the notebook: a tick box, then the line. */
+[data-of-theme="fieldnotes"] .of-choices {
+  justify-items: start;
+  gap: 7px;
+}
+
+[data-of-theme="fieldnotes"] .of-choices .of-choice {
+  align-items: center;
+  width: min(100%, 340px);
+  min-height: 44px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+[data-of-theme="fieldnotes"] .of-choices .of-choice:has(input:checked) {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 9%, transparent);
+  box-shadow: 0 0 0 1px var(--of-primary);
+}
+
+[data-of-theme="fieldnotes"] .of-choices .of-choice:has(input:disabled) {
+  opacity: 0.55;
+}
+
+/* Five stars that fill up to the one picked. */
+[data-of-theme="fieldnotes"] .of-rating {
+  display: flex;
+  gap: 2px;
+}
+
+[data-of-theme="fieldnotes"] .of-rating-item span {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: transparent;
+  font-size: 0;
+}
+
+[data-of-theme="fieldnotes"] .of-rating-item span::before {
+  content: "★" / "";
+  color: var(--of-border);
+  font-size: 2.1rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+[data-of-theme="fieldnotes"] .of-rating-item input:checked + span {
+  background: none;
+}
+
+[data-of-theme="fieldnotes"] .of-rating-item:has(~ .of-rating-item input:checked) span::before,
+[data-of-theme="fieldnotes"] .of-rating-item input:checked + span::before {
+  color: #f5b100;
+}
+
+[data-of-theme="fieldnotes"] .of-rating-item:hover span::before {
+  color: color-mix(in srgb, #f5b100 60%, var(--of-border));
+}
+
+[data-of-theme="fieldnotes"] .of-nav {
+  justify-content: flex-start;
+}
+
+[data-of-theme="fieldnotes"] .of-button {
+  min-height: 44px;
+  padding: 0 1.125rem;
+}
+
+[data-of-theme="fieldnotes"] .of-button-primary {
+  background: var(--fn-ink);
+  color: var(--fn-ink-fg);
+}
+
+[data-of-theme="fieldnotes"] .of-button-primary::after {
+  content: "→" / "";
+}
+
+[data-of-theme="fieldnotes"] .fn-foot {
+  margin: 44px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--of-border);
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="fieldnotes"] .fn-doc.of-success,
+[data-of-theme="fieldnotes"] .fn-doc.of-notice {
+  padding-top: 0;
+  text-align: left;
+}
+
+[data-of-theme="fieldnotes"] .fn-doc :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="fieldnotes"] .fn-doc.of-success .of-description,
+[data-of-theme="fieldnotes"] .fn-doc.of-notice .of-description {
+  margin-inline: 0;
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="fieldnotes"] .fn-doc {
+    width: calc(100% - 36px);
+    padding-bottom: 40px;
+  }
+
+  [data-of-theme="fieldnotes"] .fn-icon {
+    width: 68px;
+    height: 68px;
+    margin: -36px 0 16px;
+    border-radius: 16px;
+  }
+
+  [data-of-theme="fieldnotes"] .of-choices .of-choice,
+  [data-of-theme="fieldnotes"] .of-select-wrap {
+    width: 100%;
+    max-width: none;
+  }
+}

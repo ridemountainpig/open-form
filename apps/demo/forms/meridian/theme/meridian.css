@@ -1,0 +1,344 @@
+.of-root[data-of-theme="meridian"] {
+  --md-shadow: 0 1px 0 #e6e4dd, 0 40px 80px -40px rgb(20 20 50 / 0.28);
+  --md-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="meridian"]:not([data-scheme]) {
+    --md-shadow: none;
+  }
+}
+
+.of-root[data-of-theme="meridian"][data-scheme="dark"] {
+  --md-shadow: none;
+}
+
+[data-of-theme="meridian"] .md-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--of-width));
+  align-items: start;
+  gap: clamp(32px, 5vw, 72px);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 44px clamp(16px, 3vw, 40px) 56px;
+}
+
+[data-of-theme="meridian"] .md-info {
+  position: sticky;
+  top: 44px;
+}
+
+[data-of-theme="meridian"] .md-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="meridian"] .md-logo i {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--of-fg);
+}
+
+[data-of-theme="meridian"] .md-logo i::after {
+  content: "";
+  position: absolute;
+  inset: 3px auto 3px 10px;
+  width: 2px;
+  background: var(--of-bg);
+}
+
+[data-of-theme="meridian"] .md-info .of-header {
+  margin: clamp(30px, 8vh, 84px) 0 0;
+}
+
+[data-of-theme="meridian"] .md-info .of-title {
+  font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.375rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+[data-of-theme="meridian"] .md-info .of-description {
+  max-width: 40ch;
+  margin-top: 18px;
+  font-size: 1.0625rem;
+}
+
+[data-of-theme="meridian"] .md-points {
+  margin: 34px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--of-border);
+  list-style: none;
+  counter-reset: md-point;
+}
+
+[data-of-theme="meridian"] .md-points li {
+  position: relative;
+  padding: 15px 0 15px 36px;
+  border-bottom: 1px solid var(--of-border);
+  counter-increment: md-point;
+}
+
+[data-of-theme="meridian"] .md-points li::before {
+  content: counter(md-point, decimal-leading-zero) / "";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  color: var(--of-primary);
+  font: 0.75rem var(--md-mono);
+}
+
+[data-of-theme="meridian"] .md-points b {
+  display: block;
+  font-weight: 500;
+}
+
+[data-of-theme="meridian"] .md-points span {
+  color: var(--of-muted);
+  font-size: 0.875rem;
+}
+
+[data-of-theme="meridian"] .md-caption,
+[data-of-theme="meridian"] .md-under {
+  color: var(--of-muted);
+  font: 0.72rem var(--md-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="meridian"] .md-caption {
+  margin: 30px 0 0;
+}
+
+[data-of-theme="meridian"] .md-marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 26px;
+  margin: 12px 0 0;
+  color: var(--of-muted);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="meridian"] .md-marks span:nth-child(2) {
+  font-family: Georgia, serif;
+  font-size: 1.1875rem;
+  font-style: italic;
+  font-weight: 400;
+}
+
+[data-of-theme="meridian"] .md-marks span:nth-child(3) {
+  font-size: 0.875rem;
+  letter-spacing: 0.16em;
+}
+
+[data-of-theme="meridian"] .md-card {
+  padding: 34px 36px 30px;
+  border: 1px solid var(--of-border);
+  border-radius: 22px;
+  background: var(--of-surface);
+  box-shadow: var(--md-shadow);
+}
+
+[data-of-theme="meridian"] .md-card.of-success,
+[data-of-theme="meridian"] .md-card.of-notice {
+  padding-block: 64px;
+}
+
+[data-of-theme="meridian"] .of-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+[data-of-theme="meridian"] .of-required {
+  color: var(--of-primary);
+}
+
+[data-of-theme="meridian"] .of-input {
+  min-height: 44px;
+}
+
+[data-of-theme="meridian"] .of-input:focus {
+  border-color: var(--of-primary);
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--of-primary) 20%, transparent);
+}
+
+[data-of-theme="meridian"] [data-invalid] .of-input {
+  background: color-mix(in srgb, var(--of-error) 7%, var(--of-surface));
+}
+
+[data-of-theme="meridian"] .of-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-of-theme="meridian"] .of-error::before {
+  content: "!" / "";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--of-error);
+  color: var(--of-surface);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+[data-of-theme="meridian"] .md-segments {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--of-control);
+  border-radius: 10px;
+}
+
+[data-of-theme="meridian"] .md-segment {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  font-size: 0.906rem;
+  cursor: pointer;
+}
+
+[data-of-theme="meridian"] .md-segment + .md-segment {
+  border-left: 1px solid var(--of-control);
+}
+
+[data-of-theme="meridian"] .md-segment input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="meridian"] .md-segment:has(input:checked) {
+  background: var(--of-fg);
+  color: var(--of-surface);
+}
+
+[data-of-theme="meridian"] .md-segment:has(input:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: -3px;
+}
+
+[data-of-theme="meridian"] .md-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+[data-of-theme="meridian"] .md-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--of-control);
+  border-radius: 10px;
+  font-size: 0.906rem;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+[data-of-theme="meridian"] .md-option small {
+  display: block;
+  margin-top: 2px;
+  color: var(--of-muted);
+  font-size: 0.78rem;
+}
+
+[data-of-theme="meridian"] .md-option:has(input:checked) {
+  border-color: var(--of-primary);
+  background: color-mix(in srgb, var(--of-primary) 9%, var(--of-surface));
+}
+
+[data-of-theme="meridian"] .of-choice-single {
+  color: var(--of-muted);
+  font-size: 0.84rem;
+}
+
+[data-of-theme="meridian"] .of-nav .of-button-primary {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 11px;
+  background: var(--of-fg);
+  color: var(--of-surface);
+  font-size: 0.97rem;
+  font-weight: 500;
+}
+
+[data-of-theme="meridian"] .md-under {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
+@media (max-width: 960px) {
+  [data-of-theme="meridian"] .md-page {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+    max-width: 680px;
+    padding-top: 20px;
+  }
+
+  [data-of-theme="meridian"] .md-info {
+    position: static;
+  }
+
+  [data-of-theme="meridian"] .md-info .of-header {
+    margin-top: 30px;
+  }
+
+  [data-of-theme="meridian"] .md-aside {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="meridian"] .md-page {
+    padding-bottom: 36px;
+  }
+
+  [data-of-theme="meridian"] .md-card {
+    padding: 22px 18px 20px;
+    border-radius: 18px;
+  }
+
+  [data-of-theme="meridian"] .md-options {
+    grid-template-columns: 1fr;
+  }
+
+  [data-of-theme="meridian"] .md-segments {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  [data-of-theme="meridian"] .md-segment:nth-child(odd) {
+    border-left: 0;
+  }
+
+  [data-of-theme="meridian"] .md-segment:nth-child(n + 3) {
+    border-top: 1px solid var(--of-control);
+  }
+
+  [data-of-theme="meridian"] .md-under span:last-child {
+    display: none;
+  }
+}

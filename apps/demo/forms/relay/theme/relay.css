@@ -1,0 +1,246 @@
+.of-root[data-of-theme="relay"] {
+  --rl-cover: color-mix(in srgb, #f5b301 18%, var(--of-surface));
+  --rl-heading: color-mix(in srgb, var(--of-fg) 80%, #000);
+  min-height: 100dvh;
+  padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="relay"]:not([data-scheme]) {
+    --rl-heading: color-mix(in srgb, var(--of-fg) 70%, #fff);
+  }
+}
+
+.of-root[data-of-theme="relay"][data-scheme="dark"] {
+  --rl-heading: color-mix(in srgb, var(--of-fg) 70%, #fff);
+}
+
+[data-of-theme="relay"] .rl-cover {
+  height: clamp(110px, 21vh, 190px);
+  overflow: hidden;
+  background: var(--rl-cover);
+}
+
+[data-of-theme="relay"] .rl-cover svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--rl-heading);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-of-theme="relay"] .rl-doc {
+  width: min(var(--of-width), 100% - 48px);
+  margin: 0 auto;
+  padding-bottom: 72px;
+}
+
+[data-of-theme="relay"] .rl-icon {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin: -42px 0 22px;
+  border-radius: 50%;
+  background: var(--rl-heading);
+  color: var(--rl-cover);
+  box-shadow: 0 0 0 5px var(--of-surface);
+}
+
+[data-of-theme="relay"] .of-title {
+  color: var(--rl-heading);
+  font-size: clamp(1.9rem, 1.5rem + 1.4vw, 2.375rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+[data-of-theme="relay"] .of-description {
+  margin-top: 0.875rem;
+  color: var(--of-fg);
+  font-size: 1.03rem;
+}
+
+[data-of-theme="relay"] .of-label {
+  color: var(--rl-heading);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+[data-of-theme="relay"] .of-input {
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border-color: var(--of-border);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+[data-of-theme="relay"] .of-input:hover {
+  border-color: var(--of-control);
+}
+
+[data-of-theme="relay"] .of-input:focus {
+  border-color: var(--of-primary);
+  box-shadow: 0 0 0 3px var(--of-ring);
+}
+
+/* Choices are short lettered rows; the radio is hidden under the letter key. */
+[data-of-theme="relay"] .of-choices {
+  justify-items: start;
+  counter-reset: rl-key;
+}
+
+[data-of-theme="relay"] .of-choices .of-choice {
+  position: relative;
+  align-items: center;
+  gap: 10px;
+  min-width: min(100%, 250px);
+  min-height: 44px;
+  padding: 6px 14px 6px 8px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  counter-increment: rl-key;
+}
+
+[data-of-theme="relay"] .of-choices .of-choice::before {
+  content: counter(rl-key, upper-alpha) / "";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--of-border);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--of-fg) 5%, var(--of-surface));
+  color: var(--of-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+[data-of-theme="relay"] .of-choices .of-choice .of-radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+}
+
+[data-of-theme="relay"] .of-choices .of-choice:has(input:checked) {
+  box-shadow: 0 0 0 1px var(--of-primary);
+}
+
+[data-of-theme="relay"] .of-choices .of-choice:has(input:checked)::before {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="relay"] .of-choices .of-choice:has(input:checked)::after {
+  content: "✓" / "";
+  margin-left: auto;
+  padding-left: 20px;
+  color: var(--of-primary);
+  font-weight: 700;
+}
+
+/* The rating is five stars that fill up to the one picked. */
+[data-of-theme="relay"] .of-rating {
+  display: flex;
+  gap: 2px;
+}
+
+[data-of-theme="relay"] .of-rating-item span {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: transparent;
+  font-size: 0;
+}
+
+[data-of-theme="relay"] .of-rating-item span::before {
+  content: "★";
+  color: var(--of-border);
+  font-size: 2rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+[data-of-theme="relay"] .of-rating-item input:checked + span {
+  background: none;
+}
+
+[data-of-theme="relay"] .of-rating-item:has(~ .of-rating-item input:checked) span::before,
+[data-of-theme="relay"] .of-rating-item input:checked + span::before {
+  color: #f5b301;
+}
+
+[data-of-theme="relay"] .of-rating-item:hover span::before {
+  color: color-mix(in srgb, #f5b301 60%, var(--of-border));
+}
+
+[data-of-theme="relay"] .of-nav {
+  justify-content: flex-start;
+}
+
+[data-of-theme="relay"] .of-button {
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 1rem;
+}
+
+[data-of-theme="relay"] .of-button-primary {
+  background: var(--rl-heading);
+  color: var(--of-surface);
+}
+
+[data-of-theme="relay"] .of-button-primary:hover:not(:disabled) {
+  background: var(--of-fg);
+}
+
+[data-of-theme="relay"] .of-button-primary::after {
+  content: "→" / "";
+}
+
+[data-of-theme="relay"] .rl-doc.of-success,
+[data-of-theme="relay"] .rl-doc.of-notice {
+  padding-top: 0;
+  text-align: left;
+}
+
+[data-of-theme="relay"] .rl-doc :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="relay"] .rl-doc.of-success .of-description,
+[data-of-theme="relay"] .rl-doc.of-notice .of-description {
+  margin-inline: 0;
+}
+
+[data-of-theme="relay"] .rl-echo {
+  margin: 1.25rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--rl-heading);
+  color: var(--rl-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="relay"] .rl-doc {
+    width: calc(100% - 40px);
+    padding-bottom: 40px;
+  }
+
+  [data-of-theme="relay"] .rl-icon {
+    width: 68px;
+    height: 68px;
+    margin: -34px 0 16px;
+  }
+
+  [data-of-theme="relay"] .of-choices .of-choice {
+    width: 100%;
+  }
+}

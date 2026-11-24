@@ -2,37 +2,19 @@ import {
   type ChoiceGroupUIProps,
   defineTheme,
   FocusLayout,
+  type LayoutUIProps,
   type RatingUIProps,
-  type SuccessUIProps,
-  type TextareaUIProps,
-  type TextInputUIProps,
   useFormNav,
 } from '@open-form-build/core';
 import { useEffect, useRef } from 'react';
+import './fonts/bricolage-grotesque.css';
+import './fonts/geist-mono.css';
 import './conversational.css';
 
-// Conversational: one question per screen, big friendly type, soft color,
-// letter keys for choices and auto-advance — Typeform-like. See THEME.md.
-// Questions, help, errors, the select, the checkbox, the matrix and the buttons
-// are the runtime's own markup, restyled in conversational.css. The components
-// below carry behavior or markup it doesn't have: letter keys and auto-advance,
-// the answer line and counter, and the success badge.
+// Conversational: one question per screen on a warm sunrise wash. Choices
+// carry letter keys, and a single answer moves on by itself. See THEME.md.
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-function CheckIcon({ size }: { size: number }) {
-  return (
-    <svg viewBox="0 0 20 20" width={size} height={size} fill="none" aria-hidden="true">
-      <path
-        d="M4.5 10.5l3.5 3.5 7.5-8"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -44,44 +26,7 @@ function isTyping(target: EventTarget | null): boolean {
   );
 }
 
-function TextInput({ field, value, onChange, unit, ...attrs }: TextInputUIProps) {
-  return (
-    <div className="cv-line">
-      <input
-        {...field.controlProps}
-        {...attrs}
-        ref={field.ref}
-        className="cv-input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      {unit && <span className="cv-unit">{unit}</span>}
-    </div>
-  );
-}
-
-function Textarea({ field, value, onChange, maxLength, ...attrs }: TextareaUIProps) {
-  return (
-    <div className="cv-line cv-multiline">
-      <textarea
-        {...field.controlProps}
-        {...attrs}
-        ref={field.ref}
-        className="cv-input"
-        maxLength={maxLength}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      {maxLength !== undefined && (
-        <span className="cv-unit" aria-hidden="true">
-          {[...value].length}/{maxLength}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// On a one-question step, picking a single answer moves on, like Typeform.
+// On a one-question step, picking a single answer moves on.
 function useAutoAdvance() {
   const ref = useRef<HTMLDivElement>(null);
   const nav = useFormNav();
@@ -110,7 +55,7 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || isTyping(event.target)) return;
-      if (document.querySelectorAll('[data-cv-keys]').length !== 1) return;
+      if (document.querySelectorAll('[data-kt-keys]').length !== 1) return;
       const index = LETTERS.indexOf(event.key.toUpperCase());
       const option = index === -1 || event.key.length !== 1 ? undefined : options[index];
       if (!option) return;
@@ -123,9 +68,9 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
   });
 
   return (
-    <div ref={ref} className="cv-choices" data-cv-keys="">
+    <div ref={ref} className="kt-choices" data-kt-keys="">
       {options.map((option, index) => (
-        <label key={option.value} className="cv-choice">
+        <label key={option.value} className="kt-choice">
           <input
             ref={index === 0 ? field.ref : undefined}
             type={multiple ? 'checkbox' : 'radio'}
@@ -138,12 +83,14 @@ function ChoiceGroup({ field, options, multiple, selected, onToggle }: ChoiceGro
             onBlur={field.onBlur}
             onChange={(e) => pick(option.value, e.target.checked)}
           />
-          <span className="cv-key" aria-hidden="true">
-            {LETTERS[index]}
-          </span>
-          <span className="cv-choice-label">{option.label}</span>
-          <span className="cv-check" aria-hidden="true">
-            <CheckIcon size={18} />
+          <span className="kt-cap">
+            <span className="kt-key" aria-hidden="true">
+              {LETTERS[index]}
+            </span>
+            <span className="kt-choice-label">{option.label}</span>
+            <span className="kt-check" aria-hidden="true">
+              ✓
+            </span>
           </span>
         </label>
       ))}
@@ -155,13 +102,9 @@ function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingU
   const { ref, advance } = useAutoAdvance();
   return (
     <div ref={ref}>
-      <div
-        className="cv-rating"
-        data-many={scores.length > 7 || undefined}
-        style={{ '--cv-count': scores.length } as object}
-      >
+      <div className="kt-scale" data-many={scores.length > 7 || undefined}>
         {scores.map((score, index) => (
-          <label key={score} className="cv-rating-item">
+          <label key={score} className="kt-scale-item">
             <input
               ref={index === 0 ? field.ref : undefined}
               type="radio"
@@ -176,12 +119,12 @@ function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingU
                 advance();
               }}
             />
-            <span className="cv-rating-num">{score}</span>
+            <span>{score}</span>
           </label>
         ))}
       </div>
       {(lowLabel || highLabel) && (
-        <div className="cv-rating-labels" aria-hidden="true">
+        <div className="kt-scale-ends" aria-hidden="true">
           <span>{lowLabel}</span>
           <span>{highLabel}</span>
         </div>
@@ -190,70 +133,53 @@ function Rating({ field, scores, value, onChange, lowLabel, highLabel }: RatingU
   );
 }
 
-function Success({ title, children }: SuccessUIProps) {
+function Layout(props: LayoutUIProps) {
   return (
-    <div className="cv-success">
-      <div className="cv-badge" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" aria-hidden="true">
-          <path
-            d="M5 12.5l4.5 4.5L19 7.5"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+    <div className="kt-page">
+      <div className="kt-top" aria-hidden="true">
+        <span className="kt-logo">
+          <i />
+        </span>
       </div>
-      <h1 className="cv-success-title">{title}</h1>
-      <div className="cv-success-body">{children}</div>
+      <FocusLayout {...props} />
     </div>
   );
 }
 
-// Latin in a rounded face; CJK falls through to the language's own fonts, which
-// have real bold weights (Hiragino Maru Gothic has one, so browsers fake it).
-const ROUNDED =
-  'ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, var(--of-cjk), sans-serif';
+const FONT =
+  '"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", var(--of-cjk), sans-serif';
 
 export default defineTheme({
-  font: ROUNDED,
-  headingFont: ROUNDED,
-  radius: '14px',
-  buttonRadius: '999px',
+  font: FONT,
+  headingFont: FONT,
+  radius: '6px',
   spacing: 'comfortable',
-  width: '680px',
+  width: '880px',
   colors: {
-    primary: '#5b4cf5',
-    primaryForeground: '#ffffff',
-    background: '#f8f7ff',
-    surface: '#ffffff',
-    foreground: '#1b1838',
-    muted: '#66627f',
-    border: '#e6e2fa',
-    control: '#8a82c6',
-    input: '#ffffff',
-    error: '#d1242f',
-    success: '#30a46c',
+    primary: '#3b2412',
+    primaryForeground: '#fff6ea',
+    background: '#f9e3c4',
+    surface: '#fbecd6',
+    foreground: '#3b2412',
+    muted: '#6e5440',
+    border: '#c9ab8c',
+    control: '#8a6a50',
+    input: '#fdf3e4',
+    error: '#a3271b',
+    success: '#2d6a3e',
   },
   dark: {
-    primary: '#a99cff',
-    primaryForeground: '#120f2e',
-    background: '#0e0c1f',
-    surface: '#17142e',
-    foreground: '#f0edff',
-    muted: '#a39fc4',
-    border: '#2c2850',
-    control: '#6a62b8',
-    input: '#1c1838',
-    error: '#ff6b70',
-    success: '#4cc38a',
+    primary: '#fbeedd',
+    primaryForeground: '#2a1710',
+    background: '#2b1a1a',
+    surface: '#33201d',
+    foreground: '#fbeedd',
+    muted: '#c9b3a0',
+    border: '#6b4a40',
+    control: '#a88a78',
+    input: '#3a2521',
+    error: '#ff9a8a',
+    success: '#8ed3a0',
   },
-  components: {
-    Layout: FocusLayout,
-    Success,
-    TextInput,
-    Textarea,
-    ChoiceGroup,
-    Rating,
-  },
+  components: { Layout, ChoiceGroup, Rating },
 });

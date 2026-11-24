@@ -1,0 +1,733 @@
+.of-root[data-of-theme="cathode"] {
+  --tb-case1: #ece4d0;
+  --tb-case2: #d6ccb4;
+  --tb-case3: #b9ae94;
+  --tb-case-ink: #5c543f;
+  --tb-glow: 255, 170, 80;
+  --tb-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  min-height: 100dvh;
+  padding: 0;
+  overflow-x: clip;
+  background:
+    radial-gradient(900px 520px at 50% 42%, rgb(255 170 80 / 0.16), transparent 70%), var(--of-bg);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+/* The knob swaps the tube: the same tokens, in green. */
+[data-of-theme="cathode"] .tb-scene[data-phosphor="green"] {
+  --of-fg: #9bffa9;
+  --of-muted: #6cc281;
+  --of-border: #5fae72;
+  --of-control: #5fae72;
+  --of-primary: #e6ff7a;
+  --of-primary-fg: #0b140d;
+  --of-surface: #0b140d;
+  --of-input: #0b140d;
+  --tb-glow: 120, 255, 150;
+}
+
+[data-of-theme="cathode"] .tb-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 26px 10px 0;
+  color: var(--of-fg);
+}
+
+[data-of-theme="cathode"] .tb-monitor {
+  position: relative;
+  z-index: 2;
+  width: min(var(--of-width), 100%);
+  padding: 26px 30px 0;
+  border-radius: 34px 34px 14px 14px;
+  background: linear-gradient(180deg, var(--tb-case1), var(--tb-case2) 78%, var(--tb-case3));
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.7),
+    inset 0 -6px 12px rgb(0 0 0 / 0.12),
+    0 40px 80px rgb(0 0 0 / 0.6);
+}
+
+[data-of-theme="cathode"] .tb-bezel {
+  padding: 22px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #2a251d, #191510);
+  box-shadow:
+    inset 0 3px 10px rgb(0 0 0 / 0.8),
+    0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+[data-of-theme="cathode"] .tb-screen {
+  position: relative;
+  min-height: 540px;
+  padding: 30px 46px 26px;
+  overflow: hidden;
+  border-radius: 44px / 38px;
+  background: radial-gradient(
+    90% 80% at 50% 42%,
+    color-mix(in srgb, var(--of-fg) 9%, var(--of-surface)),
+    var(--of-surface) 72%
+  );
+  box-shadow: 0 0 60px rgb(var(--tb-glow), 0.22);
+  text-shadow: 0 0 9px rgb(var(--tb-glow), 0.42);
+}
+
+[data-of-theme="cathode"] .tb-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 2px, rgb(0 0 0 / 0.2) 2px 3px),
+    linear-gradient(125deg, rgb(255 255 255 / 0.07), transparent 28%);
+  box-shadow: inset 0 0 70px rgb(0 0 0 / 0.85);
+  pointer-events: none;
+}
+
+[data-of-theme="cathode"] .tb-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--of-border);
+}
+
+[data-of-theme="cathode"] .tb-head .of-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 12px;
+  margin: 0;
+}
+
+[data-of-theme="cathode"] .tb-head .of-title {
+  color: var(--of-fg);
+  font: 400 3.125rem / 0.8 var(--of-heading-font);
+  letter-spacing: 0.02em;
+}
+
+[data-of-theme="cathode"] .tb-head .of-description {
+  margin: 0;
+  color: var(--of-muted);
+  font: 1.375rem / 1 var(--of-heading-font);
+}
+
+[data-of-theme="cathode"] .tb-open {
+  margin: 0;
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+[data-of-theme="cathode"] .tb-open i,
+[data-of-theme="cathode"] .tb-power i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #6fe08e;
+  box-shadow: 0 0 8px #6fe08e;
+}
+
+[data-of-theme="cathode"] .tb-curl {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+}
+
+[data-of-theme="cathode"] .tb-curl span {
+  display: block;
+  color: var(--of-muted);
+}
+
+[data-of-theme="cathode"] .tb-curl b {
+  color: var(--of-primary);
+  font-weight: 400;
+}
+
+/* Each field is one line of the JSON body: "key": value. */
+[data-of-theme="cathode"] .of-fields {
+  gap: 2px;
+  padding-left: 2ch;
+}
+
+[data-of-theme="cathode"] .of-field {
+  display: grid;
+  grid-template-columns: 12ch minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 1ch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+[data-of-theme="cathode"] .of-field > .of-label {
+  float: left;
+  margin: 0;
+  padding: 0;
+  color: var(--of-muted);
+  font: inherit;
+  text-transform: lowercase;
+}
+
+[data-of-theme="cathode"] fieldset.of-field {
+  display: block;
+}
+
+[data-of-theme="cathode"] fieldset.of-field {
+  position: relative;
+}
+
+[data-of-theme="cathode"] fieldset.of-field > .of-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  float: none;
+}
+
+[data-of-theme="cathode"] .of-field > .of-label::before {
+  content: '"' / "";
+}
+
+[data-of-theme="cathode"] .of-field > .of-label::after {
+  content: '":' / "";
+}
+
+[data-of-theme="cathode"] .of-required {
+  display: none;
+}
+
+[data-of-theme="cathode"] .of-help {
+  float: right;
+  margin: 0;
+  color: var(--of-muted);
+  font-size: inherit;
+}
+
+[data-of-theme="cathode"] .of-help::before {
+  content: "// " / "";
+}
+
+[data-of-theme="cathode"] .of-error {
+  grid-column: 2;
+  margin: 0;
+  clear: both;
+}
+
+[data-of-theme="cathode"] .of-error::before {
+  content: "// " / "";
+}
+
+[data-of-theme="cathode"] .of-input {
+  min-height: 30px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1px dashed var(--of-border);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--of-fg);
+  font: inherit;
+  text-shadow: inherit;
+  caret-color: var(--of-primary);
+}
+
+[data-of-theme="cathode"] .of-input:focus {
+  border-bottom: 1px solid var(--of-primary);
+  box-shadow: none;
+  outline: none;
+}
+
+[data-of-theme="cathode"] .of-input::placeholder {
+  color: var(--of-muted);
+  opacity: 0.6;
+}
+
+[data-of-theme="cathode"] .of-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.6ch;
+}
+
+[data-of-theme="cathode"] .of-choices .of-choice {
+  position: relative;
+  min-height: 0;
+  padding: 1px 6px;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  line-height: inherit;
+}
+
+[data-of-theme="cathode"] .of-choices .of-choice input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="cathode"] .of-choices .of-choice > span::before,
+[data-of-theme="cathode"] .of-choices .of-choice > span::after {
+  content: '"' / "";
+}
+
+[data-of-theme="cathode"] .of-choices .of-choice:hover {
+  background: color-mix(in srgb, var(--of-fg) 16%, transparent);
+}
+
+[data-of-theme="cathode"] .of-choices .of-choice:has(input:checked) {
+  background: var(--of-fg);
+  box-shadow: 0 0 14px rgb(var(--tb-glow), 0.5);
+  color: var(--of-surface);
+  text-shadow: none;
+}
+
+[data-of-theme="cathode"] .of-choices .of-choice:has(input:focus-visible) {
+  outline: 1px solid var(--of-primary);
+  outline-offset: 2px;
+}
+
+[data-of-theme="cathode"] .of-counter {
+  display: none;
+}
+
+[data-of-theme="cathode"] .of-nav {
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+[data-of-theme="cathode"] .of-button-primary {
+  min-height: 34px;
+  padding: 2px 14px;
+  border: 1.5px solid var(--of-primary);
+  background: none;
+  color: var(--of-primary);
+  font-weight: 600;
+  text-shadow: inherit;
+}
+
+[data-of-theme="cathode"] .of-button-primary::after {
+  content: " ⏎" / "";
+  white-space: pre;
+}
+
+[data-of-theme="cathode"] .of-button-primary:hover:not(:disabled) {
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+  text-shadow: none;
+}
+
+[data-of-theme="cathode"] .tb-statusbar {
+  display: flex;
+  gap: 22px;
+  margin: 22px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--of-border);
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="cathode"] .tb-statusbar b {
+  margin-left: auto;
+  color: var(--of-fg);
+  font-weight: 400;
+}
+
+[data-of-theme="cathode"] .tb-screen:is(.of-success, .of-notice) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+[data-of-theme="cathode"] .tb-screen :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="cathode"] .tb-screen:is(.of-success, .of-notice) .of-title {
+  color: var(--of-fg);
+  font: 400 4rem / 0.9 var(--of-heading-font);
+}
+
+[data-of-theme="cathode"] .tb-screen:is(.of-success, .of-notice) .of-description {
+  max-width: 52ch;
+  margin-inline: 0;
+  color: var(--of-muted);
+}
+
+/* The machine's chin. */
+[data-of-theme="cathode"] .tb-chin {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  height: 74px;
+  padding: 0 10px;
+  color: var(--tb-case-ink);
+  font: 700 0.5625rem var(--tb-sans);
+  letter-spacing: 0.12em;
+}
+
+[data-of-theme="cathode"] .tb-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.0625rem;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="cathode"] .tb-badge i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid var(--tb-case-ink);
+  border-radius: 4px;
+}
+
+[data-of-theme="cathode"] .tb-slot {
+  width: 150px;
+  height: 9px;
+  border-radius: 5px;
+  background: #231e17;
+  box-shadow:
+    inset 0 2px 3px #000,
+    0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+[data-of-theme="cathode"] .tb-grille {
+  flex: 1;
+  height: 26px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, rgb(0 0 0 / 0.28) 0 3px, transparent 3px 9px);
+  mask: linear-gradient(90deg, transparent, #000 10% 90%, transparent);
+}
+
+[data-of-theme="cathode"] .tb-knob,
+[data-of-theme="cathode"] .tb-power {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-of-theme="cathode"] .tb-knob {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+[data-of-theme="cathode"] .tb-knob i {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #cfc5ad 60%, #a59a80);
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 0.4),
+    inset 0 0 0 1px rgb(0 0 0 / 0.15);
+  transition: rotate 0.25s ease;
+  rotate: -35deg;
+}
+
+[data-of-theme="cathode"] .tb-knob[aria-pressed="true"] i {
+  rotate: 35deg;
+}
+
+[data-of-theme="cathode"] .tb-knob i::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 4px;
+  width: 2.5px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--tb-case-ink);
+}
+
+[data-of-theme="cathode"] .tb-knob:focus-visible {
+  outline: 2px solid var(--tb-case-ink);
+  outline-offset: 3px;
+}
+
+[data-of-theme="cathode"] .tb-power i {
+  margin: 0;
+}
+
+[data-of-theme="cathode"] .tb-neck {
+  z-index: 1;
+  width: min(420px, 50%);
+  height: 20px;
+  background: linear-gradient(180deg, #9c917a, var(--tb-case3));
+}
+
+[data-of-theme="cathode"] .tb-keyboard {
+  display: grid;
+  gap: 7px;
+  width: min(1060px, 108%);
+  margin-top: 4px;
+  padding: 16px 20px 30px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(180deg, var(--tb-case1), var(--tb-case2));
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.7),
+    0 30px 60px rgb(0 0 0 / 0.6);
+  transform: perspective(1400px) rotateX(24deg);
+  transform-origin: top;
+}
+
+[data-of-theme="cathode"] .tb-keyboard div {
+  display: flex;
+  gap: 7px;
+}
+
+[data-of-theme="cathode"] .tb-keyboard span {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  height: 40px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f7f1e2, #e2d9c3);
+  box-shadow:
+    0 3px 0 #a79c82,
+    0 4px 5px rgb(0 0 0 / 0.25);
+  color: var(--tb-case-ink);
+  font: 600 0.6875rem var(--tb-sans);
+}
+
+[data-of-theme="cathode"] .tb-keyboard span[data-key] {
+  flex: 2;
+  background: linear-gradient(180deg, #b8ae96, #9d937b);
+  box-shadow:
+    0 3px 0 #766d58,
+    0 4px 5px rgb(0 0 0 / 0.25);
+  color: #3b3528;
+}
+
+[data-of-theme="cathode"] .tb-keyboard span[data-key="esc"] {
+  flex: 1;
+}
+
+[data-of-theme="cathode"] .tb-keyboard span[data-key="enter"] {
+  flex: 2.6;
+  background: linear-gradient(180deg, #ff8a62, #ee5f38);
+  box-shadow:
+    0 1px 0 #a53d20,
+    0 0 18px rgb(255 122 80 / 0.7);
+  color: #2a0d05;
+  translate: 0 2px;
+}
+
+[data-of-theme="cathode"] .tb-note {
+  position: absolute;
+  left: calc(50% + 520px);
+  top: 120px;
+  width: 170px;
+  margin: 0;
+  padding: 16px 14px 20px;
+  background: #ffe27a;
+  box-shadow: 0 14px 24px rgb(0 0 0 / 0.5);
+  color: #3b3214;
+  font: 1.375rem / 1.25 var(--of-heading-font);
+  rotate: 5deg;
+}
+
+[data-of-theme="cathode"] .tb-disk {
+  position: absolute;
+  right: calc(50% + 530px);
+  top: 420px;
+  width: 150px;
+  height: 156px;
+  padding: 0 16px;
+  border-radius: 6px 16px 6px 6px;
+  background: #2c2924;
+  box-shadow: 0 16px 26px rgb(0 0 0 / 0.55);
+  rotate: -9deg;
+}
+
+[data-of-theme="cathode"] .tb-disk::before {
+  content: "";
+  display: block;
+  width: 76px;
+  height: 48px;
+  margin: 0 auto;
+  border-radius: 0 0 3px 3px;
+  background: #b9b3a6;
+  box-shadow: inset -22px 0 0 -6px #2c2924;
+}
+
+[data-of-theme="cathode"] .tb-disk span {
+  display: block;
+  height: 78px;
+  margin-top: 14px;
+  padding: 8px 9px;
+  border-top: 10px solid #ff7a50;
+  border-radius: 3px;
+  background: #f4eedd;
+  color: #3b3528;
+  font: 600 0.75rem / 1.4 var(--of-font);
+}
+
+@media (max-width: 1420px) {
+  [data-of-theme="cathode"] :is(.tb-note, .tb-disk) {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .of-root[data-of-theme="cathode"] {
+    font-size: 0.8125rem;
+    line-height: 1.7;
+  }
+
+  [data-of-theme="cathode"] .tb-scene {
+    padding-top: 14px;
+  }
+
+  [data-of-theme="cathode"] .tb-monitor {
+    padding: 12px 12px 0;
+    border-radius: 22px 22px 10px 10px;
+  }
+
+  [data-of-theme="cathode"] .tb-bezel {
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  [data-of-theme="cathode"] .tb-screen {
+    padding: 20px 18px;
+    border-radius: 26px;
+  }
+
+  [data-of-theme="cathode"] .tb-head .of-title {
+    font-size: 2.375rem;
+  }
+
+  [data-of-theme="cathode"] .tb-head .of-description {
+    font-size: 1.125rem;
+  }
+
+  [data-of-theme="cathode"] .of-fields {
+    gap: 6px;
+    padding-left: 0;
+  }
+
+  [data-of-theme="cathode"] .of-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-of-theme="cathode"] fieldset.of-field > .of-label {
+    position: static;
+  }
+
+  [data-of-theme="cathode"] fieldset.of-field > .of-choices {
+    margin: 0;
+    padding-right: 0;
+  }
+
+  [data-of-theme="cathode"] fieldset.of-field > .of-help {
+    position: static;
+  }
+
+  [data-of-theme="cathode"] .of-help {
+    float: none;
+    display: inline;
+    margin-left: 1ch;
+  }
+
+  [data-of-theme="cathode"] .of-error {
+    grid-column: 1;
+  }
+
+  [data-of-theme="cathode"] .of-input {
+    min-height: 40px;
+  }
+
+  [data-of-theme="cathode"] .of-choices .of-choice {
+    min-height: 34px;
+    align-items: center;
+  }
+
+  [data-of-theme="cathode"] .tb-statusbar span,
+  [data-of-theme="cathode"] .tb-slot,
+  [data-of-theme="cathode"] .tb-knob span,
+  [data-of-theme="cathode"] .tb-power {
+    display: none;
+  }
+
+  [data-of-theme="cathode"] .tb-statusbar b {
+    margin: 0;
+  }
+
+  [data-of-theme="cathode"] .tb-chin {
+    gap: 12px;
+    height: 52px;
+  }
+
+  [data-of-theme="cathode"] .tb-keyboard {
+    width: 118%;
+    padding: 10px 12px 20px;
+  }
+
+  [data-of-theme="cathode"] .tb-keyboard span {
+    height: 26px;
+    font-size: 0;
+  }
+}
+
+[data-of-theme="cathode"] fieldset.of-field:not(:has(.of-help)) > .of-choices {
+  padding-right: 0;
+}
+
+/* A reference has to hold any label, so keys sit on their own line above the value. */
+[data-of-theme="cathode"] .of-fields {
+  gap: 8px;
+}
+
+[data-of-theme="cathode"] .of-field {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+[data-of-theme="cathode"] fieldset.of-field > .of-label,
+[data-of-theme="cathode"] fieldset.of-field > .of-help {
+  position: static;
+}
+
+[data-of-theme="cathode"] fieldset.of-field > .of-choices {
+  margin: 0;
+  padding-right: 0;
+}
+
+[data-of-theme="cathode"]
+  .of-field
+  > :is(.of-input, .of-select-wrap, .of-input-group, .of-textarea, .of-choices, .of-rating) {
+  margin-left: 2ch;
+}
+
+[data-of-theme="cathode"] .of-error {
+  grid-column: 1;
+}
+
+[data-of-theme="cathode"] .of-page-title {
+  color: var(--of-muted);
+  font: inherit;
+}
+
+[data-of-theme="cathode"] .of-page-title::before {
+  content: "// " / "";
+}
+
+@media (max-width: 760px) {
+  [data-of-theme="cathode"]
+    .of-field
+    > :is(.of-input, .of-select-wrap, .of-input-group, .of-textarea, .of-choices, .of-rating) {
+    margin-left: 0;
+  }
+}

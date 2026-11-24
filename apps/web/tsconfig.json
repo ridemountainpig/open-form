@@ -17,7 +17,7 @@
     "paths": {
       "@/*": ["./*"],
       "collections/*": ["./.source/*"],
-      "@starters/*": ["../demo/themes/*"]
+      "@starters/*": ["./starters/*"]
     },
     "plugins": [
       {

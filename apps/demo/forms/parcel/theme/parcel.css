@@ -1,0 +1,217 @@
+.of-root[data-of-theme="parcel"] {
+  --pc-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+[data-of-theme="parcel"] .pc-bar {
+  display: flex;
+  align-items: center;
+  padding: 26px clamp(20px, 3vw, 36px);
+}
+
+[data-of-theme="parcel"] .pc-mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="parcel"] .pc-mark i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--of-fg);
+}
+
+[data-of-theme="parcel"] .pc-sheet {
+  width: min(var(--of-width), 100% - 40px);
+  margin: 0 auto;
+  padding: clamp(12px, 4vh, 44px) 0 72px;
+}
+
+[data-of-theme="parcel"] .of-title {
+  font-size: clamp(2rem, 1.6rem + 1.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+[data-of-theme="parcel"] .of-description {
+  font-size: 1.03rem;
+}
+
+[data-of-theme="parcel"] .of-label {
+  font-weight: 500;
+}
+
+/* Help sits on the label's line, as the quiet half of the question. */
+[data-of-theme="parcel"] .of-field {
+  position: relative;
+}
+
+[data-of-theme="parcel"] .of-field > :is(.of-label, legend):has(+ .of-help) {
+  padding-right: 11.5rem;
+}
+
+[data-of-theme="parcel"] .of-field > :is(.of-label, legend) + .of-help {
+  position: absolute;
+  top: 0.1rem;
+  right: 0;
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+/* The help is out of flow, so what follows it clears the floated legend itself. */
+[data-of-theme="parcel"] .of-field > legend {
+  box-sizing: border-box;
+}
+
+[data-of-theme="parcel"] .of-field > .of-help ~ * {
+  clear: both;
+}
+
+[data-of-theme="parcel"] .of-field > * + :is(.of-rating, .of-choices, .of-input) {
+  margin-top: 0.75rem;
+}
+
+/* Text answers are a line, not a box. */
+[data-of-theme="parcel"] .of-input {
+  min-height: 44px;
+  padding: 4px 0 10px;
+  border: 0;
+  border-bottom: 1px solid var(--of-control);
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-of-theme="parcel"] .of-input:focus {
+  border-bottom-color: var(--of-primary);
+  box-shadow: 0 1px 0 var(--of-primary);
+}
+
+[data-of-theme="parcel"] .of-input:focus-visible {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 4px;
+}
+
+[data-of-theme="parcel"] .of-textarea {
+  min-height: 4.5rem;
+  resize: none;
+}
+
+[data-of-theme="parcel"] .of-rating {
+  gap: 8px;
+}
+
+[data-of-theme="parcel"] .of-rating-item span {
+  min-height: 58px;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+[data-of-theme="parcel"] .of-rating-labels {
+  margin-top: 0.5rem;
+  font-family: var(--pc-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Choices are tags: the box is hidden, the whole pill fills in. */
+[data-of-theme="parcel"] .of-choices[data-variant="cards"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+[data-of-theme="parcel"] .of-choices[data-variant="cards"] .of-choice {
+  position: relative;
+  min-height: 40px;
+  align-items: center;
+  padding: 6px 15px;
+  border-color: var(--of-control);
+  border-radius: 999px;
+}
+
+[data-of-theme="parcel"] .of-choices[data-variant="cards"] .of-checkbox {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+}
+
+[data-of-theme="parcel"] .of-choices[data-variant="cards"] .of-choice:has(input:checked) {
+  border-color: var(--of-primary);
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+[data-of-theme="parcel"] .of-nav {
+  align-items: center;
+  margin-top: calc(var(--of-gap) * 1.4);
+  padding-top: 22px;
+  border-top: 1px solid var(--of-border);
+}
+
+[data-of-theme="parcel"] .of-nav::before {
+  content: "We read every response";
+  margin-right: auto;
+  color: var(--of-muted);
+  font-family: var(--pc-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="parcel"] .of-button {
+  font-weight: 500;
+}
+
+[data-of-theme="parcel"] .pc-sheet.of-success,
+[data-of-theme="parcel"] .pc-sheet.of-notice {
+  text-align: left;
+}
+
+[data-of-theme="parcel"] .pc-sheet.of-success .of-description,
+[data-of-theme="parcel"] .pc-sheet.of-notice .of-description {
+  margin-inline: 0;
+}
+
+[data-of-theme="parcel"] .of-success-icon {
+  margin-inline: 0;
+  border-radius: 12px;
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+@media (max-width: 520px) {
+  [data-of-theme="parcel"] .pc-bar {
+    padding: 18px 20px;
+  }
+
+  [data-of-theme="parcel"] .pc-sheet {
+    padding-bottom: 40px;
+  }
+
+  [data-of-theme="parcel"] .of-rating-item span {
+    min-height: 52px;
+  }
+
+  [data-of-theme="parcel"] .of-nav::before {
+    display: none;
+  }
+
+  [data-of-theme="parcel"] .of-field > :is(.of-label, legend):has(+ .of-help) {
+    padding-right: 0;
+  }
+
+  [data-of-theme="parcel"] .of-field > :is(.of-label, legend) + .of-help {
+    position: static;
+    margin-top: 0.15rem;
+  }
+}

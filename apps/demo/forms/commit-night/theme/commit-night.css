@@ -1,0 +1,657 @@
+.of-root[data-of-theme="commit-night"] {
+  --cn-bar: #141923;
+  --cn-amber: #ffb454;
+  --cn-sel: #1a2130;
+  --cn-cyan: #6fd3ff;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: clamp(0px, 2.4vw, 34px);
+  background: radial-gradient(1200px 700px at 70% -10%, #1a1408 0, transparent 60%), var(--of-bg);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+[data-of-theme="commit-night"] .of-frame {
+  width: 100%;
+  max-width: var(--of-width);
+}
+
+[data-of-theme="commit-night"] .cn-window {
+  overflow: hidden;
+  border: 1px solid var(--of-border);
+  border-radius: 12px;
+  background: var(--of-surface);
+  box-shadow:
+    0 40px 90px -30px #000,
+    0 0 0 1px #000;
+}
+
+[data-of-theme="commit-night"] .cn-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--of-border);
+  background: var(--cn-bar);
+  color: var(--of-muted);
+  font-size: 0.78rem;
+}
+
+[data-of-theme="commit-night"] .cn-titlebar i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #2c3444;
+}
+
+[data-of-theme="commit-night"] .cn-titlebar span {
+  margin: 0 auto;
+  translate: -24px 0;
+}
+
+[data-of-theme="commit-night"] .cn-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 20px 26px 14px;
+}
+
+[data-of-theme="commit-night"] .cn-prompt {
+  margin: 0;
+  color: var(--of-muted);
+}
+
+[data-of-theme="commit-night"] .cn-head .of-header {
+  margin: 0;
+}
+
+[data-of-theme="commit-night"] .cn-head .of-title,
+[data-of-theme="commit-night"] .cn-wordmark {
+  margin: 0;
+  color: var(--of-fg);
+  font:
+    900 clamp(2.4rem, 1.2rem + 4vw, 4.125rem) / 0.9 "Doto",
+    var(--of-font);
+  letter-spacing: 0.01em;
+  text-shadow: 0 0 22px rgb(255 180 84 / 0.18);
+}
+
+[data-of-theme="commit-night"] .cn-head .of-description {
+  margin-top: 8px;
+  color: var(--of-primary);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="commit-night"] .cn-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+}
+
+[data-of-theme="commit-night"] .cn-meta div {
+  display: flex;
+  gap: 1ch;
+}
+
+[data-of-theme="commit-night"] .cn-meta dt {
+  width: 5ch;
+  color: var(--of-muted);
+}
+
+[data-of-theme="commit-night"] .cn-meta dd {
+  margin: 0;
+}
+
+[data-of-theme="commit-night"] .cn-grid {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 372px;
+  grid-template-areas:
+    "steps main agenda"
+    "you main agenda"
+    "you main seats";
+  grid-template-rows: auto 1fr auto;
+  gap: 14px;
+  padding: 8px 20px 16px;
+}
+
+[data-of-theme="commit-night"] .cn-window:not([data-state="form"]) .cn-grid {
+  grid-template-areas: "main main agenda" "main main seats";
+  grid-template-rows: 1fr auto;
+}
+
+[data-of-theme="commit-night"] .cn-pane {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: 16px 16px 12px;
+  border: 1px solid var(--of-border);
+  border-radius: 6px;
+}
+
+[data-of-theme="commit-night"] .cn-legend {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  padding: 0 7px;
+  background: var(--of-surface);
+  color: var(--of-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+[data-of-theme="commit-night"] .cn-legend-end {
+  left: auto;
+  right: 12px;
+}
+
+[data-of-theme="commit-night"] .cn-steps {
+  grid-area: steps;
+}
+
+[data-of-theme="commit-night"] .cn-you {
+  grid-area: you;
+}
+
+[data-of-theme="commit-night"] .cn-main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 22px 14px;
+  border-color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .cn-main > .cn-legend {
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .cn-main .of-step,
+[data-of-theme="commit-night"] .cn-main .of-page {
+  display: contents;
+}
+
+[data-of-theme="commit-night"] .cn-agenda {
+  grid-area: agenda;
+}
+
+[data-of-theme="commit-night"] .cn-agenda .cn-legend-end {
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .cn-seats {
+  grid-area: seats;
+}
+
+[data-of-theme="commit-night"] .cn-steps ol,
+[data-of-theme="commit-night"] .cn-agenda ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-of-theme="commit-night"] .cn-steps button {
+  display: flex;
+  gap: 9px;
+  width: 100%;
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--of-muted);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-of-theme="commit-night"] .cn-steps button:disabled {
+  cursor: default;
+}
+
+[data-of-theme="commit-night"] .cn-steps [data-state="done"] button {
+  color: var(--of-fg);
+}
+
+[data-of-theme="commit-night"] .cn-steps [data-state="done"] button span:first-child {
+  color: var(--of-primary);
+}
+
+[data-of-theme="commit-night"] .cn-steps [data-state="current"] button {
+  background: var(--cn-sel);
+  color: #fff;
+}
+
+[data-of-theme="commit-night"] .cn-steps [data-state="current"] button span:first-child {
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .cn-you dl {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="commit-night"] .cn-you dl div {
+  display: grid;
+  grid-template-columns: 7ch minmax(0, 1fr);
+}
+
+[data-of-theme="commit-night"] .cn-you dt {
+  color: var(--of-muted);
+}
+
+[data-of-theme="commit-night"] .cn-you dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-of-theme="commit-night"] .cn-you dd[data-set] {
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .cn-comment {
+  margin: 14px 0 0;
+  color: var(--of-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+[data-of-theme="commit-night"] .cn-agenda li {
+  display: grid;
+  grid-template-columns: auto 14px minmax(0, 1fr);
+  gap: 0 9px;
+  padding-bottom: 7px;
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="commit-night"] .cn-agenda time,
+[data-of-theme="commit-night"] .cn-agenda li > span {
+  color: var(--of-muted);
+}
+
+[data-of-theme="commit-night"] .cn-agenda b {
+  font-weight: 500;
+  opacity: 0.78;
+}
+
+[data-of-theme="commit-night"] .cn-agenda small {
+  display: block;
+  color: var(--of-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+[data-of-theme="commit-night"] .cn-agenda [data-hit] > span {
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .cn-agenda [data-hit] b {
+  color: #fff;
+  opacity: 1;
+}
+
+[data-of-theme="commit-night"] .cn-meter {
+  height: 16px;
+  background: var(--cn-amber);
+  mask: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 9px);
+}
+
+[data-of-theme="commit-night"] .cn-seats p {
+  margin: 6px 0 0;
+  color: var(--of-muted);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="commit-night"] .cn-seats b {
+  color: #fff;
+  font:
+    900 1.875rem / 1 "Doto",
+    var(--of-font);
+}
+
+/* Prompts: a `?` that becomes a tick once the question has an answer. */
+[data-of-theme="commit-night"] .of-page-header {
+  display: none;
+}
+
+[data-of-theme="commit-night"] .of-fields {
+  gap: 15px;
+}
+
+[data-of-theme="commit-night"] .of-field > .of-label {
+  color: #fff;
+  font-size: inherit;
+  font-weight: 500;
+}
+
+[data-of-theme="commit-night"] .of-field > .of-label::before {
+  content: "? " / "";
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .of-field:has(input:checked) > .of-label::before,
+[data-of-theme="commit-night"] .of-field:has(.of-input[value]:not([value=""])) > .of-label::before {
+  content: "✓ " / "";
+  color: var(--of-primary);
+}
+
+[data-of-theme="commit-night"] .of-help {
+  margin-left: 2ch;
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="commit-night"] .of-help::before {
+  content: "# " / "";
+}
+
+[data-of-theme="commit-night"] .of-input {
+  min-height: 44px;
+  margin-left: 2ch;
+  width: calc(100% - 2ch);
+  max-width: 52ch;
+  border-color: var(--of-border);
+  color: var(--cn-amber);
+  caret-color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .of-input:focus {
+  border-color: var(--cn-amber);
+  box-shadow: none;
+  outline: none;
+}
+
+[data-of-theme="commit-night"] .of-input::placeholder {
+  color: var(--of-control);
+}
+
+[data-of-theme="commit-night"] .of-counter {
+  max-width: 54ch;
+}
+
+[data-of-theme="commit-night"] .of-choices {
+  gap: 0;
+  margin-left: 4px;
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice {
+  position: relative;
+  align-items: center;
+  gap: 10px;
+  min-height: 30px;
+  padding: 2px 8px 2px 24px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice > span::before {
+  content: "[ ] " / "";
+  color: var(--of-muted);
+  white-space: pre;
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice:has(.of-radio) > span::before {
+  content: "( ) " / "";
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice:has(input:checked) > span::before {
+  content: "[x] " / "";
+  color: var(--of-primary);
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice:has(.of-radio:checked) > span::before {
+  content: "(•) " / "";
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice:is(:hover, :has(input:focus-visible)) {
+  background: var(--cn-sel);
+  color: #fff;
+}
+
+[data-of-theme="commit-night"]
+  .of-choices
+  .of-choice:is(:hover, :has(input:focus-visible))::before {
+  content: "❯" / "";
+  position: absolute;
+  left: 6px;
+  color: var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice:has(input:disabled) {
+  opacity: 0.5;
+}
+
+[data-of-theme="commit-night"] .of-choices[data-variant="cards"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 0 2ch;
+}
+
+[data-of-theme="commit-night"] .of-choices[data-variant="cards"] .of-choice {
+  min-height: 36px;
+  padding: 3px 13px;
+  border: 1px solid var(--of-border);
+  justify-content: center;
+}
+
+[data-of-theme="commit-night"]
+  .of-choices[data-variant="cards"]
+  .of-choice:has(input, input:checked)
+  > span::before,
+[data-of-theme="commit-night"] .of-choices[data-variant="cards"] .of-choice::before {
+  content: none;
+}
+
+[data-of-theme="commit-night"] .of-choices[data-variant="cards"] .of-choice > span {
+  position: static;
+}
+
+[data-of-theme="commit-night"] .of-choices[data-variant="cards"] .of-choice:has(input:checked) {
+  border-color: var(--cn-amber);
+  background: var(--cn-amber);
+  color: #17110a;
+  font-weight: 700;
+}
+
+[data-of-theme="commit-night"] .of-choices .of-choice:has(input:focus-visible) {
+  outline: 1px solid var(--cn-amber);
+}
+
+[data-of-theme="commit-night"] .of-choice-single {
+  margin-left: 2ch;
+}
+
+[data-of-theme="commit-night"] .of-nav {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed var(--of-border);
+}
+
+[data-of-theme="commit-night"] .of-fields {
+  margin-bottom: 16px;
+}
+
+[data-of-theme="commit-night"] .of-button {
+  min-height: 40px;
+  padding: 0 14px;
+  font-weight: 700;
+}
+
+[data-of-theme="commit-night"] .of-button-secondary {
+  border-color: var(--of-border);
+  background: none;
+  color: var(--of-muted);
+  font-weight: 400;
+}
+
+[data-of-theme="commit-night"] .of-button-secondary::before {
+  content: "← " / "";
+  white-space: pre;
+}
+
+[data-of-theme="commit-night"] .of-button-primary::after {
+  content: " ⏎" / "";
+  white-space: pre;
+}
+
+[data-of-theme="commit-night"] .cn-main:is(.of-success, .of-notice) {
+  justify-content: center;
+  min-height: 300px;
+  text-align: left;
+}
+
+[data-of-theme="commit-night"] .cn-main :is(.of-success-icon, .of-eyebrow) {
+  display: none;
+}
+
+[data-of-theme="commit-night"] .cn-main:is(.of-success, .of-notice) .of-title {
+  color: var(--of-primary);
+  font:
+    900 clamp(2rem, 1.4rem + 2vw, 3rem) / 1 "Doto",
+    var(--of-font);
+}
+
+[data-of-theme="commit-night"] .cn-main:is(.of-success, .of-notice) .of-description {
+  margin-inline: 0;
+}
+
+[data-of-theme="commit-night"] .cn-status {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--of-border);
+  background: var(--cn-bar);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+[data-of-theme="commit-night"] .cn-status > * {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+}
+
+[data-of-theme="commit-night"] .cn-status b {
+  background: var(--cn-amber);
+  color: #17110a;
+}
+
+[data-of-theme="commit-night"] .cn-status b + span {
+  background: #1c2331;
+}
+
+[data-of-theme="commit-night"] .cn-path,
+[data-of-theme="commit-night"] .cn-keys {
+  color: var(--of-muted);
+}
+
+[data-of-theme="commit-night"] .cn-keys {
+  margin-left: auto;
+}
+
+[data-of-theme="commit-night"] .cn-keys kbd {
+  color: var(--of-fg);
+  font: inherit;
+}
+
+[data-of-theme="commit-night"] .cn-status .cn-free {
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+@media (max-width: 1100px) {
+  [data-of-theme="commit-night"] .cn-grid,
+  [data-of-theme="commit-night"] .cn-window:not([data-state="form"]) .cn-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "steps steps" "main main" "agenda agenda" "you seats";
+    grid-template-rows: none;
+    gap: 18px 14px;
+  }
+
+  [data-of-theme="commit-night"] .cn-steps ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  [data-of-theme="commit-night"] .cn-steps button {
+    width: auto;
+  }
+
+  [data-of-theme="commit-night"] .cn-keys,
+  [data-of-theme="commit-night"] .cn-path {
+    display: none;
+  }
+
+  [data-of-theme="commit-night"] .cn-status .cn-free {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .of-root[data-of-theme="commit-night"] {
+    display: block;
+    padding: 0;
+  }
+
+  [data-of-theme="commit-night"] .cn-window {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  [data-of-theme="commit-night"] .cn-titlebar {
+    display: none;
+  }
+
+  [data-of-theme="commit-night"] .cn-head {
+    padding: 18px 16px 8px;
+  }
+
+  [data-of-theme="commit-night"] .cn-grid,
+  [data-of-theme="commit-night"] .cn-window:not([data-state="form"]) .cn-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "steps" "main" "agenda" "seats";
+    padding: 8px 12px 20px;
+  }
+
+  [data-of-theme="commit-night"] .cn-you {
+    display: none;
+  }
+
+  [data-of-theme="commit-night"] .cn-steps li:not([data-state="current"]) .cn-step-name {
+    display: none;
+  }
+
+  [data-of-theme="commit-night"] .cn-main {
+    padding: 16px 13px 13px;
+  }
+
+  [data-of-theme="commit-night"] .of-input,
+  [data-of-theme="commit-night"] .of-help,
+  [data-of-theme="commit-night"] .of-choice-single,
+  [data-of-theme="commit-night"] .of-choices[data-variant="cards"] {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+[data-of-theme="commit-night"] .cn-window:not([data-state="form"]) .cn-you {
+  display: none;
+}

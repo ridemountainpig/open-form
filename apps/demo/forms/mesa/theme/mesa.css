@@ -1,0 +1,309 @@
+.of-root[data-of-theme="mesa"] {
+  --ms-glow: #fbf5e8;
+  --ms-wine: #a5362e;
+  --ms-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, var(--of-cjk), monospace;
+  min-height: 100dvh;
+  padding: 0;
+  background: radial-gradient(800px 500px at 50% 0, var(--ms-glow), transparent 70%), var(--of-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="mesa"]:not([data-scheme]) {
+    --ms-glow: #2a2617;
+    --ms-wine: #b5433a;
+  }
+}
+
+.of-root[data-of-theme="mesa"][data-scheme="dark"] {
+  --ms-glow: #2a2617;
+  --ms-wine: #b5433a;
+}
+
+[data-of-theme="mesa"] .ms-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 24px clamp(20px, 3.4vw, 48px) 0;
+}
+
+[data-of-theme="mesa"] .ms-logo {
+  font: italic 300 1.875rem var(--of-heading-font);
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="mesa"] .ms-courses {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--of-muted);
+  font: 0.72rem var(--ms-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="mesa"] .ms-courses li + li::before {
+  content: "";
+  display: inline-block;
+  width: 34px;
+  margin-right: 14px;
+  border-top: 1px dotted var(--of-muted);
+  vertical-align: middle;
+}
+
+[data-of-theme="mesa"] .ms-courses [data-state="current"] {
+  color: var(--of-primary);
+}
+
+[data-of-theme="mesa"] .ms-courses [data-state="done"] {
+  color: var(--of-fg);
+}
+
+[data-of-theme="mesa"] .ms-main {
+  width: min(var(--of-width), 100% - 48px);
+  margin: 0 auto;
+  padding: clamp(36px, 8vh, 84px) 0 56px;
+  text-align: center;
+}
+
+[data-of-theme="mesa"] .of-header {
+  margin: 0;
+}
+
+[data-of-theme="mesa"] .of-header .of-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+[data-of-theme="mesa"] .of-header .of-description {
+  display: none;
+}
+
+[data-of-theme="mesa"] .ms-eyebrow {
+  margin: 0 0 12px;
+  color: var(--of-muted);
+  font: 0.72rem var(--ms-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="mesa"] .of-page-title,
+[data-of-theme="mesa"] :is(.of-success, .of-notice) .of-title {
+  font: 300 clamp(2.25rem, 1.5rem + 3vw, 3.375rem) / 1.05 var(--of-heading-font);
+  letter-spacing: -0.03em;
+}
+
+[data-of-theme="mesa"] .of-page-description,
+[data-of-theme="mesa"] :is(.of-success, .of-notice) .of-description {
+  margin-top: 10px;
+  color: var(--of-muted);
+  font-size: 1.0625rem;
+}
+
+[data-of-theme="mesa"] .of-fields {
+  width: min(520px, 100%);
+  margin: 34px auto 0;
+  text-align: left;
+}
+
+[data-of-theme="mesa"] .of-fields:has(.ms-tiles) {
+  width: 100%;
+}
+
+[data-of-theme="mesa"] .of-label {
+  color: var(--of-muted);
+  font: 0.72rem var(--ms-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="mesa"] .of-field:has(.ms-tiles) > .of-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+[data-of-theme="mesa"] .of-input {
+  min-height: 52px;
+  font-family: var(--of-heading-font);
+  font-size: 1.25rem;
+}
+
+[data-of-theme="mesa"] .of-textarea {
+  font-family: var(--of-font);
+  font-size: 1rem;
+}
+
+[data-of-theme="mesa"] .ms-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-top: 6px;
+  text-align: center;
+}
+
+[data-of-theme="mesa"] .ms-tile {
+  position: relative;
+  display: block;
+  padding: 12px 12px 18px;
+  border: 1px solid var(--of-border);
+  border-radius: 140px 140px 14px 14px;
+  background: var(--of-surface);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    translate 0.2s ease;
+}
+
+[data-of-theme="mesa"] .ms-tile:hover {
+  translate: 0 -3px;
+}
+
+[data-of-theme="mesa"] .ms-tile input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-of-theme="mesa"] .ms-art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1.05;
+  border-radius: 128px 128px 6px 6px;
+  background: color-mix(in srgb, var(--of-fg) 6%, var(--of-surface));
+}
+
+[data-of-theme="mesa"] .ms-l {
+  fill: none;
+  stroke: var(--of-fg);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-of-theme="mesa"] .ms-g {
+  fill: var(--of-primary);
+}
+
+[data-of-theme="mesa"] .ms-w {
+  fill: var(--ms-wine);
+}
+
+[data-of-theme="mesa"] .ms-tile b {
+  display: block;
+  margin-top: 14px;
+  font: 400 1.375rem var(--of-heading-font);
+  letter-spacing: -0.01em;
+}
+
+[data-of-theme="mesa"] .ms-tile small {
+  color: var(--of-muted);
+  font-size: 0.84rem;
+}
+
+[data-of-theme="mesa"] .ms-tile:has(input:checked) {
+  border-color: var(--of-primary);
+  box-shadow:
+    0 0 0 1px var(--of-primary),
+    0 20px 50px color-mix(in srgb, var(--of-primary) 16%, transparent);
+}
+
+[data-of-theme="mesa"] .ms-tile:has(input:checked) .ms-art {
+  background: color-mix(in srgb, var(--of-primary) 16%, var(--of-surface));
+}
+
+[data-of-theme="mesa"] .ms-tile:has(input:checked)::after {
+  content: "✓" / "";
+  position: absolute;
+  top: -10px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+  font-size: 0.8125rem;
+}
+
+[data-of-theme="mesa"] .ms-tile:has(input:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 4px;
+}
+
+[data-of-theme="mesa"] .of-nav {
+  justify-content: center;
+  margin-top: 36px;
+}
+
+[data-of-theme="mesa"] .of-button {
+  min-height: 50px;
+  padding: 0 1.75rem;
+  font-weight: 500;
+}
+
+[data-of-theme="mesa"] .of-button-secondary {
+  border-color: transparent;
+  background: none;
+  color: var(--of-muted);
+}
+
+[data-of-theme="mesa"] .of-alert {
+  width: min(520px, 100%);
+  margin-inline: auto;
+}
+
+[data-of-theme="mesa"] .of-success-icon {
+  background: var(--of-primary);
+  color: var(--of-primary-fg);
+}
+
+@media (max-width: 760px) {
+  [data-of-theme="mesa"] .ms-top {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding-top: 18px;
+  }
+
+  [data-of-theme="mesa"] .ms-main {
+    width: calc(100% - 40px);
+    padding: 28px 0 40px;
+  }
+
+  [data-of-theme="mesa"] .ms-tiles {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  [data-of-theme="mesa"] .ms-tile {
+    padding: 8px 8px 12px;
+    border-radius: 90px 90px 12px 12px;
+  }
+
+  [data-of-theme="mesa"] .ms-art {
+    aspect-ratio: 1 / 0.8;
+    border-radius: 82px 82px 6px 6px;
+  }
+
+  [data-of-theme="mesa"] .ms-tile b {
+    margin-top: 8px;
+    font-size: 1.125rem;
+  }
+
+  [data-of-theme="mesa"] .ms-tile small {
+    display: none;
+  }
+}
