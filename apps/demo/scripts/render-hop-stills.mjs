@@ -1,21 +1,20 @@
-// Renders forms/plop/theme/stills/<finish>.png with vgpu in Node: the picture
+// Renders forms/hop/theme/stills/<breed>.png with vgpu in Node: the picture
 // the form shows where WebGPU isn't available. Run after editing the shader:
-// node scripts/render-plop-stills.mjs (needs a WebGPU adapter: `npx vgpu doctor`)
+// node scripts/render-hop-stills.mjs (needs a WebGPU adapter: `npx vgpu doctor`)
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import zlib from 'node:zlib';
 import { prepareShader } from '@vgpu/wgsl/prepare';
 import { effect, init, target } from 'vgpu/node';
 
-const FINISHES = {
-  silver: [0.97, 0.96, 0.95],
-  rose: [0.98, 0.74, 0.66],
-  champagne: [0.97, 0.86, 0.64],
-  black: [0.32, 0.32, 0.35],
-};
+const BREEDS = ['upright', 'lop', 'lionhead', 'dwarf'];
+const SILVER = [0.97, 0.96, 0.95];
 const W = 720;
 const H = 600;
-const dir = new URL('../forms/plop/theme/', import.meta.url);
-const shader = prepareShader(readFileSync(new URL('plop.wgsl', dir), 'utf8'));
+const dir = new URL('../forms/hop/theme/', import.meta.url);
+const outDir = process.env.HOP_STILLS_DIR
+  ? new URL(`file://${process.env.HOP_STILLS_DIR}/`)
+  : new URL('stills/', dir);
+const shader = prepareShader(readFileSync(new URL('hop.wgsl', dir), 'utf8'));
 
 const CRC = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -63,16 +62,26 @@ const png = (rgba) => {
 
 const gpu = await init();
 const frame = target(gpu, { size: [W, H], format: 'rgba8unorm' });
-mkdirSync(new URL('stills/', dir), { recursive: true });
-for (const [name, tint] of Object.entries(FINISHES)) {
-  const plop = effect(gpu, shader, {
+mkdirSync(outDir, { recursive: true });
+for (const [breed, name] of BREEDS.entries()) {
+  const hop = effect(gpu, shader, {
     set: {
-      params: { tint, time: 1.3, look: [0, 0], aspect: W / H, jiggle: 0, px: 2 / H, blush: 1 },
+      params: {
+        tint: SILVER,
+        time: 1.3,
+        look: [0, 0],
+        aspect: W / H,
+        jiggle: 0,
+        px: 2 / H,
+        blush: 1,
+        breed,
+        carrots: Number(process.env.HOP_CARROTS ?? 2),
+      },
     },
   });
-  plop.draw(frame);
+  hop.draw(frame);
   const pixels = await frame.color.read({ mipLevel: 0, region: 'all' });
-  writeFileSync(new URL(`stills/${name}.png`, dir), png(pixels));
-  console.log(`stills/${name}.png`);
+  writeFileSync(new URL(`${name}.png`, outDir), png(pixels));
+  console.log(`${name}.png`);
 }
 gpu.dispose();

@@ -1,0 +1,332 @@
+.of-root[data-of-theme="hop"] {
+  --hp-carrot: #e8681a;
+  --hp-carrot-edge: #a8430a;
+  --hp-leaf: #3c9a3a;
+  --hp-stage-top: color-mix(in oklab, var(--of-surface) 70%, var(--of-bg));
+  --hp-stage-floor: color-mix(in oklab, var(--of-fg) 7%, var(--of-bg));
+  padding: 0;
+}
+
+[data-of-theme="hop"] .hp-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(400px, 1fr);
+  min-height: 100dvh;
+}
+
+/* the stage: a studio sweep the transparent canvas sits on */
+[data-of-theme="hop"] .hp-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100dvh;
+  padding: 28px clamp(20px, 3vw, 44px) 32px;
+  background:
+    radial-gradient(ellipse 70% 46% at 50% 74%, var(--hp-stage-floor), transparent 70%),
+    linear-gradient(to bottom, var(--hp-stage-top), var(--of-bg) 62%, var(--hp-stage-floor));
+  overflow: clip;
+}
+
+[data-of-theme="hop"] .hp-mark {
+  margin: 0;
+  font: 600 1.9rem / 1 var(--of-heading-font);
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="hop"] .hp-mascot {
+  position: relative;
+  min-height: 0;
+}
+
+[data-of-theme="hop"] :is(.hp-still, .hp-canvas) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-of-theme="hop"] .hp-still {
+  object-fit: contain;
+  transition: opacity 0.4s;
+}
+
+[data-of-theme="hop"] .hp-canvas {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+[data-of-theme="hop"] .hp-mascot[data-ready] .hp-canvas {
+  opacity: 1;
+}
+
+[data-of-theme="hop"] .hp-mascot[data-ready] .hp-still {
+  opacity: 0;
+}
+
+[data-of-theme="hop"] .hp-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  justify-self: center;
+  width: min(100%, 420px);
+  margin: 0;
+  padding: 12px 20px;
+  border: 1px solid var(--of-border);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--of-surface) 80%, transparent);
+  color: var(--of-muted);
+  font-size: 0.95rem;
+}
+
+[data-of-theme="hop"] .hp-total b {
+  color: var(--of-fg);
+  font: 600 1.15rem var(--of-heading-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the order sheet */
+[data-of-theme="hop"] .hp-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(56px, 7vw, 88px) clamp(24px, 4vw, 56px) 48px;
+  background: var(--of-surface);
+  border-left: 1px solid var(--of-border);
+}
+
+[data-of-theme="hop"] .hp-sheet > :not(.of-success-icon) {
+  width: 100%;
+  max-width: var(--of-width);
+}
+
+[data-of-theme="hop"] .hp-sheet.of-success {
+  align-items: center;
+}
+
+[data-of-theme="hop"] .hp-sheet:is(.of-success, .of-notice) {
+  justify-content: center;
+}
+
+[data-of-theme="hop"] .of-title {
+  font-size: clamp(1.9rem, 3vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+[data-of-theme="hop"] .hp-name {
+  margin: 0;
+  color: var(--of-muted);
+  font-weight: 600;
+}
+
+/* the finish swatches: one polished orb per metal */
+[data-of-theme="hop"] .hp-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+[data-of-theme="hop"] .hp-swatch {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 14px 6px 12px;
+  border: 1px solid var(--of-control);
+  border-radius: var(--of-radius);
+  background: var(--of-input);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+[data-of-theme="hop"] .hp-swatch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-of-theme="hop"] .hp-orb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.95) 0 9%, transparent 24%),
+    radial-gradient(circle at 70% 82%, rgb(255 255 255 / 0.55) 0 8%, transparent 26%),
+    linear-gradient(
+      to bottom,
+      var(--hp-metal) 0 44%,
+      color-mix(in oklab, var(--hp-metal) 30%, black) 50%,
+      var(--hp-metal) 78%
+    );
+  box-shadow:
+    inset 0 -3px 6px rgb(0 0 0 / 0.25),
+    0 3px 8px -3px rgb(0 0 0 / 0.4);
+}
+
+[data-of-theme="hop"] .hp-swatch-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+[data-of-theme="hop"] .hp-swatch:hover {
+  transform: translateY(-2px);
+}
+
+[data-of-theme="hop"] .hp-swatch:has(input:checked) {
+  border-color: var(--of-primary);
+  box-shadow: inset 0 0 0 1px var(--of-primary);
+}
+
+[data-of-theme="hop"] .hp-swatch:has(input:checked) .hp-swatch-name {
+  color: var(--of-primary);
+}
+
+[data-of-theme="hop"] .hp-swatch:has(input:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 2px;
+}
+
+/* breed tiles show the rabbit itself, cropped to its head and ears */
+[data-of-theme="hop"] .hp-breeds .hp-swatch {
+  padding: 6px 6px 10px;
+  gap: 4px;
+}
+
+[data-of-theme="hop"] .hp-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: 50% 30%;
+  transform: scale(1.5);
+  transform-origin: 50% 30%;
+  border-radius: calc(var(--of-radius) - 6px);
+  pointer-events: none;
+}
+
+[data-of-theme="hop"] .hp-breeds .hp-swatch {
+  overflow: hidden;
+}
+
+/* the carrot rating: tap a carrot, every one up to it lights up */
+[data-of-theme="hop"] .hp-carrots {
+  display: flex;
+  gap: 6px;
+}
+
+[data-of-theme="hop"] .hp-carrot-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 1;
+  height: 64px;
+  border: 1px solid var(--of-control);
+  border-radius: var(--of-radius);
+  background: var(--of-input);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+[data-of-theme="hop"] .hp-carrot-item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-of-theme="hop"] .hp-carrot {
+  width: 30px;
+  height: 38px;
+  fill: none;
+  stroke: var(--of-control);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1),
+    opacity 0.15s;
+}
+
+[data-of-theme="hop"] .hp-carrot-item:hover {
+  transform: translateY(-2px);
+}
+
+[data-of-theme="hop"] .hp-carrot-item[data-on] {
+  border-color: var(--hp-carrot);
+}
+
+[data-of-theme="hop"] .hp-carrot-item[data-on] .hp-carrot {
+  transform: rotate(-12deg) scale(1.08);
+}
+
+[data-of-theme="hop"] .hp-carrot-item[data-on] .hp-carrot-root {
+  fill: var(--hp-carrot);
+  stroke: var(--hp-carrot-edge);
+}
+
+[data-of-theme="hop"] .hp-carrot-item[data-on] .hp-carrot-leaf {
+  fill: var(--hp-leaf);
+  stroke: var(--hp-leaf);
+}
+
+[data-of-theme="hop"] .hp-carrot-item[data-on] .hp-carrot-line {
+  stroke: var(--hp-carrot-edge);
+}
+
+[data-of-theme="hop"] .hp-carrot-item:has(input:checked) {
+  box-shadow: inset 0 0 0 1px var(--hp-carrot);
+}
+
+[data-of-theme="hop"] .hp-carrot-item:has(input:focus-visible) {
+  outline: 2px solid var(--of-primary);
+  outline-offset: 2px;
+}
+
+[data-of-theme="hop"] .hp-receipt-total {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--of-border);
+}
+
+[data-of-theme="hop"] .hp-receipt-total b {
+  font: 600 1.3rem var(--of-heading-font);
+}
+
+@media (max-width: 860px) {
+  [data-of-theme="hop"] .hp-page {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  [data-of-theme="hop"] .hp-stage {
+    position: relative;
+    height: clamp(260px, 42dvh, 360px);
+    padding: 18px 16px 14px;
+  }
+
+  [data-of-theme="hop"] .hp-mark {
+    font-size: 1.5rem;
+  }
+
+  [data-of-theme="hop"] .hp-total {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+  }
+
+  [data-of-theme="hop"] .hp-sheet {
+    padding: 28px 20px 40px;
+    border-left: 0;
+    border-top: 1px solid var(--of-border);
+  }
+
+  [data-of-theme="hop"] .hp-swatches {
+    gap: 8px;
+  }
+}
+
+[data-of-theme="hop"] .hp-receipt .of-description {
+  overflow-wrap: anywhere;
+}
