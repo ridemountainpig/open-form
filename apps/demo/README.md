@@ -28,7 +28,7 @@ Each form owns its look in `forms/<id>/theme/` and is checked at phone, tablet a
 | `tinbox` | API beta request, dark only | A beige desktop computer drawn in CSS; a knob switches the phosphor |
 | `oda` | Studio enquiry as one sentence | Blanks set inline in a paragraph, built on `useField` |
 | `pine` | Support request as a chat | A transcript of earlier answers with Edit, quick-reply chips |
-| `hop` | Liquid-metal rabbit adoption (zh-TW) | A chrome rabbit raymarched with vgpu on WebGPU: breed tiles morph its ears, finishes re-tint it, and the carrot rating sets how many carrots orbit it |
+| `launch-rsvp` | Launch event RSVP (zh-TW) | A dark studio raymarched with vgpu on WebGPU: one chrome sphere per person coming, a moon per session, and they melt into one drop on success |
 | `offsite` | Team offsite RSVP as a bento board | Numbered tiles, a "Next" marker, a progress ring |
 
 ## Themes

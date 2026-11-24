@@ -1,0 +1,371 @@
+{
+  "version": 2,
+  "wgsl": "// The launch stage: chrome and black-chrome spheres bouncing in a dark\n// studio, one per person coming, with a small satellite per session picked.\n// On success they slow down and melt into one liquid drop. One fullscreen\n// raymarch with a reflection bounce, so each sphere shows the others. The\n// background is transparent; the stage behind it is the page's own.\n\nstruct Params {\n  time: f32,\n  aspect: f32,\n  look: vec2f,\n  px: f32,\n  people: f32,\n  sessions: f32,\n  merge: f32,\n  jiggle: f32,\n}\n@group(0) @binding(0) var<uniform> params: Params;\n\nconst FLOOR = -0.95;\nconst SILVER = 0.0;\nconst BLACK = 1.0;\n\nfn smin(a: f32, b: f32, k: f32) -> f32 {\n  let h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);\n  return mix(b, a, h) - k * h * (1.0 - h);\n}\n\nfn ellipsoid(p: vec3f, r: vec3f) -> f32 {\n  let k0 = length(p / r);\n  let k1 = length(p / (r * r));\n  return k0 * (k0 - 1.0) / k1;\n}\n\nfn rot(a: f32) -> mat2x2f {\n  let c = cos(a);\n  let s = sin(a);\n  return mat2x2f(c, s, -s, c);\n}\n\n// x, z, radius and bounce speed for each of the four people\nfn seat(i: i32) -> vec4f {\n  switch i {\n    case 0: { return vec4f(0.0, 0.0, 0.72, 1.7); }\n    case 1: { return vec4f(-1.45, -0.35, 0.42, 2.3); }\n    case 2: { return vec4f(1.4, -0.15, 0.5, 2.0); }\n    default: { return vec4f(-0.72, 1.05, 0.3, 2.6); }\n  }\n}\n\nstruct Ball {\n  c: vec3f,\n  r: vec3f,\n}\n\nfn ball(i: i32) -> Ball {\n  let s = seat(i);\n  let grow = clamp(params.people - f32(i), 0.0, 1.0);\n  let r = s.z * grow;\n  let t = params.time;\n  let calm = 1.0 - params.merge;\n  let phase = f32(i) * 1.7;\n  let hop = abs(sin(t * s.w + phase)) * (0.55 - s.z * 0.35) * calm;\n  let shake = params.jiggle * sin(t * 15.0 + phase) * 0.06;\n  let low = 1.0 - smoothstep(0.0, 0.12, hop);\n  let squash = 0.14 * low * calm + shake;\n  let centre = vec3f(s.x, FLOOR + r * (1.0 - squash) + hop, s.y);\n  var b: Ball;\n  b.c = mix(centre, vec3f(s.x * 0.45, FLOOR + r + 0.25, s.y * 0.45), params.merge);\n  b.r = r * vec3f(1.0 + squash * 0.7, 1.0 - squash, 1.0 + squash * 0.7);\n  return b;\n}\n\nfn scene(p0: vec3f) -> vec2f {\n  let xz = rot(params.look.x * 0.35) * p0.xz;\n  let p = vec3f(xz.x, p0.y, xz.y);\n  let k = 0.02 + 0.7 * params.merge;\n  var d = 1e5;\n  var id = SILVER;\n  var nearest = 1e5;\n  for (var i = 0; i < 4; i++) {\n    let b = ball(i);\n    if (b.r.y < 0.01) {\n      continue;\n    }\n    let di = ellipsoid(p - b.c, b.r);\n    if (di < nearest) {\n      nearest = di;\n      id = f32(i % 2);\n    }\n    d = smin(d, di, k);\n  }\n\n  // one small chrome moon per session, orbiting the first sphere\n  let host = ball(0);\n  for (var j = 0; j < 3; j++) {\n    let grow = clamp(params.sessions - f32(j), 0.0, 1.0);\n    if (grow < 0.01) {\n      continue;\n    }\n    let a = params.time * (0.7 + f32(j) * 0.18) + f32(j) * 2.094;\n    let tilt = 0.35 + f32(j) * 0.3;\n    let orbit = vec3f(cos(a) * 1.05, sin(a) * sin(tilt) * 0.9 + 0.15, sin(a) * cos(tilt) * 1.05);\n    let c = mix(host.c + orbit, host.c, params.merge * 0.8);\n    let dm = length(p - c) - 0.13 * grow;\n    if (dm < nearest) {\n      nearest = dm;\n      id = SILVER;\n    }\n    d = smin(d, dm, k);\n  }\n\n  // a few droplets drifting at the back of the studio\n  for (var j = 0; j < 5; j++) {\n    let fj = f32(j);\n    let c = vec3f(\n      -2.6 + fj * 1.3 + 0.2 * sin(params.time * 0.3 + fj),\n      0.9 + 0.45 * sin(params.time * (0.5 + fj * 0.07) + fj * 2.1),\n      -2.4 - fract(fj * 0.618) * 1.2,\n    );\n    let dm = length(p - c) - (0.1 + 0.07 * fract(fj * 0.37 + 0.2));\n    if (dm < nearest) {\n      nearest = dm;\n      id = f32(j % 2);\n    }\n    d = min(d, dm);\n  }\n  return vec2f(d, id);\n}\n\nfn normal(p: vec3f) -> vec3f {\n  let e = vec2f(0.0015, -0.0015);\n  return normalize(\n    e.xyy * scene(p + e.xyy).x + e.yyx * scene(p + e.yyx).x +\n    e.yxy * scene(p + e.yxy).x + e.xxx * scene(p + e.xxx).x,\n  );\n}\n\n// A dark monochrome studio: a black sweep, a long softbox overhead-left, a\n// thin rim strip on the right and a faint floor bounce.\nfn studio(dir: vec3f) -> vec3f {\n  let az = atan2(dir.x, dir.z);\n  let el = asin(clamp(dir.y, -1.0, 1.0));\n  var c = mix(vec3f(0.55), vec3f(0.06), smoothstep(-0.05, -0.7, el));\n  c = mix(c, mix(vec3f(0.02), vec3f(0.22), smoothstep(0.1, 1.2, el)), smoothstep(-0.02, 0.05, el));\n  c += vec3f(0.09) * smoothstep(0.03, 0.0, abs(el - 0.02));\n  let key = smoothstep(0.05, 0.0, abs(az + 0.55) - 0.42) * smoothstep(0.04, 0.0, abs(el - 0.62) - 0.2);\n  c += vec3f(4.0) * key;\n  let rim = smoothstep(0.03, 0.0, abs(az - 1.7) - 0.05) * smoothstep(0.05, 0.0, abs(el - 0.2) - 0.6);\n  c += vec3f(2.6) * rim;\n  let back = smoothstep(0.05, 0.0, abs(abs(az) - 2.7) - 0.25) * smoothstep(0.05, 0.0, abs(el - 0.3) - 0.25);\n  c += vec3f(1.1) * back;\n  let side = smoothstep(0.05, 0.0, abs(az + 1.9) - 0.12) * smoothstep(0.05, 0.0, abs(el - 0.1) - 0.5);\n  c += vec3f(1.8) * side;\n  c += vec3f(1.4) * smoothstep(1.15, 1.35, el);\n  return c;\n}\n\nfn f0(id: f32) -> vec3f {\n  return select(vec3f(0.94, 0.94, 0.95), vec3f(0.2, 0.2, 0.22), id > 0.5);\n}\n\nfn fresnel(f: vec3f, cosT: f32) -> vec3f {\n  return f + (1.0 - f) * pow(1.0 - clamp(cosT, 0.0, 1.0), 5.0);\n}\n\nfn shade(p: vec3f, n: vec3f, rd: vec3f, id: f32) -> vec3f {\n  let r = reflect(rd, n);\n  var env = studio(r);\n  var t = 0.02;\n  for (var i = 0; i < 40; i++) {\n    let h = scene(p + r * t);\n    if (h.x < 0.002) {\n      let hp = p + r * t;\n      let hn = normal(hp);\n      env = studio(reflect(r, hn)) * fresnel(f0(h.y), dot(-r, hn)) * 0.92;\n      break;\n    }\n    t += h.x;\n    if (t > 7.0) {\n      break;\n    }\n  }\n  let ao = clamp(0.5 + 0.5 * scene(p + n * 0.15).x / 0.15, 0.2, 1.0);\n  return fresnel(f0(id), dot(-rd, n)) * env * ao;\n}\n\nfn tonemap(c: vec3f) -> vec3f {\n  let a = c * (2.51 * c + 0.03);\n  let b = c * (2.43 * c + 0.59) + 0.14;\n  return pow(clamp(a / b, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / 2.2));\n}\n\n@fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {\n  let zoom = max(1.0, 1.35 / params.aspect);\n  let sp = vec2f((uv.x * 2.0 - 1.0) * params.aspect, 1.0 - uv.y * 2.0) * zoom;\n  let ro = vec3f(0.0, 0.5 - params.look.y * 0.3, 5.0);\n  let ta = vec3f(0.0, -0.25, -0.2);\n  let fw = normalize(ta - ro);\n  let rt = normalize(cross(fw, vec3f(0.0, 1.0, 0.0)));\n  let up = cross(rt, fw);\n  let fov = 0.42;\n  let rd = normalize(fw + (sp.x * rt + sp.y * up) * fov);\n\n  var t = 0.0;\n  var hit = false;\n  var id = SILVER;\n  var closest = 1e9;\n  var tClosest = 0.0;\n  for (var i = 0; i < 100; i++) {\n    let h = scene(ro + rd * t);\n    let ratio = h.x / max(t, 0.001);\n    if (ratio < closest) {\n      closest = ratio;\n      tClosest = t;\n    }\n    if (h.x < 0.0008 * t) {\n      hit = true;\n      id = h.y;\n      break;\n    }\n    t += h.x * 0.9;\n    if (t > 11.0) {\n      break;\n    }\n  }\n\n  let pix = params.px * fov * zoom;\n  var alpha = 1.0;\n  if (!hit) {\n    alpha = 1.0 - smoothstep(0.0, 1.5 * pix, closest);\n    t = tClosest;\n    id = scene(ro + rd * t).y;\n  }\n\n  // soft contact shadows under each sphere\n  let ft = (FLOOR - ro.y) / rd.y;\n  var shadow = 0.0;\n  if (ft > 0.0) {\n    let fp0 = ro + rd * ft;\n    let xz = rot(params.look.x * 0.35) * fp0.xz;\n    for (var i = 0; i < 4; i++) {\n      let b = ball(i);\n      let lift = max(b.c.y - b.r.y - FLOOR, 0.0);\n      let q = (xz - b.c.xz) / max(b.r.x * 1.1, 0.01);\n      shadow += 0.5 * exp(-dot(q, q) * 1.6) / (1.0 + lift * 5.0) * step(0.01, b.r.y);\n    }\n    shadow = min(shadow, 0.6);\n  }\n\n  if (alpha <= 0.0) {\n    return vec4f(0.0, 0.0, 0.0, shadow);\n  }\n  let p = ro + rd * t;\n  let col = tonemap(shade(p, normal(p), rd, id));\n  return vec4f(col * alpha, alpha + shadow * (1.0 - alpha));\n}\n",
+  "reflection": {
+    "bindings": [
+      {
+        "group": 0,
+        "binding": 0,
+        "name": "params",
+        "mangledName": "params",
+        "type": { "kind": "identifier", "name": "Params", "mangledName": "_vgsl_6f41d3c0__Params" },
+        "kind": "buffer",
+        "addressSpace": "uniform",
+        "struct": {
+          "name": "Params",
+          "mangledName": "_vgsl_6f41d3c0__Params",
+          "members": [
+            { "name": "time", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "aspect", "type": { "kind": "scalar", "name": "f32" } },
+            {
+              "name": "look",
+              "type": {
+                "kind": "vector",
+                "width": 2,
+                "element": { "kind": "scalar", "name": "f32" }
+              }
+            },
+            { "name": "px", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "people", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "sessions", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "merge", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "jiggle", "type": { "kind": "scalar", "name": "f32" } }
+          ]
+        },
+        "layout": {
+          "name": "params",
+          "mangledName": "params",
+          "layoutMode": "wgsl-host-shareable-v1",
+          "type": {
+            "kind": "identifier",
+            "name": "Params",
+            "mangledName": "_vgsl_6f41d3c0__Params"
+          },
+          "align": 8,
+          "size": 40,
+          "members": [
+            {
+              "name": "time",
+              "offset": 0,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "time",
+                "mangledName": "time",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "aspect",
+              "offset": 4,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "aspect",
+                "mangledName": "aspect",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "look",
+              "offset": 8,
+              "align": 8,
+              "size": 8,
+              "type": {
+                "kind": "vector",
+                "width": 2,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "layout": {
+                "name": "look",
+                "mangledName": "look",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": {
+                  "kind": "vector",
+                  "width": 2,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "align": 8,
+                "size": 8
+              }
+            },
+            {
+              "name": "px",
+              "offset": 16,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "px",
+                "mangledName": "px",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "people",
+              "offset": 20,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "people",
+                "mangledName": "people",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "sessions",
+              "offset": 24,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "sessions",
+                "mangledName": "sessions",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "merge",
+              "offset": 28,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "merge",
+                "mangledName": "merge",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "jiggle",
+              "offset": 32,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "jiggle",
+                "mangledName": "jiggle",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            }
+          ]
+        },
+        "bindingLayout": {
+          "kind": "buffer",
+          "buffer": { "type": "uniform", "hasDynamicOffset": false, "minBindingSize": 40 }
+        }
+      }
+    ],
+    "entryPoints": [
+      {
+        "name": "fs_main",
+        "mangledName": "fs_main",
+        "stage": "fragment",
+        "bindings": [{ "group": 0, "binding": 0 }],
+        "samplingPairs": []
+      }
+    ],
+    "overrides": [],
+    "featuresRequired": [],
+    "aliases": [],
+    "structs": [
+      {
+        "name": "Params",
+        "mangledName": "_vgsl_6f41d3c0__Params",
+        "members": [
+          { "name": "time", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "aspect", "type": { "kind": "scalar", "name": "f32" } },
+          {
+            "name": "look",
+            "type": { "kind": "vector", "width": 2, "element": { "kind": "scalar", "name": "f32" } }
+          },
+          { "name": "px", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "people", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "sessions", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "merge", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "jiggle", "type": { "kind": "scalar", "name": "f32" } }
+        ]
+      },
+      {
+        "name": "Ball",
+        "mangledName": "_vgsl_6f41d3c0__Ball",
+        "members": [
+          {
+            "name": "c",
+            "type": { "kind": "vector", "width": 3, "element": { "kind": "scalar", "name": "f32" } }
+          },
+          {
+            "name": "r",
+            "type": { "kind": "vector", "width": 3, "element": { "kind": "scalar", "name": "f32" } }
+          }
+        ]
+      }
+    ],
+    "hostShareableLayouts": [
+      {
+        "name": "params",
+        "mangledName": "params",
+        "layoutMode": "wgsl-host-shareable-v1",
+        "type": { "kind": "identifier", "name": "Params", "mangledName": "_vgsl_6f41d3c0__Params" },
+        "align": 8,
+        "size": 40,
+        "members": [
+          {
+            "name": "time",
+            "offset": 0,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "time",
+              "mangledName": "time",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "aspect",
+            "offset": 4,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "aspect",
+              "mangledName": "aspect",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "look",
+            "offset": 8,
+            "align": 8,
+            "size": 8,
+            "type": {
+              "kind": "vector",
+              "width": 2,
+              "element": { "kind": "scalar", "name": "f32" }
+            },
+            "layout": {
+              "name": "look",
+              "mangledName": "look",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": {
+                "kind": "vector",
+                "width": 2,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "align": 8,
+              "size": 8
+            }
+          },
+          {
+            "name": "px",
+            "offset": 16,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "px",
+              "mangledName": "px",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "people",
+            "offset": 20,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "people",
+              "mangledName": "people",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "sessions",
+            "offset": 24,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "sessions",
+              "mangledName": "sessions",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "merge",
+            "offset": 28,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "merge",
+              "mangledName": "merge",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "jiggle",
+            "offset": 32,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "jiggle",
+              "mangledName": "jiggle",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "sourceChecksum": "fnv1a64-utf16le-v1:6aa6bd27f37d2b0c",
+  "producer": "@vgpu/wgsl/prepare-v2"
+}
