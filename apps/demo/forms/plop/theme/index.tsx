@@ -66,8 +66,10 @@ function Layout({
   const finish = isFinish(value) ? value : 'silver';
   return (
     <div className="pl-page" data-state={state}>
-      <section className="pl-stage" aria-hidden="true">
-        <p className="pl-mark">plop</p>
+      <section className="pl-stage">
+        <p className="pl-mark" aria-hidden="true">
+          plop
+        </p>
         <Mascot finish={finish} cheer={state === 'success'} />
         {state === 'form' && <Total />}
       </section>

@@ -171,7 +171,7 @@ export function Mascot({ finish, cheer }: Props) {
   }, []);
 
   return (
-    <div className="pl-mascot" data-ready={ready || undefined}>
+    <div className="pl-mascot" data-ready={ready || undefined} aria-hidden="true">
       <img className="pl-still" src={FINISHES[finish].still} alt="" />
       <canvas ref={canvasRef} className="pl-canvas" />
     </div>
