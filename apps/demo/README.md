@@ -28,6 +28,7 @@ Each form owns its look in `forms/<id>/theme/` and is checked at phone, tablet a
 | `tinbox` | API beta request, dark only | A beige desktop computer drawn in CSS; a knob switches the phosphor |
 | `oda` | Studio enquiry as one sentence | Blanks set inline in a paragraph, built on `useField` |
 | `pine` | Support request as a chat | A transcript of earlier answers with Edit, quick-reply chips |
+| `tea-order` | Bubble-tea pickup order (zh-TW) | A glass cup raymarched with vgpu on WebGPU that is the drink being ordered: the tea tints it, ice floats, toppings drop in, steam rises off a hot one, and it is sealed with a straw on success |
 | `offsite` | Team offsite RSVP as a bento board | Numbered tiles, a "Next" marker, a progress ring |
 
 ## Themes

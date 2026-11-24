@@ -12,11 +12,13 @@
   "dependencies": {
     "@open-form-build/core": "workspace:*",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "vgpu": "0.6.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "@vgpu/wgsl": "0.6.0",
     "typescript": "^7.0.2"
   }
 }
