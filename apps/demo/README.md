@@ -28,6 +28,7 @@ Each form owns its look in `forms/<id>/theme/` and is checked at phone, tablet a
 | `tinbox` | API beta request, dark only | A beige desktop computer drawn in CSS; a knob switches the phosphor |
 | `oda` | Studio enquiry as one sentence | Blanks set inline in a paragraph, built on `useField` |
 | `pine` | Support request as a chat | A transcript of earlier answers with Edit, quick-reply chips |
+| `plop` | Liquid-metal figure preorder (zh-TW) | A chrome mascot raymarched with vgpu on WebGPU; the finish swatches re-tint it live |
 | `offsite` | Team offsite RSVP as a bento board | Numbered tiles, a "Next" marker, a progress ring |
 
 ## Themes
