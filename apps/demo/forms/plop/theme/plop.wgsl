@@ -76,7 +76,8 @@ fn droplet(i: f32, t: f32) -> vec4f {
   let a = t * (0.55 + i * 0.07) + i * 1.9;
   let dive = pow(max(sin(t * 0.45 + i * 1.7), 0.0), 6.0);
   let orbit = mix(1.62 + 0.08 * sin(t + i), 1.08, dive);
-  let y = 0.05 + 0.32 * sin(t * 0.8 + i * 2.3);
+  // a tilted ring: low in front so the face stays clear, high behind the head
+  let y = 0.12 + 0.22 * sin(t * 0.8 + i * 2.3) - 0.62 * sin(a);
   let r = 0.1 + 0.05 * fract(i * 0.618 + 0.3);
   return vec4f(cos(a) * orbit, y, sin(a) * orbit * 0.7, r);
 }
