@@ -17,13 +17,16 @@ import { Ticket } from './ticket.tsx';
 
 export const config = defineForm({
   title: 'MONO 春季發表會報名',
-  description: '2027 年 3 月 13 日（六）下午，台北。現場 200 個位子，報名約 1 分鐘。',
+  description:
+    '2027 年 3 月 13 日（六）下午，台北。開放 200 組報名，每組最多 4 人，3 月 12 日截止，報名約 1 分鐘。',
   locale: 'zh-TW',
+  timeZone: 'Asia/Taipei',
   submissions: {
     maxResponses: 200,
     uniqueBy: 'email',
-    fullMessage: '200 個位子都滿了。發表會當天會有線上直播，連結會公布在官網。',
-    closedMessage: '報名已經截止，謝謝你的關注。當天見不到面的話，直播見。',
+    closesAt: '2027-03-12',
+    fullMessage: '200 組名額都報滿了。發表會當天會有線上直播，連結會公布在官網。',
+    closedMessage: '報名已在 3 月 12 日截止，謝謝你的關注。當天見不到面的話，直播見。',
     duplicateMessage: '這個 Email 已經報名過了。想改場次或人數，回覆確認信就好。',
   },
 });

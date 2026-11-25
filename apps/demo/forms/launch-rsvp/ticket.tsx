@@ -45,8 +45,8 @@ export function Ticket() {
       </ul>
       <p className="of-description">
         {rsvp.email
-          ? `入場 QR code 會在 3 月 6 日前寄到 ${rsvp.email}。`
-          : '入場 QR code 會在 3 月 6 日前寄出。'}
+          ? `入場 QR code 會在 3 月 12 日報名截止後寄到 ${rsvp.email}。`
+          : '入場 QR code 會在 3 月 12 日報名截止後寄出。'}
         當天憑 QR code 入場，同行的人跟你一起進場就好。
       </p>
     </div>
