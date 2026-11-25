@@ -109,20 +109,30 @@ fn plume(p: vec2f, i: i32) -> f32 {
   let caustic = fbm(vec2f(p.x * 3.0, p.y * 0.6 + params.time * 0.05)) * smoothstep(-0.6, 1.0, p.y);
   let rays = pow(caustic, 3.0);
 
+  // each ink is a dye: at full density it tints the water exactly its own
+  // colour, and dyes multiply where they overlap
   var absorb = vec3f(0.0);
   var glow = vec3f(0.0);
+  var blend = vec3f(0.0);
   var total = 0.0;
   for (var i = 0; i < 6; i++) {
-    let dens = plume(p, i) * params.strength * 0.85;
+    let raw = plume(p, i) * params.strength;
+    let dens = 1.15 * (1.0 - exp(-raw * 0.95));
     let c = params.ink[i].rgb;
-    absorb += dens * (vec3f(1.0) - c) * 1.25;
-    // on dark water a deep ink still has to glow, so lift it to a bright tint
-    glow += dens * c / max(max(c.r, max(c.g, c.b)), 0.05) * (0.55 + 0.45 * max(c.r, max(c.g, c.b)));
+    absorb += dens * -log(max(c, vec3f(0.03)));
+    let bright = mix(c, c / max(max(c.r, max(c.g, c.b)), 0.05), 0.6);
+    glow += dens * mix(bright, vec3f(1.0), 0.1);
+    blend += dens * c;
     total += dens;
   }
 
-  let light = lightWater * (1.0 + rays * 0.06) * exp(-absorb);
-  let lit = darkWater + rays * vec3f(0.035, 0.04, 0.05) + glow * 0.55 / (1.0 + total * 0.35);
+  // where dyes overlap, lean partly on their average so mixes don't go muddy
+  let average = mix(vec3f(1.0), blend / max(total, 1e-4), min(total, 1.0));
+  let tint = mix(exp(-absorb), average, 0.35 * smoothstep(0.6, 1.6, total));
+  // a faint pearly sheen where the ink is thin, like light through silk
+  let sheen = smoothstep(0.05, 0.4, total) * (1.0 - smoothstep(0.4, 1.2, total));
+  let light = lightWater * (1.0 + rays * 0.06) * tint + vec3f(1.0, 0.97, 0.95) * sheen * 0.035;
+  let lit = darkWater + rays * vec3f(0.035, 0.04, 0.05) + glow * 0.8 / (1.0 + total * 0.4);
   var col = mix(light, lit, params.dark);
 
   // a soft glint along the surface and a vignette

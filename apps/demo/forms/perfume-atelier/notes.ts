@@ -2,24 +2,24 @@
 // light and stay near the surface; base notes are heavy and sink.
 
 export const TOP = {
-  bergamot: { name: 'Bergamot', ink: [0.78, 0.82, 0.18] },
-  pinkPepper: { name: 'Pink pepper', ink: [0.93, 0.32, 0.5] },
-  yuzu: { name: 'Yuzu', ink: [0.98, 0.72, 0.05] },
-  neroli: { name: 'Neroli', ink: [0.97, 0.5, 0.22] },
+  bergamot: { name: 'Bergamot', ink: [0.78, 0.86, 0.46] },
+  pinkPepper: { name: 'Pink pepper', ink: [0.97, 0.56, 0.62] },
+  yuzu: { name: 'Yuzu', ink: [1.0, 0.83, 0.38] },
+  neroli: { name: 'Neroli', ink: [1.0, 0.67, 0.48] },
 } as const;
 
 export const HEART = {
-  rose: { name: 'Damask rose', ink: [0.82, 0.08, 0.32] },
-  jasmine: { name: 'Jasmine', ink: [0.93, 0.68, 0.22] },
-  iris: { name: 'Iris', ink: [0.56, 0.46, 0.86] },
-  fig: { name: 'Fig leaf', ink: [0.2, 0.6, 0.36] },
+  rose: { name: 'Damask rose', ink: [0.88, 0.38, 0.54] },
+  jasmine: { name: 'Jasmine', ink: [0.97, 0.8, 0.52] },
+  iris: { name: 'Iris', ink: [0.68, 0.62, 0.92] },
+  fig: { name: 'Fig leaf', ink: [0.52, 0.74, 0.58] },
 } as const;
 
 export const BASE = {
-  sandalwood: { name: 'Sandalwood', ink: [0.66, 0.36, 0.16] },
-  vetiver: { name: 'Vetiver', ink: [0.16, 0.42, 0.34] },
-  amber: { name: 'Amber', ink: [0.9, 0.44, 0.06] },
-  oud: { name: 'Oud', ink: [0.3, 0.1, 0.24] },
+  sandalwood: { name: 'Sandalwood', ink: [0.84, 0.6, 0.44] },
+  vetiver: { name: 'Vetiver', ink: [0.32, 0.6, 0.56] },
+  amber: { name: 'Amber', ink: [0.95, 0.62, 0.26] },
+  oud: { name: 'Oud', ink: [0.56, 0.27, 0.45] },
 } as const;
 
 export const CONCENTRATION = {
