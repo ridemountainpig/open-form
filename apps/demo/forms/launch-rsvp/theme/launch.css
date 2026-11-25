@@ -289,6 +289,7 @@
   [data-of-theme="launch-rsvp"] .lr-sheet {
     padding: 28px 20px 40px;
     border-left: 0;
+    align-items: center;
     border-top: 1px solid var(--of-border);
   }
 }
