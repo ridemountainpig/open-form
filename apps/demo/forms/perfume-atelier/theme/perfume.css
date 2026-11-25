@@ -283,5 +283,17 @@
   [data-of-theme="perfume-atelier"] .pa-sheet {
     padding: 28px 20px 40px;
     border-left: 0;
+    align-items: center;
+  }
+}
+
+/* on a short screen (a phone on its side) the pinned tank would crowd out the fields */
+@media (max-width: 860px) and (max-height: 560px) {
+  [data-of-theme="perfume-atelier"] .pa-tank {
+    position: relative;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-sheet * {
+    scroll-margin-top: 0;
   }
 }

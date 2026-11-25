@@ -236,5 +236,17 @@
   [data-of-theme="dark-sky-camp"] .ds-sheet {
     padding: 28px 20px 40px;
     border-left: 0;
+    align-items: center;
+  }
+}
+
+/* on a short screen (a phone on its side) the pinned sky would crowd out the fields */
+@media (max-width: 860px) and (max-height: 560px) {
+  [data-of-theme="dark-sky-camp"] .ds-sky {
+    position: relative;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-sheet * {
+    scroll-margin-top: 0;
   }
 }
