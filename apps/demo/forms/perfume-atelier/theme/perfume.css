@@ -1,0 +1,287 @@
+.of-root[data-of-theme="perfume-atelier"] {
+  padding: 0;
+}
+
+[data-of-theme="perfume-atelier"] .pa-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 1fr);
+  min-height: 100dvh;
+}
+
+/* the tank: the water fills it, the labels sit on the glass */
+[data-of-theme="perfume-atelier"] .pa-tank {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: clip;
+  color: var(--of-fg);
+}
+
+[data-of-theme="perfume-atelier"] .pa-scene,
+[data-of-theme="perfume-atelier"] :is(.pa-still, .pa-canvas) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-of-theme="perfume-atelier"] .pa-still {
+  object-fit: cover;
+  transition: opacity 0.5s;
+}
+
+[data-of-theme="perfume-atelier"] .pa-still-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="perfume-atelier"]:not([data-scheme="light"]) .pa-still-light {
+    display: none;
+  }
+
+  .of-root[data-of-theme="perfume-atelier"]:not([data-scheme="light"]) .pa-still-dark {
+    display: block;
+  }
+}
+
+.of-root[data-of-theme="perfume-atelier"][data-scheme="dark"] .pa-still-light {
+  display: none;
+}
+
+.of-root[data-of-theme="perfume-atelier"][data-scheme="dark"] .pa-still-dark {
+  display: block;
+}
+
+[data-of-theme="perfume-atelier"] .pa-canvas {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+[data-of-theme="perfume-atelier"] .pa-scene[data-ready] .pa-canvas {
+  opacity: 1;
+}
+
+[data-of-theme="perfume-atelier"] .pa-scene[data-ready] .pa-still {
+  opacity: 0;
+}
+
+[data-of-theme="perfume-atelier"] .pa-mark {
+  position: absolute;
+  top: 28px;
+  left: clamp(24px, 3.5vw, 48px);
+  margin: 0;
+  font-family: var(--of-heading-font);
+  font-size: 1.1rem;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+/* the three layers, at the depth their ink settles */
+[data-of-theme="perfume-atelier"] .pa-layers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-of-theme="perfume-atelier"] .pa-layers li {
+  position: absolute;
+  right: clamp(20px, 3vw, 40px);
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  padding-right: 14px;
+  border-right: 1px solid color-mix(in srgb, var(--of-fg) 35%, transparent);
+  transform: translateY(-50%);
+}
+
+[data-of-theme="perfume-atelier"] .pa-layers li[data-layer="0"] {
+  top: 24%;
+}
+
+[data-of-theme="perfume-atelier"] .pa-layers li[data-layer="1"] {
+  top: 50%;
+}
+
+[data-of-theme="perfume-atelier"] .pa-layers li[data-layer="2"] {
+  top: 78%;
+}
+
+[data-of-theme="perfume-atelier"] .pa-layers span {
+  color: var(--of-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="perfume-atelier"] .pa-layers b {
+  font-family: var(--of-heading-font);
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+[data-of-theme="perfume-atelier"] .pa-label {
+  position: absolute;
+  left: clamp(24px, 3.5vw, 48px);
+  bottom: 36px;
+  display: grid;
+  gap: 4px;
+  max-width: 70%;
+}
+
+[data-of-theme="perfume-atelier"] .pa-label-no {
+  margin: 0;
+  color: var(--of-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="perfume-atelier"] .pa-label-name {
+  margin: 0;
+  font-family: var(--of-heading-font);
+  font-size: clamp(2.4rem, 4.6vw, 4rem);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+/* the sheet */
+[data-of-theme="perfume-atelier"] .pa-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: clamp(48px, 6vw, 84px) clamp(24px, 4vw, 60px) 48px;
+  background: var(--of-surface);
+  border-left: 1px solid var(--of-border);
+}
+
+[data-of-theme="perfume-atelier"] .pa-sheet > :not(.of-success-icon) {
+  width: 100%;
+  max-width: var(--of-width);
+}
+
+[data-of-theme="perfume-atelier"] .pa-sheet.of-success {
+  align-items: center;
+}
+
+[data-of-theme="perfume-atelier"] .pa-sheet:is(.of-success, .of-notice) {
+  justify-content: center;
+}
+
+[data-of-theme="perfume-atelier"] .of-title {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+[data-of-theme="perfume-atelier"] .pa-name {
+  margin: 0;
+  color: var(--of-muted);
+  font-family: var(--of-heading-font);
+  font-style: italic;
+}
+
+/* the receipt on the success screen */
+[data-of-theme="perfume-atelier"] .pa-receipt {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--of-border);
+  text-align: left;
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt-name {
+  margin: 0;
+  font-family: var(--of-heading-font);
+  font-size: 1.9rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt-notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 14px 0;
+  border-block: 1px solid var(--of-border);
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt-notes dt {
+  color: var(--of-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt-notes dd {
+  margin: 4px 0 0;
+  font-family: var(--of-heading-font);
+  font-size: 1.05rem;
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: var(--of-muted);
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt-line b {
+  color: var(--of-fg);
+}
+
+[data-of-theme="perfume-atelier"] .pa-receipt .of-description {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 860px) {
+  [data-of-theme="perfume-atelier"] .pa-page {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  /* on a phone the tank stays pinned above the questions */
+  [data-of-theme="perfume-atelier"] .pa-tank {
+    z-index: 2;
+    height: 230px;
+    border-bottom: 1px solid var(--of-border);
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-mark {
+    top: 14px;
+    left: 16px;
+    font-size: 0.95rem;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-layers li {
+    right: 14px;
+    padding-right: 10px;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-layers b {
+    font-size: 0.9rem;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-label {
+    left: 16px;
+    bottom: 14px;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-label-name {
+    font-size: 1.8rem;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-sheet * {
+    scroll-margin-top: 250px;
+  }
+
+  [data-of-theme="perfume-atelier"] .pa-sheet {
+    padding: 28px 20px 40px;
+    border-left: 0;
+  }
+}
