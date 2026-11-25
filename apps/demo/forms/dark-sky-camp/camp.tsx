@@ -1,5 +1,5 @@
 import { useFormValues } from '@open-form-build/core';
-import { pick, SIGNS, SITES, signFor, WEEKENDS } from './sky.ts';
+import { pick, SIGNS, SITES, signFor, visibleAtNight, WEEKENDS } from './sky.ts';
 
 export function useCamp() {
   const values = useFormValues();
@@ -30,7 +30,11 @@ export function Ticket() {
       <p className="of-description">
         Arrive before sunset on the first day; we switch every light off at 21:00. Bring warm layers
         {camp.telescope ? ' — your telescope will be set up at your pitch' : ''}.
-        {camp.signName ? ` We'll point out ${camp.signName} on the first night.` : ''}
+        {camp.sign && camp.signName && camp.weekend
+          ? visibleAtNight(camp.sign, camp.weekend)
+            ? ` We'll point out ${camp.signName} on the first night.`
+            : ` ${camp.signName} is too close to the Sun to see that weekend, so we'll show you where it hides on the sky chart.`
+          : ''}
       </p>
     </div>
   );

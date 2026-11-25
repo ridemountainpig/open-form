@@ -1,9 +1,10 @@
 // The weekends, the sites and the star signs, and what each does to the sky.
 
+// `sun` is the Sun's ecliptic longitude that weekend, in degrees.
 export const WEEKENDS = {
-  perseids: { name: 'Perseids', dates: 'Aug 13–15', milky: 1, meteors: 1.1 },
-  orionids: { name: 'Orionids', dates: 'Oct 22–24', milky: 0.6, meteors: 0.55 },
-  geminids: { name: 'Geminids', dates: 'Dec 12–14', milky: 0.3, meteors: 1.4 },
+  perseids: { name: 'Perseids', dates: 'Aug 13–15', sun: 141, milky: 1, meteors: 1.1 },
+  orionids: { name: 'Orionids', dates: 'Oct 22–24', sun: 209, milky: 0.6, meteors: 0.55 },
+  geminids: { name: 'Geminids', dates: 'Dec 10–12', sun: 259, milky: 0.3, meteors: 1.4 },
 } as const;
 
 export const SITES = {
@@ -293,6 +294,32 @@ export function signFor(birthday: unknown) {
   const current = starts(month);
   const from = current ? SIGNS[current]?.from[1] : undefined;
   return from !== undefined && day >= from ? current : starts(month === 1 ? 12 : month - 1);
+}
+
+// Roughly where each figure sits along the ecliptic, in degrees.
+const LONGITUDE: Record<string, number> = {
+  aries: 37,
+  taurus: 68,
+  gemini: 100,
+  cancer: 127,
+  leo: 152,
+  virgo: 200,
+  libra: 232,
+  scorpio: 245,
+  sagittarius: 283,
+  capricorn: 315,
+  aquarius: 337,
+  pisces: 2,
+};
+
+// A figure closer than this to the Sun is lost in twilight or daylight.
+const MIN_ELONGATION = 60;
+
+export function visibleAtNight(sign: string, weekend: keyof typeof WEEKENDS) {
+  const lon = LONGITUDE[sign];
+  if (lon === undefined) return false;
+  const gap = Math.abs(((lon - WEEKENDS[weekend].sun + 540) % 360) - 180);
+  return gap >= MIN_ELONGATION;
 }
 
 export function shapeUniforms(sign: string | undefined) {

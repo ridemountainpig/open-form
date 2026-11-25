@@ -21,7 +21,7 @@ import theme from './theme/index.tsx';
 export const config = defineForm({
   title: 'Dark Sky Camp',
   description:
-    'Three nights a year, far from any city light. Two nights of camping, guided sky tours and hot cocoa at 2 a.m.',
+    'Three weekends in 2027, far from any city light. Two nights of camping, guided sky tours and hot cocoa at 2 a.m.',
   submissions: {
     maxResponses: 120,
     uniqueBy: 'email',
@@ -37,7 +37,7 @@ export default function DarkSkyCamp() {
         <RadioGroup
           name="weekend"
           label="Which weekend?"
-          description="Each one is timed to a meteor shower and a new moon."
+          description="Each one is timed to the peak of a meteor shower. Friday to Sunday."
           required
           variant="cards"
           options={Object.entries(WEEKENDS).map(([value, w]) => ({
@@ -70,7 +70,7 @@ export default function DarkSkyCamp() {
           label="Your birthday"
           description="Optional. We'll find your star sign in the sky for you."
           min="1920-01-01"
-          max="2026-12-31"
+          max="2026-11-25"
         />
       </Page>
       <Page title="Your details">
