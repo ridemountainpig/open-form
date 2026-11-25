@@ -66,7 +66,7 @@ export default function PerfumeAtelier() {
         <RadioGroup
           name="size"
           label="Size"
-          description="Extrait adds €30."
+          description="Prices are for EDT and EDP. Extrait adds €30 to any size."
           required
           defaultValue="50"
           variant="cards"
@@ -102,6 +102,17 @@ export default function PerfumeAtelier() {
             'Taiwan',
           ]}
         />
+        <Text name="address" label="Street address" required autoComplete="street-address" />
+        <Row>
+          <Text name="city" label="City" required autoComplete="address-level2" />
+          <Text
+            name="postcode"
+            label="Postcode"
+            required
+            autoComplete="postal-code"
+            maxLength={12}
+          />
+        </Row>
         <Checkbox name="gift">Wrap it as a gift</Checkbox>
         <When field="gift" equals={true}>
           <Textarea

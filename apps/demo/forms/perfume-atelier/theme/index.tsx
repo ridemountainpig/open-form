@@ -1,5 +1,6 @@
 import { defineTheme, type LayoutUIProps } from '@open-form-build/core';
 import { useBlend } from '../blend.tsx';
+import { SIZES } from '../notes.ts';
 import { Scene } from './scene.tsx';
 import './perfume.css';
 
@@ -22,7 +23,13 @@ function Tank({ done }: { done: boolean }) {
         ))}
       </ol>
       <div className="pa-label" aria-live="polite">
-        <p className="pa-label-no">{done ? 'Blended for you' : 'No. 001 · in progress'}</p>
+        <p className="pa-label-no">
+          {done
+            ? 'Blended for you'
+            : blend.size && blend.price !== undefined
+              ? `No. 001 · ${SIZES[blend.size].name} · €${blend.price}`
+              : 'No. 001 · in progress'}
+        </p>
         <p className="pa-label-name">{blend.engraving || 'Untitled'}</p>
       </div>
     </section>

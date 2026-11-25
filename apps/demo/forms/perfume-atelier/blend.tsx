@@ -18,6 +18,10 @@ export function useBlend() {
     engraving,
     gift: values.gift === true,
     email: String(values.email ?? ''),
+    shipTo: [values.city, values.country]
+      .map((v) => String(v ?? '').trim())
+      .filter(Boolean)
+      .join(', '),
   };
 }
 
@@ -43,7 +47,8 @@ export function Receipt() {
         {blend.price !== undefined && <b>€{blend.price}</b>}
       </p>
       <p className="of-description">
-        We mix it by hand and let it rest for a week before it ships. A tracking link goes to{' '}
+        We mix it by hand and let it rest for a week before it ships
+        {blend.shipTo ? ` to ${blend.shipTo}` : ''}. A tracking link goes to{' '}
         {blend.email || 'your email'} when it leaves the atelier.
       </p>
     </div>
