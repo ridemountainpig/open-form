@@ -1,0 +1,565 @@
+{
+  "version": 2,
+  "wgsl": "// A tank of still water that the fragrance is mixed in. Each note chosen is a\n// drop of ink: top notes stay near the surface, heart notes hang in the\n// middle, base notes sink and pool at the bottom. The plumes billow through a\n// slowly drifting flow field and mix like real pigment (subtractive on light\n// water, glowing on dark). The concentration darkens the ink, and on success\n// the whole tank turns slowly into one vortex.\n\nstruct Params {\n  time: f32,\n  aspect: f32,\n  dark: f32,\n  strength: f32,\n  swirl: f32,\n  calm: f32,\n  look: vec2f,\n  // rgb + how present the drop is (it fades out when replaced)\n  ink: array<vec4f, 6>,\n  // x where it fell in, seconds since it fell, how deep it sinks, seed\n  drop: array<vec4f, 6>,\n}\n@group(0) @binding(0) var<uniform> params: Params;\n\nfn hash2(p: vec2f) -> f32 {\n  return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453);\n}\n\nfn noise(p: vec2f) -> f32 {\n  let i = floor(p);\n  let f = fract(p);\n  let u = f * f * (3.0 - 2.0 * f);\n  return mix(\n    mix(hash2(i), hash2(i + vec2f(1.0, 0.0)), u.x),\n    mix(hash2(i + vec2f(0.0, 1.0)), hash2(i + vec2f(1.0, 1.0)), u.x),\n    u.y,\n  );\n}\n\nfn fbm(p0: vec2f) -> f32 {\n  var p = p0;\n  var a = 0.5;\n  var s = 0.0;\n  for (var i = 0; i < 5; i++) {\n    s += a * noise(p);\n    p = mat2x2f(1.6, 1.2, -1.2, 1.6) * p + vec2f(3.1, 1.7);\n    a *= 0.5;\n  }\n  return s;\n}\n\nfn rot(a: f32) -> mat2x2f {\n  let c = cos(a);\n  let s = sin(a);\n  return mat2x2f(c, s, -s, c);\n}\n\nfn segment(p: vec2f, a: vec2f, b: vec2f) -> vec2f {\n  let pa = p - a;\n  let ba = b - a;\n  let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);\n  return vec2f(length(pa - ba * h), h);\n}\n\n// The water's slow drift, plus the vortex that gathers everything at the end.\nfn flow(p0: vec2f, seed: f32) -> vec2f {\n  let t = params.time * 0.045;\n  var p = p0;\n  let r = length(p);\n  p = rot(params.swirl * (2.6 / (0.35 + r)) + params.swirl * t * 6.0) * p;\n  p *= 1.0 - params.swirl * 0.35;\n  let q = vec2f(fbm(p * 1.3 + vec2f(seed, t)), fbm(p * 1.3 + vec2f(5.2 - t, seed * 1.7)));\n  let w = vec2f(fbm(p * 1.9 + q * 2.2 + vec2f(1.7, 9.2 + t)), fbm(p * 1.9 + q * 2.2 + vec2f(8.3 - t, 2.8)));\n  return p + (w - 0.5) * (0.55 - 0.25 * params.calm);\n}\n\nfn plume(p: vec2f, i: i32) -> f32 {\n  let d = params.drop[i];\n  let ink = params.ink[i];\n  if (ink.a < 0.005) {\n    return 0.0;\n  }\n  let age = d.y;\n  let seed = d.w;\n  let q = flow(p, seed);\n  let sink = d.z * (1.0 - exp(-age * 0.55));\n  let top = vec2f(d.x, 1.05);\n  let head = vec2f(d.x + 0.18 * sin(seed * 3.0), 1.0 - sink);\n  let s = segment(q, top, head);\n  let grow = 1.0 - exp(-age * 0.4);\n  let r = 0.03 + mix(0.045, 0.2, grow) * (0.4 + 0.6 * s.y);\n  // the falling head rolls into a ring, the trail behind it thins out\n  let ring = length(q - head);\n  let headR = 0.05 + 0.17 * grow;\n  let body = exp(-pow(s.x / r, 2.0) * 1.6) * mix(0.45, 1.0, s.y);\n  let curl = exp(-pow((ring - headR * 0.6) / (headR * 0.55), 2.0) * 1.4);\n  let fil = fbm(q * 5.5 + vec2f(seed * 3.0, params.time * 0.02));\n  let wisps = smoothstep(0.35, 0.85, 1.0 - abs(fil - 0.5) * 2.0);\n  let dens = (body + curl * 0.9) * mix(0.55, 1.35, wisps);\n  // a drop starts as a bead and opens up\n  let bead = exp(-dot(p - top + vec2f(0.0, age * 1.4), p - top + vec2f(0.0, age * 1.4)) * 900.0) * (1.0 - smoothstep(0.0, 0.25, age));\n  return (dens * smoothstep(0.0, 0.35, age) + bead) * ink.a;\n}\n\n@fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {\n  let p = vec2f((uv.x * 2.0 - 1.0) * params.aspect, 1.0 - uv.y * 2.0) + params.look * 0.04;\n\n  // the water: pale and lit from above, or deep and dark\n  let lightWater = mix(vec3f(0.985, 0.978, 0.965), vec3f(0.9, 0.91, 0.92), smoothstep(1.0, -1.2, p.y));\n  let darkWater = mix(vec3f(0.055, 0.06, 0.075), vec3f(0.018, 0.02, 0.028), smoothstep(1.0, -1.1, p.y));\n  let caustic = fbm(vec2f(p.x * 3.0, p.y * 0.6 + params.time * 0.05)) * smoothstep(-0.6, 1.0, p.y);\n  let rays = pow(caustic, 3.0);\n\n  // each ink is a dye: at full density it tints the water exactly its own\n  // colour, and dyes multiply where they overlap\n  var absorb = vec3f(0.0);\n  var glow = vec3f(0.0);\n  var blend = vec3f(0.0);\n  var total = 0.0;\n  for (var i = 0; i < 6; i++) {\n    let raw = plume(p, i) * params.strength;\n    let dens = 1.15 * (1.0 - exp(-raw * 0.95));\n    let c = params.ink[i].rgb;\n    absorb += dens * -log(max(c, vec3f(0.03)));\n    let bright = mix(c, c / max(max(c.r, max(c.g, c.b)), 0.05), 0.6);\n    glow += dens * mix(bright, vec3f(1.0), 0.1);\n    blend += dens * c;\n    total += dens;\n  }\n\n  // where dyes overlap, lean partly on their average so mixes don't go muddy\n  let average = mix(vec3f(1.0), blend / max(total, 1e-4), min(total, 1.0));\n  let tint = mix(exp(-absorb), average, 0.35 * smoothstep(0.6, 1.6, total));\n  // a faint pearly sheen where the ink is thin, like light through silk\n  let sheen = smoothstep(0.05, 0.4, total) * (1.0 - smoothstep(0.4, 1.2, total));\n  let light = lightWater * (1.0 + rays * 0.06) * tint + vec3f(1.0, 0.97, 0.95) * sheen * 0.035;\n  let lit = darkWater + rays * vec3f(0.035, 0.04, 0.05) + glow * 0.8 / (1.0 + total * 0.4);\n  var col = mix(light, lit, params.dark);\n\n  // a soft glint along the surface and a vignette\n  col += vec3f(0.6) * exp(-pow((p.y - 0.985) * 60.0, 2.0)) * 0.08;\n  let v = 1.0 - 0.18 * dot(p * vec2f(0.6 / params.aspect, 0.55), p * vec2f(0.6 / params.aspect, 0.55));\n  col *= mix(1.0, v, 0.6);\n  let grain = (hash2(uv * 931.0 + fract(params.time)) - 0.5) * 0.012;\n  return vec4f(clamp(col + grain, vec3f(0.0), vec3f(1.0)), 1.0);\n}\n",
+  "reflection": {
+    "bindings": [
+      {
+        "group": 0,
+        "binding": 0,
+        "name": "params",
+        "mangledName": "params",
+        "type": { "kind": "identifier", "name": "Params", "mangledName": "_vgsl_6f41d3c0__Params" },
+        "kind": "buffer",
+        "addressSpace": "uniform",
+        "struct": {
+          "name": "Params",
+          "mangledName": "_vgsl_6f41d3c0__Params",
+          "members": [
+            { "name": "time", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "aspect", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "dark", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "strength", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "swirl", "type": { "kind": "scalar", "name": "f32" } },
+            { "name": "calm", "type": { "kind": "scalar", "name": "f32" } },
+            {
+              "name": "look",
+              "type": {
+                "kind": "vector",
+                "width": 2,
+                "element": { "kind": "scalar", "name": "f32" }
+              }
+            },
+            {
+              "name": "ink",
+              "type": {
+                "kind": "array",
+                "element": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "count": 6,
+                "countExpression": "6"
+              }
+            },
+            {
+              "name": "drop",
+              "type": {
+                "kind": "array",
+                "element": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "count": 6,
+                "countExpression": "6"
+              }
+            }
+          ]
+        },
+        "layout": {
+          "name": "params",
+          "mangledName": "params",
+          "layoutMode": "wgsl-host-shareable-v1",
+          "type": {
+            "kind": "identifier",
+            "name": "Params",
+            "mangledName": "_vgsl_6f41d3c0__Params"
+          },
+          "align": 16,
+          "size": 224,
+          "members": [
+            {
+              "name": "time",
+              "offset": 0,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "time",
+                "mangledName": "time",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "aspect",
+              "offset": 4,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "aspect",
+                "mangledName": "aspect",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "dark",
+              "offset": 8,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "dark",
+                "mangledName": "dark",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "strength",
+              "offset": 12,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "strength",
+                "mangledName": "strength",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "swirl",
+              "offset": 16,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "swirl",
+                "mangledName": "swirl",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "calm",
+              "offset": 20,
+              "align": 4,
+              "size": 4,
+              "type": { "kind": "scalar", "name": "f32" },
+              "layout": {
+                "name": "calm",
+                "mangledName": "calm",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": { "kind": "scalar", "name": "f32" },
+                "align": 4,
+                "size": 4
+              }
+            },
+            {
+              "name": "look",
+              "offset": 24,
+              "align": 8,
+              "size": 8,
+              "type": {
+                "kind": "vector",
+                "width": 2,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "layout": {
+                "name": "look",
+                "mangledName": "look",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": {
+                  "kind": "vector",
+                  "width": 2,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "align": 8,
+                "size": 8
+              }
+            },
+            {
+              "name": "ink",
+              "offset": 32,
+              "align": 16,
+              "size": 96,
+              "type": {
+                "kind": "array",
+                "element": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "count": 6,
+                "countExpression": "6"
+              },
+              "layout": {
+                "name": "ink",
+                "mangledName": "ink",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": {
+                  "kind": "array",
+                  "element": {
+                    "kind": "vector",
+                    "width": 4,
+                    "element": { "kind": "scalar", "name": "f32" }
+                  },
+                  "count": 6,
+                  "countExpression": "6"
+                },
+                "align": 16,
+                "size": 96,
+                "stride": 16,
+                "element": {
+                  "name": "ink[]",
+                  "mangledName": "ink[]",
+                  "layoutMode": "wgsl-host-shareable-v1",
+                  "type": {
+                    "kind": "vector",
+                    "width": 4,
+                    "element": { "kind": "scalar", "name": "f32" }
+                  },
+                  "align": 16,
+                  "size": 16
+                },
+                "runtimeSized": false
+              }
+            },
+            {
+              "name": "drop",
+              "offset": 128,
+              "align": 16,
+              "size": 96,
+              "type": {
+                "kind": "array",
+                "element": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "count": 6,
+                "countExpression": "6"
+              },
+              "layout": {
+                "name": "drop",
+                "mangledName": "drop",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": {
+                  "kind": "array",
+                  "element": {
+                    "kind": "vector",
+                    "width": 4,
+                    "element": { "kind": "scalar", "name": "f32" }
+                  },
+                  "count": 6,
+                  "countExpression": "6"
+                },
+                "align": 16,
+                "size": 96,
+                "stride": 16,
+                "element": {
+                  "name": "drop[]",
+                  "mangledName": "drop[]",
+                  "layoutMode": "wgsl-host-shareable-v1",
+                  "type": {
+                    "kind": "vector",
+                    "width": 4,
+                    "element": { "kind": "scalar", "name": "f32" }
+                  },
+                  "align": 16,
+                  "size": 16
+                },
+                "runtimeSized": false
+              }
+            }
+          ]
+        },
+        "bindingLayout": {
+          "kind": "buffer",
+          "buffer": { "type": "uniform", "hasDynamicOffset": false, "minBindingSize": 224 }
+        }
+      }
+    ],
+    "entryPoints": [
+      {
+        "name": "fs_main",
+        "mangledName": "fs_main",
+        "stage": "fragment",
+        "bindings": [{ "group": 0, "binding": 0 }],
+        "samplingPairs": []
+      }
+    ],
+    "overrides": [],
+    "featuresRequired": [],
+    "aliases": [],
+    "structs": [
+      {
+        "name": "Params",
+        "mangledName": "_vgsl_6f41d3c0__Params",
+        "members": [
+          { "name": "time", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "aspect", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "dark", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "strength", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "swirl", "type": { "kind": "scalar", "name": "f32" } },
+          { "name": "calm", "type": { "kind": "scalar", "name": "f32" } },
+          {
+            "name": "look",
+            "type": { "kind": "vector", "width": 2, "element": { "kind": "scalar", "name": "f32" } }
+          },
+          {
+            "name": "ink",
+            "type": {
+              "kind": "array",
+              "element": {
+                "kind": "vector",
+                "width": 4,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "count": 6,
+              "countExpression": "6"
+            }
+          },
+          {
+            "name": "drop",
+            "type": {
+              "kind": "array",
+              "element": {
+                "kind": "vector",
+                "width": 4,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "count": 6,
+              "countExpression": "6"
+            }
+          }
+        ]
+      }
+    ],
+    "hostShareableLayouts": [
+      {
+        "name": "params",
+        "mangledName": "params",
+        "layoutMode": "wgsl-host-shareable-v1",
+        "type": { "kind": "identifier", "name": "Params", "mangledName": "_vgsl_6f41d3c0__Params" },
+        "align": 16,
+        "size": 224,
+        "members": [
+          {
+            "name": "time",
+            "offset": 0,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "time",
+              "mangledName": "time",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "aspect",
+            "offset": 4,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "aspect",
+              "mangledName": "aspect",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "dark",
+            "offset": 8,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "dark",
+              "mangledName": "dark",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "strength",
+            "offset": 12,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "strength",
+              "mangledName": "strength",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "swirl",
+            "offset": 16,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "swirl",
+              "mangledName": "swirl",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "calm",
+            "offset": 20,
+            "align": 4,
+            "size": 4,
+            "type": { "kind": "scalar", "name": "f32" },
+            "layout": {
+              "name": "calm",
+              "mangledName": "calm",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": { "kind": "scalar", "name": "f32" },
+              "align": 4,
+              "size": 4
+            }
+          },
+          {
+            "name": "look",
+            "offset": 24,
+            "align": 8,
+            "size": 8,
+            "type": {
+              "kind": "vector",
+              "width": 2,
+              "element": { "kind": "scalar", "name": "f32" }
+            },
+            "layout": {
+              "name": "look",
+              "mangledName": "look",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": {
+                "kind": "vector",
+                "width": 2,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "align": 8,
+              "size": 8
+            }
+          },
+          {
+            "name": "ink",
+            "offset": 32,
+            "align": 16,
+            "size": 96,
+            "type": {
+              "kind": "array",
+              "element": {
+                "kind": "vector",
+                "width": 4,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "count": 6,
+              "countExpression": "6"
+            },
+            "layout": {
+              "name": "ink",
+              "mangledName": "ink",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": {
+                "kind": "array",
+                "element": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "count": 6,
+                "countExpression": "6"
+              },
+              "align": 16,
+              "size": 96,
+              "stride": 16,
+              "element": {
+                "name": "ink[]",
+                "mangledName": "ink[]",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "align": 16,
+                "size": 16
+              },
+              "runtimeSized": false
+            }
+          },
+          {
+            "name": "drop",
+            "offset": 128,
+            "align": 16,
+            "size": 96,
+            "type": {
+              "kind": "array",
+              "element": {
+                "kind": "vector",
+                "width": 4,
+                "element": { "kind": "scalar", "name": "f32" }
+              },
+              "count": 6,
+              "countExpression": "6"
+            },
+            "layout": {
+              "name": "drop",
+              "mangledName": "drop",
+              "layoutMode": "wgsl-host-shareable-v1",
+              "type": {
+                "kind": "array",
+                "element": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "count": 6,
+                "countExpression": "6"
+              },
+              "align": 16,
+              "size": 96,
+              "stride": 16,
+              "element": {
+                "name": "drop[]",
+                "mangledName": "drop[]",
+                "layoutMode": "wgsl-host-shareable-v1",
+                "type": {
+                  "kind": "vector",
+                  "width": 4,
+                  "element": { "kind": "scalar", "name": "f32" }
+                },
+                "align": 16,
+                "size": 16
+              },
+              "runtimeSized": false
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "sourceChecksum": "fnv1a64-utf16le-v1:1fdaab3dc7c7eef8",
+  "producer": "@vgpu/wgsl/prepare-v2"
+}

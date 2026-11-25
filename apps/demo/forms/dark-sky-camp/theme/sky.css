@@ -1,0 +1,252 @@
+.of-root[data-of-theme="dark-sky-camp"] {
+  padding: 0;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 1fr);
+  min-height: 100dvh;
+}
+
+/* the sky fills the panel, the caption sits over it */
+[data-of-theme="dark-sky-camp"] .ds-sky {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: clip;
+  color: #f1f2fb;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-scene,
+[data-of-theme="dark-sky-camp"] :is(.ds-still, .ds-canvas) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-still {
+  object-fit: cover;
+  transition: opacity 0.5s;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-still-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .of-root[data-of-theme="dark-sky-camp"]:not([data-scheme="light"]) .ds-still-light {
+    display: none;
+  }
+
+  .of-root[data-of-theme="dark-sky-camp"]:not([data-scheme="light"]) .ds-still-dark {
+    display: block;
+  }
+}
+
+.of-root[data-of-theme="dark-sky-camp"][data-scheme="dark"] .ds-still-light {
+  display: none;
+}
+
+.of-root[data-of-theme="dark-sky-camp"][data-scheme="dark"] .ds-still-dark {
+  display: block;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-canvas {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-scene[data-ready] .ds-canvas {
+  opacity: 1;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-scene[data-ready] .ds-still {
+  opacity: 0;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-mark {
+  position: absolute;
+  top: 28px;
+  left: clamp(24px, 3.5vw, 48px);
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-mark span {
+  margin-left: 8px;
+  color: rgb(241 242 251 / 0.6);
+  font-weight: 500;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-caption {
+  position: absolute;
+  left: clamp(24px, 3.5vw, 48px);
+  right: clamp(24px, 3.5vw, 48px);
+  top: 84px;
+  display: grid;
+  gap: 6px;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.5);
+}
+
+[data-of-theme="dark-sky-camp"] .ds-eyebrow {
+  margin: 0;
+  color: rgb(241 242 251 / 0.75);
+  font:
+    600 0.78rem / 1.4 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: pre-wrap;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-word {
+  margin: 0;
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-detail {
+  margin: 0;
+  min-height: 1.4em;
+  color: rgb(241 242 251 / 0.7);
+  font-size: 0.95rem;
+}
+
+/* the ticket on the success screen */
+[data-of-theme="dark-sky-camp"] .ds-ticket {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid var(--of-border);
+  border-radius: var(--of-radius);
+  text-align: left;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-ticket-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: var(--of-muted);
+  font:
+    600 0.8rem ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-ticket-head b {
+  color: var(--of-fg);
+}
+
+[data-of-theme="dark-sky-camp"] .ds-ticket-site {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 300;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-ticket .of-description {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* the sheet */
+[data-of-theme="dark-sky-camp"] .ds-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: clamp(48px, 6vw, 84px) clamp(24px, 4vw, 60px) 48px;
+  background: var(--of-surface);
+  border-left: 1px solid var(--of-border);
+}
+
+[data-of-theme="dark-sky-camp"] .ds-sheet > :not(.of-success-icon) {
+  width: 100%;
+  max-width: var(--of-width);
+}
+
+[data-of-theme="dark-sky-camp"] .ds-sheet.of-success {
+  align-items: center;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-sheet:is(.of-success, .of-notice) {
+  justify-content: center;
+}
+
+[data-of-theme="dark-sky-camp"] .of-title {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+[data-of-theme="dark-sky-camp"] .ds-name {
+  margin: 0;
+  color: var(--of-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 860px) {
+  [data-of-theme="dark-sky-camp"] .ds-page {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  /* on a phone the sky stays pinned above the questions */
+  [data-of-theme="dark-sky-camp"] .ds-sky {
+    z-index: 2;
+    height: 230px;
+    border-bottom: 1px solid var(--of-border);
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-mark {
+    top: 14px;
+    left: 16px;
+    font-size: 0.85rem;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-caption {
+    left: 16px;
+    right: 16px;
+    top: 40px;
+    gap: 2px;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-word {
+    font-size: 2rem;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-detail {
+    font-size: 0.8rem;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-sheet * {
+    scroll-margin-top: 250px;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-sheet {
+    padding: 28px 20px 40px;
+    border-left: 0;
+    align-items: center;
+  }
+}
+
+/* on a short screen (a phone on its side) the pinned sky would crowd out the fields */
+@media (max-width: 860px) and (max-height: 560px) {
+  [data-of-theme="dark-sky-camp"] .ds-sky {
+    position: relative;
+  }
+
+  [data-of-theme="dark-sky-camp"] .ds-sheet * {
+    scroll-margin-top: 0;
+  }
+}

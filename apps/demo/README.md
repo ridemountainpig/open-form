@@ -28,6 +28,8 @@ Each form owns its look in `forms/<id>/theme/` and is checked at phone, tablet a
 | `tinbox` | API beta request, dark only | A beige desktop computer drawn in CSS; a knob switches the phosphor |
 | `oda` | Studio enquiry as one sentence | Blanks set inline in a paragraph, built on `useField` |
 | `pine` | Support request as a chat | A transcript of earlier answers with Edit, quick-reply chips |
+| `perfume-atelier` | Bespoke fragrance order | A tank of water rendered with vgpu on WebGPU: each note picked drops in as its own ink, top notes near the surface and base notes at the bottom, and it all turns into one vortex on success |
+| `dark-sky-camp` | Stargazing camp booking | The night sky over the campsite rendered with vgpu: the weekend sets the Milky Way and meteor rate, the site sets the horizon, each person lights a tent, a birthday draws the star sign, and a fireball crosses on success |
 | `offsite` | Team offsite RSVP as a bento board | Numbered tiles, a "Next" marker, a progress ring |
 
 ## Themes
