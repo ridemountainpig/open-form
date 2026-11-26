@@ -9,6 +9,8 @@ import {
   type ResponseSortKey,
   responseFilterTest,
   responseSortKey,
+  stepBit,
+  type VisitGroup,
 } from '../schema/index.ts';
 import { countersFor, planVersions, RESTORE_NOT_EMPTY } from '../storage/dump.ts';
 import type {
@@ -81,6 +83,19 @@ const MIGRATIONS: string[] = [
      id TEXT PRIMARY KEY,
      expires_at INTEGER NOT NULL
    );`,
+  `CREATE TABLE form_visits (
+     form_id TEXT NOT NULL,
+     id TEXT NOT NULL,
+     form_version_id TEXT NOT NULL,
+     day TEXT NOT NULL,
+     steps INTEGER NOT NULL,
+     last_step INTEGER,
+     started INTEGER NOT NULL,
+     completed INTEGER NOT NULL,
+     seconds INTEGER,
+     PRIMARY KEY (form_id, id)
+   );
+   CREATE INDEX form_visits_form_day ON form_visits (form_id, day);`,
 ];
 
 // node:sqlite still prints an ExperimentalWarning on Node 22. It is the whole
@@ -274,9 +289,30 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
        ON CONFLICT (form_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`,
     ),
     deleteOverrides: db.prepare('DELETE FROM form_overrides WHERE form_id = ?'),
+    visit: db.prepare(
+      `INSERT INTO form_visits
+         (form_id, id, form_version_id, day, steps, last_step, started, completed, seconds)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (form_id, id) DO UPDATE SET
+         steps = steps | excluded.steps,
+         last_step = COALESCE(excluded.last_step, last_step),
+         started = MAX(started, excluded.started),
+         completed = MAX(completed, excluded.completed),
+         seconds = COALESCE(excluded.seconds, seconds)`,
+    ),
+    visitGroups: db.prepare(
+      `SELECT form_version_id, steps, last_step, started, completed, COUNT(*) AS n
+       FROM form_visits WHERE form_id = ? AND day >= ?
+       GROUP BY form_version_id, steps, last_step, started, completed`,
+    ),
+    visitDurations: db.prepare(
+      `SELECT form_version_id, seconds FROM form_visits
+       WHERE form_id = ? AND day >= ? AND completed = 1 AND seconds IS NOT NULL`,
+    ),
     // Responses first: they reference the form's versions (their files cascade).
     eraseForm: [
       db.prepare('DELETE FROM submissions WHERE form_id = ?'),
+      db.prepare('DELETE FROM form_visits WHERE form_id = ?'),
       db.prepare('DELETE FROM form_versions WHERE form_id = ?'),
       db.prepare('DELETE FROM form_overrides WHERE form_id = ?'),
       db.prepare('DELETE FROM form_counters WHERE form_id = ?'),
@@ -524,6 +560,51 @@ export async function createSqliteStorage(opts: SqliteStorageOptions): Promise<S
 
     async isSessionRevoked(id) {
       return Boolean(stmt.isRevoked.get(id));
+    },
+
+    async recordVisit(update) {
+      const completed = update.completed ? 1 : 0;
+      stmt.visit.run(
+        update.formId,
+        update.visitId,
+        update.formVersionId,
+        update.day,
+        update.step === undefined ? 0 : stepBit(update.step),
+        update.step ?? null,
+        update.started || completed ? 1 : 0,
+        completed,
+        update.seconds ?? null,
+      );
+    },
+
+    async visitStats(formId, opts = {}) {
+      const since = opts.since ?? '';
+      const groups = (
+        stmt.visitGroups.all(formId, since) as Array<{
+          form_version_id: string;
+          steps: number;
+          last_step: number | null;
+          started: number;
+          completed: number;
+          n: number;
+        }>
+      ).map(
+        (row): VisitGroup => ({
+          formVersionId: row.form_version_id,
+          steps: Number(row.steps),
+          lastStep: row.last_step === null ? null : Number(row.last_step),
+          started: Boolean(row.started),
+          completed: Boolean(row.completed),
+          count: Number(row.n),
+        }),
+      );
+      const durations = (
+        stmt.visitDurations.all(formId, since) as Array<{
+          form_version_id: string;
+          seconds: number;
+        }>
+      ).map((row) => ({ formVersionId: row.form_version_id, seconds: Number(row.seconds) }));
+      return { groups, durations };
     },
 
     async dump() {

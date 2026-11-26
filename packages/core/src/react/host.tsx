@@ -22,7 +22,12 @@ export type FormHostProps = {
   className?: string;
 };
 
-type Info = { availability: FormAvailability; token?: string; turnstile?: { siteKey: string } };
+type Info = {
+  availability: FormAvailability;
+  token?: string;
+  turnstile?: { siteKey: string };
+  visits?: boolean;
+};
 
 /**
  * Renders an Open Form form inside your own React app (Next.js, Remix, …)
@@ -71,6 +76,7 @@ export function FormHost({
       availability: info?.availability,
       token: info?.token,
       turnstile: info?.turnstile,
+      visits: info?.visits ? `${base}/visits` : undefined,
     }),
     [base, config, id, info, locale, theme, themeId],
   );
@@ -87,7 +93,7 @@ export function FormHost({
   return (
     <div className={host}>
       <RuntimeContext.Provider value={runtime}>
-        <Form />
+        <Form key={base} />
       </RuntimeContext.Provider>
     </div>
   );

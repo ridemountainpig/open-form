@@ -28,6 +28,42 @@ export function storageContract(name: string, open: () => Promise<StorageAdapter
       expect(await storage.isSessionRevoked('current')).toBe(true);
       await storage.close();
     });
+    it('adds up a visit’s steps, keeps its last one, and groups visits that went alike', async () => {
+      const storage = await open();
+      if (!storage.recordVisit || !storage.visitStats) return;
+      const visit = (visitId: string, rest: Record<string, unknown>, day = '2026-11-20') =>
+        storage.recordVisit?.({ formId: 'f', visitId, formVersionId: 'v1', day, ...rest });
+      await visit('a', { step: 0 });
+      await visit('a', { started: true });
+      await visit('a', { step: 2 });
+      await visit('a', { step: 2 });
+      await visit('a', { step: 1 });
+      await visit('b', { step: 0 });
+      await visit('c', { step: 0 });
+      await visit('c', { completed: true, seconds: 42 }, '2026-11-21');
+      await visit('old', { step: 0 }, '2026-10-01');
+      await storage.recordVisit({
+        formId: 'g',
+        visitId: 'a',
+        formVersionId: 'v9',
+        day: '2026-11-20',
+        step: 0,
+      });
+
+      const stats = await storage.visitStats('f', { since: '2026-11-01' });
+      const groups = stats.groups
+        .map((g) => [g.steps, g.lastStep, g.started, g.completed, g.count])
+        .sort((x, y) => String(x).localeCompare(String(y)));
+      expect(groups).toEqual([
+        [1, 0, false, false, 1],
+        [1, 0, true, true, 1],
+        [7, 1, true, false, 1],
+      ]);
+      expect(stats.durations).toEqual([{ formVersionId: 'v1', seconds: 42 }]);
+      expect((await storage.visitStats('f')).groups.reduce((n, g) => n + g.count, 0)).toBe(4);
+      await storage.close();
+    });
+
     it('never hands a deleted response number to the next response', async () => {
       const storage = await open();
       await submit(storage, { name: 'Amy' });

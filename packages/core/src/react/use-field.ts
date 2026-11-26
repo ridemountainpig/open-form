@@ -202,7 +202,11 @@ export function useField(opts: UseFieldOptions): FieldApi {
 
   const setValue = useCallback(
     (next: unknown) => {
+      const before = store.getState().values;
       store.setValue(name, next);
+      if (store.getState().values !== before && !store.getState().edited) {
+        store.setState({ edited: true });
+      }
       if (ownValue(store.getState().errors, name)) void validateNow(next);
     },
     [name, store, validateNow],

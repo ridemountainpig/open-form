@@ -36,6 +36,7 @@ export function FormDetail() {
       label: t('detail.responses'),
       count: info?.responses,
     },
+    { to: 'analytics', label: t('detail.analytics') },
     { to: 'schema', label: t('detail.schema') },
     { to: 'settings', label: t('detail.settings') },
   ];

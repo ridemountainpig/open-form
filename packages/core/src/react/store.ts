@@ -14,6 +14,8 @@ export type FormState = {
   /** Bumped each time `formError` is set, so the alert announces a repeated message again. */
   alertCount: number;
   submissionId?: string;
+  /** The respondent has changed an answer (defaults and restored drafts don't count). */
+  edited?: boolean;
 };
 
 export type FormStore = {

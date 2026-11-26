@@ -306,6 +306,7 @@ Admin API (used by Studio):
 GET    /api/forms                                   admin: forms + response counts, status, latest response time
 GET    /api/forms/:id                               public: status + timing token
 POST   /api/forms/:id/submissions                   public: submit (see the pipeline above)
+POST   /api/forms/:id/visits                        public: a visit's step or start (Analytics), 204
 GET    /api/forms/:id/schema                        admin: schema + status / opensAt / closesAt with overrides applied
 GET    /api/forms/:id/submissions?limit&offset&q    admin (limit defaults to 50, max 500)
 GET    /api/forms/:id/submissions/:sid              admin
@@ -313,6 +314,7 @@ DELETE /api/forms/:id/submissions/:sid              admin
 POST   /api/forms/:id/submissions/delete { ids }    admin: bulk delete (1–500), returns { deleted }
 PUT    /api/forms/:id/overrides                     admin: Studio submission-setting overrides (see §9)
 DELETE /api/forms/:id/overrides                     admin: revert to the settings in code
+GET    /api/forms/:id/analytics?days&version       admin: Analytics: views, starts, completions, step funnel (days, version)
 GET    /api/forms/:id/export?format=csv|xlsx|json   admin
 GET    /api/studio/session                          sign-in state (signedIn, readOnly, whether sign-out is possible, sign-in method)
 POST   /api/studio/session    { password }          password → session cookie (same-origin, 10 per IP (/64 for IPv6) / 10 minutes)
@@ -346,10 +348,12 @@ rate_limits      (key_hash, window_start, count, expires_at)                 PRI
 form_overrides   (form_id, data JSON, updated_at)                            PRIMARY KEY(form_id)
 form_counters    (form_id, last_number)                                      PRIMARY KEY(form_id)
 revoked_sessions (id, expires_at)                                            PRIMARY KEY(id)  -- signed-out Studio sessions
+form_visits      (form_id, id, form_version_id, day, steps, last_step,
+                  started, completed, seconds)                              PRIMARY KEY(form_id, id)
 meta             (key, value)                                                -- schema_version, etc.
 ```
 
-- Migrations run in order, and `meta.schema_version` records the last one applied: ① the initial 4 tables ② `submissions.locale` (v0.3 localization) ③ `form_overrides` (Studio submission-setting overrides) ④ `form_counters` (response number counter) ⑤ `revoked_sessions` (revoke sessions on sign-out).
+- Migrations run in order, and `meta.schema_version` records the last one applied: ① the initial 4 tables ② `submissions.locale` (v0.3 localization) ③ `form_overrides` (Studio submission-setting overrides) ④ `form_counters` (response number counter) ⑤ `revoked_sessions` (revoke sessions on sign-out) ⑥ `form_visits` (Studio Analytics).
 
 - Default path `.open-form/open-form.db` (override with `storage.path` or `OPEN_FORM_DB`), WAL mode.
 - Responses are personal data: the `.open-form/` directory is `0700`, the DB and its `-wal` / `-shm` are `0600` (the DB is created `0600`, and existing files are fixed when opened), and `secret` is `0600` (also tightened on read).
@@ -363,10 +367,12 @@ meta             (key, value)                                                -- 
 - Filters (`listSubmissions({ filter, now })`, Studio's `?filter=` JSON) are defined once in `schema/response-filter.ts`: `parseResponseFilter` validates them (the handler answers 400 on a bad one) and `responseFilterTest` evaluates them. The memory adapter calls the test directly; SQLite registers it as the `open_form_filter(data, created_at)` SQL function, so `COUNT`, `LIMIT` and `OFFSET` stay in SQL and both adapters agree. Day rules on the submission time are read in the `timeZone` Studio sends (the viewer's).
 - Sorting (`listSubmissions({ sort })`, Studio's `?sort=` JSON) works the same way: `schema/response-sort.ts` turns an answer into a key (`responseSortKey`: numbers, lowercased text, or a choice's position in the `values` Studio sends, so options sort in form order) and defines the order (`compareResponseSortKeys`: SQLite's — numbers before text, empty answers last either way). SQLite registers the key as `open_form_sort_key(data)` and sorts in a subquery, so pages are still cut in SQL; ties fall back to `number DESC`.
 
+- `form_visits` holds Studio's Analytics: one row per visit, keyed by a random id the form page keeps in `sessionStorage` (so a reload continues it), never the device id. It keeps the UTC day (no time), the form version, the steps reached as one integer of bits (`stepBit`, steps 0–52), the last step, `started`, `completed` and the seconds to submit, taken from the signed timing token so the page can't set it. `POST /api/forms/:id/visits` upserts it (rate-limited per hashed IP, always `204`), and a stored submission that carries the same `visit` marks it complete; honeypot hits don't. Adapters group the rows in SQL (`visitStats`), and `summarizeVisits` in `schema/analytics.ts` turns the groups into the funnel, so every adapter agrees. `recordVisit` / `visitStats` are optional: without them Studio says the storage keeps no analytics. `analytics: false` (form, then project) stops counting; `open-form db copy` leaves visits behind.
+
 ### Postgres (`@open-form-build/core/postgres`)
 
 - The same tables in their own schema, `open_form` by default (`createPostgresStorage({ schema })`), so they never mix with an app's tables in `public`. `data`, `schema` and override data are `json`, not `jsonb`: answers come back with their keys in the order the form sent them. Timestamps stay ISO-8601 `TEXT`, as in SQLite, so every adapter returns identical `createdAt` strings. `(form_id, number)` has a unique index on top of SQLite's indexes.
-- One migration so far (the whole current schema), tracked in `open_form.meta` like SQLite's. A server first reads `schema_version` without a lock (so warm serverless starts cost one query), and only when behind takes `pg_advisory_xact_lock` inside the migration transaction; concurrent cold starts wait and then find nothing to do. The schema is created only when `pg_namespace` lacks it, so a role that merely owns an existing schema works.
+- Two migrations so far (the whole schema as of v0.7, then `form_visits`), tracked in `open_form.meta` like SQLite's. A server first reads `schema_version` without a lock (so warm serverless starts cost one query), and only when behind takes `pg_advisory_xact_lock` inside the migration transaction; concurrent cold starts wait and then find nothing to do. The schema is created only when `pg_namespace` lacks it, so a role that merely owns an existing schema works.
 - `createSubmission` runs in one transaction: upsert the form's `form_counters` row, `SELECT … FOR UPDATE` it, then check `maxResponses` and the unique key, bump the counter and insert. The row lock serializes responses to one form across processes, and under READ COMMITTED each later statement sees the previous response. A `23505` on the partial unique index still maps to `duplicate`. Numbers come from the counter alone; there is no legacy data to bound it with `MAX(number)`.
 - Search runs in SQL: `jsonb_path_query(data::jsonb, 'strict $.**')` filtered to strings and numbers, `ILIKE` with escaped wildcards. Without a filter or column sort, `COUNT` / `ORDER BY number` / `LIMIT` / `OFFSET` stay in SQL. With one, the adapter reads the form's matching rows and hands them to `pageSubmissions` (`storage/list.ts`, shared with the memory adapter), which runs `responseFilterTest` / `responseSortKey` — Postgres can't call JavaScript, and translating 26 operators with time zones to SQL would let the adapters disagree. Pushing common operators down to SQL is a later optimization, guarded by the shared contract tests.
 - Connections: `pg`'s `Pool` (unnamed statements only, so PgBouncer / Supabase transaction pooling works), with an `error` listener so a dropped idle client doesn't crash the server. A remote host without `sslmode` gets `sslmode=verify-full`; `sslmode=disable` to a remote host logs a warning. Connection strings are shown only through `redactUrl` (password and `password=`-like query parameters replaced by `***`).

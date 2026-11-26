@@ -82,6 +82,11 @@ loads `.env` itself.
       type: '{ origins?: string[] }',
       description: 'Sites that may frame forms and call the public form API. Use * for any site.',
     },
+    analytics: {
+      type: 'boolean',
+      default: 'true',
+      description: 'Count visits, starts, steps reached and completions for Studio’s Analytics tab. A form’s own analytics wins. See Studio → Analytics.',
+    },
     studio: {
       type: "{ public?: 'read-only' }",
       description: "'read-only' lets anyone open Studio under open-form start and read every form and response without signing in. Changes still need OPEN_FORM_ADMIN_PASSWORD.",

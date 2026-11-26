@@ -1,4 +1,4 @@
-import type { FormSchema } from '../schema/index.ts';
+import { type FormSchema, stepBit, type VisitGroup } from '../schema/index.ts';
 import { countersFor, planVersions, RESTORE_NOT_EMPTY } from './dump.ts';
 import { pageSubmissions } from './list.ts';
 import type {
@@ -10,6 +10,17 @@ import type {
   StoredOverrides,
   StoredSubmission,
 } from './types.ts';
+
+type Visit = {
+  formId: string;
+  formVersionId: string;
+  day: string;
+  steps: number;
+  lastStep: number | null;
+  started: boolean;
+  completed: boolean;
+  seconds: number | null;
+};
 
 type Row = StoredSubmission & { uniqueKey: string | null; updatedAt?: string };
 
@@ -31,6 +42,7 @@ export function createMemoryStorage(): StorageAdapter {
   const overrides = new Map<string, StoredOverrides>();
   const counters = new Map<string, number>();
   const revoked = new Map<string, number>();
+  const visits = new Map<string, Visit>();
 
   const strip = ({ uniqueKey: _key, updatedAt: _updated, ...rest }: Row): StoredSubmission => rest;
   const ofForm = (formId: string) => submissions.filter((s) => s.formId === formId);
@@ -124,6 +136,7 @@ export function createMemoryStorage(): StorageAdapter {
       for (const [id, record] of versions) if (record.formId === formId) versions.delete(id);
       overrides.delete(formId);
       counters.delete(formId);
+      for (const [key, visit] of visits) if (visit.formId === formId) visits.delete(key);
       return before - submissions.length;
     },
     async hasUniqueKey(formId, uniqueKey) {
@@ -154,6 +167,50 @@ export function createMemoryStorage(): StorageAdapter {
     },
     async isSessionRevoked(id) {
       return revoked.has(id);
+    },
+    async recordVisit(update) {
+      const key = JSON.stringify([update.formId, update.visitId]);
+      const visit = visits.get(key) ?? {
+        formId: update.formId,
+        formVersionId: update.formVersionId,
+        day: update.day,
+        steps: 0,
+        lastStep: null,
+        started: false,
+        completed: false,
+        seconds: null,
+      };
+      if (update.step !== undefined) {
+        // Adding a bit twice would carry into the next step's.
+        const bit = stepBit(update.step);
+        if (Math.floor(visit.steps / bit) % 2 === 0) visit.steps += bit;
+        visit.lastStep = update.step;
+      }
+      if (update.started || update.completed) visit.started = true;
+      if (update.completed) visit.completed = true;
+      if (update.seconds !== undefined) visit.seconds = update.seconds;
+      visits.set(key, visit);
+    },
+    async visitStats(formId, opts = {}) {
+      const groups = new Map<string, VisitGroup>();
+      const durations: Array<{ formVersionId: string; seconds: number }> = [];
+      for (const visit of visits.values()) {
+        if (visit.formId !== formId || (opts.since && visit.day < opts.since)) continue;
+        const { formVersionId, steps, lastStep, started, completed } = visit;
+        const key = JSON.stringify([formVersionId, steps, lastStep, started, completed]);
+        const group = groups.get(key) ?? {
+          ...{ formVersionId, steps, lastStep },
+          started,
+          completed,
+          count: 0,
+        };
+        group.count++;
+        groups.set(key, group);
+        if (completed && visit.seconds !== null) {
+          durations.push({ formVersionId, seconds: visit.seconds });
+        }
+      }
+      return { groups: [...groups.values()], durations };
     },
     async dump() {
       const now = Date.now();

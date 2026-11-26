@@ -326,9 +326,10 @@
 - ✅ Cloudflare Turnstile（`protection.turnstile`）：由 server 驗證；平常看不到，Cloudflare 要求勾選時才以 dialog 開啟
 - ⬜ hCaptcha（選用）
 
-### Step 2 — Analytics ⬜
+### Step 2 — Analytics ✅
 
-- ⬜ 完成率、各 step 流失
+- ✅ 完成率、各 step 流失：Studio 的「分析」分頁（瀏覽、開始填寫、完成率、完成時間中位數、各步驟漏斗並標出條件步驟，可選日期範圍與表單版本）；單一表單或整個專案可用 `analytics: false` 關閉
+- ✅ 隱私優先：每次造訪只記隨機的分頁 id、表單版本、日期、到過的步驟和最後一步、是否開始與完成，以及花了幾秒；不記答案、IP、cookie 或裝置 id，造訪和回覆之間沒有任何關聯
 
 ## v0.7 — Remote storage & integrations
 

@@ -77,6 +77,7 @@ import { createFormStore, type FormStore, useStoreSelector } from './store.ts';
 import type { FormTheme } from './theme.ts';
 import { type TurnstileHandle, type TurnstileOutcome, TurnstileWidget } from './turnstile.tsx';
 import { visitorId } from './visitor.ts';
+import { useVisit } from './visits.ts';
 
 export type FormProps = {
   children?: ReactNode;
@@ -582,6 +583,7 @@ function InteractiveForm({
       step: 0,
       status: 'idle',
       formError: undefined,
+      edited: false,
     });
     setFurthest(0);
     setRestored(false);
@@ -606,6 +608,17 @@ function InteractiveForm({
       notice: previewNotice?.state,
     });
   }, [runtime.onNavigate, current, position, total, stepTitle, inspecting, status, previewNotice]);
+
+  const visitOf = useVisit({
+    endpoint:
+      runtime.preview || inspecting || props.onSubmit || !runtime.endpoint
+        ? undefined
+        : runtime.visits,
+    formId,
+    step: current,
+    done: status === 'success',
+    store,
+  });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs after each step change or focus request
   useEffect(() => {
@@ -766,6 +779,7 @@ function InteractiveForm({
           token: runtime.token,
           hp: honeypotRef.current?.value ?? '',
           visitor: visitorId(),
+          visit: visitOf(),
           ...(turnstile ? { turnstile } : {}),
         }),
       });
@@ -820,6 +834,7 @@ function InteractiveForm({
     store,
     tr,
     turnstileKey,
+    visitOf,
   ]);
 
   const next = useCallback(async () => {

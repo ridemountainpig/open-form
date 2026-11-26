@@ -43,7 +43,7 @@ if (url) {
       );
       await submit(all[0] as (typeof all)[number], { name: 'Amy' });
       expect(await all[3]?.countSubmissions('f')).toBe(1);
-      expect((await all[1]?.info?.())?.schemaVersion).toBe(1);
+      expect((await all[1]?.info?.())?.schemaVersion).toBe(2);
       await Promise.all(all.map((storage) => storage.close()));
       await admin.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
     });
@@ -61,7 +61,7 @@ describe('postgres storage', () => {
     expect(rows.map((row) => row.table_name)).toContain('submissions');
     const reopened = await createPostgresStorage({ pool, schema: 'forms' });
     expect(await reopened.countSubmissions('f')).toBe(1);
-    expect(await reopened.info?.()).toMatchObject({ schemaVersion: 1, location: 'schema forms' });
+    expect(await reopened.info?.()).toMatchObject({ schemaVersion: 2, location: 'schema forms' });
   });
 
   it('searches past an answer that jsonb cannot hold', async () => {

@@ -12,4 +12,5 @@ export type {
   StoredOverrides,
   StoredSubmission,
   SubmissionPage,
+  VisitUpdate,
 } from './types.ts';
