@@ -1,5 +1,16 @@
 # create-open-form
 
+## 0.5.0
+
+### Patch Changes
+
+- 782959f: Rewrite the npm READMEs: quick start, what you get, every CLI command and `init` flag, the environment variables, and links to each deploy guide.
+- Updated dependencies [38101ee]
+- Updated dependencies [2472f12]
+- Updated dependencies [782959f]
+- Updated dependencies [38101ee]
+  - @open-form-build/core@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes
