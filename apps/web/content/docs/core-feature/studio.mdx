@@ -143,10 +143,14 @@ the trash button on the [forms list](#forms-list).
 
 **Submissions** has **Published** (takes the form offline when off: its link
 shows "Form not found"), **Accepting responses** (pauses the form when off),
-**Opens** and **Closes** (a date, optionally with a time), the **Time zone**
-those dates are read in, and **Response limit**. These map to the form's
-[`published`](/docs/reference/define-form#published), `submissions.opensAt`,
-`closesAt`, `maxResponses`, `closed` and the form's `timeZone`.
+**Cloudflare Turnstile** (a [bot check](/docs/core-feature/submissions#cloudflare-turnstile)
+on submit, which can be switched on once the server has
+`OPEN_FORM_TURNSTILE_SITE_KEY` and `OPEN_FORM_TURNSTILE_SECRET`), **Opens** and
+**Closes** (a date, optionally with a time), the **Time zone** those dates are
+read in, and **Response limit**. These map to the form's
+[`published`](/docs/reference/define-form#published), `protection.turnstile`,
+`submissions.opensAt`, `closesAt`, `maxResponses`, `closed` and the form's
+`timeZone`.
 
 - Under `open-form dev`, **Save** writes the values into
   `forms/<id>/index.tsx`. The code stays the only source.
@@ -154,7 +158,7 @@ those dates are read in, and **Response limit**. These map to the form's
   take effect right away, without a deploy. Studio lists what was **Changed in
   Studio, not in code**, and **Use code values** removes the overrides.
 
-**Set in code** shows one response per email or device, drafts, protection,
+**Set in code** shows one response per email or device, drafts, the other protection settings,
 languages and translation coverage, webhooks, and the embed snippet. See
 [Submissions & protection](/docs/core-feature/submissions).
 

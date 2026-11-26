@@ -78,7 +78,7 @@ project-wide defaults in `open-form.config.ts` (each form's own keys win).
 | `honeypot` | `true` | A hidden field bots fill in. Those submissions get the answer a new one would and nothing is stored. |
 | `minimumCompletionTime` | `'2s'` | The page gets a signed timing token on load; submissions sent faster are rejected. `false` disables it. |
 | `rateLimit` | `{ max: 10, window: '10m' }` | Submissions with valid answers per IP per form, counted before the Turnstile check; an IPv6 address counts as its /64. Attempts, valid or not, are capped at five times `max` in the same window. `false` disables both. |
-| `turnstile` | `false` | `{ siteKey }` adds a [Cloudflare Turnstile](#cloudflare-turnstile) check on submit, out of sight unless Cloudflare asks the respondent to tick a box. |
+| `turnstile` | `false` | `{ siteKey }`, or `true` for the server's `OPEN_FORM_TURNSTILE_SITE_KEY`, adds a [Cloudflare Turnstile](#cloudflare-turnstile) check on submit, out of sight unless Cloudflare asks the respondent to tick a box. |
 
 Durations accept `'2s'`, `'10m'`, `'1h'`, `'1d'` or milliseconds. Behind a reverse
 proxy, set [`trustProxy`](/docs/reference/config#behind-a-reverse-proxy) in
@@ -95,19 +95,26 @@ CAPTCHA alternative. Most people never see a puzzle.
 
 1. In the Cloudflare dashboard, add a Turnstile widget for your form's
    hostname. It gives you a **site key** (public) and a **secret key**.
-2. Put the site key in `protection`, for every form or only some:
+2. Set both where the server runs:
+
+   ```bash
+   OPEN_FORM_TURNSTILE_SITE_KEY=0x4AAAAAAA…
+   OPEN_FORM_TURNSTILE_SECRET=0x4AAAAAAA…
+   ```
+
+3. Turn it on for each form with the **Cloudflare Turnstile** switch in
+   Studio's [Settings](#changing-the-schedule-in-studio), or in code, for every
+   form or only some:
 
    ```ts title="open-form.config.ts"
    export default defineConfig({
-     protection: { turnstile: { siteKey: '0x4AAAAAAA…' } },
+     protection: { turnstile: true },
    });
    ```
 
-3. Set the secret key where the server runs:
-
-   ```bash
-   OPEN_FORM_TURNSTILE_SECRET=0x4AAAAAAA…
-   ```
+The site key is public, so it can also go in code instead of
+`OPEN_FORM_TURNSTILE_SITE_KEY`: `turnstile: { siteKey: '0x4AAAAAAA…' }`. The
+secret key never goes in code.
 
 One widget covers every form: the server has a single secret, so a form that
 sets its own `siteKey` must use the same widget's. Add each hostname your forms
@@ -125,9 +132,10 @@ The server verifies the token with Cloudflare after the answers pass
 validation, so fixing a mistake doesn't need a new check. A missing or rejected
 token gets `400 human_check` and nothing is stored.
 
-The server fails closed: with `turnstile` set but no `OPEN_FORM_TURNSTILE_SECRET`,
-or when Cloudflare can't be reached, responses are refused with `503` and the
-server logs why. `open-form check` warns when the secret isn't set. Under
+The server fails closed: with Turnstile on but no `OPEN_FORM_TURNSTILE_SECRET`
+or no site key, or when Cloudflare can't be reached, responses are refused with
+`503` and the server logs why. `open-form check` warns when either key isn't
+set for a form that turns it on in code. Under
 `open-form dev` without a secret, forms use Cloudflare's always-pass
 [test site key and secret](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
 in place of yours, so you can try them locally without adding `localhost` to
@@ -194,7 +202,7 @@ POST /api/forms/:id/submissions
 | `410` | `closed`, `not_open` or `full`. |
 | `422` | Validation failed. Body: `{ errors }`, mapped back to each field's step. |
 | `429` | Rate limit or attempt cap reached. |
-| `503` | `turnstile` is on but the server can't verify tokens: no `OPEN_FORM_TURNSTILE_SECRET`, or Cloudflare unreachable. |
+| `503` | `turnstile` is on but the server can't verify tokens: no `OPEN_FORM_TURNSTILE_SECRET` or site key, or Cloudflare unreachable. |
 
 Requests from another site that isn't in `embed.origins` get `403`, oversized
 bodies `413`, and non-JSON bodies `415`. See the
@@ -204,10 +212,14 @@ bodies `413`, and non-JSON bodies `415`. See the
 
 People who run an event often need to move a deadline or raise a limit without a
 developer. Studio's **Settings** tab can edit `opensAt`, `closesAt`,
-`maxResponses`, `closed`, the `timeZone` they're read in, and whether the form
-is [`published`](/docs/reference/define-form#published), and nothing else.
+`maxResponses`, `closed`, the `timeZone` they're read in, whether the form
+is [`published`](/docs/reference/define-form#published), and whether it uses
+[Cloudflare Turnstile](#cloudflare-turnstile), and nothing else. Turnstile can
+only be switched on when the server has `OPEN_FORM_TURNSTILE_SITE_KEY` and
+`OPEN_FORM_TURNSTILE_SECRET`.
 
-- Under `open-form dev`, saving rewrites those keys in `forms/<id>/index.tsx`.
+- Under `open-form dev`, saving rewrites those keys in `forms/<id>/index.tsx`
+  (the switch writes `protection.turnstile`).
 - On a deployed server, saving stores **overrides** in the database. They apply
   immediately and win over the code. Only values that differ from the code are
   stored, so later deploys still change everything Studio didn't touch.

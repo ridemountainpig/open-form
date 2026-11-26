@@ -22,6 +22,8 @@ export type FormOverrides = {
   /** Read the policy dates in this IANA zone instead of the code's. */
   timeZone?: string;
   published?: boolean;
+  /** Turn Cloudflare Turnstile on or off, whatever `protection.turnstile` says. */
+  turnstile?: boolean;
 };
 
 /** Whether the form is online: Studio's override, else the code's `published`. */
@@ -30,6 +32,16 @@ export function isPublished(
   overrides: FormOverrides | null | undefined,
 ): boolean {
   return (overrides?.published ?? config?.published) !== false;
+}
+
+/** Turnstile in effect: Studio's switch over the code's. On without a site key uses the server's. */
+export function overriddenTurnstile(
+  code: { siteKey?: string } | null,
+  overrides: FormOverrides | null | undefined,
+): { siteKey?: string } | null {
+  if (overrides?.turnstile === false) return null;
+  if (overrides?.turnstile === true) return code ?? {};
+  return code;
 }
 
 /** The zone a form's policy dates are read in: Studio's override, else the form's, else the project's. */
@@ -127,8 +139,13 @@ export function parseTimeZone(input: unknown, fallback: string): string {
  * the zone keeps the code's wall-clock dates and moves them with it.
  */
 export function scheduleEdit(
-  body: { submissions?: unknown; timeZone?: unknown; published?: unknown },
-  code: { policy: SubmissionPolicy | undefined; timeZone: string; published: boolean },
+  body: { submissions?: unknown; timeZone?: unknown; published?: unknown; turnstile?: unknown },
+  code: {
+    policy: SubmissionPolicy | undefined;
+    timeZone: string;
+    published: boolean;
+    turnstile: boolean;
+  },
 ): FormOverrides {
   const timeZone = parseTimeZone(body.timeZone, code.timeZone);
   const submissions = scheduleChanges(
@@ -140,10 +157,15 @@ export function scheduleEdit(
     throw new Error('published must be true or false.');
   }
   const published = body.published ?? code.published;
+  if (body.turnstile !== undefined && typeof body.turnstile !== 'boolean') {
+    throw new Error('turnstile must be true or false.');
+  }
+  const turnstile = body.turnstile ?? code.turnstile;
   return {
     ...(Object.keys(submissions).length > 0 ? { submissions } : {}),
     ...(timeZone !== code.timeZone ? { timeZone } : {}),
     ...(published !== code.published ? { published } : {}),
+    ...(turnstile !== code.turnstile ? { turnstile } : {}),
   };
 }
 

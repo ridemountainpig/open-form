@@ -79,6 +79,7 @@ environment win, so your platform's settings override the file.
 | `OPEN_FORM_SECRET` | Signs timing tokens and Studio sessions, and hashes visitor ids (default: generated into a `secret` file next to the database). At least 16 characters. Keep it stable and private. |
 | `OPEN_FORM_WEBHOOK_SECRET` | Signs [webhook](/docs/deploy/webhooks) deliveries. Base64, optionally prefixed `whsec_` as the Standard Webhooks libraries expect. |
 | `OPEN_FORM_TURNSTILE_SECRET` | Verifies [Cloudflare Turnstile](/docs/core-feature/submissions#cloudflare-turnstile) tokens for forms with `protection.turnstile`. Without it those forms refuse responses. |
+| `OPEN_FORM_TURNSTILE_SITE_KEY` | The [Cloudflare Turnstile](/docs/core-feature/submissions#cloudflare-turnstile) site key for forms with `turnstile: true` or Studio's Turnstile switch. With the secret, Studio can turn Turnstile on. |
 | `OPEN_FORM_TRUST_PROXY` | Number of reverse proxies in front of the server (usually `1`), or `true` for one. Lets rate limits and sign-in attempts count each visitor instead of the proxy. |
 | `OPEN_FORM_SECURE_COOKIES` | With a trusted proxy, cookies are always marked `Secure`. `0` marks them `Secure` only for requests made over HTTPS. |
 

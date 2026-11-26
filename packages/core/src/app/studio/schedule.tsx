@@ -28,15 +28,20 @@ type Draft = {
   closed: boolean;
   zone: string;
   published: boolean;
+  turnstile: boolean;
 };
 
-const LABELS: Record<keyof SubmissionOverrides | 'timeZone' | 'published', MessageKey> = {
+const LABELS: Record<
+  keyof SubmissionOverrides | 'timeZone' | 'published' | 'turnstile',
+  MessageKey
+> = {
   opensAt: 'settings.opens',
   closesAt: 'settings.closes',
   maxResponses: 'settings.limit',
   closed: 'schedule.accepting',
   timeZone: 'schedule.zone',
   published: 'schedule.published',
+  turnstile: 'settings.turnstile',
 };
 
 /**
@@ -58,6 +63,7 @@ function toDraft(info: SchemaInfo): Draft {
     closed: schedule.closed,
     zone: (info.timeZoneFallback && undated && deviceTimeZone()) || timeZone,
     published: info.published,
+    turnstile: info.protection.turnstile !== null,
   };
 }
 
@@ -86,20 +92,23 @@ function Switch({
   checked,
   onChange,
   labelledBy,
+  disabled,
 }: {
   checked: boolean;
   onChange(value: boolean): void;
   labelledBy: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="switch"
+      disabled={disabled}
       aria-checked={checked}
       aria-labelledby={labelledBy}
       onClick={() => onChange(!checked)}
       className={cx(
-        'focus-ring relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors',
+        'focus-ring relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50',
         checked ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700',
       )}
     >
@@ -246,6 +255,7 @@ export function ScheduleSection({
     ...(Object.keys(overrides?.submissions ?? {}) as Array<keyof SubmissionOverrides>),
     ...(overrides?.timeZone ? (['timeZone'] as const) : []),
     ...(overrides?.published !== undefined ? (['published'] as const) : []),
+    ...(overrides?.turnstile !== undefined ? (['turnstile'] as const) : []),
   ];
   const next = toSchedule(draft, initial, schedule);
   const problem = dirty ? scheduleProblem(next, draft.zone) : undefined;
@@ -282,7 +292,12 @@ export function ScheduleSection({
     event.preventDefault();
     if (problem) return;
     void run(async () => {
-      await saveSchedule(formId, next, { timeZone: draft.zone, published: draft.published, dev });
+      await saveSchedule(formId, next, {
+        timeZone: draft.zone,
+        published: draft.published,
+        turnstile: draft.turnstile,
+        dev,
+      });
       // The draft started from the overridden values; once they're in code, the
       // overrides would only shadow later edits.
       if (dev && overrides) await clearOverrides(formId);
@@ -323,6 +338,35 @@ export function ScheduleSection({
                 labelledBy={`${ids}-accepting`}
               />
               {draft.closed && <span className={SUBTLE}>{t('schedule.pausedHint')}</span>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-1.5 py-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-start">
+            <span id={`${ids}-turnstile`} className="text-sm text-zinc-500 dark:text-zinc-400">
+              {t('settings.turnstile')}
+            </span>
+            <div className="min-w-0">
+              <Switch
+                checked={draft.turnstile}
+                disabled={!draft.turnstile && !initial.turnstile && !info.turnstileKeys}
+                onChange={(turnstile) => update({ turnstile })}
+                labelledBy={`${ids}-turnstile`}
+              />
+              <p className={cx('mt-1.5 leading-relaxed', SUBTLE)}>
+                {info.turnstileKeys && !(dev && draft.turnstile) ? (
+                  t('schedule.turnstileHint')
+                ) : (
+                  <>
+                    {dev && info.turnstileKeys
+                      ? t('schedule.turnstileDev.before')
+                      : t('schedule.turnstileKeys.before')}
+                    <Kbd>OPEN_FORM_TURNSTILE_SITE_KEY</Kbd>
+                    {t('schedule.turnstileKeys.middle')}
+                    <Kbd>OPEN_FORM_TURNSTILE_SECRET</Kbd>
+                    {t('schedule.turnstileKeys.after')}
+                  </>
+                )}
+              </p>
             </div>
           </div>
 

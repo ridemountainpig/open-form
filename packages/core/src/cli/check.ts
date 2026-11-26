@@ -360,15 +360,22 @@ export function turnstileWarnings(
   project: OpenFormConfig,
   env: Record<string, string | undefined> = process.env,
 ): string[] {
-  let turnstile: unknown;
+  let turnstile: { siteKey?: string } | null;
   try {
     turnstile = resolveProtection(project.protection, config.protection).turnstile;
   } catch (err) {
     return [`protection: ${err instanceof Error ? err.message : String(err)}`];
   }
-  if (!turnstile || env.OPEN_FORM_TURNSTILE_SECRET) return [];
+  if (!turnstile) return [];
+  const missing = [
+    env.OPEN_FORM_TURNSTILE_SECRET ? '' : 'OPEN_FORM_TURNSTILE_SECRET',
+    turnstile.siteKey || env.OPEN_FORM_TURNSTILE_SITE_KEY?.trim()
+      ? ''
+      : 'OPEN_FORM_TURNSTILE_SITE_KEY',
+  ].filter(Boolean);
+  if (missing.length === 0) return [];
   return [
-    'protection.turnstile is on but OPEN_FORM_TURNSTILE_SECRET is not set here. Set it wherever the server runs, or every response is refused (open-form dev uses the Cloudflare test keys instead).',
+    `protection.turnstile is on but ${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} not set here. Set ${missing.length > 1 ? 'them' : 'it'} wherever the server runs, or every response is refused (open-form dev uses the Cloudflare test keys instead).`,
   ];
 }
 

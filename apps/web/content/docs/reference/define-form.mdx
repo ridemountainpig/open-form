@@ -153,9 +153,9 @@ Submit button. `uniqueBy` must name a field in the form.
       description: 'Submissions with valid answers per IP address per form within each window, counted before the Turnstile check, so one Turnstile rejects still counts. An IPv6 address counts as its /64. Attempts, valid or not, are capped at five times max.',
     },
     turnstile: {
-      type: '{ siteKey: string } | false',
+      type: '{ siteKey: string } | boolean',
       default: 'false',
-      description: 'A Cloudflare Turnstile check on submit, out of sight unless Cloudflare asks the respondent to tick a box, which opens in a dialog. The server needs OPEN_FORM_TURNSTILE_SECRET. See Submissions & protection.',
+      description: 'A Cloudflare Turnstile check on submit, out of sight unless Cloudflare asks the respondent to tick a box, which opens in a dialog. true takes the site key from OPEN_FORM_TURNSTILE_SITE_KEY. The server needs OPEN_FORM_TURNSTILE_SECRET. Studio’s Turnstile switch overrides it. See Submissions & protection.',
     },
   }}
 />

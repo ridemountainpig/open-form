@@ -46,6 +46,15 @@ describe('writeScheduleChanges', () => {
     );
   });
 
+  it('writes the Turnstile switch into protection', () => {
+    const on = writeScheduleChanges(FORM, { turnstile: true });
+    expect(on).toContain('  protection: { turnstile: true },');
+    const keyed = on.replace('turnstile: true', "turnstile: { siteKey: '0x4AAA' }");
+    expect(writeScheduleChanges(keyed, { turnstile: false })).toContain(
+      '  protection: { turnstile: false },',
+    );
+  });
+
   it('follows a config declared apart from its export', () => {
     const source = `const config = { title: 'x' } satisfies object;\nexport { config };\n`;
     const out = writeScheduleChanges(source, { submissions: { maxResponses: 5 } });

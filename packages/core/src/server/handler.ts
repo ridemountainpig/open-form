@@ -2,6 +2,7 @@ import {
   applyOverrides,
   type CustomValidator,
   type FormConfig,
+  type FormOverrides,
   type FormSchema,
   type FormValues,
   formLocales,
@@ -12,6 +13,7 @@ import {
   type Messages,
   type OpenFormConfig,
   overriddenTimeZone,
+  overriddenTurnstile,
   parseResponseFilter,
   parseResponseSort,
   type ResponseFilter,
@@ -82,6 +84,8 @@ export type OpenFormHandlerOptions = {
   waitUntil?: (promise: Promise<unknown>) => void;
   /** Checks Turnstile tokens (`protection.turnstile`). Usually `OPEN_FORM_TURNSTILE_SECRET`. */
   turnstileSecret?: string;
+  /** The site key for `protection.turnstile: true` and Studio's switch. Usually `OPEN_FORM_TURNSTILE_SITE_KEY`. */
+  turnstileSiteKey?: string;
   /**
    * Without `turnstileSecret`, use Cloudflare's always-pass test site key and
    * secret in place of the configured ones (`open-form dev`).
@@ -316,13 +320,23 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
   }
   const turnstileTest = opts.turnstileTestKeys === true && !opts.turnstileSecret;
   const turnstileSecret = turnstileTest ? TURNSTILE_TEST_SECRET : opts.turnstileSecret;
-  const siteKeyOf = (turnstile: { siteKey: string }) =>
-    turnstileTest ? TURNSTILE_TEST_SITE_KEY : turnstile.siteKey;
+  const defaultSiteKey = opts.turnstileSiteKey?.trim() || undefined;
+  const siteKeyOf = (turnstile: { siteKey?: string }) =>
+    turnstileTest ? TURNSTILE_TEST_SITE_KEY : (turnstile.siteKey ?? defaultSiteKey);
   if (projectProtection.turnstile && !turnstileSecret) {
     console.warn(
       '[open-form] protection.turnstile is set but OPEN_FORM_TURNSTILE_SECRET is not, so forms that use it refuse every response.',
     );
   }
+  if (projectProtection.turnstile && !siteKeyOf(projectProtection.turnstile)) {
+    console.warn(
+      '[open-form] protection.turnstile is true but OPEN_FORM_TURNSTILE_SITE_KEY is not set, so forms that use it refuse every response.',
+    );
+  }
+  const protectionOf = (def: FormDefinition, overrides: FormOverrides | null) => {
+    const protection = resolveProtection(opts.config?.protection, def.config.protection);
+    return { ...protection, turnstile: overriddenTurnstile(protection.turnstile, overrides) };
+  };
   const turnstileWarned = new Set<string>();
   const turnstileProblem = (kind: string, message: string) => {
     if (turnstileWarned.has(kind)) return;
@@ -472,13 +486,14 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
     const { def, overrides } = await loadPublicForm(id as string);
     const status = await availability(def, overrides, request, now);
     const token = status.state === 'open' ? await issueTimingToken(signer, def.id, now) : undefined;
-    const { turnstile } = resolveProtection(opts.config?.protection, def.config.protection);
+    const { turnstile } = protectionOf(def, overrides);
+    const siteKey = turnstile && siteKeyOf(turnstile);
     return json({
       id: def.id,
       title: def.schema.title,
       availability: status,
       token,
-      ...(turnstile ? { turnstile: { siteKey: siteKeyOf(turnstile) } } : {}),
+      ...(siteKey ? { turnstile: { siteKey } } : {}),
     });
   }
 
@@ -498,7 +513,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       );
     }
 
-    const protection = resolveProtection(opts.config?.protection, def.config.protection);
+    const protection = protectionOf(def, overrides);
     const address = rateLimitSubject(opts.clientAddress?.(request) ?? 'unknown');
     const overLimit = async (scope: string, max: number, windowMs: number) => {
       const key = (await signer.sign(`${scope}:${def.id}:${address}`)).slice(0, 32);
@@ -555,6 +570,13 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
         turnstileProblem(
           'secret',
           `Form "${def.id}" uses protection.turnstile but OPEN_FORM_TURNSTILE_SECRET is not set, so its responses are refused.`,
+        );
+        throw new HttpError(503, 'unavailable', messages.genericError);
+      }
+      if (!siteKeyOf(protection.turnstile)) {
+        turnstileProblem(
+          'siteKey',
+          `Form "${def.id}" uses Turnstile without a site key in protection.turnstile, and OPEN_FORM_TURNSTILE_SITE_KEY is not set, so its responses are refused.`,
         );
         throw new HttpError(503, 'unavailable', messages.genericError);
       }
@@ -705,7 +727,11 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
       status: statusOf(window.status, responses, policy?.maxResponses, published),
       opensAt: iso(window.opensAt),
       closesAt: iso(window.closesAt),
-      protection: resolveProtection(opts.config?.protection, def.config.protection),
+      protection: protectionOf(def, overrides),
+      turnstileKeys: Boolean(
+        turnstileSecret &&
+          (turnstileTest || defaultSiteKey || protectionOf(def, null).turnstile?.siteKey),
+      ),
       responses,
       embed: { origins: embedOrigins },
       webhooks: webhooks.targets(def.id).map((hook) => ({
@@ -730,6 +756,7 @@ export function createOpenFormHandler(opts: OpenFormHandlerOptions): OpenFormHan
         policy: def.config.submissions,
         timeZone: codeTimeZone(def),
         published: isPublished(def.config, null),
+        turnstile: protectionOf(def, null).turnstile !== null,
       });
     } catch (err) {
       throw new HttpError(422, 'invalid', (err as Error).message);

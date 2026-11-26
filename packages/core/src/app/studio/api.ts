@@ -52,6 +52,8 @@ export type SchemaInfo = {
   opensAt?: string;
   closesAt?: string;
   protection: ResolvedProtection;
+  /** The server has a Turnstile secret and a site key (its own or the form's), so Studio can turn the check on. */
+  turnstileKeys: boolean;
   responses: number;
   embed?: { origins: string[] };
   /** Origins only: a webhook URL's path may be a secret. */
@@ -257,7 +259,12 @@ export async function submissionIds(
 export function saveSchedule(
   formId: string,
   schedule: Schedule,
-  { timeZone, published, dev }: { timeZone: string; published: boolean; dev: boolean },
+  {
+    timeZone,
+    published,
+    turnstile,
+    dev,
+  }: { timeZone: string; published: boolean; turnstile: boolean; dev: boolean },
 ) {
   const url = dev
     ? `/api/studio/forms/${encodeURIComponent(formId)}/schedule`
@@ -265,7 +272,7 @@ export function saveSchedule(
   return request<unknown>(url, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ submissions: schedule, timeZone, published }),
+    body: JSON.stringify({ submissions: schedule, timeZone, published, turnstile }),
   });
 }
 
