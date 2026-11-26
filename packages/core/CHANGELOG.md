@@ -1,5 +1,17 @@
 # @open-form-build/core
 
+## 0.5.0
+
+### Minor Changes
+
+- 38101ee: `FocusLayout` works from the keyboard throughout: Enter moves on from anywhere on a step, Shift + Enter goes back (outside a textarea), a step that opens with a text field puts the cursor in it on desktop, and Tab reaches Next before Back.
+- 38101ee: `protection.turnstile: { siteKey }` adds a Cloudflare Turnstile check on submit, verified on the server with `OPEN_FORM_TURNSTILE_SECRET`. It runs out of sight and opens in a dialog only when Cloudflare asks the respondent to tick a box. Every submission attempt, valid or not, now counts against a cap of five times `rateLimit.max`.
+
+### Patch Changes
+
+- 2472f12: Studio's theme previews show a neutral sample form (field types as labels) instead of a made-up workshop signup.
+- 782959f: Rewrite the npm READMEs: quick start, what you get, every CLI command and `init` flag, the environment variables, and links to each deploy guide.
+
 ## 0.4.0
 
 ### Minor Changes
