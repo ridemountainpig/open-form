@@ -71,6 +71,7 @@ import { type FormLanguage, TranslateContext, type Translator } from './i18n.tsx
 import { InspectContext } from './inspect.ts';
 import { conditionFromProps } from './layout.tsx';
 import { type FormNav, NavContext } from './nav.ts';
+import { prefillAnswers, prefillOverDraft } from './prefill.ts';
 import { firstOnPage, revealField, scrollBehavior } from './reveal.ts';
 import { type FormParts, partitionForm, type StepEntry } from './steps.ts';
 import { createFormStore, type FormStore, useStoreSelector } from './store.ts';
@@ -543,6 +544,7 @@ function InteractiveForm({
   const draftMs = runtime.preview || !formId ? null : draftLifetime(config?.drafts);
   const [restored, setRestored] = useState(false);
   const restoredAt = useRef<number | null>(null);
+  const restoredValues = useRef<FormValues | undefined>(undefined);
 
   // Drafts: restore after mount (localStorage doesn't exist while rendering on a
   // server), then save every change until the form is sent. A form that stopped
@@ -558,6 +560,7 @@ function InteractiveForm({
     const draft = readDraft(formId, draftMs);
     if (draft && Object.keys(draft.values).length > 0) {
       store.setState((s) => ({ values: { ...s.values, ...draft.values }, step: draft.step }));
+      restoredValues.current = draft.values;
       restoredAt.current = draft.step;
       setRestored(true);
     }
@@ -568,9 +571,31 @@ function InteractiveForm({
     });
   }, [draftMs, formId, store]);
 
+  // Link answers need field types, so they wait for the schema; they never
+  // replace what a restored draft holds for the same field.
+  const prefillAllowed = config?.prefill;
+  const prefilled = useMemo(
+    () =>
+      collected && prefillAllowed && runtime.prefill
+        ? prefillAnswers(collected.schema, prefillAllowed, runtime.prefill)
+        : {},
+    [collected, prefillAllowed, runtime.prefill],
+  );
+  const prefillApplied = useRef(false);
+  useEffect(() => {
+    if (prefillApplied.current || !collected) return;
+    prefillApplied.current = true;
+    const fresh = prefillOverDraft(prefilled, restoredValues.current);
+    if (Object.keys(fresh).length === 0) return;
+    store.setState((s) => {
+      const untouched = Object.entries(fresh).filter(([name]) => !ownValue(s.touched, name));
+      return { values: { ...s.values, ...Object.fromEntries(untouched) } };
+    });
+  }, [collected, prefilled, store]);
+
   const startOver = useCallback(() => {
     if (formId) clearDraft(formId);
-    const values = { ...props.defaultValues };
+    const values = { ...props.defaultValues, ...prefilled };
     // Mounted fields won't re-run their mount effect, so give them their own defaults back.
     const defaults = [...registry]
       .map((field) => [field.name, field.getDefault()] as const)
@@ -586,8 +611,9 @@ function InteractiveForm({
     setFurthest(0);
     setRestored(false);
     restoredAt.current = null;
+    restoredValues.current = undefined;
     requestFocus('step');
-  }, [formId, props.defaultValues, registry, requestFocus, store]);
+  }, [formId, prefilled, props.defaultValues, registry, requestFocus, store]);
 
   const sourceTitle = props.title ?? config?.title;
   const sourceDescription = props.description ?? config?.description;

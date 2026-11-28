@@ -102,6 +102,13 @@ export type FormConfig = {
    * on a shared computer the next person would see them.
    */
   drafts?: boolean | { expires?: Duration };
+  /**
+   * Fields a link may fill in: `prefill: ['name', 'email']` lets
+   * `/f/<id>#name=Ada&email=ada@example.com` (or `?name=…`) open with them
+   * answered. The respondent can still change them; the server checks them
+   * like any answer.
+   */
+  prefill?: string[];
 };
 
 export function defineForm(config: FormConfig): FormConfig {

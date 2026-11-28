@@ -280,6 +280,7 @@ defineForm({
   success: { title: 'Thanks!', message: 'See you there.', redirect: 'https://…' },
   // event forms: success: { calendar: { start: '2026-11-15T19:00', end: '2026-11-15T21:00', location: '…' } } — see *Event forms*
   drafts: true,                    // long forms: keep unfinished answers in the browser 7 days ({ expires: '1d' }); off by default for shared computers
+  prefill: ['name', 'email'],      // fields a link may fill in: /f/<id>#name=Ada&email=ada%40example.com (`#` keeps them out of server logs). Not trusted: never a price, discount or invite code. A restored draft wins per field
   published: false,                // take it offline: the link says "Form not found", Studio still previews it and keeps its responses. Unlike `closed`, which shows a closed screen
 });
 ```

@@ -154,6 +154,11 @@ duration. Drafts clear on submit, and when the form is closed, full or already
 answered. Studio's Preview doesn't keep them. They're off by default because on a
 shared computer the next person would see the previous person's answers.
 
+`prefill: ['name', 'email']` lets a link fill those fields in:
+`/f/meetup#name=Ada&email=ada%40example.com`. A restored draft wins over the
+link for the fields it holds. See
+[`defineForm`](/docs/reference/define-form#prefill).
+
 ## Closed screens
 
 When a form isn't taking responses, respondents get a `Notice` screen instead of

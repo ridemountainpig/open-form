@@ -93,6 +93,10 @@ It's `theme/index.tsx` once it adds components.
       default: 'false',
       description: 'Keep unfinished answers in the browser and restore them on return.',
     },
+    prefill: {
+      type: 'string[]',
+      description: 'Fields a link may fill in, like `/f/<id>#name=Ada&email=ada@example.com`.',
+    },
   }}
 />
 
@@ -225,6 +229,43 @@ browser and are cleared on submit, when the form closes, fills up or the
 respondent has already answered, and when you turn `drafts` off. Opening any
 form also clears expired drafts of the others. A restored draft shows a notice
 with a button to start over.
+
+## `prefill`
+
+Lists the fields a link may fill in, so people open the form with their name
+and email already there:
+
+```tsx
+export const config = defineForm({
+  prefill: ['name', 'email'],
+});
+```
+
+```txt
+https://forms.example.com/f/meetup#name=Ada%20Lovelace&email=ada%40example.com
+```
+
+- Put the answers after `#`. Browsers never send that part to a server, so it
+  stays out of access logs and `Referer` headers. `?name=…` works too, and `#`
+  wins when both name a field. Repeat a key for a `CheckboxGroup`:
+  `#topics=ai&topics=web`.
+- The form reads the link once, then removes the answers from the address bar,
+  so a copied link and the browser history don't carry them. Reloading the page
+  without `drafts` starts empty.
+- Answers are coerced to the field's type. A choice the field doesn't offer, a
+  number that isn't one, and fields not in `prefill` are ignored. `custom` fields
+  can't be listed.
+- With `drafts` on, a restored draft wins field by field: it holds what the
+  respondent typed after opening the link, often a correction, and reopening
+  the same link mustn't undo it. Fields the draft never reached still come from
+  the link. **Start over** goes back to the link's answers.
+- A prefilled answer is a starting point, not proof of who someone is: the
+  respondent can change it, anyone can edit the link, and the server validates
+  it like any other answer. Don't use it for anything you need to trust, such
+  as a price, a discount or an invite code.
+
+`FormHost` takes the same answers as its `prefill` prop; read them from your own
+page with `readLinkPrefill(config.prefill, location.search, location.hash)`.
 
 ## Dates and time zones
 

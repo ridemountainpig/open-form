@@ -19,6 +19,7 @@ export const config = defineForm({
   title: 'COMMIT NIGHT v12',
   description: 'Four talks, one long table, pizza.',
   drafts: true,
+  prefill: ['name', 'email', 'handle'],
   submissions: {
     maxResponses: 100,
     uniqueBy: 'email',

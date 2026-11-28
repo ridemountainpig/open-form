@@ -7,6 +7,7 @@ import {
   FormRuntimeContext,
   type NavigationInfo,
 } from '../../react/index.ts';
+import { readLinkPrefill, withoutPrefill } from '../../react/prefill.ts';
 import { visitorHeaders } from '../../react/visitor.ts';
 import {
   getMessages,
@@ -98,6 +99,20 @@ export function PublicFormPage() {
 
   const config = module?.config;
   const locale = config?.locale ?? appConfig.locale;
+
+  // Read once: the answers then leave the address bar, so a copied or shared
+  // link, and the browser history, don't carry the invitee's name and email.
+  const [link] = useState(() => ({ search: window.location.search, hash: window.location.hash }));
+  const prefillFields = config?.prefill;
+  const prefill = useMemo(
+    () => (prefillFields ? readLinkPrefill(prefillFields, link.search, link.hash) : undefined),
+    [link, prefillFields],
+  );
+  useEffect(() => {
+    if (!prefillFields || preview) return;
+    const clean = withoutPrefill(window.location.href, prefillFields);
+    if (clean) window.history.replaceState(window.history.state, '', clean);
+  }, [prefillFields, preview]);
 
   // Screen readers, hyphenation and CJK font fallback all key off the page
   // language; it and the title follow the language the respondent picks.
@@ -269,6 +284,7 @@ export function PublicFormPage() {
       themeDraft: themeDraft ?? undefined,
       onSubmitted,
       redirect,
+      prefill,
     }),
     [
       formId,
@@ -284,6 +300,7 @@ export function PublicFormPage() {
       themeDraft,
       onSubmitted,
       redirect,
+      prefill,
     ],
   );
 
