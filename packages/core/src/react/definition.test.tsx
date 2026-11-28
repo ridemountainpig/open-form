@@ -41,6 +41,15 @@ describe('toFormDefinition', () => {
     ).toThrow(/uniqueBy is "emial", which is not a field\. Use 'device' or one of: name, email/);
   });
 
+  it('rejects prefill that names no field', () => {
+    expect(() =>
+      toFormDefinition('signup', {
+        default: Signup,
+        config: defineForm({ prefill: ['name', 'emial'] }),
+      }),
+    ).toThrow(/prefill lists "emial", which is not a field\. Use one of: name, email/);
+  });
+
   it('rejects an unsupported locale and suggests the right tag', () => {
     expect(() =>
       toFormDefinition('signup', {

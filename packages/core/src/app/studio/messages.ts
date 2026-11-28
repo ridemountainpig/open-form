@@ -572,6 +572,7 @@ const en = {
   'edit.notesHint.after': ' to apply them.',
   'edit.removeNote': 'Remove note',
   'settings.drafts': 'Keeps unfinished answers',
+  'settings.prefill': 'Filled in from the link',
   'settings.responses': 'Responses',
   'schedule.published': 'Published',
   'schedule.unpublishedHint':
@@ -1180,6 +1181,7 @@ const zhTW: Dictionary = {
   'edit.notesHint.after': ' 套用。',
   'edit.removeNote': '移除留言',
   'settings.drafts': '保存未完成的回答',
+  'settings.prefill': '可由連結預填',
   'settings.responses': '回覆',
   'schedule.published': '發布',
   'schedule.unpublishedHint': '已下架，連結會顯示「找不到表單」，只有 Studio 能預覽。',
@@ -1783,6 +1785,7 @@ const zhCN: Dictionary = {
   'edit.notesHint.after': ' 来应用。',
   'edit.removeNote': '移除留言',
   'settings.drafts': '保存未完成的回答',
+  'settings.prefill': '可由链接预填',
   'settings.responses': '回复',
   'schedule.published': '发布',
   'schedule.unpublishedHint': '已下架，链接会显示“找不到该表单”，只有 Studio 能预览。',
@@ -2410,6 +2413,7 @@ const ja: Dictionary = {
   'edit.notesHint.after': ' を実行してもらうと反映されます。',
   'edit.removeNote': 'メモを削除',
   'settings.drafts': '途中の回答を保存',
+  'settings.prefill': 'リンクから入力',
   'settings.responses': '回答',
   'schedule.published': '公開',
   'schedule.unpublishedHint':

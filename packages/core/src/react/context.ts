@@ -81,6 +81,8 @@ export type FormRuntime = {
   previewControl?: { subscribe(listener: (command: PreviewCommand) => void): () => void };
   /** Preview only: unsaved tokens from Studio's Adjust panel, in place of the form's own theme's tokens. */
   themeDraft?: Theme;
+  /** Answers from the link (see `readLinkPrefill`); only the fields in `config.prefill` are used. */
+  prefill?: FormValues;
   /** Collect only: answers to render with, so text shown only for some answers is counted. */
   answers?: FormValues;
 };

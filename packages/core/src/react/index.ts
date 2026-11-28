@@ -80,6 +80,7 @@ export { FocusLayout, SplitLayout, StepperLayout } from './layouts.tsx';
 export type { FormNav, NavStep } from './nav.ts';
 export { useFormNav } from './nav.ts';
 export type { OptionInput } from './options.ts';
+export { readLinkPrefill } from './prefill.ts';
 export type { FormTheme } from './theme.ts';
 export { defineTheme } from './theme.ts';
 export type { FieldApi, UseFieldOptions } from './use-field.ts';

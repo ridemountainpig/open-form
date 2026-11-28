@@ -75,6 +75,9 @@ export function Settings() {
                   )}`
                 : off}
             </Row>
+            <Row label={t('settings.prefill')}>
+              {info.config.prefill?.length ? info.config.prefill.join(', ') : off}
+            </Row>
           </Section>
           <Section title={t('settings.protection')}>
             <Row label={t('settings.honeypot')}>{protection.honeypot ? t('settings.on') : off}</Row>

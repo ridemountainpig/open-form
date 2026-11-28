@@ -1,5 +1,5 @@
 import { type ComponentType, useEffect, useMemo, useState } from 'react';
-import { type FormConfig, getMessages, type Locale } from '../schema/index.ts';
+import { type FormConfig, type FormValues, getMessages, type Locale } from '../schema/index.ts';
 import { type FormAvailability, type FormRuntime, RuntimeContext } from './context.ts';
 import type { FormTheme } from './theme.ts';
 import { visitorHeaders } from './visitor.ts';
@@ -19,6 +19,11 @@ export type FormHostProps = {
   api?: string;
   /** The project's default language, for forms that don't set `locale`. */
   locale?: Locale;
+  /**
+   * Answers to open with, for the fields the form lists in `config.prefill`:
+   * from your own page's URL (`readLinkPrefill`) or a signed-in user.
+   */
+  prefill?: FormValues;
   className?: string;
 };
 
@@ -37,6 +42,7 @@ export function FormHost({
   themeId,
   api = '/api',
   locale,
+  prefill,
   className,
 }: FormHostProps) {
   const [info, setInfo] = useState<Info | null>(null);
@@ -71,8 +77,9 @@ export function FormHost({
       availability: info?.availability,
       token: info?.token,
       turnstile: info?.turnstile,
+      prefill,
     }),
-    [base, config, id, info, locale, theme, themeId],
+    [base, config, id, info, locale, prefill, theme, themeId],
   );
 
   const host = ['of-host', className].filter(Boolean).join(' ');

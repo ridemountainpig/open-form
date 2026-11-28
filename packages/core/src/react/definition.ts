@@ -48,6 +48,15 @@ function assertValidConfig(id: string, config: FormConfig, schema: FormSchema): 
       `submissions.uniqueBy is "${uniqueBy}", which is not a field. Use 'device' or one of: ${names}.`,
     );
   }
+  for (const name of config.prefill ?? []) {
+    const field = schema.fields.find((f) => f.name === name);
+    if (!field) {
+      const names = [...new Set(schema.fields.map((f) => f.name))].join(', ');
+      problems.push(`prefill lists "${name}", which is not a field. Use one of: ${names}.`);
+    } else if (field.type === 'custom') {
+      problems.push(`prefill lists "${name}", a custom field; a link can't fill those in.`);
+    }
+  }
   try {
     submissionWindow(config.submissions, { timeZone: timeZone ? undefined : config.timeZone });
   } catch (err) {
